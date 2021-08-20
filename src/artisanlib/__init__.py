@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 __version__ = '2.4.7'
-__revision__ = '5'
+__revision__ = '0'
 __build__ = '8'
 
 __release_sponsor_name__ = "Sweet Maria's"
