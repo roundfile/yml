@@ -85,7 +85,7 @@ for:
   build_script:
     - echo "Windows Build"
     - cmd: cd src
-    - ps: gc artisan-win.spec | %{ $_ -replace "PYTHON = r'c:\python39-x64'", "PYTHON = r'c:\python38-x64'" } | out-file newfile -encoding ascii
+    - ps: gc artisan-win.spec | %{ $_ -replace "PYTHON = r'c\:\\python39-x64'", "PYTHON = r'c\:\\python38-x64'" } | out-file newfile -encoding ascii
     - ps: move -force newfile artisan-win.spec
     - type artisan-win.spec
 
