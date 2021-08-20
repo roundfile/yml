@@ -100,9 +100,9 @@ RequestExecutionLevel admin
 ;Special commandline options needed when signing files
 ;Product version can be defined on the command line '/DPRODUCT_VERSION=ww.xx.yy.zz' 
 ;  and will override the version explicitly set in this file
-!if $PRODUCT_VERSION S== ""
-  !define PRODUCT_VERSION "2.4.7.0"
-!endif
+;!if $PRODUCT_VERSION S== ""
+!define /ifndef PRODUCT_VERSION "2.4.7.0"
+;!endif
 
 Caption "${PRODUCT_NAME} Installer"
 VIProductVersion ${PRODUCT_VERSION}
