@@ -105,7 +105,7 @@ RequestExecutionLevel admin
 ;!endif
 
 Caption "${PRODUCT_NAME} Installer"
-VIProductVersion ${PRODUCT_VERSION}
+VIProductVersion "${PRODUCT_VERSION}"
 VIAddVersionKey ProductName "${PRODUCT_NAME}"
 VIAddVersionKey Comments "Installer for Artisan"
 VIAddVersionKey CompanyName ""
