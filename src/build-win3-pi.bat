@@ -4,7 +4,7 @@ rem comandline potion LEGACY used to flag a legacy build in NSIS
 if "%~1" == "LEGACY"  (set ARTISAN_LEGACY="True") else (set ARTISAN_LEGACY="False")
 
 
-rem dave pyinstaller --noconfirm artisan-win.spec
+pyinstaller --noconfirm artisan-win.spec
 
 rem #
 rem # Don't make assumptions as to where the 'makensis.exe' is - look in the obvious places
