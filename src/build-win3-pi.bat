@@ -18,4 +18,4 @@ FOR /F "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanl
 rem ## remove the next line #dave
 echo %NSIS_EXE% setup-install3-pi.nsi /DPRODUCT_VERSION=%ARTISAN_VERSION%.0
 rem %NSIS_EXE% setup-install3-pi.nsi /DPRODUCT_VERSION=%ARTISAN_VERSION%.%ARTISAN_REVISION%
-%NSIS_EXE% setup-install3-pi.nsi /DPRODUCT_VERSION=%ARTISAN_VERSION%.0
+%NSIS_EXE% /DPRODUCT_VERSION=%ARTISAN_VERSION%.0 setup-install3-pi.nsi
