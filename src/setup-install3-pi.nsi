@@ -88,6 +88,17 @@ RequestExecutionLevel admin
   notRunning:
 !macroEnd
 
+!include WinVer.nsh
+!macro MinimumSystem
+  !ifndef ${LEGACY}
+    MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "LEGACY is not defined"
+    !if ! ${AtLeastWin10}
+      MessageBox mb_iconStop "Windows 10 blah blah" 
+      Abort
+    !endif
+  !endif
+!macroend
+
 ; HM NIS Edit Wizard helper defines
 !define pyinstallerOutputDir 'dist/artisan'
 !define PRODUCT_NAME "Artisan"
@@ -154,6 +165,8 @@ ShowInstDetails show
 ShowUnInstDetails show
 
 Function .onInit
+  !insertmacro MinimumSystem
+    
   !insertmacro IsRunning
 
   ${If} ${RunningX64}
