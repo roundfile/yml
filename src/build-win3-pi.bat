@@ -16,5 +16,6 @@ rem #
 FOR /F "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanlib.__version__)"`) DO (set ARTISAN_VERSION=%%~a)
 FOR /F "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanlib.__revision__)"`) DO (set ARTISAN_REVISION=%%~a)
 rem ## remove the next line #dave
-echo From bat file: %ARTISAN_VERSION%.%ARTISAN_REVISION%
-%NSIS_EXE% setup-install3-pi.nsi /DPRODUCT_VERSION=%ARTISAN_VERSION%.%ARTISAN_REVISION%
+echo From bat file: %ARTISAN_VERSION% _ %ARTISAN_REVISION%
+ewm %NSIS_EXE% setup-install3-pi.nsi /DPRODUCT_VERSION=%ARTISAN_VERSION%.%ARTISAN_REVISION%
+%NSIS_EXE% setup-install3-pi.nsi /DPRODUCT_VERSION=%ARTISAN_VERSION%
