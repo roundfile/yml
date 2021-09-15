@@ -88,17 +88,6 @@ RequestExecutionLevel admin
   notRunning:
 !macroEnd
 
-!include WinVer.nsh
-!macro MinimumSystem
-  !ifndef ${LEGACY}
-    MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION "LEGACY is not defined"
-    !if ! ${AtLeastWin10}
-      MessageBox mb_iconStop "Windows 10 blah blah" 
-      Abort
-    !endif
-  !endif
-!macroend
-
 ; HM NIS Edit Wizard helper defines
 !define pyinstallerOutputDir 'dist/artisan'
 !define PRODUCT_NAME "Artisan"
@@ -108,12 +97,12 @@ RequestExecutionLevel admin
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
-;Special commandline options needed when signing files
+;Special commandline options
 ;Product version can be defined on the command line '/DPRODUCT_VERSION=ww.xx.yy.zz' 
-;  and will override the version explicitly set in this file
-!if $PRODUCT_VERSION S== ""
-  !define /ifndef PRODUCT_VERSION "0.0.0.0"  
-!endif
+;  and will override the version explicitly set below.
+!define /ifndef PRODUCT_VERSION "0.0.0.0"  
+!define /ifndef SIGN "False"
+!define /ifndef LEGACY "False"
 
 Caption "${PRODUCT_NAME} Installer"
 VIProductVersion ${PRODUCT_VERSION}
@@ -164,8 +153,15 @@ InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show
 ShowUnInstDetails show
 
+!include WinVer.nsh
+
 Function .onInit
-  !insertmacro MinimumSystem
+
+  ${If} ${LEGACY} == "False"
+  ${AndIfNot} ${AtLeastWin8}
+    MessageBox mb_iconStop "Artisan requires Windows 8 or later to install and run." 
+    Abort
+  ${EndIf}
     
   !insertmacro IsRunning
 

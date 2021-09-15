@@ -1,6 +1,10 @@
 @echo off
 
-pyinstaller --noconfirm artisan-win.spec
+rem comandline potion LEGACY used to flag a legacy build in NSIS
+if "%~1" == "LEGACY"  (set ARTISAN_LEGACY="True") else (set ARTISAN_LEGACY="False")
+
+
+rem dave pyinstaller --noconfirm artisan-win.spec
 
 rem #
 rem # Don't make assumptions as to where the 'makensis.exe' is - look in the obvious places
@@ -16,4 +20,4 @@ rem #
 FOR /F "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanlib.__version__)"`) DO (set ARTISAN_VERSION=%%~a)
 rem FOR /F "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanlib.__revision__)"`) DO (set ARTISAN_REVISION=%%~a)
 FOR /F "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanlib.__build__)"`) DO (set ARTISAN_BUILD=%%~a)
-%NSIS_EXE% /DPRODUCT_VERSION=%ARTISAN_VERSION%.%ARTISAN_BUILD% setup-install3-pi.nsi
+%NSIS_EXE% /DPRODUCT_VERSION=%ARTISAN_VERSION%.%ARTISAN_BUILD% /DLEGACY=%ARTISAN_LEGACY% setup-install3-pi.nsi
