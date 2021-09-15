@@ -14,8 +14,6 @@ rem #
 rem #
 rem #
 FOR /F "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanlib.__version__)"`) DO (set ARTISAN_VERSION=%%~a)
-FOR /F "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanlib.__revision__)"`) DO (set ARTISAN_REVISION=%%~a)
-rem ## remove the next line #dave
-echo %NSIS_EXE% setup-install3-pi.nsi /DPRODUCT_VERSION=%ARTISAN_VERSION%.0
-rem %NSIS_EXE% setup-install3-pi.nsi /DPRODUCT_VERSION=%ARTISAN_VERSION%.%ARTISAN_REVISION%
+rem FOR /F "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanlib.__revision__)"`) DO (set ARTISAN_REVISION=%%~a)
+FOR /F "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanlib.__build__)"`) DO (set ARTISAN_REVISION=%%~a)
 %NSIS_EXE% /DPRODUCT_VERSION=%ARTISAN_VERSION%.0 setup-install3-pi.nsi

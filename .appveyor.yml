@@ -103,7 +103,7 @@ for:
     # run the install script
     - cmd: build-win3-pi.bat
     - cmd: copy ..\LICENSE LICENSE.txt
-    - cmd: 7z a artisan-win8-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
+    - cmd: 7z a artisan-win-legacy-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
 
 #  artifacts:
 #    - path: 'src\artisan-*.zip'
