@@ -101,11 +101,11 @@ RequestExecutionLevel admin
 ;Product version can be defined on the command line '/DPRODUCT_VERSION=ww.xx.yy.zz' 
 ;  and will override the version explicitly set in this file
 ;!if $PRODUCT_VERSION S== ""
-;  !define /ifndef PRODUCT_VERSION "1.1.2.0"
+!define /ifndef PRODUCT_VERSION "1.1.2.0"
 ;!endif
 
 Caption "${PRODUCT_NAME} Installer"
-VIProductVersion "${PRODUCT_VERSION}"
+VIProductVersion ${PRODUCT_VERSION}
 VIAddVersionKey ProductName "${PRODUCT_NAME}"
 VIAddVersionKey Comments "Installer for Artisan"
 VIAddVersionKey CompanyName ""
