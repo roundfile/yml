@@ -91,6 +91,7 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
         
     - ps: $v = $GIT_VERSION -split "\."
+    - ps: $v 
     - ps: gc file_version_info-win.txt | %{ $_ -replace "_ww", "$v[0] " } | out-file newfile -encoding ascii
     - ps: move -force file_version_info-win.txt
     - ps: gc file_version_info-win.txt | %{ $_ -replace "_xx", "$v[1] " } | out-file newfile -encoding ascii
@@ -112,6 +113,8 @@ for:
   deploy_script:
     - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
     #- cmd: bash upload.sh artisan-*.zip
+    - cmd: pwd
+    - cmd: dir
     - cmd: bash upload.sh dist/artisan.exe
 
 
