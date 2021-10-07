@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
-
+# -*- coding: utf-8 -*-
+#
 # ABOUT
 # WebSocket support for Artisan
 
@@ -7,7 +7,7 @@
 # This program or module is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
 # by the Free Software Foundation, either version 2 of the License, or
-# version 3 of the License, or (at your option) any later versison. It is
+# version 3 of the License, or (at your option) any later version. It is
 # provided for educational purposes and is distributed in the hope that
 # it will be useful, but WITHOUT ANY WARRANTY; without even the implied
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
@@ -24,11 +24,14 @@ import websocket
 import json
 import random
 
+try:
+    #pylint: disable = E, W, R, C
+    from PyQt6.QtWidgets import QApplication # @UnusedImport @Reimport  @UnresolvedImport
+except Exception:
+    #pylint: disable = E, W, R, C
+    from PyQt5.QtWidgets import QApplication # @UnusedImport @Reimport  @UnresolvedImport
 
-from PyQt5.QtWidgets import QApplication
-
-
-class wsport(object):
+class wsport():
     def __init__(self,aw):
         self.aw = aw
         
@@ -120,7 +123,7 @@ class wsport(object):
                             delay = self.aw.qmc.delay * 2 # we delay the markCharge action by 2 sampling periods
                         self.aw.qmc.markChargeSignal.emit(delay)
                         if self.aw.seriallogflag:
-                            self.aw.addserial("wsport markCHARGE() signal sent".format(delay))
+                            self.aw.addserial("wsport markCHARGE() with delay={} signal sent".format(delay))
                 elif self.drop_message != "" and pushMessage == self.drop_message:
                     if self.aw.seriallogflag:
                         self.aw.addserial("wsport message: DROP")
@@ -178,30 +181,32 @@ class wsport(object):
                 # fill weight of current roast set: {"pushMessage": "setRoastingProcessFillWeight", "data": { "fillWeight": 12 }}
 
     def onError(self, _, err):
-        self.aw.qmc.adderror(QApplication.translate("Error Message","WebSocket connection failed: {}",None).format(err))
+        self.aw.qmc.adderror(QApplication.translate("Error Message","WebSocket connection failed: {}").format(err))
         if self.aw.seriallogflag:
             self.aw.addserial("wsport onError(): {}".format(err))
 
-    def onClose(self, _):
-        self.aw.sendmessage(QApplication.translate("Message","WebSocket disconnected", None))
+    def onClose(self, *_):
+        self.aw.sendmessage(QApplication.translate("Message","WebSocket disconnected"))
         if self.aw.seriallogflag:
             self.aw.addserial("wsport onClose()")
     
-    def onOpen(self, _):
+    def onOpen(self, *_):
         self.open_event.set() # unblock the connect action
-        self.aw.sendmessage(QApplication.translate("Message","WebSocket connected", None))
+        self.aw.sendmessage(QApplication.translate("Message","WebSocket connected"))
         if self.aw.seriallogflag:
             self.aw.addserial("wsport onOpen()")
     
-    def onPing(self, _):
+    def onPing(self, *_):
         if self.aw.seriallogflag:
             self.aw.addserial("wsport onPing()")
     
-    def onPong(self, _):
+    def onPong(self, *_):
         if self.aw.seriallogflag:
             self.aw.addserial("wsport onPong()")
     
     def create(self):
+        # initialize readings
+        self.readings = [-1]*self.channels
         while self.active:
             try:
                 if self.aw.seriallogflag:
@@ -220,13 +225,13 @@ class wsport(object):
                     skip_utf8_validation=True,
                     ping_interval=self.ping_interval,
                     ping_timeout=self.ping_timeout)
-            except Exception as e:
-                self.aw.qmc.adderror(QApplication.translate("Error Message","WebSocket connection failed: {}",None).format(e))
+            except Exception as e: # pylint: disable=broad-except
+                self.aw.qmc.adderror(QApplication.translate("Error Message","WebSocket connection failed: {}").format(e))
                 if self.aw.seriallogflag:
                     self.aw.addserial("wsport create() error: {}".format(e))
             time.sleep(self.reconnect_interval)
             if self.active:
-                self.aw.sendmessage(QApplication.translate("Error Message","Reconnecting WebSocket",None))
+                self.aw.sendmessage(QApplication.translate("Error Message","Reconnecting WebSocket"))
         self.ws = None
 
     def connect(self):
@@ -283,8 +288,7 @@ class wsport(object):
             del self.pending_events[message_id]
             if not isinstance(v,threading.Event):
                 return v
-            else:
-                return None
+            return None
         return res
     
     # takes a request as dict to be send as JSON
@@ -296,7 +300,8 @@ class wsport(object):
             if connected:
                 message_id = random.randint(1,99999)
                 request[self.id_node] = message_id
-                request[self.machine_node] = self.machineID
+                if self.machine_node:
+                    request[self.machine_node] = self.machineID
                 json_req = json.dumps(request)
                 if block:
                     e = self.registerRequest(message_id)
@@ -308,19 +313,16 @@ class wsport(object):
                         if self.aw.seriallogflag:
                             self.aw.addserial("wsport send() received: {}".format(message_id))
                         return self.getRequestResponse(message_id)
-                    else:
-                        if self.aw.seriallogflag:
-                            self.aw.addserial("wsport send() timeout: {}".format(message_id))
-                        self.removeRequestResponse(message_id)
-                        return None # timeout
-                else:
-                    self.ws.send(json_req)
                     if self.aw.seriallogflag:
-                        self.aw.addserial("wsport send() non-blocking: {}".format(json_req))
-                    return None
-            else:
+                        self.aw.addserial("wsport send() timeout: {}".format(message_id))
+                    self.removeRequestResponse(message_id)
+                    return None # timeout
+                self.ws.send(json_req)
+                if self.aw.seriallogflag:
+                    self.aw.addserial("wsport send() non-blocking: {}".format(json_req))
                 return None
-        except Exception as e:
+            return None
+        except Exception as e: # pylint: disable=broad-except
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " wsport:send() {0}").format(str(e)),exc_tb.tb_lineno)
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " wsport:send() {0}").format(str(e)),exc_tb.tb_lineno)
             return None

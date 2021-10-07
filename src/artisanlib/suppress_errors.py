@@ -1,3 +1,6 @@
+# -*- coding: utf-8 -*-
+#
+
 import os
 import sys
 
@@ -8,7 +11,7 @@ import sys
 
 
 # Define a context manager to suppress stdout and stderr.
-class suppress_stdout_stderr(object):
+class suppress_stdout_stderr():
     '''
     A context manager for doing a "deep suppression" of stdout and stderr in 
     Python, i.e. will suppress all print, even if the print originates in a 
@@ -25,7 +28,7 @@ class suppress_stdout_stderr(object):
         try:
             #self.save_fds = [os.dup(1), os.dup(2)] # fails on Windows 7 under Python 3.7.4 with "OSError: [WinError 87] The parameter is incorrect"
             self.save_fds = [os.dup(sys.stdout.fileno()), os.dup(sys.stderr.fileno())]
-        except:
+        except Exception: # pylint: disable=broad-except
             self.save_fds = None
 
     def __enter__(self):
