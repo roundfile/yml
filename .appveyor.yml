@@ -91,13 +91,13 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
         
     - ps: $v = $GIT_VERSION -split "\."
-    - ps: gc file_version_info-win.txt | %{ $_ -replace "_ww", "$v[0] }"} | out-file newfile -encoding ascii
+    - ps: gc file_version_info-win.txt | %{ $_ -replace "_ww", "$v[0] " } | out-file newfile -encoding ascii
     - ps: move -force file_version_info-win.txt
-    - ps: gc file_version_info-win.txt | %{ $_ -replace "_xx", "$v[1] }"} | out-file newfile -encoding ascii
+    - ps: gc file_version_info-win.txt | %{ $_ -replace "_xx", "$v[1] " } | out-file newfile -encoding ascii
     - ps: move -force file_version_info-win.txt
-    - ps: gc file_version_info-win.txt | %{ $_ -replace "_yy", "$v[2] }"} | out-file newfile -encoding ascii
+    - ps: gc file_version_info-win.txt | %{ $_ -replace "_yy", "$v[2] " } | out-file newfile -encoding ascii
     - ps: move -force file_version_info-win.txt
-    - ps: gc file_version_info-win.txt | %{ $_ -replace "_zz", "$v[3] }"} | out-file newfile -encoding ascii
+    - ps: gc file_version_info-win.txt | %{ $_ -replace "_zz", "$v[3] " } | out-file newfile -encoding ascii
     - ps: move -force file_version_info-win.txt
     - cmd: type file_version_info-win.txt
 
@@ -111,7 +111,8 @@ for:
 
   deploy_script:
     - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-    - cmd: bash upload.sh artisan-*.zip
+    #- cmd: bash upload.sh artisan-*.zip
+    - cmd: bash upload.sh dist/artisan.exe
 
 
 -
