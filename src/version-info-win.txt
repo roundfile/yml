@@ -6,8 +6,8 @@ VSVersionInfo(
   ffi=FixedFileInfo(
     # filevers and prodvers should be always a tuple with four items: (1, 2, 3, 4)
     # Set not needed items to zero 0.
-    filevers=(_ww, _xx, _yy, _zz),
-    prodvers=(_ww, _xx, _yy, _zz),
+    filevers=(_ww_, _xx_, _yy_, _zz_),
+    prodvers=(_ww_, _xx_, _yy_, _zz_),
     # Contains a bitmask that specifies the valid bits 'flags'r
     mask=0x0,
     # Contains a bitmask that specifies the Boolean attributes of the file.
@@ -31,11 +31,11 @@ VSVersionInfo(
         u'040904e4',
         [StringStruct(u'Comments', u'Installer for Artisan'),
         StringStruct(u'CompanyName', u''),
-        StringStruct(u'FileDescription', u'Artisan v _ver Installer'),
+        StringStruct(u'FileDescription', u'Artisan v _ver_ Installer'),
         StringStruct(u'FileVersion', u'_ver'),
         StringStruct(u'LegalCopyright', u'Artisan.org'),
         StringStruct(u'ProductName', u'Artisan'),
-        StringStruct(u'ProductVersion', u'_ver')])
+        StringStruct(u'ProductVersion', u'_ver_')])
       ]), 
     VarFileInfo([VarStruct(u'Translation', [1033, 1252])])
   ]

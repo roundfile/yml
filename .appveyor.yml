@@ -90,20 +90,8 @@ for:
     - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '0'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
     - ps: move -force newfile artisanlib/__init__.py
         
-    - ps: $v = $GIT_VERSION -split "\."
-    - ps: $v 
-    - ps: gc file_version_info-win.txt | %{ $_ -replace "_ww", "$v[0] " } | out-file newfile -encoding ascii
-    - ps: move -force file_version_info-win.txt
-    - ps: gc file_version_info-win.txt | %{ $_ -replace "_xx", "$v[1] " } | out-file newfile -encoding ascii
-    - ps: move -force file_version_info-win.txt
-    - ps: gc file_version_info-win.txt | %{ $_ -replace "_yy", "$v[2] " } | out-file newfile -encoding ascii
-    - ps: move -force file_version_info-win.txt
-    - ps: gc file_version_info-win.txt | %{ $_ -replace "_zz", "$v[3] " } | out-file newfile -encoding ascii
-    - ps: move -force file_version_info-win.txt
-    - cmd: type file_version_info-win.txt
-
     # run the install script
-    - cmd: build-win3-pi.bat LEGACY
+    - ps: build-win3-pi.ps1 LEGACY
     - cmd: copy ..\LICENSE LICENSE.txt
     - cmd: 7z a artisan-win-legacy-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
 
