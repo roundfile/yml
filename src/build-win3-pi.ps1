@@ -24,10 +24,10 @@ $temp_str = $temp_str.replace("_xx_", $v[1])
 $temp_str = $temp_str.replace("_yy_", $v[2])
 $temp_str = $temp_str.replace("_zz_", $ARTISAN_BUILD)
 $temp_str = $temp_str.replace("_ver_", $ARTISAN_VERSION)
-Set-Content -Path ".\version-info.txt" -Value $temp_str
+Set-Content -Path ".\version-info.txt" -Value $temp_str -Encoding UTF8
 #Write-Host $temp_str
 
-pyinstaller --noconfirm artisan-win.spec --version-file version-info.txt
+& pyinstaller.exe --% --noconfirm Dave-artisan-win.spec
 
 #
 # Don't make assumptions as to where the 'makensis.exe' is - look in the obvious places
@@ -43,4 +43,4 @@ if (Test-Path -Path "${Env:ProgramFiles(x86)}\NSIS\makensis.exe" -PathType Leaf)
 #
 #
 Write-Host "$NSIS_EXE /DPRODUCT_VERSION=$ARTISAN_VERSION.$ARTISAN_BUILD /DLEGACY=$ARTISAN_LEGACY setup-install3-pi.nsi"
-& $NSIS_EXE /DPRODUCT_VERSION=$ARTISAN_VERSION.$ARTISAN_BUILD /DLEGACY=$ARTISAN_LEGACY setup-install3-pi.nsi
+#& $NSIS_EXE /DPRODUCT_VERSION=$ARTISAN_VERSION.$ARTISAN_BUILD /DLEGACY=$ARTISAN_LEGACY setup-install3-pi.nsi

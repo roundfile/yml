@@ -6,7 +6,7 @@ block_cipher = None
 import os
 if os.environ.get('APPVEYOR'):
   ARTISAN_SRC = r'C:\projects\artisan\src'
-  PYTHON = r'c:\python39-x64'
+  PYTHON = r'c:\python38-x64'
 else:
   ARTISAN_SRC = r'C:\Users\dbaxter\Documents\GitHub\yml\src'
   PYTHON = r'C:\Python38-64'
@@ -27,7 +27,7 @@ if is_module_satisfies('scipy >= 1.3.2'):
   SCIPY_BIN = PYTHON_PACKAGES + r'\scipy\.libs'
 else:
   SCIPY_BIN = PYTHON_PACKAGES + r'\scipy\extra-dll'
-
+  
 #os.system(PYTHON + r'\Scripts\pylupdate5 artisan.pro')
 
 a = Analysis(['artisan.py'],
@@ -55,7 +55,7 @@ exe = EXE(pyz,
           strip=False, # =True fails
           upx=True, # not installed
           icon='artisan.ico',
-          version='version_info-win.txt',
+          version='version-info-win.txt',
           console=False) # was True
 
 coll = COLLECT(exe,
@@ -144,7 +144,6 @@ for fn in [
     r'includes\roast-template.htm',
     r'includes\ranking-template.htm',
     r'includes\jquery-1.11.1.min.js',
-    r'includes\logging.yaml',
     ]:
   os.system('copy ' + fn + ' ' + TARGET)
 
