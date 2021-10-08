@@ -27,7 +27,7 @@ $temp_str = $temp_str.replace("_ver_", $ARTISAN_VERSION)
 Set-Content -Path ".\version-info.txt" -Value $temp_str
 #Write-Host $temp_str
 
-& pyinstaller --noconfirm artisan-win.spec --version-file version-info.txt
+pyinstaller --noconfirm artisan-win.spec --version-file version-info.txt
 
 #
 # Don't make assumptions as to where the 'makensis.exe' is - look in the obvious places
