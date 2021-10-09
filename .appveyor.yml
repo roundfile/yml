@@ -11,12 +11,12 @@ environment:
   matrix:
   - job_name: windows_legacy
     appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: windows
-#    appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: macos
-#    appveyor_build_worker_image: macos
-#  - job_name: linux
-#   appveyor_build_worker_image: Ubuntu2004
+  - job_name: windows
+    appveyor_build_worker_image: Visual Studio 2019
+  - job_name: macos
+    appveyor_build_worker_image: macos
+  - job_name: linux
+    appveyor_build_worker_image: Ubuntu2004
 #  - job_name: rpi
 #    appveyor_build_worker_image: Ubuntu1604
 
@@ -89,7 +89,7 @@ for:
     - ps: $GIT_VERSION=git rev-parse --verify --short HEAD
     - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '0'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
     - ps: move -force newfile artisanlib/__init__.py
-        
+
     # run the install script
     - cmd: build-win3-pi.bat LEGACY
     - cmd: copy ..\LICENSE LICENSE.txt

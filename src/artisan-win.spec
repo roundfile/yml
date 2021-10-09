@@ -2,14 +2,13 @@
 
 block_cipher = None
 
-
 import os
 if os.environ.get('APPVEYOR'):
   ARTISAN_SRC = r'C:\projects\artisan\src'
   PYTHON = r'c:\python39-x64'
 else:
-  ARTISAN_SRC = r'C:\Users\dbaxter\Documents\GitHub\yml\src'
-  PYTHON = r'C:\Python38-64'
+  ARTISAN_SRC = r'C:\Users\luther\Desktop\src'
+  PYTHON = r'C:\Program Files\Python37'
 NAME = 'artisan'
 
 ##
@@ -43,9 +42,6 @@ a = Analysis(['artisan.py'],
              cipher=block_cipher)
 
 pyz = PYZ(a.pure, a.zipped_data,cipher=block_cipher)
-
-
-
 
 exe = EXE(pyz,
           a.scripts,
@@ -115,7 +111,6 @@ os.system('copy "' + SNAP7_BIN + r'\snap7.dll" ' + TARGET)
 # copy libusb0.1 lib
 
 os.system('copy "' + LIBUSB_BIN + r'\libusb0.dll" ' + TARGET)
-
 
 for fn in [
     'artisan.png',
