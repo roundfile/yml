@@ -14,7 +14,7 @@ NAME = 'artisan'
 ##
 TARGET = 'dist\\' + NAME + '\\'
 PYTHON_PACKAGES = PYTHON + r'\Lib\site-packages'
-PYQT_QT = PYTHON_PACKAGES + r'\PyQt5\Qt'
+PYQT_QT = PYTHON_PACKAGES + r'\PyQt6\Qt'
 PYQT_QT_BIN = PYQT_QT + r'\bin'
 PYQT_QT_TRANSLATIONS = PYQT_QT + r'\translations'
 YOCTO_BIN = PYTHON_PACKAGES + r'\yoctopuce\cdll'
