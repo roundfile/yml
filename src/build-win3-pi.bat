@@ -10,6 +10,7 @@ FOR /F "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanl
 
 rem create a version file for pyinstaller
 create-version-file version-metadata.yml --outfile version_info-win.txt --version %ARTISAN_VERSION%.%ARTISAN_BUILD%
+echo. artisan-win%ARTISAN_SPEC%.spec
 pyinstaller --noconfirm artisan-win%ARTISAN_SPEC%.spec
 
 rem Don't make assumptions as to where the 'makensis.exe' is - look in the obvious places
