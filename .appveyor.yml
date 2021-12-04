@@ -146,7 +146,7 @@ for:
     
     #Monkey patch to fix Python3.10
     - echo "Monkey patch"
-    - curl -L -O https://github.com/roundfile/yml/blob/dff68c3ac240e9e37b02843f5af43ad4b7dc18c8/.ci/dis.py
+    - curl -L -O https://raw.githubusercontent.com/roundfile/yml/main/.ci/dis.py
     - echo "Curled dis.py "
     - copy dis.py C:\Python310-x64\Lib
     - echo "Copied dis.py "
