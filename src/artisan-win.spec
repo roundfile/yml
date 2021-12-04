@@ -5,10 +5,10 @@ block_cipher = None
 import os
 if os.environ.get('APPVEYOR'):
   ARTISAN_SRC = r'C:\projects\artisan\src'
-  PYTHON = r'c:\python310-x64'
+  PYTHON = r'c:\python39-x64'
 else:
   ARTISAN_SRC = r'C:\Users\roast\Documents\src'
-  PYTHON = r'C:\Program Files\Python310-x64'
+  PYTHON = r'C:\Program Files\Python39-x64'
 NAME = 'artisan'
 
 ##

@@ -34,7 +34,7 @@ branches:
     - master
 
 stack:
-  python 3.10
+  python 3.9
 
 for:
 -
@@ -110,7 +110,7 @@ for:
     fast_finish: false
 
   environment:
-    PYTHON: "C:\\Python310-x64"
+    PYTHON: "C:\\Python39-x64"
   #  PYINSTALLER_VER: "4.3"
     UPLOADTOOL_BODY:
       "WARNING: pre-release builds may not work. Use at your own risk."
@@ -145,11 +145,11 @@ for:
     - copy libusb-win32-bin-1.2.6.0\bin\amd64\libusb0.dll C:\Windows\SysWOW64
     
     #Monkey patch to fix Python3.10
-    - echo "Monkey patch"
-    - curl -L -O https://raw.githubusercontent.com/roundfile/yml/main/.ci/dis.py
-    - echo "Curled dis.py "
-    - copy dis.py C:\Python310-x64\Lib
-    - echo "Copied dis.py "
+#    - echo "Monkey patch"
+#    - curl -L -O https://raw.githubusercontent.com/roundfile/yml/main/.ci/dis.py
+#    - echo "Curled dis.py "
+#    - copy dis.py C:\Python310-x64\Lib
+#    - echo "Copied dis.py "
     
 
   build_script:
