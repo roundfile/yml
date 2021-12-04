@@ -332,19 +332,19 @@ Section Uninstall
 
   !insertmacro Rmdir_Wildcard "$INSTDIR\PyQt*" ${__LINE__}
   !insertmacro Rmdir_Wildcard "$INSTDIR\qt*_plugins" ${__LINE__}
-  !insertmacro Rmdir_Wildcard "$INSTDIR\altgraph-0.17.2.dist-info ${__LINE__}
-  !insertmacro Rmdir_Wildcard "$INSTDIR\cffi-1.15.0.dist-info ${__LINE__}
-  !insertmacro Rmdir_Wildcard "$INSTDIR\gevent-21.8.0.dist-info ${__LINE__}
-  !insertmacro Rmdir_Wildcard "$INSTDIR\greenlet-1.1.2.dist-info ${__LINE__}
-  !insertmacro Rmdir_Wildcard "$INSTDIR\importlib_metadata-4.8.2.dist-info ${__LINE__}
-  !insertmacro Rmdir_Wildcard "$INSTDIR\keyring-23.2.1.dist-info ${__LINE__}
-  !insertmacro Rmdir_Wildcard "$INSTDIR\prettytable-2.4.0.dist-info ${__LINE__}
-  !insertmacro Rmdir_Wildcard "$INSTDIR\pycparser-2.21.dist-info ${__LINE__}
-  !insertmacro Rmdir_Wildcard "$INSTDIR\pyinstaller-4.7.dist-info ${__LINE__}
-  !insertmacro Rmdir_Wildcard "$INSTDIR\setuptools-59.1.1.dist-info ${__LINE__}
-  !insertmacro Rmdir_Wildcard "$INSTDIR\wheel-0.37.0.dist-info ${__LINE__}
-  !insertmacro Rmdir_Wildcard "$INSTDIR\zope.event-4.5.0.dist-info ${__LINE__}
-  !insertmacro Rmdir_Wildcard "$INSTDIR\zope.interface-5.4.0.dist-info ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\altgraph-0.17.2.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\cffi-1.15.0.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\gevent-21.8.0.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\greenlet-1.1.2.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\importlib_metadata-4.8.2.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\keyring-23.2.1.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\prettytable-2.4.0.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\pycparser-2.21.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\pyinstaller-4.7.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\setuptools-59.1.1.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\wheel-0.37.0.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\zope.event-4.5.0.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\zope.interface-5.4.0.dist-info" ${__LINE__}
 
   Delete "$INSTDIR\artisan.png"
   Delete "$INSTDIR\LICENSE.txt"
