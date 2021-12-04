@@ -31,7 +31,6 @@ class AcaiaBLE():
     DEVICE_NAME_LUNAR = "ACAIA"
     SERVICE_UUID_LEGACY = "00001820-0000-1000-8000-00805f9b34fb"
     CHAR_UUID_LEGACY = ("00002a80-0000-1000-8000-00805f9b34fb", BLE_CHAR_TYPE.BLE_CHAR_NOTIFY_WRITE)
-    DEVICE_NAMES_LEGACY = ["PROCHBT001"]
     
     # Acaia Pearl (2021):
     DEVICE_NAME_PEARL2021 = "PEARL-"
@@ -45,8 +44,8 @@ class AcaiaBLE():
     # Acaia Lunar (2021):
     DEVICE_NAME_LUNAR2021 = "LUNAR-"
     
-    # Others:
-    DEVICE_NAME_OTHERS = "ACAIA"
+    # Acaia Pyxis:
+    DEVICE_NAME_PYXIS = "PYXIS"
     
     
     HEADER1      = 0xef
@@ -102,7 +101,11 @@ class AcaiaBLE():
 
 
     def __init__(self):
-        self.notificationConfSent = False
+        
+        self.timeStart = None
+    
+        self.notificationConfSentFast = False
+        self.notificationConfSentSlow = False
         # holds msgType on messages split in header and payload
         self.msgType = None
         self.weight = None
@@ -159,8 +162,10 @@ class AcaiaBLE():
                 cal_crc=self.crc(self.protocolParseBuf)
                 if cal_crc[0] == self.protocolParseCRC[0] and cal_crc[1] == self.protocolParseCRC[1]:
                     self.msgType=self.protocolParseCMD
-                    # When protocol parsing success, call original data parser
-                    self.parseScaleData(write, self.msgType, self.protocolParseBuf)
+                    data = self.protocolParseBuf[:] # copy buffer
+                    self.resetProtocolParser() # reset buffer already before parseScaleData() as it might hang
+                    # when protocol parsing success, call original data parser
+                    self.parseScaleData(write, self.msgType, data)
                     self.msgType = None  # message consumed completely
 
                 self.resetProtocolParser()
@@ -190,7 +195,6 @@ class AcaiaBLE():
         write(msg)
 
     # should be send every 3-5sec
-    # this seems not to be essential for the acaia. The Pearl disconnects from time to time, the Lunar never!?
     def sendHeartbeat(self,write):
         self.sendMessage(write,self.MSG_SYSTEM,b'\x02\x00')
 
@@ -205,13 +209,16 @@ class AcaiaBLE():
 
     def sendId(self,write):
         self.sendMessage(write,self.MSG_IDENTIFY,b'\x2d\x2d\x2d\x2d\x2d\x2d\x2d\x2d\x2d\x2d\x2d\x2d\x2d\x2d\x2d')
+        # non-legacy id message
+        # self.sendMessage(write,self.MSG_IDENTIFY,b'\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39\x30\x31\x32\x33\x34')
 
     def sendEvent(self,write,payload):
         self.sendMessage(write,self.MSG_EVENT,bytes([len(payload)+1]) + payload)
 
     # configure notifications
-    def confNotifications(self,write):
-        _log.debug("confNotifications(_)")
+    def confNotificationsSlow(self,write):
+        _log.debug("confNotificationsSlow(_)")
+        self.notificationConfSentSlow = True
         self.sendEvent(write,
             bytes([ # pairs of key/setting
                     0,  # weight id
@@ -225,6 +232,22 @@ class AcaiaBLE():
 #                    255, #4   # setting (not used)
                 ])
                 )
+    def confNotificationsFast(self,write):
+        _log.debug("confNotificationsFast(_)")
+        self.notificationConfSentFast = True
+        self.sendEvent(write,
+            bytes([ # pairs of key/setting
+                    0,  # weight id
+                    1,  # 0, 1, 3, 5, 7, 15, 31, 63, 127  # weight argument (speed of notifications in 1/10 sec)
+                       # 5 or 7 seems to be good values for this app in Artisan
+#                    1,   # battery id
+#                    255, #2,  # battery argument (if 0 : fast, 1 : slow)
+#                    2,  # timer id
+#                    255, #5,  # timer argument
+#                    3,  # key (not used)
+#                    255, #4   # setting (not used)
+                ])
+                )                
 
     def parseInfo(self,data):
         _log.debug("parseInfo(_)")
@@ -248,21 +271,21 @@ class AcaiaBLE():
         value = ((payload[3] & 0xff) << 24) + \
             ((payload[2] & 0xff) << 16) + ((payload[1] & 0xff) << 8) + (payload[0] & 0xff)
         
-        unit = payload[4]
+        div = payload[4]
 
-        if unit == 1:
+        if div == 1:
             value /= 10
-        elif unit == 2:
+        elif div == 2:
             value /= 100
-        elif unit == 3:
+        elif div == 3:
             value /= 1000
-        elif unit == 4:
+        elif div == 4:
             value /= 10000
         
         # convert received weight data to g
         if self.unit == 1: # kg
             value = value * 1000
-        elif self.unit == 5: # lbs
+        elif self.unit == 5: # oz
             value = value * 28.3495
         
         #stable = (payload[5] & 0x01) != 0x01
@@ -295,7 +318,8 @@ class AcaiaBLE():
 #            print("minutes",payload[0])
 #            print("seconds",payload[1])
 #            print("mseconds",payload[2])
-        _log.debug("parseTimerEvent(_): %sm%s%sms",payload[0],payload[1],payload[2])
+        value = ((payload[0] & 0xff) * 60) + payload[1] + payload[2] / 10.
+        _log.debug("parseTimerEvent(_): %sm%s%sms, %s",payload[0],payload[1],payload[2], value)
         return self.EVENT_TIMER_LEN
     
     def parseAckEvent(self,payload):
@@ -309,13 +333,17 @@ class AcaiaBLE():
             return -1
         return self.EVENT_KEY_LEN
 
-    def parseScaleEvent(self,payload):
+    def parseScaleEvent(self,payload,write):
         if payload and len(payload) > 0:
             event = payload[1]
             payload = payload[2:]
             val = -1
             if event == self.EVENT_WEIGHT:
-                val = self.parseWeightEvent(payload)
+                val = self.parseWeightEvent(payload)                
+                if not self.notificationConfSentSlow:
+                    # after receiving the first weight quick, 
+                    # we slow down the weight notificatinos
+                    self.confNotificationsSlow(write)
             elif event == self.EVENT_BATTERY:
                 val = self.parseBatteryEvent(payload)
             elif event == self.EVENT_TIMER:
@@ -331,23 +359,25 @@ class AcaiaBLE():
             return val + 1
         return -1
 
-    def parseScaleEvents(self,payload):
+    def parseScaleEvents(self,payload,write):
         if payload and len(payload) > 0:
-            pos = self.parseScaleEvent(payload)
+            pos = self.parseScaleEvent(payload,write)
             if pos > -1:
-                self.parseScaleEvents(payload[pos+1:])
+                self.parseScaleEvents(payload[pos+1:],write)
                 
     def parseStatus(self,payload):
         _log.debug("parseStatus(_,_)")
+        
         # battery level (7 bits of first byte) + TIMER_START (1bit)
         if payload and len(payload) > 0:
-            self.battery = int(payload[0] & ~(1 << 7))
+            self.battery = int(payload[1] & ~(1 << 7))
             _log.debug("battery: %s%%", self.battery)
             #print("bat","{}%".format(self.battery))
         # unit (7 bits of second byte) + CD_START (1bit)
         if payload and len(payload) > 1:
-            self.unit = int(payload[1] & ~(1 << 7))
+            self.unit = int(payload[2] & 0x7F)
             _log.debug("unit: %s", self.unit)
+            
         # mode (7 bits of third byte) + tare (1bit)
         # sleep (4th byte), 0:off, 1:5sec, 2:10sec, 3:20sec, 4:30sec, 5:60sec
         # key disabled (5th byte), touch key setting 0: off , 1:On
@@ -361,13 +391,16 @@ class AcaiaBLE():
     def parseScaleData(self,write,msgType,data):
         if msgType == self.MSG_INFO:
             self.parseInfo(data)
-            self.sendId(write)
+            if not self.notificationConfSentFast:
+                self.sendId(write)
         elif msgType == self.MSG_STATUS:
             self.parseStatus(data)
-            if not self.notificationConfSent:
-                self.confNotifications(write)
+            if not self.notificationConfSentFast:
+                # we configure the scale to receive the initial
+                # weight notification as fast as possible
+                self.confNotificationsFast(write)
         elif msgType == self.MSG_EVENT:
-            self.parseScaleEvents(data)
+            self.parseScaleEvents(data,write)
 
     # returns None or new weight data as first result and
     # None or new battery level as second result

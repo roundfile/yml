@@ -24,7 +24,6 @@ import numpy
 from artisanlib.dialogs import ArtisanDialog
 from artisanlib.util import stringfromseconds, stringtoseconds
 
-from help import transposer_help
 
 try:
     #pylint: disable = E, W, R, C
@@ -48,9 +47,9 @@ class profileTransformatorDlg(ArtisanDialog):
         
         self.helpdialog = None
         
-        self.regexpercent = QRegularExpression(r"[0-9]?[0-9]?(\.[0-9])")
-        self.regextime = QRegularExpression(r"[0-9]?[0-9]:[0-5][0-9]")
-        self.regextemp = QRegularExpression(r"[0-9]?[0-9]?[0-9]?(\.[0-9])")
+        self.regexpercent = QRegularExpression(r"^$|[0-9]?[0-9]?(\.[0-9])?")
+        self.regextime = QRegularExpression(r"^$|[0-9]?[0-9]:[0-5][0-9]")
+        self.regextemp = QRegularExpression(r"^$|[0-9]?[0-9]?[0-9]?(\.[0-9])?")
         
         # original data
         self.org_transMappingMode = self.aw.qmc.transMappingMode
@@ -552,6 +551,7 @@ class profileTransformatorDlg(ArtisanDialog):
 
     @pyqtSlot(bool)
     def openHelp(self,_=False):
+        from help import transposer_help
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog

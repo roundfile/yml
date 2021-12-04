@@ -23,7 +23,8 @@
 import sys
 import platform
 import numpy
-import prettytable
+import logging
+from typing import Final
 
 from artisanlib.util import (deltaLabelBigPrefix, deltaLabelPrefix, deltaLabelUTF8, 
                              stringtoseconds, stringfromseconds, toFloat)
@@ -48,6 +49,8 @@ except Exception:
                                  QGroupBox, QLayout, QMessageBox, QRadioButton, QStyleFactory, QHeaderView, # @UnusedImport @Reimport  @UnresolvedImport
                                  QTableWidget, QTableWidgetItem, QFrame) # @UnusedImport @Reimport  @UnresolvedImport
 
+
+_log: Final = logging.getLogger(__name__)
 
 ########################################################################################
 #####################  PLOTTER DATA DLG  ###############################################
@@ -237,6 +240,7 @@ class equDataDlg(ArtisanDialog):
             
     @pyqtSlot(bool)
     def copyDataTabletoClipboard(self,_=False):
+        import prettytable
         nrows = self.datatable.rowCount() 
         ncols = self.datatable.columnCount() - 1 #there is a dummy column at the end on the right
         clipboard = ""
@@ -328,13 +332,13 @@ class CurvesDlg(ArtisanDialog):
         self.DeltaETfilter.setSingleStep(1)
         self.DeltaETfilter.setRange(0,40)
         self.DeltaETfilter.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.DeltaETfilter.setValue(self.aw.qmc.deltaETfilter/2)
+        self.DeltaETfilter.setValue(int(round((self.aw.qmc.deltaETfilter - 1)/2)))
         self.DeltaETfilter.editingFinished.connect(self.changeDeltaETfilter)
         self.DeltaBTfilter = QSpinBox()
         self.DeltaBTfilter.setSingleStep(1)
         self.DeltaBTfilter.setRange(0,40)
         self.DeltaBTfilter.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.DeltaBTfilter.setValue(self.aw.qmc.deltaBTfilter/2)
+        self.DeltaBTfilter.setValue(int(round(self.aw.qmc.deltaBTfilter -1)/2))
         self.DeltaBTfilter.editingFinished.connect(self.changeDeltaBTfilter)
 
         self.OptimalSmoothingFlag = QCheckBox(QApplication.translate("CheckBox", "Optimal Smoothing Post Roast"))
@@ -354,7 +358,7 @@ class CurvesDlg(ArtisanDialog):
         self.Filter.setSingleStep(1)
         self.Filter.setRange(0,40)
         self.Filter.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.Filter.setValue(self.aw.qmc.curvefilter/2)
+        self.Filter.setValue(int(round((self.aw.qmc.curvefilter - 1)/2)))
         self.Filter.editingFinished.connect(self.changeFilter)
         #filterspikes
         self.FilterSpikes = QCheckBox(QApplication.translate("CheckBox", "Smooth Spikes"))
@@ -425,7 +429,7 @@ class CurvesDlg(ArtisanDialog):
         self.projectCheck.stateChanged.connect(self.changeProjection) #toggle
         
         deltaSpanLabel = QLabel(QApplication.translate("Label", "Delta Span"))
-        self.spanitems = range(1,31)
+        self.spanitems = range(0,31)
         self.deltaBTspan = QComboBox()
         self.deltaBTspan.addItems([str(i) + "s" for i in self.spanitems])
         try:
@@ -1128,6 +1132,7 @@ class CurvesDlg(ArtisanDialog):
             pass
         self.styleComboBox.currentIndexChanged.connect(self.setappearance)
         self.resolutionSpinBox = QSpinBox()
+        self.resolutionSpinBox.setSuffix("%")
         self.resolutionSpinBox.setRange(40,300)
         self.resolutionSpinBox.setSingleStep(5)
         self.resolutionSpinBox.setValue(self.aw.dpi)
@@ -1139,6 +1144,12 @@ class CurvesDlg(ArtisanDialog):
         self.soundCheck.setChecked(self.aw.soundflag) 
         self.soundCheck.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.soundCheck.stateChanged.connect(self.soundset) #toggle
+        self.notifications = QCheckBox(QApplication.translate("CheckBox", "Notifications"))
+        self.notifications.setChecked(self.aw.notificationsflag) 
+        self.notifications.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        notifyLayout = QHBoxLayout()
+        notifyLayout.addWidget(self.notifications)
+        notifyLayout.addStretch()
         appLayout1 = QHBoxLayout()
         appLayout1.addLayout(pathEffectsLayout)
         appLayout1.addStretch()
@@ -1153,6 +1164,7 @@ class CurvesDlg(ArtisanDialog):
         appLayout = QVBoxLayout()
         appLayout.addLayout(appLayout1)
         appLayout.addLayout(appLayout2)
+        appLayout.addLayout(notifyLayout)
         appLayout.addStretch()
         appearanceGroupWidget = QGroupBox(QApplication.translate("GroupBox","Appearance"))
         appearanceGroupWidget.setLayout(appLayout)
@@ -1422,7 +1434,7 @@ class CurvesDlg(ArtisanDialog):
     @pyqtSlot(bool)
     def expradiobuttonClicked(self,_=False):
         expradioButton = self.sender()
-        if self.expradioButton.isChecked():
+        if expradioButton.isChecked():
             self.exppower = expradioButton.power
             self.expvarCheck.setChecked(False)
             self.expvar(0)
@@ -2452,6 +2464,13 @@ class CurvesDlg(ArtisanDialog):
             self.aw.largeLCDs_dialog.reLayout()
         if self.aw.largeDeltaLCDs_dialog is not None:
             self.aw.largeDeltaLCDs_dialog.reLayout()
+        
+        self.aw.notificationsflag = self.notifications.isChecked()
+        if self.aw.notificationManager:
+            if self.aw.notificationsflag:
+                self.aw.notificationManager.showNotifications()
+            else:
+                self.aw.notificationManager.hideNotifications()
             
         self.aw.qmc.RoRlimitFlag = self.rorFilter.isChecked()
         self.aw.qmc.RoRlimitm = int(self.rorminLimit.value())
@@ -2473,6 +2492,7 @@ class CurvesDlg(ArtisanDialog):
         self.aw.qmc.plotcurves[6] = str(self.equedit7.text())
         self.aw.qmc.plotcurves[7] = str(self.equedit8.text())
         self.aw.qmc.plotcurves[8] = str(self.equedit9.text())
+        self.aw.cacheCurveVisibilities()  #dave
         self.aw.qmc.resetlinecountcaches()
         self.aw.qmc.resetlines()
         self.aw.qmc.redraw(recomputeAllDeltas=True)

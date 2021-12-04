@@ -19,13 +19,13 @@
 import sys
 import time
 import platform
+import logging
+from typing import Final
 
 from artisanlib.util import toFloat, uchr
 from artisanlib.dialogs import ArtisanDialog, ArtisanResizeablDialog
 from artisanlib.comm import serialport
 
-from help import modbus_help
-from help import s7_help
 
 try:
     #pylint: disable = E, W, R, C
@@ -43,6 +43,9 @@ except Exception:
                                  QPushButton, QTabWidget, QComboBox, QDialogButtonBox, QGridLayout,QSizePolicy, # @UnusedImport @Reimport  @UnresolvedImport
                                  QGroupBox, QTableWidget, QTableWidgetItem, QDialog, QTextEdit, QDoubleSpinBox, # @UnusedImport @Reimport  @UnresolvedImport
                                  QHeaderView) # @UnusedImport @Reimport  @UnresolvedImport
+
+
+_log: Final = logging.getLogger(__name__)
 
 class scanModbusDlg(ArtisanDialog):
     def __init__(self, parent = None, aw = None):
@@ -180,8 +183,8 @@ class scanModbusDlg(ArtisanDialog):
                     if res is not None:
                         result += str(register) + "(3)," + str(res) + "<br>"
                         self.modbusEdit.setHtml(result)
-        except Exception: # pylint: disable=broad-except
-            pass
+        except Exception as e: # pylint: disable=broad-except
+            _log.exception(e)
         # reconstruct MODBUS setup
         self.aw.modbus.comport = self.port_aw
         self.aw.modbus.baudrate = self.baudrate_aw
@@ -338,8 +341,8 @@ class scanS7Dlg(ArtisanDialog):
                     result += "{}: {}<br>".format(str(register),str(res))
                     self.S7Edit.setHtml(result)
                 time.sleep(0.4)
-        except Exception: # pylint: disable=broad-except
-            pass
+        except Exception as e: # pylint: disable=broad-except
+            _log.exception(e)
         # reconstruct S7 setup
         self.aw.s7.host = self.shost_aw
         self.aw.s7.port = self.sport_aw
@@ -428,8 +431,8 @@ class PortComboBox(QComboBox):
                 self.setCurrentIndex(pos)
             except Exception: # pylint: disable=broad-except
                 pass
-        except Exception: # pylint: disable=broad-except
-            pass
+        except Exception as e: # pylint: disable=broad-except
+            _log.exception(e)
         self.blockSignals(False)
 
 class comportDlg(ArtisanResizeablDialog):
@@ -1623,8 +1626,8 @@ class comportDlg(ArtisanResizeablDialog):
             elif i==1: # Tiny Tonino
                 self.aw.color.baudrate = 57600
             self.color_baudrateComboBox.setCurrentIndex(self.color_bauds.index(str(self.aw.color.baudrate)))
-        except Exception: # pylint: disable=broad-except
-            pass
+        except Exception as e: # pylint: disable=broad-except
+            _log.exception(e)
     
     @pyqtSlot(bool)
     def scanS7(self,_):
@@ -1765,12 +1768,14 @@ class comportDlg(ArtisanResizeablDialog):
     @pyqtSlot(bool)
     def showModbusbuttonhelp(self,_=False):
         if self.TabWidget.currentIndex() == 2:
+            from help import modbus_help
             self.helpdialog = self.aw.showHelpDialog(
                     self,            # this dialog as parent
                     self.helpdialog, # the existing help dialog
                     QApplication.translate("Form Caption","MODBUS Help"),
                     modbus_help.content())
         elif self.TabWidget.currentIndex() == 3:
+            from help import s7_help
             self.helpdialog = self.aw.showHelpDialog(
                     self,            # this dialog as parent
                     self.helpdialog, # the existing help dialog

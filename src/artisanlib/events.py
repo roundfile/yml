@@ -18,15 +18,13 @@
 
 import sys
 import platform
-import prettytable
+import logging
+from typing import Final
 
 from artisanlib.util import uchr
 from artisanlib.dialogs import ArtisanResizeablDialog, ArtisanDialog
 from artisanlib.widgets import MyQComboBox
 
-from help import eventannotations_help
-from help import eventbuttons_help
-from help import eventsliders_help
 
 try:
     #pylint: disable = E, W, R, C
@@ -43,6 +41,8 @@ except Exception:
                                  QPushButton, QSpinBox, QDoubleSpinBox, QWidget, QTabWidget, QDialogButtonBox, # @UnusedImport @Reimport  @UnresolvedImport
                                  QGridLayout, QGroupBox, QTableWidget, QHeaderView) # @UnusedImport @Reimport  @UnresolvedImport
 
+
+_log: Final = logging.getLogger(__name__)
 
 class EventsDlg(ArtisanResizeablDialog):
     def __init__(self, parent = None, aw = None, activeTab = 0):
@@ -642,45 +642,45 @@ class EventsDlg(ArtisanResizeablDialog):
         self.E1offset = QDoubleSpinBox()
         self.E1offset.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E1offset.setRange(-9999,9999)
-        self.E1offset.setDecimals(1)
+        self.E1offset.setDecimals(2)
         self.E1offset.setValue(self.aw.eventslideroffsets[0])
         self.E2offset = QDoubleSpinBox()
         self.E2offset.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E2offset.setRange(-9999,9999)
-        self.E2offset.setDecimals(1)
+        self.E2offset.setDecimals(2)
         self.E2offset.setValue(self.aw.eventslideroffsets[1])
         self.E3offset = QDoubleSpinBox()
         self.E3offset.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E3offset.setRange(-9999,9999)
-        self.E3offset.setDecimals(1)
+        self.E3offset.setDecimals(2)
         self.E3offset.setValue(self.aw.eventslideroffsets[2])
         self.E4offset = QDoubleSpinBox()
         self.E4offset.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E4offset.setRange(-9999,9999)
-        self.E4offset.setDecimals(1)
+        self.E4offset.setDecimals(2)
         self.E4offset.setValue(self.aw.eventslideroffsets[3])
         self.E1factor = QDoubleSpinBox()
         self.E1factor.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E1factor.setRange(-999,999)
-        self.E1factor.setDecimals(3)
+        self.E1factor.setDecimals(4)
         self.E1factor.setValue(self.aw.eventsliderfactors[0])
         self.E1factor.setMaximumWidth(70)
         self.E2factor = QDoubleSpinBox()
         self.E2factor.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E2factor.setRange(-999,999)
-        self.E2factor.setDecimals(3)
+        self.E2factor.setDecimals(4)
         self.E2factor.setValue(self.aw.eventsliderfactors[1])
         self.E2factor.setMaximumWidth(70)
         self.E3factor = QDoubleSpinBox()
         self.E3factor.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E3factor.setRange(-999,999)
-        self.E3factor.setDecimals(3)
+        self.E3factor.setDecimals(4)
         self.E3factor.setValue(self.aw.eventsliderfactors[2])
         self.E3factor.setMaximumWidth(70)
         self.E4factor = QDoubleSpinBox()
         self.E4factor.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E4factor.setRange(-999,999)
-        self.E4factor.setDecimals(3)
+        self.E4factor.setDecimals(4)
         self.E4factor.setValue(self.aw.eventsliderfactors[3])
         self.E4factor.setMaximumWidth(70)
         self.E1_min = QSpinBox()
@@ -2302,6 +2302,7 @@ class EventsDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def copyEventButtonTabletoClipboard(self,_=False):
+        import prettytable
         nrows = self.eventbuttontable.rowCount() 
         ncols = self.eventbuttontable.columnCount() - 1 #there is a dummy column at the end on the right
         clipboard = ""
@@ -2607,8 +2608,8 @@ class EventsDlg(ArtisanResizeablDialog):
                 event_buttoncolor = self.extraeventbuttoncolor[selected_idx]
                 event_textcolor = self.extraeventbuttontextcolor[selected_idx]
                 event_label = self.extraeventslabels[selected_idx]
-            except Exception: # pylint: disable=broad-except
-                pass
+            except Exception as e: # pylint: disable=broad-except
+                _log.exception(e)
 
         if bindex >= 0:
             self.extraeventsdescriptions.insert(bindex,event_description)
@@ -2728,10 +2729,10 @@ class EventsDlg(ArtisanResizeablDialog):
         self.aw.eventslidercommands[1] = self.E2command.text()
         self.aw.eventslidercommands[2] = self.E3command.text()
         self.aw.eventslidercommands[3] = self.E4command.text()
-        self.aw.eventslideroffsets[0] = int(self.E1offset.value())
-        self.aw.eventslideroffsets[1] = int(self.E2offset.value())
-        self.aw.eventslideroffsets[2] = int(self.E3offset.value())
-        self.aw.eventslideroffsets[3] = int(self.E4offset.value())
+        self.aw.eventslideroffsets[0] = self.E1offset.value()
+        self.aw.eventslideroffsets[1] = self.E2offset.value()
+        self.aw.eventslideroffsets[2] = self.E3offset.value()
+        self.aw.eventslideroffsets[3] = self.E4offset.value()
         self.aw.eventsliderfactors[0] = float(self.E1factor.value())
         if self.aw.eventsliderfactors[0] == 0: # a zero does not make much sense and might be a user error
             self.aw.eventsliderfactors[0] = 1.0
@@ -3044,6 +3045,11 @@ class EventsDlg(ArtisanResizeablDialog):
             #save special event annotations
             self.saveAnnotationsSettings()
             self.aw.closeEventSettings()
+            # restart PhidgetManager
+            try:
+                self.aw.qmc.restartPhidgetManager()
+            except Exception as e: # pylint: disable=broad-except
+                _log.exception(e)
         except Exception as e: # pylint: disable=broad-except
             #import traceback
             #traceback.print_exc(file=sys.stdout)
@@ -3059,6 +3065,7 @@ class EventsDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def showEventbuttonhelp(self,_=False):
+        from help import eventbuttons_help
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
@@ -3067,6 +3074,7 @@ class EventsDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def showSliderHelp(self,_=False):
+        from help import eventsliders_help
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
@@ -3075,6 +3083,7 @@ class EventsDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def showEventannotationhelp(self,_=False):
+        from help import eventannotations_help
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog

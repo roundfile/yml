@@ -4,16 +4,14 @@
 import logging
 import platform
 import sys
-import os
-import codecs
 import math
+import os
+import re
 import functools
 from pathlib import Path
 from typing import Final, Optional
 from matplotlib import colors
 
-import urllib.parse as urlparse  # @Reimport
-import urllib.request as urllib  # @Reimport
 
 ##
 
@@ -57,8 +55,8 @@ def appFrozen():
             if getattr(sys, 'frozen', False):
                 # The application is frozen
                 ib = True
-    except Exception: # pylint: disable=broad-except
-        pass
+    except Exception as e: # pylint: disable=broad-except
+        _log.exception(e)
     return ib
 
 def decs2string(x):
@@ -71,10 +69,12 @@ def uchr(x):
     return chr(x)
 def decodeLocal(x):
     if x is not None:
+        import codecs
         return codecs.unicode_escape_decode(x)[0]
     return None
 def encodeLocal(x):
     if x is not None:
+        import codecs
         return codecs.unicode_escape_encode(str(x))[0].decode("utf8")
     return None
 def hex2int(h1,h2=None):
@@ -164,6 +164,8 @@ def convertTemp(t,source_unit,target_unit):
 
 
 def path2url(path):
+    import urllib.parse as urlparse  # @Reimport
+    import urllib.request as urllib  # @Reimport
     return urlparse.urljoin(
       'file:', urllib.pathname2url(path))
         
@@ -422,3 +424,7 @@ def debugLogLevelToggle() -> bool:
     newDebugLevel = not debugLogLevelActive()
     setDebugLogLevel(newDebugLevel)
     return newDebugLevel
+
+
+def natsort(s):
+    return [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', s)]

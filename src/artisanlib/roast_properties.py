@@ -19,7 +19,6 @@
 import sys
 import math
 import platform
-import prettytable
 import logging
 from typing import Final
 
@@ -34,7 +33,6 @@ from artisanlib.util import deltaLabelUTF8, appFrozen, stringfromseconds,stringt
 from artisanlib.dialogs import ArtisanDialog, ArtisanResizeablDialog
 from artisanlib.widgets import MyQComboBox, ClickableQLabel, ClickableTextEdit, MyTableWidgetItemNumber
 
-from help import energy_help
 
 from uic import EnergyWidget
 from uic import SetupWidget
@@ -1480,7 +1478,7 @@ class editGraphDlg(ArtisanResizeablDialog):
                             acaia.DEVICE_NAME_PEARL2021, 
                             acaia.DEVICE_NAME_PEARLS, 
                             acaia.DEVICE_NAME_LUNAR2021,
-                            acaia.DEVICE_NAME_OTHERS
+                            acaia.DEVICE_NAME_PYXIS
                         ])                          
                     # start BLE loop
                     self.ble.deviceDisconnected.connect(self.ble_scan_failed)
@@ -2659,6 +2657,7 @@ class editGraphDlg(ArtisanResizeablDialog):
                     le.setText("%g" % self.aw.float2floatWeightVolume(converted))
         self.calculated_density()
 #PLUS
+        self.populatePlusCoffeeBlendCombos() # update the plus stock popups to display the correct unit
         try:
             # weight unit changed, we update the selected blend in plus mode
             if self.plus_blends_combo.currentIndex() > 0:
@@ -3351,6 +3350,7 @@ class editGraphDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def copyEnergyDataTabletoClipboard(self,_=False):
+        import prettytable
         nrows = self.energy_ui.datatable.rowCount()
         ncols = self.energy_ui.datatable.columnCount()
         clipboard = ""
@@ -3653,6 +3653,7 @@ class editGraphDlg(ArtisanResizeablDialog):
             
     @pyqtSlot(bool)
     def showenergyhelp(self,_=False):
+        from help import energy_help
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
@@ -4117,6 +4118,7 @@ class editGraphDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def copyEventTabletoClipboard(self,_=False):
+        import prettytable
         nrows = self.eventtable.rowCount() 
         ncols = self.eventtable.columnCount()
         clipboard = ""

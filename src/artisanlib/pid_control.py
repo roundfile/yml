@@ -29,6 +29,8 @@
 
 import time as libtime
 import numpy
+import logging
+from typing import Final
 
 from artisanlib.util import decs2string, fromCtoF, fromFtoC, hex2int, str2cmd, stringfromseconds
 
@@ -40,6 +42,9 @@ except Exception:
     #pylint: disable = E, W, R, C
     from PyQt5.QtCore import pyqtSlot # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import QApplication # @UnusedImport @Reimport  @UnresolvedImport
+
+
+_log: Final = logging.getLogger(__name__)
 
 class FujiPID():
     def __init__(self,aw):
@@ -564,49 +569,6 @@ class FujiPID():
         #val range -3 to 103%. Check for possible decimal digit user settings
         return val
 
-    #turns ON turns OFF current ramp soak mode
-    #flag =0 OFF, flag = 1 ON, flag = 2 hold
-    #A ramp soak pattern defines a whole profile. They have a minimum of 4 segments.
-    # returns True on success, False otherwise
-    def setrampsoak(self,flag):
-        register = None
-        if self.aw.ser.controlETpid[0] == 0: #Fuji PXG
-            register = self.PXG4["rampsoak"][1]        
-        elif self.aw.ser.controlETpid[0] == 1: #Fuji PXR
-            register = self.PXR["rampsoak"][1]
-        elif self.aw.ser.controlETpid[0] == 4:
-            register = self.PXF["rampsoak"][1]
-        if self.aw.ser.useModbusPort:
-            if register is not None:
-                reg = self.aw.modbus.address2register(register,6)
-                self.aw.modbus.writeSingleRegister(self.aw.ser.controlETpid[1],reg,flag)
-                if flag == 1:
-                    self.aw.fujipid.rampsoak = True
-                    self.aw.sendmessage(QApplication.translate("Message","RS ON"))
-                elif flag == 0:
-                    self.aw.fujipid.rampsoak = False
-                    self.aw.sendmessage(QApplication.translate("Message","RS OFF"))
-                else:
-                    self.aw.sendmessage(QApplication.translate("Message","RS on HOLD"))
-                return True         
-        elif register is not None:
-            command = self.message2send(self.aw.ser.controlETpid[1],6,register,flag)
-            r = self.aw.ser.sendFUJIcommand(command,8)
-            #if OK
-            if r == command:
-                if flag == 1:
-                    self.aw.fujipid.rampsoak = True
-                    self.aw.sendmessage(QApplication.translate("Message","RS ON"))
-                elif flag == 0:
-                    self.aw.fujipid.rampsoak = False
-                    self.aw.sendmessage(QApplication.translate("Message","RS OFF"))
-                else:
-                    self.aw.sendmessage(QApplication.translate("Message","RS on HOLD"))
-                return True
-            self.aw.qmc.adderror(QApplication.translate("Error Message","RampSoak could not be changed"))
-            return False
-        return False
-        
     def getrampsoakmode(self):
         if self.aw.ser.controlETpid[0] == 0: #Fuji PXG
             register = self.PXG4["rampsoakpattern"][1]
@@ -639,6 +601,7 @@ class FujiPID():
         if self.aw.ser.useModbusPort:
             reg = self.aw.modbus.address2register(register,3)
             self.aw.modbus.writeSingleRegister(self.aw.ser.controlETpid[1],reg,mode)
+            r = ""
         else:                
             command = self.aw.fujipid.message2send(self.aw.ser.controlETpid[1],6,register,mode)
             r = self.aw.ser.sendFUJIcommand(command,8)
@@ -651,9 +614,53 @@ class FujiPID():
                 self.PXF["rampsoakpattern"][0] = mode
             return True
         return False
+            
+    #turns ON turns OFF current ramp soak mode
+    #flag =0 OFF, flag = 1 ON, flag = 2 hold
+    #A ramp soak pattern defines a whole profile. They have a minimum of 4 segments.
+    # returns True on success, False otherwise
+    def setrampsoak(self,flag):
+        register = None
+        if self.aw.ser.controlETpid[0] == 0: #Fuji PXG
+            register = self.PXG4["rampsoak"][1]        
+        elif self.aw.ser.controlETpid[0] == 1: #Fuji PXR
+            register = self.PXR["rampsoak"][1]
+        elif self.aw.ser.controlETpid[0] == 4: #Fuji PXF
+            register = self.PXF["rampsoak"][1]
+        if self.aw.ser.useModbusPort:
+            if register is not None:
+                reg = self.aw.modbus.address2register(register,6)
+                self.aw.modbus.writeSingleRegister(self.aw.ser.controlETpid[1],reg,flag)
+                if flag == 1:
+                    self.aw.fujipid.rampsoak = True
+                    self.aw.sendmessage(QApplication.translate("Message","RS ON"))
+                elif flag == 0:
+                    self.aw.fujipid.rampsoak = False
+                    self.aw.sendmessage(QApplication.translate("Message","RS OFF"))
+                else:
+                    self.aw.sendmessage(QApplication.translate("Message","RS on HOLD"))
+                return True         
+        elif register is not None:
+            command = self.message2send(self.aw.ser.controlETpid[1],6,register,flag)
+            r = self.aw.ser.sendFUJIcommand(command,8)
+            #if OK
+            if r == command:
+                if flag == 1:
+                    self.aw.fujipid.rampsoak = True
+                    self.aw.sendmessage(QApplication.translate("Message","RS ON"))
+                elif flag == 0:
+                    self.aw.fujipid.rampsoak = False
+                    self.aw.sendmessage(QApplication.translate("Message","RS OFF"))
+                else:
+                    self.aw.sendmessage(QApplication.translate("Message","RS on HOLD"))
+                return True
+            self.aw.qmc.adderror(QApplication.translate("Error Message","RampSoak could not be changed"))
+            return False
+        return False
 
     # returns True on success, False otherwise
     def setONOFFstandby(self,flag):
+        _log.debug("setONOFFstandby(%s)",flag)
         #flag = 0 standby OFF, flag = 1 standby ON (pid off)
         #standby ON (pid off) will reset: rampsoak modes/autotuning/self tuning
         #Fuji PXG
@@ -670,7 +677,7 @@ class FujiPID():
             command = self.aw.fujipid.message2send(self.aw.ser.controlETpid[1],6,register,flag)
             #TX and RX
             r = self.aw.ser.sendFUJIcommand(command,8)
-        if r == command or self.aw.ser.useModbusPort:
+        if self.aw.ser.useModbusPort or r == command:
             if self.aw.ser.controlETpid[0] == 0:
                 self.aw.fujipid.PXG4["runstandby"][0] = flag
             elif self.aw.ser.controlETpid[0] == 1:
@@ -681,6 +688,15 @@ class FujiPID():
         mssg = QApplication.translate("Error Message","Exception:") + " setONOFFstandby()"
         self.aw.qmc.adderror(mssg)
         return False
+    
+    def getONOFFstandby(self):
+        if self.aw.ser.controlETpid[0] == 0:
+            return self.aw.fujipid.PXG4["runstandby"][0]
+        if self.aw.ser.controlETpid[0] == 1:
+            return self.aw.fujipid.PXR["runstandby"][0]
+        if self.aw.ser.controlETpid[0] == 4:
+            return self.aw.fujipid.PXF["runstandby"][0]
+        return None
                 
     #sets a new sv value (if slient=False, no output nor event recording is done, if move is True the SV slider is moved)
     def setsv(self,value,silent=False,move=True):
@@ -694,17 +710,17 @@ class FujiPID():
             
             #send command to the current sv (1-7)
             
-            #-- experimental begin
-            # read the current svN (1-7) being used
-            if self.aw.ser.useModbusPort:
-                reg = self.aw.modbus.address2register(reg_dict["selectsv"][1],3)
-                N = self.aw.modbus.readSingleRegister(self.aw.ser.controlETpid[1],reg,3)
-            else:
-                command = self.aw.fujipid.message2send(self.aw.ser.controlETpid[1],3,reg_dict["selectsv"][1],1)
-                N = self.aw.fujipid.readoneword(command)
-            if N > 0:
-                reg_dict["selectsv"][0] = N
-            #-- experimental end
+#            #-- experimental begin
+#            # read the current svN (1-7) being used
+#            if self.aw.ser.useModbusPort:
+#                reg = self.aw.modbus.address2register(reg_dict["selectsv"][1],3)
+#                N = self.aw.modbus.readSingleRegister(self.aw.ser.controlETpid[1],reg,3)
+#            else:
+#                command = self.message2send(self.aw.ser.controlETpid[1],3,reg_dict["selectsv"][1],1)
+#                N = self.readoneword(command)
+#            if N > 0:
+#                reg_dict["selectsv"][0] = N
+#            #-- experimental end
             
             svkey = "sv"+ str(reg_dict["selectsv"][0]) #current sv
             if self.aw.ser.useModbusPort:
@@ -1188,10 +1204,8 @@ class PIDcontrol():
                     self.aw.block_quantification_sampling_ticks[slidernr] = self.aw.sampling_ticks_to_block_quantifiction
                     cool = int(round(numpy.interp(vn,[-100,0],[self.aw.eventslidermax[slidernr],self.aw.eventslidermin[slidernr]])))
                     self.aw.qmc.temporarymovenegativeslider = (slidernr,cool)
-            except Exception: # pylint: disable=broad-except
-#                import traceback
-#                traceback.print_exc(file=sys.stdout)
-                pass
+            except Exception as e: # pylint: disable=broad-except
+                _log.exception(e)
         self.lastEnergy = v
 
     def conv2celsius(self):
@@ -1213,8 +1227,8 @@ class PIDcontrol():
                 for j in range(len(self.RS_svValues[n])):
                     if self.RS_svValues[n][j] != 0:
                         self.RS_svValues[n][j] = fromFtoC(self.RS_svValues[n][j])
-        except Exception: # pylint: disable=broad-except
-            pass
+        except Exception as e: # pylint: disable=broad-except
+            _log.exception(e)
         finally:
             if self.aw.qmc.rampSoakSemaphore.available() < 1:
                 self.aw.qmc.rampSoakSemaphore.release(1)
@@ -1226,8 +1240,8 @@ class PIDcontrol():
             self.svSliderMin = fromCtoF(self.svSliderMin)
             self.svSliderMax = fromCtoF(self.svSliderMax)
             # establish ne limits on sliders
-            self.aw.sliderSV.setMinimum(self.svSliderMin)
-            self.aw.sliderSV.setMaximum(self.svSliderMax)
+            self.aw.sliderSV.setMinimum(int(round(self.svSliderMin)))
+            self.aw.sliderSV.setMaximum(int(round(self.svSliderMax)))
             self.pidKp = self.pidKp / (9/5.)
             self.pidKi = self.pidKi / (9/5.)
             self.pidKd = self.pidKd / (9/5.)
@@ -1238,8 +1252,8 @@ class PIDcontrol():
                 for j in range(len(self.RS_svValues[n])):
                     if self.RS_svValues[n][j] != 0:
                         self.RS_svValues[n][j] = fromCtoF(self.RS_svValues[n][j])
-        except Exception: # pylint: disable=broad-except
-            pass
+        except Exception as e: # pylint: disable=broad-except
+            _log.exception(e)
         finally:
             if self.aw.qmc.rampSoakSemaphore.available() < 1:
                 self.aw.qmc.rampSoakSemaphore.release(1)
@@ -1312,7 +1326,6 @@ class PIDcontrol():
                 self.aw.qmc.pid.setControl(self.aw.pidcontrol.setEnergy)
                 if self.aw.pidcontrol.svMode == 0:
                     self.aw.pidcontrol.setSV(self.aw.sliderSV.value())
-#                    self.aw.pidcontrol.setSV(self.aw.pidcontrol.svValue)
                 self.pidActive = True
                 self.aw.qmc.pid.on()
                 self.aw.buttonCONTROL.setStyleSheet(self.aw.pushbuttonstyles["PIDactive"])
@@ -1464,7 +1477,7 @@ class PIDcontrol():
 #                # before and after DROP the SV configured in the dialog is returned (min/maxed)
 #                return max(self.aw.pidcontrol.svSliderMin,(min(self.aw.pidcontrol.svSliderMax,self.aw.pidcontrol.svValue)))
             if self.aw.qmc.timeindex[6] > 0: # after DROP, the SV configured in the dialog is returned (min/maxed)
-                return max(self.aw.pidcontrol.svSliderMin,(min(self.aw.pidcontrol.svSliderMax,self.aw.pidcontrol.svValue)))
+                return max(self.aw.pidcontrol.svSliderMin, min(self.aw.pidcontrol.svSliderMax, self.aw.pidcontrol.svValue))
             if self.aw.qmc.timeindex[0] < 0: # before CHARGE, the CHARGE temp of the background profile is returned
                 if self.aw.qmc.timeindexB[0] < 0:
                     # no CHARGE in background, return manual SV
@@ -1551,8 +1564,8 @@ class PIDcontrol():
                 self.svActions = self.RS_svActions[n]
                 self.svBeeps = self.RS_svBeeps[n]
                 self.svDescriptions = self.RS_svDescriptions[n]
-        except Exception: # pylint: disable=broad-except
-            pass
+        except Exception as e: # pylint: disable=broad-except
+            _log.exception(e)
         finally:
             if self.aw.qmc.rampSoakSemaphore.available() < 1:
                 self.aw.qmc.rampSoakSemaphore.release(1)
@@ -1562,7 +1575,8 @@ class PIDcontrol():
         try:
             self.aw.qmc.rampSoakSemaphore.acquire(1)
             return self.RS_svLabels.index(label)
-        except Exception: # pylint: disable=broad-except
+        except Exception as e: # pylint: disable=broad-except
+            _log.exception(e)
             return None
         finally:
             if self.aw.qmc.rampSoakSemaphore.available() < 1:
@@ -1583,7 +1597,7 @@ class PIDcontrol():
             if self.aw.pidcontrol.sv is not None:
                 sv = self.aw.pidcontrol.sv
             else:
-                sv = self.svSliderMin
+                sv = min(self.svSliderMax, max(self.svSliderMin, self.aw.pidcontrol.svValue))
             self.aw.updateSVSliderLCD(sv)
             self.aw.sliderSV.setValue(sv)
             self.aw.sliderSV.blockSignals(False)

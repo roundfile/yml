@@ -439,7 +439,7 @@ class modbusport():
                             self.cacheReadings(code,slave,register,res.registers)
 
         except Exception as ex: # pylint: disable=broad-except
-            _log.exception(ex)
+            _log.debug(ex)
 #            self.disconnect()
 #            import traceback
 #            traceback.print_exc(file=sys.stdout)
@@ -815,9 +815,11 @@ class modbusport():
             if code in [1,2]:
                 if res is not None and res.bits[0]:
                     return 1
-                return 0 
+                return 0
             decoder = getBinaryPayloadDecoderFromRegisters(res.registers, self.byteorderLittle, self.wordorderLittle)
             r = decoder.decode_16bit_uint()
+            _log.debug("  res.registers => %s", res.registers)
+            _log.debug("  decoder.decode_16bit_uint() => %s", r)
             return r
         return None
 
@@ -828,10 +830,6 @@ class modbusport():
     # if force the readings cache is ignored and fresh readings are requested
     def readSingleRegister(self,slave,register,code=3,force=False):
         _log.debug("readSingleRegister(%d,%d,%d,%s)", slave, register, code, force)
-#        import logging
-#        logging.basicConfig()
-#        log = logging.getLogger()
-#        log.setLevel(logging.DEBUG)
         if slave == 0:
             return None
         r = None
