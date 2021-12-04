@@ -143,6 +143,14 @@ for:
     - curl -k -L -O https://netcologne.dl.sourceforge.net/project/libusb-win32/libusb-win32-releases/1.2.6.0/libusb-win32-bin-1.2.6.0.zip
     - 7z x libusb-win32-bin-1.2.6.0.zip
     - copy libusb-win32-bin-1.2.6.0\bin\amd64\libusb0.dll C:\Windows\SysWOW64
+    
+    #Monkey patch to fix Python3.10
+    - echo "Monkey patch"
+    - curl -L -O https://github.com/roundfile/yml/blob/dff68c3ac240e9e37b02843f5af43ad4b7dc18c8/.ci/dis.py
+    - echo "Curled dis.py "
+    - copy dis.py C:\Python310-x64\Lib
+    - echo "Copied dis.py "
+    
 
   build_script:
     - echo "Windows Build"
