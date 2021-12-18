@@ -61,6 +61,7 @@ import re
 import gc
 import io
 import functools
+from bisect import bisect_right
 
 # links CTR-C signals to the system default (ignore)
 import signal
@@ -114,7 +115,7 @@ try:
     from PyQt6.QtGui import (QAction, QImage, QImageReader, QWindow, # @Reimport @UnresolvedImport @UnusedImport
                                 QKeySequence, # @Reimport @UnresolvedImport @UnusedImport
                                 QPixmap,QColor,QDesktopServices,QIcon, # @Reimport @UnresolvedImport @UnusedImport
-                                QRegularExpressionValidator,QDoubleValidator, QPainter ,QCursor) # @Reimport @UnresolvedImport @UnusedImport
+                                QRegularExpressionValidator,QDoubleValidator, QPainter, QCursor, QFont) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt6.QtPrintSupport import (QPrinter,QPrintDialog) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt6.QtCore import (QLibraryInfo, QTranslator, QLocale, QFileInfo, PYQT_VERSION_STR, pyqtSignal, pyqtSlot, # @Reimport @UnresolvedImport @UnusedImport
                               qVersion, QTime, QTimer, QFile, QIODevice, QTextStream, QSettings, # @Reimport @UnresolvedImport @UnusedImport
@@ -135,7 +136,7 @@ except Exception:
     from PyQt5.QtGui import (QImage, QImageReader, QWindow,  # @Reimport @UnresolvedImport @UnusedImport
                                 QKeySequence, # @Reimport @UnresolvedImport @UnusedImport
                                 QPixmap,QColor,QDesktopServices,QIcon, # @Reimport @UnresolvedImport @UnusedImport
-                                QRegularExpressionValidator,QDoubleValidator, QPainter, QFont,QBrush, QRadialGradient,QCursor) # @Reimport @UnresolvedImport @UnusedImport
+                                QRegularExpressionValidator,QDoubleValidator, QPainter, QCursor, QFont) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt5.QtPrintSupport import (QPrinter,QPrintDialog) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt5.QtCore import (QLibraryInfo, QTranslator, QLocale, QFileInfo, PYQT_VERSION_STR, pyqtSignal, pyqtSlot, # @Reimport @UnresolvedImport @UnusedImport
                               qVersion, QTime, QTimer, QFile, QIODevice, QTextStream, QSettings,  # @Reimport @UnresolvedImport @UnusedImport
@@ -695,7 +696,7 @@ class tgraphcanvas(FigureCanvas):
         'on_unfiltereddelta2', 'on_delta1', 'on_delta2', 'on_extratemp1', 'on_extratemp2', 'on_extratimex', 'on_extractimex1', 'on_extractemp1', 'on_extractimex2', 'on_extractemp2',
         'timeindex', 'ETfunction', 'BTfunction', 'DeltaETfunction', 'DeltaBTfunction', 'safesaveflag', 'pid', 'background', 'backgroundprofile', 'backgroundDetails',
         'backgroundeventsflag', 'backgroundpath', 'backgroundUUID', 'backgroundUUID', 'backgroundShowFullflag', 'titleB', 'roastbatchnrB', 'roastbatchprefixB',
-        'roastbatchposB', 'temp1B', 'temp2B', 'temp1BX', 'temp2BX', 'timeB', 'temp1Bdelta', 'temp1Bdelta', 'temp2Bdelta', 'temp2Bdelta',
+        'roastbatchposB', 'temp1B', 'temp2B', 'temp1BX', 'temp2BX', 'timeB', 'temp1Bdelta', 'temp2Bdelta',
         'stemp1B', 'stemp2B', 'stemp1BX', 'stemp2BX', 'extraname1B', 'extraname2B', 'extratimexB', 'xtcurveidx', 'ytcurveidx', 'delta1B', 'delta2B', 'timeindexB',
         'TP_time_B', 'TP_time_B_loaded', 'backgroundEvents', 'backgroundEtypes', 'backgroundEvalues', 'backgroundEStrings', 'backgroundalpha', 'backgroundmetcolor',
         'backgroundbtcolor', 'backgroundxtcolor', 'backgroundytcolor', 'backgrounddeltaetcolor', 'backgrounddeltabtcolor', 'backmoveflag', 'detectBackgroundEventTime',
@@ -758,7 +759,7 @@ class tgraphcanvas(FigureCanvas):
         'R1_DT', 'R1_BT', 'R1_BT_ROR', 'R1_EXIT_TEMP', 'R1_HEATER', 'R1_FAN', 'R1_DRUM', 'R1_VOLTAGE', 'R1_TX', 'R1_STATE', 'R1_FAN_RPM', 'R1_STATE_STR',
         'extraArduinoT1', 'extraArduinoT2', 'extraArduinoT3', 'extraArduinoT4', 'extraArduinoT5', 'extraArduinoT6', 'program_t3', 'program_t4', 'program_t5', 'program_t6', 
         'program_t7', 'program_t8', 'program_t9', 'program_t10', 'dutycycle', 'dutycycleTX', 'currentpidsv', 'linecount', 'deltalinecount',
-        'ax_background', 'block_update', 'fmt_data_RoR', 'plotterstack', 'plotterequationresults', 'plottermessage', 'alarm_popup_timout',
+        'ax_background', 'block_update', 'fmt_data_RoR', 'fmt_data_curve', 'plotterstack', 'plotterequationresults', 'plottermessage', 'alarm_popup_timout',
         'RTtemp1', 'RTtemp2', 'RTextratemp1', 'RTextratemp2', 'RTextratx', 'idx_met', 'showmet', 'met_annotate', 'met_timex_temp1_delta',
         'extendevents', 'statssummary', 'showtimeguide', 'statsmaxchrperline', 'energyunits', 'powerunits', 'sourcenames', 'loadlabels_setup',
         'loadratings_setup', 'ratingunits_setup', 'sourcetypes_setup', 'load_etypes_setup', 'presssure_percents_setup', 'loadevent_zeropcts_setup',
@@ -771,7 +772,7 @@ class tgraphcanvas(FigureCanvas):
         'eventmessagetimer', 'resizeredrawing', 'logoimg', 'analysisresultsloc_default', 'analysisresultsloc', 'analysispickflag', 'analysisresultsstr',
         'analysisstartchoice', 'analysisoffset', 'curvefitstartchoice', 'curvefitoffset', 'segmentresultsloc_default', 'segmentresultsloc',
         'segmentpickflag', 'segmentdeltathreshold', 'segmentsamplesthreshold', 'stats_summary_rect', 'title_text', 'title_artist', 'title_width',
-        'background_title_width', 'xlabel_text', 'xlabel_artist', 'xlabel_width', 'lazyredraw_on_resize_timer' ]
+        'background_title_width', 'xlabel_text', 'xlabel_artist', 'xlabel_width', 'lazyredraw_on_resize_timer', 'mathdictionary_base' ]
         
         
         
@@ -794,6 +795,15 @@ class tgraphcanvas(FigureCanvas):
         self.palette1 = self.palette.copy()
         self.EvalueColor_default = ['#43A7CF','#49B160','#800080','#AD0427']
         self.EvalueTextColor_default = ['white','#FFFFFF','white','#FFFFFF']
+        
+        # standard math functions allowed in symbolic formulas
+        self.mathdictionary_base = {
+            "min":min,"max":max,"sin":math.sin,"cos":math.cos,"tan":math.tan,
+            "pow":math.pow,"exp":math.exp,"pi":math.pi,"e":math.e,
+            "abs":abs,"acos":math.acos,"asin":math.asin,"atan":math.atan,
+            "log":math.log,"radians":math.radians,
+            "sqrt":math.sqrt,"degrees":math.degrees}
+        
 
         self.artisanflavordefaultlabels: Final = [QApplication.translate("Textbox", "Acidity"),
                                             QApplication.translate("Textbox", "Aftertaste"),
@@ -1393,6 +1403,8 @@ class tgraphcanvas(FigureCanvas):
             left=0.067, # the left side of the subplots of the figure (default: 0.125)
             right=.925) # the right side of the subplots of the figure (default: 0.9
         FigureCanvas.__init__(self, self.fig)
+        
+        self.fig.canvas.set_cursor = lambda _: None # deactivate the busy cursor on slow full redraws
 
         # important to make the Qt canvas transparent (note that this changes stylesheets of childs like popups too!):
         self.fig.canvas.setStyleSheet("background-color:transparent;") # default is white
@@ -1568,7 +1580,7 @@ class tgraphcanvas(FigureCanvas):
         self.roastbatchnrB = 0
         self.roastbatchprefixB = ""
         self.roastbatchposB = 1
-        self.temp1B,self.temp2B,self.temp1BX,self.temp2BX,self.timeB,self.temp1Bdelta,self.temp1Bdelta,self.temp2Bdelta,self.temp2Bdelta = [],[],[],[],[],[],[],[],[]
+        self.temp1B,self.temp2B,self.temp1BX,self.temp2BX,self.timeB,self.temp1Bdelta,self.temp2Bdelta = [],[],[],[],[],[],[]
         self.stemp1B,self.stemp2B,self.stemp1BX,self.stemp2BX = [],[],[],[] # smoothed versions of the background curves
         self.extraname1B,self.extraname2B = [],[]
         self.extratimexB = []
@@ -2329,6 +2341,10 @@ class tgraphcanvas(FigureCanvas):
 
         # flag to toggle between Temp and RoR scale of xy-display
         self.fmt_data_RoR = False
+        self.fmt_data_ON = True #; if False, the xy-display is deactivated
+        # toggle between using the 0: y-cursor pos, 1: BT@x, 2: ET@x, 3: BTB@x, 4: ETB@x (thus BT, ET or the corresponding background curve data at cursor position x)
+        # to display the y of the cursor coordinates
+        self.fmt_data_curve = 0
 
         #holds last values calculated from plotter
         self.plotterstack = [0]*10
@@ -2497,6 +2513,27 @@ class tgraphcanvas(FigureCanvas):
     #################################    FUNCTIONS    ###################################
     #####################################################################################
 
+    # toggles the y cursor coordinate see self.qmc.fmt_data_curve
+    def nextFmtDataCurve(self):
+        self.fmt_data_curve = (self.fmt_data_curve+1) % 5
+        if aw.qmc.backgroundprofile is None and self.fmt_data_curve in [3,4]:
+            self.fmt_data_curve = 0
+        if len(aw.qmc.timex)<3 and self.fmt_data_curve in [1,2]:
+            if aw.qmc.backgroundprofile is None:
+                self.fmt_data_curve = 0
+            else:
+                self.fmt_data_curve = 3
+        s = "cursor position"
+        if self.fmt_data_curve == 1:
+            s = aw.BTname
+        elif self.fmt_data_curve == 2:
+            s = aw.ETname
+        elif self.fmt_data_curve == 3:
+            s = f'{QApplication.translate("Label","Background")} {aw.BTname}'
+        elif self.fmt_data_curve == 4:
+            s = f'{QApplication.translate("Label","Background")} {aw.ETname}'
+        aw.ntb.update_message()
+        aw.sendmessage(QApplication.translate("Message", "set y-coordinate to {}").format(s))
 
     @pyqtSlot(str, bool)
     def showCurve(self, name: str, state: bool):
@@ -3296,7 +3333,7 @@ class tgraphcanvas(FigureCanvas):
 
     # note that partial values might be given here (time might update, but not the values)
     @pyqtSlot(str,str,str)
-    # pylint: disable=no-self-use
+    # pylint: disable=no-self-use # used as slot
     def updateLargeLCDs(self, bt, et, time):
         try:
             if aw.largeLCDs_dialog is not None:
@@ -3308,7 +3345,7 @@ class tgraphcanvas(FigureCanvas):
             _log.exception(e)
 
     @pyqtSlot(str,str)
-    # pylint: disable=no-self-use
+    # pylint: disable=no-self-use # used as slot
     def setTimerLargeLCDcolor(self, fc, bc):
         try:
             if aw.largeLCDs_dialog is not None:
@@ -3317,7 +3354,7 @@ class tgraphcanvas(FigureCanvas):
             _log.exception(e)
     
     @pyqtSlot(str,int)   
-    # pylint: disable=no-self-use
+    # pylint: disable=no-self-use # used as slot
     def showAlarmPopup(self, message, timeout):
         # alarm popup message with <aw.qmc.alarm_popup_timout>sec timeout
         amb = ArtisanMessageBox(aw,QApplication.translate("Message", "Alarm notice"),message,timeout=timeout,modal=False)
@@ -3327,7 +3364,7 @@ class tgraphcanvas(FigureCanvas):
             aw.qmc.updateWebLCDs(alertText=message,alertTimeout=timeout)
 
     @pyqtSlot(str,str)
-    # pylint: disable=no-self-use
+    # pylint: disable=no-self-use # used as slot
     def updateLargeLCDsReadings(self, bt, et):
         try:
             if aw.largeLCDs_dialog is not None:
@@ -3336,7 +3373,7 @@ class tgraphcanvas(FigureCanvas):
             _log.exception(e)
 
     @pyqtSlot(str)
-    # pylint: disable=no-self-use
+    # pylint: disable=no-self-use # used as slot
     def updateLargeLCDsTime(self, time):
         try:
             if aw.largeLCDs_dialog is not None:
@@ -4440,30 +4477,59 @@ class tgraphcanvas(FigureCanvas):
                 self.quantifiedEvent = []
 
                 if self.flagstart:
-                    if  self.zoom_follow and self.temp2 and len(self.temp2)>0 and self.temp1 and len(self.temp1)>0: # aw.ntb._active == 'ZOOM'
-                        # center current BT reading on canvas
-                        bt = self.temp2[-1]
-                        tx = self.timex[-1]
-                        # get current limits
-                        xlim = self.ax.get_xlim()
-                        xlim_offset = (xlim[1] - xlim[0]) / 2.
-                        xlim_new = (tx - xlim_offset, tx + xlim_offset)
-                        ylim = self.ax.get_ylim()
-                        ylim_offset = (ylim[1] - ylim[0]) / 2.
-                        ylim_new = (bt - ylim_offset, bt + ylim_offset)
-                        # set new limits to center current BT on canvas
-                        self.ax.set_xlim(xlim_new)
-                        self.ax.set_ylim(ylim_new)
-                        two_ax_mode = (self.DeltaETflag or self.DeltaBTflag or (self.background and (self.DeltaETBflag or self.DeltaBTBflag)))
-                        if two_ax_mode and self.delta_ax:
-                            zlim = self.delta_ax.set_ylim()
-                            zlim_offset = (zlim[1] - zlim[0]) / 2.
-                            btd = (self.delta_ax.transData.inverted().transform((0,self.ax.transData.transform((0,bt))[1]))[1])
-                            zlim_new = (btd - zlim_offset, btd + zlim_offset)
-                            self.delta_ax.set_ylim(zlim_new)
-
-                        if ylim != ylim_new or xlim != xlim_new or (two_ax_mode and zlim != zlim_new):
-                            self.ax_background = None
+                    if  self.zoom_follow: # aw.ntb._active == 'ZOOM'
+                        if aw.qmc.fmt_data_RoR == False:
+                            # center current temp reading on canvas
+                            temp = None
+                            if self.temp2 and len(self.temp2)>0:
+                                temp = self.temp2[-1]
+                                if temp is not None:
+                                    tx = self.timex[-1]
+                                    # get current limits
+                                    xlim = self.ax.get_xlim()
+                                    xlim_offset = (xlim[1] - xlim[0]) / 2.
+                                    xlim_new = (tx - xlim_offset, tx + xlim_offset)
+                                    ylim = self.ax.get_ylim()
+                                    ylim_offset = (ylim[1] - ylim[0]) / 2.
+                                    ylim_new = (temp - ylim_offset, temp + ylim_offset)
+                                    if ylim != ylim_new or xlim != xlim_new:
+                                        # set new limits to center current temp on canvas
+                                        self.ax.set_xlim(xlim_new)
+                                        self.ax.set_ylim(ylim_new)
+                                        if self.twoAxisMode() and self.delta_ax:
+                                            # keep the RoR axis constant
+                                            zlim = self.delta_ax.get_ylim()
+                                            zlim_offset = (zlim[1] - zlim[0]) / 2.
+                                            tempd = (self.delta_ax.transData.inverted().transform((0,self.ax.transData.transform((0,temp))[1]))[1])
+                                            zlim_new = (tempd - zlim_offset, tempd + zlim_offset)
+                                            self.delta_ax.set_ylim(zlim_new)
+                                        self.ax_background = None
+                        else:
+                            # center current RoR reading on canvas
+                            ror = None
+                            two_ax_mode = (self.DeltaETflag or self.DeltaBTflag or (self.background and (self.DeltaETBflag or self.DeltaBTBflag)))
+                            if two_ax_mode and self.delta_ax and self.delta2 and len(self.delta2)>0:
+                                ror = self.delta2[-1]
+                            if ror is not None:
+                                tx = self.timex[-1]
+                                # get current limits
+                                xlim = self.ax.get_xlim()
+                                xlim_offset = (xlim[1] - xlim[0]) / 2.
+                                xlim_new = (tx - xlim_offset, tx + xlim_offset)
+                                ylim = self.ax.get_ylim()
+                                ylim_offset = (ylim[1] - ylim[0]) / 2.
+                                rord = (self.ax.transData.inverted().transform((0,self.delta_ax.transData.transform((0,ror))[1]))[1])
+                                ylim_new = (rord - ylim_offset, rord + ylim_offset)
+                                if ylim != ylim_new or xlim != xlim_new:
+                                    # set new limits to center current temp on canvas
+                                    self.ax.set_xlim(xlim_new)
+                                    self.ax.set_ylim(ylim_new)
+                                    # keep the RoR axis constant
+                                    zlim = self.delta_ax.get_ylim()
+                                    zlim_offset = (zlim[1] - zlim[0]) / 2.
+                                    zlim_new = (ror - zlim_offset, ror + zlim_offset)
+                                    self.delta_ax.set_ylim(zlim_new)
+                                    self.ax_background = None
 
                     if self.patheffects:
                         rcParams['path.effects'] = [PathEffects.withStroke(linewidth=self.patheffects, foreground=self.palette["background"])]
@@ -5309,9 +5375,8 @@ class tgraphcanvas(FigureCanvas):
     # The given mathexpression has to be a non-empty string!
     def eval_math_expression(self,mathexpression,t,equeditnumber=None, RTsname=None,RTsval=None,t_offset=0):
         if len(mathexpression):
-            mathdictionary = {"min":min,"max":max,"sin":math.sin,"cos":math.cos,"tan":math.tan,"pow":math.pow,"exp":math.exp,"pi":math.pi,"e":math.e,
-                              "abs":abs,"acos":math.acos,"asin":math.asin,"atan":math.atan,"log":math.log,"radians":math.radians,
-                              "sqrt":math.sqrt,"degrees":math.degrees}
+            mathdictionary = {}
+            mathdictionary.update(self.mathdictionary_base) # extend by the standard math symbolic formulas
 
             if aw.qmc.flagstart or not aw.qmc.flagon:
                 sample_timex = self.timex
@@ -6044,21 +6109,16 @@ class tgraphcanvas(FigureCanvas):
 
     def fmt_data(self,x):
         res = x
-        if self.fmt_data_RoR and not aw.qmc.designerflag and self.delta_ax:
+        if self.fmt_data_ON and self.delta_ax and self.fmt_data_RoR and self.twoAxisMode():
             try:
                 # depending on the z-order of ax vs delta_ax the one or the other one is correct
                 #res = (self.ax.transData.inverted().transform((0,self.delta_ax.transData.transform((0,x))[1]))[1])
                 res = (self.delta_ax.transData.inverted().transform((0,self.ax.transData.transform((0,x))[1]))[1])
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
-        elif not self.fmt_data_RoR and aw.qmc.designerflag and self.delta_ax:
-            try:
-                res = (self.delta_ax.transData.inverted().transform((0,self.ax.transData.transform((0,x))[1]))[1])
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+            except Exception:
+                pass
         if aw.qmc.LCDdecimalplaces:
             return aw.float2float(res)
-        return int(round(res))
+        return int(round(res)) 
 
     #used by xaxistosm(). Provides also negative time
     def formtime(self,x,_):
@@ -7339,6 +7399,83 @@ class tgraphcanvas(FigureCanvas):
                 if aw.qmc.profileDataSemaphore.available() < 1:
                     aw.qmc.profileDataSemaphore.release(1)
 
+    def smoothETBT(self,smooth,recomputeAllDeltas,sampling,decay_smoothing_p):
+        try:
+            # we resample the temperatures to regular interval timestamps
+            if self.timex is not None and self.timex and len(self.timex)>1:
+                timex_lin = numpy.linspace(self.timex[0],self.timex[-1],len(self.timex))
+            else:
+                timex_lin = None
+            temp1_nogaps = fill_gaps(self.resizeList(self.temp1,len(self.timex)))
+            temp2_nogaps = fill_gaps(self.resizeList(self.temp2,len(self.timex)))
+
+            if smooth or len(self.stemp1) != len(self.timex):
+                if not aw.qmc.smooth_curves_on_recording and aw.qmc.flagon: # we don't smooth, but remove the dropouts
+                    self.stemp1 = temp1_nogaps
+                else:
+                    self.stemp1 = self.smooth_list(self.timex,temp1_nogaps,window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=timex_lin)
+            if smooth or len(self.stemp2) != len(self.timex):
+                if not aw.qmc.smooth_curves_on_recording and aw.qmc.flagon:  # we don't smooth, but remove the dropouts
+                    self.stemp2 = fill_gaps(self.temp2)
+                else:
+                    self.stemp2 = self.smooth_list(self.timex,temp2_nogaps,window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=timex_lin)
+
+            #populate delta ET (self.delta1) and delta BT (self.delta2)
+            # calculated here to be available for parsepecialeventannotations(). the curve are plotted later.
+            if self.DeltaETflag or self.DeltaBTflag:
+                if (recomputeAllDeltas or (self.DeltaETflag and self.delta1 == []) or (self.DeltaBTflag and self.delta2 == [])) and not self.flagstart: # during recording we don't recompute the deltas
+                    cf = aw.qmc.curvefilter*2 # we smooth twice as heavy for PID/RoR calcuation as for normal curve smoothing
+                    decay_smoothing_p = not aw.qmc.optimalSmoothing or sampling or aw.qmc.flagon
+                    t1 = self.smooth_list(self.timex,temp1_nogaps,window_len=cf,decay_smoothing=decay_smoothing_p,a_lin=timex_lin)
+                    t2 = self.smooth_list(self.timex,temp2_nogaps,window_len=cf,decay_smoothing=decay_smoothing_p,a_lin=timex_lin)
+                    # we start RoR computation 10 readings after CHARGE to avoid this initial peak
+                    if aw.qmc.timeindex[0]>-1:
+                        RoR_start = min(aw.qmc.timeindex[0]+10, len(self.timex)-1)
+                    else:
+                        RoR_start = -1
+                    self.delta1, self.delta2 = self.recomputeDeltas(self.timex,RoR_start,aw.qmc.timeindex[6],t1,t2,optimalSmoothing=not decay_smoothing_p,timex_lin=timex_lin)
+        except Exception as ex: # pylint: disable=broad-except
+            _log.exception(ex)
+            _, _, exc_tb = sys.exc_info()
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " smoothETBT() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+
+    def smoothETBTBkgnd(self,recomputeAllDeltas,decay_smoothing_p):
+        try:
+            if recomputeAllDeltas or (self.DeltaETBflag and self.delta1B == []) or (self.DeltaBTBflag and self.delta2B == []):
+                
+                # we resample the temperatures to regular interval timestamps
+                if self.timeB is not None and self.timeB:
+                    timeB_lin = numpy.linspace(self.timeB[0],self.timeB[-1],len(self.timeB))
+                else:
+                    timeB_lin = None
+
+                # we populate temporary smoothed ET/BT data arrays
+                cf = aw.qmc.curvefilter*2 # we smooth twice as heavy for PID/RoR calcuation as for normal curve smoothing
+                st1 = self.smooth_list(self.timeB,fill_gaps(self.temp1B),window_len=cf,decay_smoothing=decay_smoothing_p,a_lin=timeB_lin)
+                st2 = self.smooth_list(self.timeB,fill_gaps(self.temp2B),window_len=cf,decay_smoothing=decay_smoothing_p,a_lin=timeB_lin)
+                # we start RoR computation 10 readings after CHARGE to avoid this initial peak
+                if aw.qmc.timeindexB[0]>-1:
+                    RoRstart = min(aw.qmc.timeindexB[0]+10, len(self.timeB)-1)
+                else:
+                    RoRstart = -1
+                if aw.qmc.background_profile_sampling_interval is None:
+                    dsET = None
+                else:
+                    dsET = max(1,int(aw.qmc.deltaETspan / aw.qmc.background_profile_sampling_interval))
+                if aw.qmc.background_profile_sampling_interval is None:
+                    dsBT = None
+                else:
+                    dsBT = max(1,int(aw.qmc.deltaBTspan / aw.qmc.background_profile_sampling_interval))
+                self.delta1B, self.delta2B = self.recomputeDeltas(self.timeB,RoRstart,aw.qmc.timeindexB[6],st1,st2,optimalSmoothing=not decay_smoothing_p,timex_lin=timeB_lin,deltaETsamples=dsET,deltaBTsamples=dsBT)
+        except Exception as ex: # pylint: disable=broad-except
+            _log.exception(ex)
+            _, _, exc_tb = sys.exc_info()
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " smmothETBTBkgnd() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+
+    def twoAxisMode(self):
+        return (self.DeltaETflag or self.DeltaBTflag or
+                    (self.background and self.backgroundprofile and (self.DeltaETBflag or self.DeltaBTBflag)))
+    
     #Redraws data
     # if recomputeAllDeltas, the delta arrays; if smooth the smoothed line arrays are recomputed (incl. those of the background curves)
     def redraw(self, recomputeAllDeltas=True, smooth=True,sampling=False, takelock=True, forceRenewAxis=False):
@@ -7376,6 +7513,8 @@ class tgraphcanvas(FigureCanvas):
 
                 rcParams['xtick.color'] = self.palette["xlabel"]
                 rcParams['ytick.color'] = self.palette["ylabel"]
+                
+                #rcParams['text.antialiased'] = True
 
                 if forceRenewAxis:
                     self.fig.clf()
@@ -7449,8 +7588,7 @@ class tgraphcanvas(FigureCanvas):
                 except Exception: # pylint: disable=broad-except # set_in_layout not available in mpl<3.x
                     pass
 
-                two_ax_mode = (self.DeltaETflag or self.DeltaBTflag or
-                    (aw.qmc.background and aw.qmc.backgroundprofile and (self.DeltaETBflag or self.DeltaBTBflag))or
+                two_ax_mode = (self.twoAxisMode() or
                     any(aw.extraDelta1[:len(self.extratimex)]) or
                     any(aw.extraDelta2[:len(self.extratimex)]))
 
@@ -7507,10 +7645,10 @@ class tgraphcanvas(FigureCanvas):
                     if aw.qmc.flagstart:
                         y_label = self.delta_ax.set_ylabel("")
                     else:
-                        y_label = self.delta_ax.set_ylabel(f'{aw.qmc.mode}{aw.arabicReshape(QApplication.translate("Label", "/min"))}',
+                        y_label = self.delta_ax.set_ylabel(f'{aw.qmc.mode}{aw.arabicReshape("/min")}',
                             color = self.palette["ylabel"],
                             fontsize="large",
-                            fontfamily=prop.get_family()                            
+                            fontfamily=prop.get_family()
                             )
                     try:
                         y_label.set_in_layout(False) # remove y-axis labels from tight_layout calculation
@@ -7812,33 +7950,10 @@ class tgraphcanvas(FigureCanvas):
                                                 sketch_params=None,path_effects=[],
                                                 alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundBT")))
 
-                    # we resample the temperatures to regular interval timestamps
-                    if self.timeB is not None and self.timeB:
-                        timeB_lin = numpy.linspace(self.timeB[0],self.timeB[-1],len(self.timeB))
-                    else:
-                        timeB_lin = None
-
+                    self.smoothETBTBkgnd(recomputeAllDeltas,decay_smoothing_p)
+                    
                     #populate background delta ET (self.delta1B) and delta BT (self.delta2B)
                     if self.DeltaETBflag or self.DeltaBTBflag:
-                        if recomputeAllDeltas or (self.DeltaETBflag and self.delta1B == []) or (self.DeltaBTBflag and self.delta2B == []):
-                            # we populate temporary smoothed ET/BT data arrays
-                            cf = aw.qmc.curvefilter*2 # we smooth twice as heavy for PID/RoR calcuation as for normal curve smoothing
-                            st1 = self.smooth_list(self.timeB,fill_gaps(self.temp1B),window_len=cf,decay_smoothing=decay_smoothing_p,a_lin=timeB_lin)
-                            st2 = self.smooth_list(self.timeB,fill_gaps(self.temp2B),window_len=cf,decay_smoothing=decay_smoothing_p,a_lin=timeB_lin)
-                            # we start RoR computation 10 readings after CHARGE to avoid this initial peak
-                            if aw.qmc.timeindexB[0]>-1:
-                                RoRstart = min(aw.qmc.timeindexB[0]+10, len(self.timeB)-1)
-                            else:
-                                RoRstart = -1
-                            if aw.qmc.background_profile_sampling_interval is None:
-                                dsET = None
-                            else:
-                                dsET = max(1,int(aw.qmc.deltaETspan / aw.qmc.background_profile_sampling_interval))
-                            if aw.qmc.background_profile_sampling_interval is None:
-                                dsBT = None
-                            else:
-                                dsBT = max(1,int(aw.qmc.deltaBTspan / aw.qmc.background_profile_sampling_interval))
-                            self.delta1B, self.delta2B = self.recomputeDeltas(self.timeB,RoRstart,aw.qmc.timeindexB[6],st1,st2,optimalSmoothing=not decay_smoothing_p,timex_lin=timeB_lin,deltaETsamples=dsET,deltaBTsamples=dsBT)
                         ##### DeltaETB,DeltaBTB curves
                         if self.delta_ax:
                             trans = self.delta_ax.transData #=self.delta_ax.transScale + (self.delta_ax.transLimits + self.delta_ax.transAxes)
@@ -8265,39 +8380,7 @@ class tgraphcanvas(FigureCanvas):
                 self.labels = []
                 self.legend_lines = []
 
-                # we resample the temperatures to regular interval timestamps
-                if self.timex is not None and self.timex and len(self.timex)>1:
-                    timex_lin = numpy.linspace(self.timex[0],self.timex[-1],len(self.timex))
-                else:
-                    timex_lin = None
-                temp1_nogaps = fill_gaps(self.resizeList(self.temp1,len(self.timex)))
-                temp2_nogaps = fill_gaps(self.resizeList(self.temp2,len(self.timex)))
-
-                if smooth or len(self.stemp1) != len(self.timex):
-                    if not aw.qmc.smooth_curves_on_recording and aw.qmc.flagon: # we don't smooth, but remove the dropouts
-                        self.stemp1 = temp1_nogaps
-                    else:
-                        self.stemp1 = self.smooth_list(self.timex,temp1_nogaps,window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=timex_lin)
-                if smooth or len(self.stemp2) != len(self.timex):
-                    if not aw.qmc.smooth_curves_on_recording and aw.qmc.flagon:  # we don't smooth, but remove the dropouts
-                        self.stemp2 = fill_gaps(self.temp2)
-                    else:
-                        self.stemp2 = self.smooth_list(self.timex,temp2_nogaps,window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=timex_lin)
-
-                #populate delta ET (self.delta1) and delta BT (self.delta2)
-                # calculated here to be available for parsepecialeventannotations(). the curve are plotted later.
-                if self.DeltaETflag or self.DeltaBTflag:
-                    if (recomputeAllDeltas or (self.DeltaETflag and self.delta1 == []) or (self.DeltaBTflag and self.delta2 == [])) and not self.flagstart: # during recording we don't recompute the deltas
-                        cf = aw.qmc.curvefilter*2 # we smooth twice as heavy for PID/RoR calcuation as for normal curve smoothing
-                        decay_smoothing_p = not aw.qmc.optimalSmoothing or sampling or aw.qmc.flagon
-                        t1 = self.smooth_list(self.timex,temp1_nogaps,window_len=cf,decay_smoothing=decay_smoothing_p,a_lin=timex_lin)
-                        t2 = self.smooth_list(self.timex,temp2_nogaps,window_len=cf,decay_smoothing=decay_smoothing_p,a_lin=timex_lin)
-                        # we start RoR computation 10 readings after CHARGE to avoid this initial peak
-                        if aw.qmc.timeindex[0]>-1:
-                            RoR_start = min(aw.qmc.timeindex[0]+10, len(self.timex)-1)
-                        else:
-                            RoR_start = -1
-                        self.delta1, self.delta2 = self.recomputeDeltas(self.timex,RoR_start,aw.qmc.timeindex[6],t1,t2,optimalSmoothing=not decay_smoothing_p,timex_lin=timex_lin)
+                self.smoothETBT(smooth,recomputeAllDeltas,sampling,decay_smoothing_p)
 
 ## Output Idle Noise StdDev of BT RoR
 #                        try:
@@ -9485,7 +9568,10 @@ class tgraphcanvas(FigureCanvas):
         width = img.width()
         height = img.height()
         imgsize = img.bits()
-        imgsize.setsize(img.byteCount())
+        try:
+            imgsize.setsize(img.sizeInBytes())
+        except Exception: # pylint: disable=broad-except
+            imgsize.setsize(img.byteCount()) # byteCount() is depricated, but kept here for compatibility with older Qt versions
         arr = numpy.array(imgsize).reshape((height, width, int(32/8)))
         return arr
 
@@ -12715,13 +12801,13 @@ class tgraphcanvas(FigureCanvas):
                     _,_,tsb,_ = aw.ts(tp=TP_index)
 
                     #curveSimilarity
-                    det,dbt = aw.curveSimilarity(aw.qmc.phases[1]) # we analyze from DRY-END as specified in the phases dialog to DROP
+                    det,dbt = aw.curveSimilarity() # we analyze from DRY-END as specified in the phases dialog to DROP
 
                     #end temperature
                     if self.locale_str == "ar":
                         strline = (
                                     f'C*min{int(tsb)}={aw.arabicReshape(QApplication.translate("Label", "AUC"))}   '
-                                    f'{aw.arabicReshape(aw.qmc.mode + QApplication.translate("Label", "/min"))}'
+                                    f'{aw.arabicReshape(aw.qmc.mode + "/min")}'
                                     f'{ror}=aw.arabicReshape(QApplication.translate("Label", "RoR"))   '
                                     f'{ETmax}=aw.arabicReshape(QApplication.translate("Label", "MET"))'
                                    )
@@ -12734,7 +12820,7 @@ class tgraphcanvas(FigureCanvas):
                         if temp1_values_max and temp1_values_max > 0:
                             strline = (QApplication.translate("Label", "MET") + "={0}   ").format(ETmax)
                         strline += (QApplication.translate("Label", "RoR") + "={0}" \
-                                    + aw.qmc.mode + QApplication.translate("Label", "/min") + "   " \
+                                    + aw.qmc.mode + "/min" + "   " \
                                     + QApplication.translate("Label", "AUC") + "={1}C*min") \
                                     .format(str(ror), \
                                     str(int(tsb)))
@@ -12946,9 +13032,10 @@ class tgraphcanvas(FigureCanvas):
                     else:
                         fmtstr = "{2:." + d + "f}{3}"
 
-                    st1 = st1 + fmtstr.format(rates_of_changes[3], aw.qmc.mode, rates_of_changes[0], aw.arabicReshape(aw.qmc.mode + QApplication.translate("Label", "/min")))
-                    st2 = st2 + fmtstr.format(rates_of_changes[4], aw.qmc.mode, rates_of_changes[1], aw.arabicReshape(aw.qmc.mode + QApplication.translate("Label", "/min")))
-                    st3 = st3 + fmtstr.format(rates_of_changes[5], aw.qmc.mode, rates_of_changes[2], aw.arabicReshape(aw.qmc.mode + QApplication.translate("Label", "/min")))
+                    unit = aw.arabicReshape(aw.qmc.mode + "/min")
+                    st1 = st1 + fmtstr.format(rates_of_changes[3], aw.qmc.mode, rates_of_changes[0], unit)
+                    st2 = st2 + fmtstr.format(rates_of_changes[4], aw.qmc.mode, rates_of_changes[1], unit)
+                    st3 = st3 + fmtstr.format(rates_of_changes[5], aw.qmc.mode, rates_of_changes[2], unit)
 
                     text = self.ax.text(self.timex[self.timeindex[0]] + self.statisticstimes[1]/2.,statisticslower,st1,
                         color=self.palette["text"],
@@ -13550,7 +13637,7 @@ class tgraphcanvas(FigureCanvas):
             if self.timeindex[0] > -1 and self.timeindex[6] > -1:  #CHARGE and DROP events exist
                 charge = self.timex[self.timeindex[0]]
                 if curvefit_starttime != None and curvefit_starttime > charge:
-                    begin = aw.time2index(curvefit_starttime)
+                    begin = self.time2index(curvefit_starttime)
                     time_l = []
                     temp_l = []
                 else:
@@ -13560,7 +13647,7 @@ class tgraphcanvas(FigureCanvas):
                         begin = self.timeindex[1]
                     else: # take DRY as specificed in phases
                         pi = aw.findDryEnd(phasesindex=1)
-                        begin = aw.time2index(self.timex[pi])
+                        begin = self.time2index(self.timex[pi])
                     # initial bean temp set to greens_temp or ambient or a fixed temp
                     if aw.qmc.greens_temp > 0:
                         time_l = [charge]
@@ -13576,7 +13663,7 @@ class tgraphcanvas(FigureCanvas):
                             roomTemp = 21.0
                         temp_l = [roomTemp]
                 if curvefit_endtime > 0:
-                    end = aw.time2index(curvefit_endtime)
+                    end = self.time2index(curvefit_endtime)
                 else:
                     end = self.timeindex[6]
                 time_l = time_l + self.timex[begin:end]
@@ -13620,13 +13707,16 @@ class tgraphcanvas(FigureCanvas):
             _, _, exc_tb = sys.exc_info()
             aw.qmc.adderror(QApplication.translate("Error Message","Error in lnRegression:") + " lnRegression() " + str(e),getattr(exc_tb, 'tb_lineno', '?'))
             if power == 2:
-                fit = QApplication.translate("Label","x") +"\u00b2"
+                fit = "x\u00b2"
             elif power == 3:
-                fit = QApplication.translate("Label","x") +"\u00b3"
+                fit = "x\u00b3"
             else:
                 fit = QApplication.translate("Label","ln()")
-            QMessageBox.warning(aw,QApplication.translate("Message","Curve fit problem"),
-                    QApplication.translate("Message","Cannot fit this curve to " + fit))
+            msg = (QApplication.translate("Message","Cannot fit this curve to " + fit))
+            QApplication.processEvents() #this is here to be sure the adderror gets wrtten to the log before the sendmessage
+            aw.sendmessage(msg)
+            #QMessageBox.warning(aw,QApplication.translate("Message","Curve fit problem"), msg)
+
         return res
 
     #interpolation type
@@ -13769,36 +13859,32 @@ class tgraphcanvas(FigureCanvas):
             offset = 0
         return self.timetemparray2temp(self.timeB,self.delta1B,seconds + offset)
 
+    # fast variant based on binary search on lists using bisect (using numpy.searchsorted is slower)
+    # side-condition: values in self.qmc.timex in linear order
+    # time: time in seconds
+    # nearest: if nearest is True the closest index is returned (slower), otherwise the previous (faster)
+    # returns
+    #   -1 on empty timex
+    #    0 if time smaller than first entry of timex
+    #  len(timex)-1 if time larger than last entry of timex (last index)
     @staticmethod
-    def timearray2index(timearray, seconds):
-        #find where given seconds crosses timearray
-        if len(timearray):                           #check that timearray is not empty just in case
-            #if input seconds longer than available time return last index
-            if  seconds > timearray[-1]:
-                return int(len(timearray)-1)
-            #if given input seconds smaller than first time return first index
-            if seconds < timearray[0]:
-                return 0
-            i = numpy.searchsorted(timearray,seconds,side='left')
-            if i < len(timearray) - 1:
-                #look around (check if the value of the next index is closer
-                choice1 = abs(timearray[i] - seconds)
-                choice2 = abs(timearray[i-1] - seconds)
-                #return closest (smallest) index
-                if choice2 < choice1:
-                    i = i - 1
-            return int(i)
+    def timearray2index(timearray, time, nearest:bool=True):
+        i = bisect_right(timearray, time)
+        if i:
+            if nearest and i>0 and (i == len(timearray) or abs(time - timearray[i]) > abs(time - timearray[i-1])):
+                return i-1
+            return i
         return -1
 
     #selects closest time INDEX in self.timex from a given input float seconds
-    def time2index(self,seconds):
+    def time2index(self,seconds, nearest:bool=True):
         #find where given seconds crosses self.timex
-        return self.timearray2index(self.timex,seconds)
+        return self.timearray2index(self.timex, seconds, nearest)
 
     #selects closest time INDEX in self.timeB from a given input float seconds
-    def backgroundtime2index(self,seconds):
+    def backgroundtime2index(self,seconds, nearest:bool=True):
         #find where given seconds crosses self.timeB
-        return self.timearray2index(self.timeB,seconds)
+        return self.timearray2index(self.timeB, seconds, nearest)
 
     #updates list self.timeindex when found an _OLD_ profile without self.timeindex (new version)
     def timeindexupdate(self,times):
@@ -14609,7 +14695,7 @@ class tgraphcanvas(FigureCanvas):
     #launches designer config Window
     @pyqtSlot()
     @pyqtSlot(bool)
-    def desconfig(self, _=False): # pylint: disable=no-self-use
+    def desconfig(self, _=False): # pylint: disable=no-self-use # used as slot
         from artisanlib.designer import designerconfigDlg
         dialog = designerconfigDlg(aw,aw)
         dialog.show()
@@ -15242,12 +15328,18 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
         self.white_icons = white_icons
 
         self.axis_ranges = [] # holds the ranges of all axis to detect if it is zoomed in
+        
+        # holds the last known cursor event while mouse pointer is in canvas, set by mouse_move()
+        self._last_event = None
 
         NavigationToolbar.__init__(self, plotCanvas, parent)
 
         # lets make the font of the coordinates QLabel a little larger
         f = self.locLabel.font()
-        f.setPointSize(self.locLabel.font().pointSize()+4)
+        f.setPointSize(f.pointSize()+4)
+#        f.setStyleHint(QFont.StyleHint.TypeWriter) # not monospaced!
+        f.setStyleHint(QFont.StyleHint.Monospace)
+        f.setFamily('monospace')
         self.locLabel.setFont(f)
 
 
@@ -15427,39 +15519,78 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
                 color.setAlpha(tmp.pixelColor(x,y).alpha())
                 tmp.setPixelColor(x,y,color)
         return QPixmap.fromImage(tmp)
-        
+    
+    def update_message(self):
+        if not aw.qmc.twoAxisMode():
+            aw.qmc.fmt_data_RoR = False
+        if self._last_event is None or not aw.qmc.fmt_data_ON:
+            self.set_message(self.mode)
+        else:
+            try:
+                channel = ""
+                xs = self._last_event.inaxes.format_xdata(self._last_event.xdata)
+                if aw.qmc.fmt_data_curve == 0 or aw.qmc.designerflag:
+                    ys = self._last_event.inaxes.format_ydata(self._last_event.ydata)
+                else:
+                    try:
+                        if aw.qmc.fmt_data_curve == 1: # BT
+                            if aw.qmc.fmt_data_RoR:
+                                ys = aw.qmc.delta2[aw.qmc.time2index(self._last_event.xdata, nearest=False)]
+                            else:
+                                ys = aw.qmc.temp2[aw.qmc.time2index(self._last_event.xdata, nearest=False)]
+                            channel = aw.BTname
+                        elif aw.qmc.fmt_data_curve == 2: # ET
+                            if aw.qmc.fmt_data_RoR:
+                                ys = aw.qmc.delta1[aw.qmc.time2index(self._last_event.xdata, nearest=False)]
+                            else:
+                                ys = aw.qmc.temp1[aw.qmc.time2index(self._last_event.xdata, nearest=False)]
+                            channel = aw.ETname
+                        elif aw.qmc.fmt_data_curve == 3 and aw.qmc.backgroundprofile is not None: # BTB
+                            if aw.qmc.fmt_data_RoR:
+                                ys = aw.qmc.delta2B[aw.qmc.backgroundtime2index(self._last_event.xdata, nearest=False)]
+                            else:
+                                ys = aw.qmc.temp2B[aw.qmc.backgroundtime2index(self._last_event.xdata, nearest=False)]
+                            channel = "BTB"
+                        elif aw.qmc.fmt_data_curve == 4 and aw.qmc.backgroundprofile is not None: # ETB
+                            if aw.qmc.fmt_data_RoR:
+                                ys = aw.qmc.delta1B[aw.qmc.backgroundtime2index(self._last_event.xdata, nearest=False)]
+                            else:
+                                ys = aw.qmc.temp1B[aw.qmc.backgroundtime2index(self._last_event.xdata, nearest=False)]
+                            channel = "ETB"
+                        else:
+                            ys = self._last_event.inaxes.format_ydata(self._last_event.ydata)
+                        if ys is not None:
+                            if aw.qmc.LCDdecimalplaces:
+                                ys = aw.float2float(ys)
+                            else:
+                                ys = int(round(ys))
+                    except Exception: # pylint: disable=broad-except
+                        ys = self._last_event.inaxes.format_ydata(self._last_event.ydata)
+            except Exception: # pylint: disable=broad-except
+                self.set_message(self.mode)
+            else:
+                if aw.qmc.LCDdecimalplaces:
+                    min_temp_digits = 5
+                else:
+                    min_temp_digits = 3
+                if aw.qmc.fmt_data_RoR:
+                    min_temp_digits -= 1
+                if len(self.mode):
+                    self.set_message(f"{self.mode}  {xs: >5}\n{channel} {'' if ys is None else ys: >{min_temp_digits}}\u00B0{aw.qmc.mode}{'/min' if aw.qmc.fmt_data_RoR else ''}")
+                else:
+                    self.set_message(f"{xs: >5}\n{channel} {'' if ys is None else ys: >{min_temp_digits}}\u00B0{aw.qmc.mode}{'/min' if aw.qmc.fmt_data_RoR else ''}")
+
     # overwritten from MPL v3.2.2 to get rid of that extra data printed
     def mouse_move(self, event):
         try:
             self._update_cursor(event) # not available in MPL v3.0.3 on Python3.5 for the RPi Stretch builds
         except Exception: # pylint: disable=broad-except
             pass
-
         if event.inaxes and event.inaxes.get_navigate():
-
-            try:
-                s = event.inaxes.format_coord(event.xdata, event.ydata)
-            except (ValueError, OverflowError):
-                pass
-            else:
-#                artists = [a for a in event.inaxes._mouseover_set
-#                           if a.contains(event)[0] and a.get_visible()]
-#
-#                if artists:
-#                    a = mpl.cbook._topmost_artist(artists)
-#                    if a is not event.inaxes.patch:
-#                        data = a.get_cursor_data(event)
-#                        if data is not None:
-#                            data_str = a.format_cursor_data(data)
-#                            if data_str is not None:
-#                                s = s + ' ' + data_str
-
-                if len(self.mode):
-                    self.set_message('%s, %s' % (self.mode, s))
-                else:
-                    self.set_message(s)
+            self._last_event = event
         else:
-            self.set_message(self.mode)
+            self._last_event = None
+        self.update_message()
 
 #PLUS
     @staticmethod
@@ -15542,9 +15673,9 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
                             y_label.set_in_layout(False) # remove x-axis labels from tight_layout calculation
                         except Exception: # pylint: disable=broad-except # set_in_layout not available in mpl<3.x
                             pass
-                        two_ax_mode = (aw.qmc.DeltaETflag or aw.qmc.DeltaBTflag or (aw.qmc.background and (aw.qmc.DeltaETBflag or aw.qmc.DeltaBTBflag))) and not aw.qmc.designerflag
+                        two_ax_mode = aw.qmc.twoAxisMode() and not aw.qmc.designerflag
                         if two_ax_mode and aw.qmc.delta_ax:
-                            y_label = aw.qmc.delta_ax.set_ylabel(aw.qmc.mode + aw.arabicReshape(QApplication.translate("Label", "/min")))
+                            y_label = aw.qmc.delta_ax.set_ylabel(aw.qmc.mode + "/min")
                             try:
                                 y_label.set_in_layout(False) # remove x-axis labels from tight_layout calculation
                             except Exception: # pylint: disable=broad-except # set_in_layout not available in mpl<3.x
@@ -15771,7 +15902,7 @@ class EventActionThread(QThread): # pylint: disable=too-few-public-methods
 # applies comma2dot as fixup to automatically turn numbers like "1,2" into valid numbers like "1.0" and the empty entry into "0.0"
 class MyQDoubleValidator(QDoubleValidator): # pylint: disable=too-few-public-methods 
     
-    def fixup(self, input_value): # pylint: disable=no-self-use
+    def fixup(self, input_value): # pylint: disable=no-self-use # used by class
         if input_value is None or input_value == "":
             return "0"
         try:
@@ -18443,7 +18574,7 @@ class ApplicationWindow(QMainWindow):
             _log.exception(e)
 
     @pyqtSlot(str)
-    def setCanvasColor(self, c): # pylint: disable=no-self-use
+    def setCanvasColor(self, c): # pylint: disable=no-self-use # used as slot
         try:
             QColor(c) # test if color is valid
             aw.qmc.palette["canvas_alt"] = aw.qmc.palette["canvas"]
@@ -18454,7 +18585,7 @@ class ApplicationWindow(QMainWindow):
             _log.exception(e)
     
     @pyqtSlot()
-    def resetCanvasColor(self): # pylint: disable=no-self-use
+    def resetCanvasColor(self): # pylint: disable=no-self-use # used as slot
         try:
             if "canvas_alt" in aw.qmc.palette:
                 aw.qmc.palette["canvas"] = aw.qmc.palette["canvas_alt"]
@@ -18474,13 +18605,13 @@ class ApplicationWindow(QMainWindow):
     def QTime2time(t: QTime):
         return t.minute() * 60 + t.second()
 
-    def dragEnterEvent(self, event): # pylint: disable=no-self-use
+    def dragEnterEvent(self, event): # pylint: disable=no-self-use # class method
         if event.mimeData().hasUrls():
             event.accept()
         else:
             event.ignore()
 
-    def dropEvent(self, event): # pylint: disable=no-self-use
+    def dropEvent(self, event): # pylint: disable=no-self-use # class method
         urls = event.mimeData().urls()
         if urls and len(urls)>0:
             app.open_url(urls[0])
@@ -20143,7 +20274,7 @@ class ApplicationWindow(QMainWindow):
             aw.sendmessage(QApplication.translate("Message","super off"))
 
     @pyqtSlot("QPoint")
-    def PhaseslcdClicked(self,_): # pylint: disable=no-self-use
+    def PhaseslcdClicked(self,_): # pylint: disable=no-self-use # used as slot
         aw.qmc.phasesLCDmode = (aw.qmc.phasesLCDmode + 1)%3
         aw.updatePhasesLCDs()
 
@@ -20264,7 +20395,7 @@ class ApplicationWindow(QMainWindow):
                             temp = aw.qmc.extratemp2[x // 2]
                         else:
                             temp = aw.qmc.on_extratemp2[x // 2]
-            except Exception:
+            except Exception: # pylint: disable=broad-except
                 # timex might not have an index x // 2
                 pass
         return temp,timex
@@ -20282,65 +20413,93 @@ class ApplicationWindow(QMainWindow):
 
     def curveSimilarity2(self,exp=-1,analysis_starttime=0,analysis_endtime=0): # pylint: disable=no-self-use
         result = {}
+        result['mse_BT'] = float('nan')
+        result['mse_deltaBT'] = float('nan')
+        result['rmse_BT'] = float('nan')
+        result['rmse_deltaBT'] = float('nan')
+        result['r2_BT'] = float('nan')
+        result['r2_deltaBT'] = float('nan')
+        result['ror_fcs_act'] = '--'  #not a type issue, prettytable accepts text or number
+        result['ror_fcs_delta'] = '--'  #not a type issue, prettytable accepts text or number
+        result['ror_max_delta'] = float('nan')
+        result['ror_min_delta'] = float('nan')
+        result['segmentresultstr'] = ''
+        mask = numpy.empty(0)
+        fitRoR = "--"  #not a type issue, prettytable accepts text or number
+        RoR_FCs_act = "--"  #not a type issue, prettytable accepts text or number
+        mse_BT = float('nan')
+        mse_deltaBT = float('nan')
+        rmse_BT = float('nan')
+        rmse_deltaBT = float('nan')
+        r2_BT = float('nan')
+        r2_deltaBT = float('nan')
+        RoR_FCs_delta = '--'  #not a type issue, prettytable accepts text or number
+        maxdelta = float('nan')
+        mindelta = float('nan')
         try:
-            analysis_start = aw.qmc.time2index(analysis_starttime)
-            analysis_end = aw.qmc.time2index(analysis_endtime) +1 # +1 was added 9/25
-            np_bt = numpy.array(aw.qmc.stemp2[analysis_start:analysis_end])
-            np_dbt = numpy.array(aw.qmc.delta2[analysis_start:analysis_end])
-            #compare to background curve?
-            if exp == 4:  
-                # create background BT and background delta BT arrays over the interval of interest
-                xarray = numpy.array(aw.qmc.timex[analysis_start:analysis_end])
-                # replace None entries with 0 in the background delta list
-                _delta2B = [0 if x is None else x for x in aw.qmc.delta2B]
-                np_dbtb = numpy.array([self.qmc.timetemparray2temp(aw.qmc.timeB,_delta2B,x) for x in xarray])
-                np_btb = numpy.array([self.qmc.timetemparray2temp(aw.qmc.timeB,aw.qmc.temp2B,x) for x in xarray])
-            else:
-                np_btb = numpy.array(aw.qmc.stemp2B[analysis_start:analysis_end])
-                np_dbtb = numpy.array(aw.qmc.delta2B[analysis_start:analysis_end])
+            if self.qmc.background:
+                analysis_start = aw.qmc.time2index(analysis_starttime)
+                analysis_end = aw.qmc.time2index(analysis_endtime) +1 # +1 was added 9/25
+                np_bt = numpy.array(aw.qmc.stemp2[analysis_start:analysis_end])
+                np_dbt = numpy.array(aw.qmc.delta2[analysis_start:analysis_end])
+                #compare to background curve?
+                if exp == 4:  
+                    # create background BT and background delta BT arrays over the interval of interest
+                    xarray = numpy.array(aw.qmc.timex[analysis_start:analysis_end])
+                    # replace None entries with 0 in the background delta list
+                    _delta2B = [0 if x is None else x for x in aw.qmc.delta2B]
+                    np_dbtb = numpy.array([self.qmc.timetemparray2temp(aw.qmc.timeB,_delta2B,x) for x in xarray])
+                    np_btb = numpy.array([self.qmc.timetemparray2temp(aw.qmc.timeB,aw.qmc.temp2B,x) for x in xarray])
+                else:
+                    np_btb = numpy.array(aw.qmc.stemp2B[analysis_start:analysis_end])
+                    np_dbtb = numpy.array(aw.qmc.delta2B[analysis_start:analysis_end])
 
-            # Replace None values in the Delta curves with the closest numeric value on the right
-            for i in range(len(np_dbt) - 1, -1, -1):
-                if np_dbt[i] is None:
+                # Replace None values in the Delta curves with the closest numeric value on the right
+                def replNone(a,nv):
+                    for i in range(len(nv)):
+                        if i == len(nv) -1:
+                            a[nv[i]] = 0
+                        elif a[nv[i]+1] == None:
+                            a[nv[i]] = 0
+                        else:
+                            a[nv[i]] = a[nv[i] +1]
+                    return a
+                nv = numpy.where(np_dbt == None)[0]
+                nvb = numpy.where(np_dbtb == None)[0]
+                np_dbt = replNone(np_dbt,nv)
+                np_dbtb = replNone(np_dbtb,nvb)
+                
+                if len(np_dbtb) == 0:
+                    raise ValueError('Length of np_dbtb is zero')
+
+                #MSE
+                mse_BT = numpy.mean(numpy.square(np_bt - np_btb))
+                mse_deltaBT = numpy.mean(numpy.square(np_dbt - np_dbtb))
+
+                # RMSE
+                rmse_BT = numpy.sqrt(mse_BT)
+                rmse_deltaBT = numpy.sqrt(mse_deltaBT)
+
+                # R squared - Coefficient of determination from 0 to 1 (1 is a good result, 0 is not good)
+                # residual sum of squares
+                ss_res_bt = numpy.sum((np_bt - np_btb) ** 2)
+                ss_res_dbt = numpy.sum((np_dbt - np_dbtb) ** 2)
+                # total sum of squares
+                ss_tot_bt = numpy.sum((np_bt - numpy.mean(np_bt)) ** 2)
+                ss_tot_dbt = numpy.sum((np_dbt - numpy.mean(np_dbt)) ** 2)
+                # r-squared
+                r2_BT = 1 - (ss_res_bt / ss_tot_bt)
+                r2_deltaBT = 1 - (ss_res_dbt / ss_tot_dbt)
+
+                # Tests that require FCs is marked
+                if aw.qmc.timeindex[2]:
+                    # RoR at time of FCs, and Actual RoR versus Template RoR at FCs
+                    RoR_FCs_act = aw.qmc.delta2[aw.qmc.timeindex[2]]
                     try:
-                        np_dbt[i] = np_dbt[i+1]
+                        fcs_idx = aw.qmc.timeindex[2]-analysis_start
+                        RoR_FCs_delta = RoR_FCs_act - np_dbtb[fcs_idx]
                     except Exception: # pylint: disable=broad-except
-                        np_dbt[i] = 0
-            for i in range(len(np_dbtb) - 1, -1, -1):
-                if np_dbtb[i] is None:
-                    try:
-                        np_dbtb[i] = np_dbtb[i+1]
-                    except Exception: # pylint: disable=broad-except
-                        np_dbtb[i] = 0
-
-            #MSE
-            mse_BT = numpy.mean(numpy.square(np_bt - np_btb))
-            mse_deltaBT = numpy.mean(numpy.square(np_dbt - np_dbtb))
-
-            # RMSE
-            rmse_BT = numpy.sqrt(mse_BT)
-            rmse_deltaBT = numpy.sqrt(mse_deltaBT)
-
-            # R squared - Coefficient of determination from 0 to 1 (1 is a good result, 0 is not good)
-            # residual sum of squares
-            ss_res_bt = numpy.sum((np_bt - np_btb) ** 2)
-            ss_res_dbt = numpy.sum((np_dbt - np_dbtb) ** 2)
-            # total sum of squares
-            ss_tot_bt = numpy.sum((np_bt - numpy.mean(np_bt)) ** 2)
-            ss_tot_dbt = numpy.sum((np_dbt - numpy.mean(np_dbt)) ** 2)
-            # r-squared
-            r2_BT = 1 - (ss_res_bt / ss_tot_bt)
-            r2_deltaBT = 1 - (ss_res_dbt / ss_tot_dbt)
-
-            # Tests that require FCs is marked
-            if aw.qmc.timeindex[2]:
-                # RoR at time of FCs, and Actual RoR versus Template RoR at FCs
-                RoR_FCs_act = aw.qmc.delta2[aw.qmc.timeindex[2]]
-                try:
-                    fcs_idx = aw.qmc.timeindex[2]-analysis_start
-                    RoR_FCs_delta = RoR_FCs_act - np_dbtb[fcs_idx]
-                except Exception: # pylint: disable=broad-except
-                    RoR_FCs_delta = float('nan')
+                        RoR_FCs_delta = float('nan')
 
                 #max and min difference between actual RoR and template RoR
                 maxdelta = numpy.max(np_dbt - np_dbtb)
@@ -20450,97 +20609,192 @@ class ApplicationWindow(QMainWindow):
                 ioi_abc_deltas = numpy.sum(numpy.trapz(ioi_abs_deltas, x=times_all))
                 ioi_abcprime = ioi_abc_deltas / ioi_seconds
 
-                # general information
-                fitRoR = 60*(np_dbtb[-1] - np_dbtb[0]) / (aw.qmc.timex[timeindexs_all[-1]] - aw.qmc.timex[timeindexs_all[0]])
-                fitTypes = [QApplication.translate("Label","ln()"),
-                            "",
-                            QApplication.translate("Label","x") + "\u00b2",
-                            QApplication.translate("Label","x") + "\u00b3",
-                            QApplication.translate("Label","Bkgnd"), ""]
-                fitType = fitTypes[exp]
-                if aw.qmc.filterDropOuts:
-                    smoothspikes = QApplication.translate("Label","On")
-                else:
-                    smoothspikes = QApplication.translate("Label","Off")
-                if aw.qmc.optimalSmoothing:
-                    optimal= QApplication.translate("Label","On")
-                else:
-                    optimal = QApplication.translate("Label","Off")
-                if aw.qmc.polyfitRoRcalc:
-                    polyfit = QApplication.translate("Label","On")
-                else:
-                    polyfit = QApplication.translate("Label","Off")
-
-                # build a table of results
-                import prettytable  # @UnresolvedImport
-                tbl = prettytable.PrettyTable()
-                tbl.field_names = [QApplication.translate("Label","Start"),
-                                   QApplication.translate("Label","Duration"),
-                                   QApplication.translate("Label","Max Delta"),
-                                   QApplication.translate("Label","Swing"),
-                                   QApplication.translate("Label","ABC/secs")  ]
-                tbl.float_format = "5.2"
-                for i in range(len(mask)):
-                    thistime = self.eventtime2string(aw.qmc.timex[timeindexs_seg[i]] - aw.qmc.timex[aw.qmc.timeindex[0]])
-                    duration = self.eventtime2string(deltatimes_seg[i])
-                    if i > 0:
-                        swing = maxdeltas_seg[i] - maxdeltas_seg[i-1]
-                    else:
-                        swing = ""
-                    abcprime = segment_abc_deltas[i] / deltatimes_seg[i]
-                    tbl.add_row([thistime, duration, maxdeltas_seg[i], swing, abcprime ])
-                if len(mask) > 1:
-                    tbl.add_row(['~~~~~','~~~~~','~~~~~','~~~~~','~~~~~'])
-                    tbl.add_row([ioi_start, ioi_duration, ioi_maxdelta, '-', ioi_abcprime ])
-                segmentresultstr = QApplication.translate("Label","Segment Analysis (rise, crash and flick)") + "\n"
-                segmentresultstr += tbl.get_string(border=True)
-
-                # build table of general information
-                tbl2 = prettytable.PrettyTable()
-                tbl2.field_names = ["A","A1", "B", "B1"  ]
-                tbl2.align = 'l'
-                tbl2.align["A1"] = "r"
-                tbl2.align["B1"] = "r"
-                tbl2.float_format = "5.2"
-                tbl2.add_row([QApplication.translate("Label","Curve Fit"), fitType, '', ''])
-                tbl2.add_row([QApplication.translate("Label","Samples Threshold"), aw.qmc.segmentsamplesthreshold, QApplication.translate("Label","Delta Threshold"), aw.qmc.segmentdeltathreshold])
-                tbl2.add_row([QApplication.translate("Label","Sample rate (secs)"), self.qmc.profile_sampling_interval, QApplication.translate("Label","Smooth Curves/Spikes"), f'{str(int((aw.qmc.curvefilter-1)/2))}/{str(smoothspikes)}' ])
-                tbl2.add_row([QApplication.translate("Label","Delta Span/Smoothing"), f'{str(aw.qmc.deltaBTspan)}/{str(int((aw.qmc.deltaBTfilter-1)/2))}', QApplication.translate("Label","Polyfit/Optimal Smoothing"), f'{str(polyfit)}/{str(optimal)}'  ])
-                tbl2.add_row([QApplication.translate("Label","Fit RoRoR (C/min/min)"), fitRoR, QApplication.translate("Label","Actual RoR at FCs"), RoR_FCs_act])
-                segmentresultstr += "{}{}".format("\n", tbl2.get_string(border=False,header=False))
-
-                result['segmentresultstr'] = segmentresultstr
-
+                # fit RoR in C/min/min
+                if exp == 2:
+                    fitRoR = 60*(np_dbtb[-1] - np_dbtb[0]) / (aw.qmc.timex[timeindexs_all[-1]] - aw.qmc.timex[timeindexs_all[0]])
+                    fitRoR = f'{fitRoR:.2f}'
             else:
-                RoR_FCs_act = 0
-                RoR_FCs_delta = 0
-                maxdelta = 0
-                mindelta = 0
-                result['segmentresultstr'] = ""
+                # there is no background
+                pass
 
-            # build the dict to return
-            result['mse_BT'] = mse_BT
-            result['mse_deltaBT'] = mse_deltaBT
-            result['rmse_BT'] = rmse_BT
-            result['rmse_deltaBT'] = rmse_deltaBT
-            result['r2_BT'] = r2_BT
-            result['r2_deltaBT'] = r2_deltaBT
-            result['ror_fcs_act'] = RoR_FCs_act
-            result['ror_fcs_delta'] = RoR_FCs_delta
-            result['ror_max_delta'] = maxdelta
-            result['ror_min_delta'] = mindelta
+            # general information
+            fitTypes = [QApplication.translate("Label","ln()"),
+                        "",
+                        QApplication.translate("Label","x") + "\u00b2",
+                        QApplication.translate("Label","x") + "\u00b3",
+                        QApplication.translate("Label","Bkgnd"), ""]
+            fitType = fitTypes[exp]
+            if aw.qmc.filterDropOuts:
+                smoothspikes = QApplication.translate("Label","On")
+            else:
+                smoothspikes = QApplication.translate("Label","Off")
+            if aw.qmc.optimalSmoothing:
+                optimal= QApplication.translate("Label","On")
+            else:
+                optimal = QApplication.translate("Label","Off")
+            if aw.qmc.polyfitRoRcalc:
+                polyfit = QApplication.translate("Label","On")
+            else:
+                polyfit = QApplication.translate("Label","Off")
+
+            # build a table of results
+            import prettytable  # @UnresolvedImport
+            tbl = prettytable.PrettyTable()
+            tbl.field_names = [QApplication.translate("Label","Start"),
+                               QApplication.translate("Label","Duration"),
+                               QApplication.translate("Label","Max Delta"),
+                               QApplication.translate("Label","Swing"),
+                               QApplication.translate("Label","ABC/secs")  ]
+            tbl.float_format = "5.2"
+            for i in range(len(mask)):
+                thistime = self.eventtime2string(aw.qmc.timex[timeindexs_seg[i]] - aw.qmc.timex[aw.qmc.timeindex[0]])
+                duration = self.eventtime2string(deltatimes_seg[i])
+                if i > 0:
+                    swing = maxdeltas_seg[i] - maxdeltas_seg[i-1]
+                else:
+                    swing = ""
+                abcprime = segment_abc_deltas[i] / deltatimes_seg[i]
+                tbl.add_row([thistime, duration, maxdeltas_seg[i], swing, abcprime ])
+            if len(mask) > 1:
+                tbl.add_row(['~~~~~','~~~~~','~~~~~','~~~~~','~~~~~'])
+                tbl.add_row([ioi_start, ioi_duration, ioi_maxdelta, '-', ioi_abcprime ])
+            segmentresultstr = QApplication.translate("Label","Segment Analysis (rise, crash and flick)") + "\n"
+            segmentresultstr += tbl.get_string(border=True)
+
+            # build table of general information
+            tbl2 = prettytable.PrettyTable()
+            tbl2.field_names = ["A","A1", "B", "B1"  ]
+            tbl2.align = 'l'
+            tbl2.align["A1"] = "r"
+            tbl2.align["B1"] = "r"
+            tbl2.float_format = "5.2"
+            tbl2.add_row([QApplication.translate("Label","Curve Fit"), fitType, '', ''])
+            tbl2.add_row([QApplication.translate("Label","Samples Threshold"), aw.qmc.segmentsamplesthreshold, QApplication.translate("Label","Delta Threshold"), aw.qmc.segmentdeltathreshold])
+            tbl2.add_row([QApplication.translate("Label","Sample rate (secs)"), self.qmc.profile_sampling_interval, QApplication.translate("Label","Smooth Curves/Spikes"), f'{str(int((aw.qmc.curvefilter-1)/2))}/{str(smoothspikes)}' ])
+            tbl2.add_row([QApplication.translate("Label","Delta Span/Smoothing"), f'{str(aw.qmc.deltaBTspan)}/{str(int((aw.qmc.deltaBTfilter-1)/2))}', QApplication.translate("Label","Polyfit/Optimal Smoothing"), f'{str(polyfit)}/{str(optimal)}'  ])
+            tbl2.add_row([QApplication.translate("Label","Fit RoRoR (C/min/min)"), fitRoR, QApplication.translate("Label","Actual RoR at FCs"), RoR_FCs_act])
+            segmentresultstr += "{}{}".format("\n", tbl2.get_string(border=False,header=False))
+
+            result['segmentresultstr'] = segmentresultstr
 
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
             aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " curveSimilatrity2(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
+        # build the dict to return
+        result['mse_BT'] = mse_BT
+        result['mse_deltaBT'] = mse_deltaBT
+        result['rmse_BT'] = rmse_BT
+        result['rmse_deltaBT'] = rmse_deltaBT
+        result['r2_BT'] = r2_BT
+        result['r2_deltaBT'] = r2_deltaBT
+        result['ror_fcs_act'] = RoR_FCs_act
+        result['ror_fcs_delta'] = RoR_FCs_delta
+        result['ror_max_delta'] = maxdelta
+        result['ror_min_delta'] = mindelta
+
         return result
 
     # computes the similarity between BT and backgroundBT as well as ET and backgroundET
+    # known as CM
+    # computes from profile DRY END as set in Phases dialog through DROP 
+    # returns None in case no similarity can be computed
+    # refactored to use numpy arrays.
+    def curveSimilarity(self):
+        try:
+            # if background profile is loaded and both profiles have a DROP event set
+            if aw.qmc.backgroundprofile is not None and aw.qmc.timeindex[6] and aw.qmc.timeindexB[6]:
+
+                _log.debug(f"curveSimilarity: {self.qmc.profile_sampling_interval=}")  #pylint: disable=logging-fstring-interpolation
+                _log.debug(f"curveSimilarity: {self.qmc.background_profile_sampling_interval=}")  #pylint: disable=logging-fstring-interpolation
+
+                # create arrays using smoothed data if available
+                if aw.qmc.stemp1 and len(aw.qmc.stemp1) == len(aw.qmc.temp1):
+                    # take smoothed data if available
+                    np_et = numpy.array(aw.qmc.stemp1)
+                else:
+                    np_et = numpy.array(aw.qmc.temp1)
+                    _log.debug("curveSimilarity: using non-smoothed ET")
+                if aw.qmc.stemp2 and len(aw.qmc.stemp2) == len(aw.qmc.temp2):
+                    # take smoothed data if available
+                    np_bt = numpy.array(aw.qmc.stemp2)
+                else:
+                    np_bt = numpy.array(aw.qmc.temp2)
+                    _log.debug("curveSimilarity: using non-smoothed BT")
+
+                # CM is based on the Phases Dry not marked Dry
+                # Find the DRY point
+                # create a view of the original with a stride that accesses it in reverse order
+                rev_np_bt = np_bt[::-1]
+                # Find TP or if there is not one then find the minimum temp before DROP 
+                # Note - CHARGE is not considered
+                len_bt = len(aw.qmc.stemp2)
+                rev_drop_idx = len_bt - aw.qmc.timeindex[6]
+                BTlimit = aw.qmc.phases[1]
+                rev_min_idx = numpy.argmin(rev_np_bt[rev_drop_idx:]) + rev_drop_idx
+
+                # Find the first sample less than the phases DRY temp (going backwards from DROP)
+                rev_dry_idx = numpy.argmin(numpy.sign(rev_np_bt[rev_drop_idx:rev_min_idx] - BTlimit))
+
+                # Flip the index to forward looking
+                dry_idx = len_bt - (rev_drop_idx + rev_dry_idx) 
+
+                # set start and end indexes
+                start = dry_idx
+                end = aw.qmc.timeindex[6] +1  #the +1 adjusts for Python indexing
+                
+                # create arrays from Dry to DROP, 
+                np_et = np_et[start:end]
+                np_bt = np_bt[start:end]
+                np_timex = numpy.array(aw.qmc.timex[start:end])
+
+                # diference in time between DROPs in profile and background
+                dropTimeDelta = aw.qmc.timex[aw.qmc.timeindex[6]] - aw.qmc.timeB[aw.qmc.timeindexB[6]]
+
+                # these are not the smoothed background temps, which is how the old CM was done
+                np_etb = numpy.array(aw.qmc.temp1B)
+                np_btb = numpy.array(aw.qmc.temp2B)
+                np_timeB = numpy.array(aw.qmc.timeB) + dropTimeDelta
+
+                # hack to work like OLD method where any temp before timeB[0] is -1
+                np_etb = numpy.insert(np_etb,0,-1)
+                np_btb = numpy.insert(np_btb,0,-1)
+                np_timeB = numpy.insert(np_timeB,0,np_timeB[0]-0.1)
+                    
+                interp_np_etb = numpy.interp(np_timex,np_timeB,np_etb)
+                interp_np_btb = numpy.interp(np_timex,np_timeB,np_btb)
+
+                det = numpy.sqrt(numpy.mean(numpy.square(np_et - interp_np_etb)))
+                dbt = numpy.sqrt(numpy.mean(numpy.square(np_bt - interp_np_btb)))
+
+                #TODO remove this check  #pylint: disable=fixme
+                if debugLogLevelActive():
+                    old_det,old_dbt = aw.OLDcurveSimilarity()
+                    if abs(old_det - det) > .1 or abs(old_dbt - dbt) > .1:
+                        aw.sendmessage("curveSimilarity: det, dbt results DO NOT MATCH with old method!!")
+                        _log.debug("curveSimilarity: OLDcurvesimilarity results %.2f/%.2f %s", old_det,old_dbt,aw.qmc.mode)
+                        _log.debug("curveSimilarity: curvesimilarity results    %.2f/%.2f %s", det,dbt,aw.qmc.mode)
+                    else:
+                        _log.debug("curveSimilarity: det, dbt results MATCH with old method!!")
+
+                return det,dbt
+
+            # no DROP event registered
+            return None, None
+        except Exception as e: # pylint: disable=broad-except
+            _log.exception(e)
+            _, _, exc_tb = sys.exc_info()
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " curveSimilatrity(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            return None, None
+
+    #TODO remove this function, left only for cross checking new funciton  #pylint: disable=fixme
+    # computes the similarity between BT and backgroundBT as well as ET and backgroundET
     # iterates over all BT/ET values backward from DROP to the specified BT temperature
     # returns None in case no similarity can be computed
-    def curveSimilarity(self,BTlimit=None): # pylint: disable=no-self-use
+    @staticmethod
+    def OLDcurveSimilarity(): 
+        BTlimit = aw.qmc.phases[1]
         try:
             # if background profile is loaded and both profiles have a DROP even set
             if aw.qmc.backgroundprofile is not None and aw.qmc.timeindex[6] and aw.qmc.timeindexB[6]:
@@ -20668,7 +20922,7 @@ class ApplicationWindow(QMainWindow):
             self.slider4.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.slider4.clearFocus()
 
-    def setFonts(self, redraw=True): # pylint: disable=no-self-use
+    def setFonts(self, redraw=True):
         # try to select the right font for matplotlib according to the given locale and plattform
         if self.qmc.graphfont == 0:
             try:
@@ -22818,7 +23072,10 @@ class ApplicationWindow(QMainWindow):
                             # loadBackground(<filepath>)
                             elif cs.startswith("loadBackground(") and cs.endswith(")"):
                                 try:
-                                    fp = str(eval(cs[len("loadBackground("):-1])) # pylint: disable=eval-used
+                                    try:
+                                        fp = str(eval(cs[len("loadBackground("):-1])) # pylint: disable=eval-used
+                                    except Exception: # pylint: disable=broad-except
+                                        fp = str(cs[len("loadBackground("):-1])
                                     self.loadBackgroundSignal.emit(fp)
                                     self.sendmessage("Artisan Command: {}".format(cs))
                                 except Exception as e: # pylint: disable=broad-except
@@ -23446,7 +23703,7 @@ class ApplicationWindow(QMainWindow):
 
     @pyqtSlot()
     @pyqtSlot(bool)
-    def on_actionCut_triggered(self,_=False): # pylint: disable=no-self-use
+    def on_actionCut_triggered(self,_=False): # pylint: disable=no-self-use # used as slot
         try:
             app.activeWindow().focusWidget().cut()
         except Exception as e: # pylint: disable=broad-except
@@ -23454,7 +23711,7 @@ class ApplicationWindow(QMainWindow):
 
     @pyqtSlot()
     @pyqtSlot(bool)
-    def on_actionCopy_triggered(self,_=False): # pylint: disable=no-self-use
+    def on_actionCopy_triggered(self,_=False): # pylint: disable=no-self-use # used as slot
         try:
             app.activeWindow().focusWidget().copy()
         except Exception as e: # pylint: disable=broad-except
@@ -23462,7 +23719,7 @@ class ApplicationWindow(QMainWindow):
 
     @pyqtSlot()
     @pyqtSlot(bool)
-    def on_actionPaste_triggered(self,_=False): # pylint: disable=no-self-use
+    def on_actionPaste_triggered(self,_=False): # pylint: disable=no-self-use # used as slot
         try:
             app.activeWindow().focusWidget().paste()
         except Exception as e: # pylint: disable=broad-except
@@ -24005,7 +24262,7 @@ class ApplicationWindow(QMainWindow):
                     self.toggleForegroundShowfullFlag()
                 elif k == 79:                       #O (toggle background showfull flag)
                     self.toggleBackroundShowfullFlag()
-                elif k == 72:           #H  (load / delete background profile
+                elif k == 72:                       #H  (load / delete background profile
                     if not self.qmc.designerflag and not bool(aw.comparator):
                         # allow SHIFT-H for all platforms (ALT-H additionally for non-Windows platforms)
                         if ((alt_modifier or shift_modifier) and platf != 'Windows') or (control_shift_modifier or control_alt_modifier and platf == 'Windows'): #control_alt_modifier here for backward compatibility only, see note above
@@ -24147,15 +24404,25 @@ class ApplicationWindow(QMainWindow):
                 elif k == 65:                     #letter A (automatic save)
                     if not app.artisanviewerMode and self.qmc.flagon and not self.qmc.designerflag and not bool(aw.comparator):
                         self.automaticsave()
-                elif k == 68:                     #letter D (toggle xy between temp and RoR scale)
-                    if not self.qmc.designerflag and not bool(aw.comparator):
-                        self.qmc.fmt_data_RoR = not (self.qmc.fmt_data_RoR)
+                elif k == 68:                     #letter D (toggle xy coordinates between temp and RoR scale)
+                    if not self.qmc.wheelflag:
+                        if not self.qmc.fmt_data_ON:
+                            self.qmc.fmt_data_ON = True
+                        elif self.qmc.fmt_data_RoR == False and self.qmc.twoAxisMode():
+                            self.qmc.fmt_data_RoR = True
+                        else:
+                            self.qmc.fmt_data_RoR = False
+                            self.qmc.fmt_data_ON = False
+                        aw.ntb.update_message()
                         # force redraw crosslines if active
                         if aw.qmc.crossmarker:
                             try:
                                 aw.ntb.mouse_move(mplLocationevent.lastevent)
                             except Exception as e: # pylint: disable=broad-except
                                 _log.exception(e)
+                elif k == 90:                     #letter Z (toggle xy coordinates between 0: cursor, 1: BT, 2: ET, 3: BTB, 4: ETB)
+                    if not self.qmc.wheelflag and not bool(aw.comparator):
+                        self.qmc.nextFmtDataCurve()
                 elif k == 67:                     #letter C (controls)
                     self.toggleControls()
                 elif k == 88:                     #letter X (readings)
@@ -25588,28 +25855,28 @@ class ApplicationWindow(QMainWindow):
             #set events
             CHARGE = stringtoseconds(header[2].split('CHARGE:')[1])
             if CHARGE > 0:
-                self.qmc.timeindex[0] = max(-1,self.time2index(CHARGE))
+                self.qmc.timeindex[0] = max(-1, self.qmc.time2index(CHARGE))
             DRYe = stringtoseconds(header[4].split('DRYe:')[1])
             if DRYe > 0:
-                self.qmc.timeindex[1] = max(0,self.time2index(DRYe))
+                self.qmc.timeindex[1] = max(0, self.qmc.time2index(DRYe))
             FCs = stringtoseconds(header[5].split('FCs:')[1])
             if FCs > 0:
-                self.qmc.timeindex[2] = max(0,self.time2index(FCs))
+                self.qmc.timeindex[2] = max(0, self.qmc.time2index(FCs))
             FCe = stringtoseconds(header[6].split('FCe:')[1])
             if FCe > 0:
-                self.qmc.timeindex[3] = max(0,self.time2index(FCe))
+                self.qmc.timeindex[3] = max(0, self.qmc.time2index(FCe))
             SCs = stringtoseconds(header[7].split('SCs:')[1])
             if SCs > 0:
-                self.qmc.timeindex[4] = max(0,self.time2index(SCs))
+                self.qmc.timeindex[4] = max(0, self.qmc.time2index(SCs))
             SCe = stringtoseconds(header[8].split('SCe:')[1])
             if SCe> 0:
-                self.qmc.timeindex[5] = max(0,self.time2index(SCe))
+                self.qmc.timeindex[5] = max(0, self.qmc.time2index(SCe))
             DROP = stringtoseconds(header[9].split('DROP:')[1])
             if DROP > 0:
-                self.qmc.timeindex[6] = max(0,self.time2index(DROP))
+                self.qmc.timeindex[6] = max(0, self.qmc.time2index(DROP))
             COOL = stringtoseconds(header[10].split('COOL:')[1])
             if COOL > 0:
-                self.qmc.timeindex[7] = max(0,self.time2index(COOL))
+                self.qmc.timeindex[7] = max(0, self.qmc.time2index(COOL))
             self.qmc.endofx = self.qmc.timex[-1]
             self.sendmessage(QApplication.translate("Message","Artisan CSV file loaded successfully"))
             self.qmc.fileDirtySignal.emit()
@@ -27945,7 +28212,7 @@ class ApplicationWindow(QMainWindow):
             aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " computedProfileInformation() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         ######### Similarity #########
         try:
-            det,dbt = aw.curveSimilarity(aw.qmc.phases[1])
+            det,dbt = aw.curveSimilarity()
             if det is not None and not math.isnan(det):
                 computedProfile["det"] = det
             if dbt is not None and not math.isnan(dbt):
@@ -28648,11 +28915,6 @@ class ApplicationWindow(QMainWindow):
 #            verify=False
             )
         return ast.literal_eval(r.text)
-#        s = requests.Session()
-#        s.mount('file://', requests.FileAdapter())
-#        resp = s.get(url.toString(), timeout=(4, 15), headers={"Accept-Encoding" : "gzip"})
-#        print(resp.text)
-#        return ast.literal_eval(resp.text)
     
     @pyqtSlot()
     @pyqtSlot(bool)
@@ -28678,7 +28940,7 @@ class ApplicationWindow(QMainWindow):
         self.fileImport(QApplication.translate("Message", "Import RoastLogger"),self.importRoastLogger,True)
 
     #loads the settings at the start of application. See the oppposite closeEventSettings()
-    def settingsLoad(self, filename=None, theme=False, machine=False):
+    def settingsLoad(self, filename=None, theme=False, machine=False, redraw=True):
         res = False
         try:
             updateBatchCounter = True
@@ -28883,6 +29145,10 @@ class ApplicationWindow(QMainWindow):
             #restore x,y formating mode
             if settings.contains("fmt_data_RoR"):
                 self.qmc.fmt_data_RoR = bool(toBool(settings.value("fmt_data_RoR",self.qmc.fmt_data_RoR)))
+            if settings.contains("fmt_data_ON"):
+                self.qmc.fmt_data_ON = bool(toBool(settings.value("fmt_data_ON",self.qmc.fmt_data_ON)))
+            if settings.contains("fmt_data_curve"):
+                self.qmc.fmt_data_curve = toInt(settings.value("fmt_data_curve",self.qmc.fmt_data_curve))
             #restore playback aid
             if settings.contains("detectBackgroundEventTime"):
                 self.qmc.detectBackgroundEventTime = toInt(settings.value("detectBackgroundEventTime",self.qmc.detectBackgroundEventTime))
@@ -30223,8 +30489,7 @@ class ApplicationWindow(QMainWindow):
 
 #--------------------------------
         try:
-
-            aw.setFonts() # this one triggers a redraw by default to establish the correct fonts
+            aw.setFonts(redraw=redraw) # this one triggers a redraw by default to establish the correct fonts
             # only after this the correct aspect ratio of the qmc canvas is set
 
             if len(self.logofilename) > 0:
@@ -30249,7 +30514,6 @@ class ApplicationWindow(QMainWindow):
                         aw.setdpi(toInt(settings.value("dpi",aw.dpi)),moveWindow=True)
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
-
             #restore geometry
             if settings.contains("Geometry"):
                 self.restoreGeometry(settings.value("Geometry"))
@@ -30716,6 +30980,8 @@ class ApplicationWindow(QMainWindow):
             settings.setValue("elevation",self.qmc.elevation)
             settings.endGroup()
             settings.setValue("fmt_data_RoR",self.qmc.fmt_data_RoR)
+            settings.setValue("fmt_data_ON",self.qmc.fmt_data_ON)
+            settings.setValue("fmt_data_curve",self.qmc.fmt_data_curve)
             settings.setValue("detectBackgroundEventTime",self.qmc.detectBackgroundEventTime)
             settings.setValue("backgroundReproduce",self.qmc.backgroundReproduce)
             settings.setValue("backgroundReproduceBeep",self.qmc.backgroundReproduceBeep)
@@ -34083,35 +34349,6 @@ class ApplicationWindow(QMainWindow):
             notes_html = "<br>" + notes_html
         return notes_html
 
-    #finds closest Bean Temperature in aw.qmc.temp2 given an input time. timex and temp2 always have same dimension
-    def BTfromseconds(self,seconds):
-        if len(self.qmc.timex):
-            #find when input time crosses timex
-            for i in range(len(self.qmc.timex)):
-                if self.qmc.timex[i] > seconds:
-                    break
-            return float(self.qmc.temp2[i-1])           #return the BT temperature
-        return 0.0
-
-    #finds closest Environmental Temperature in aw.qmc.temp1 given an input time. timex and temp1 always have same dimension
-    def ETfromseconds(self,seconds):
-        if len(self.qmc.timex):
-            #find when input time crosses timex
-            for i in range(len(self.qmc.timex)):
-                if self.qmc.timex[i] > seconds:
-                    break
-            return float(self.qmc.temp1[i-1])           #return the ET temperature
-        return 0.0
-
-    # converts times (values of timex) to indices
-    def time2index(self,time):
-        for i in range(len(self.qmc.timex)):
-            if self.qmc.timex[i] >= time:
-                if i > 0 and abs(time - self.qmc.timex[i]) > abs(time - self.qmc.timex[i-1]):
-                    return int(i-1)
-                return int(i)
-        return -1
-
     #returns the index of the lowest point in BT; return -1 if no such value found
     def findTP(self):
         return self.findTPint(aw.qmc.timeindex, aw.qmc.timex, aw.qmc.temp2)
@@ -34586,12 +34823,12 @@ class ApplicationWindow(QMainWindow):
 
     @pyqtSlot()
     @pyqtSlot(bool)
-    def showAboutQt(self, _=False): # pylint: disable=no-self-use
+    def showAboutQt(self, _=False): # pylint: disable=no-self-use # used as slot
         QApplication.instance().aboutQt()
 
     @pyqtSlot()
     @pyqtSlot(bool)
-    def helpHelp(self, _=False):  # pylint: disable=no-self-use
+    def helpHelp(self, _=False):  # pylint: disable=no-self-use # used as slot
         QDesktopServices.openUrl(QUrl("https://artisan-scope.org/docs/quick-start-guide/", QUrl.ParsingMode.TolerantMode))
 
     @pyqtSlot()
@@ -35348,7 +35585,7 @@ class ApplicationWindow(QMainWindow):
 
     @pyqtSlot()
     @pyqtSlot(bool)
-    def switchETBT(self, _=False): # pylint: disable=no-self-use
+    def switchETBT(self, _=False): # pylint: disable=no-self-use # used as slot
         t2 = aw.qmc.temp2
         aw.qmc.temp2 = aw.qmc.temp1
         aw.qmc.temp1 = t2
@@ -36344,7 +36581,7 @@ class ApplicationWindow(QMainWindow):
                 widget.deleteLater()
 
     #orders extra event buttons based on max number of buttons
-    def realignbuttons(self): # pylint: disable=no-self-use
+    def realignbuttons(self):
         #clear buttons
         self.clearBoxLayout(self.e1buttonbarLayout)
         self.clearBoxLayout(self.e2buttonbarLayout)
@@ -36861,7 +37098,12 @@ class ApplicationWindow(QMainWindow):
             if aw.qmc.mode == "F":
                 restoreF = True
                 self.qmc.convertTemperature("C", silent=True, setdefaultaxes=False)
-                self.analysisRecomputeDeltas()
+                smooth=True
+                sampling=False
+                decay_smoothing_p = not aw.qmc.optimalSmoothing
+                recomputeAllDeltas = True
+                self.qmc.smoothETBT(smooth,recomputeAllDeltas,sampling,decay_smoothing_p)
+                self.qmc.smoothETBTBkgnd(recomputeAllDeltas,decay_smoothing_p)
             else:
                 restoreF = False
 
@@ -36934,71 +37176,70 @@ class ApplicationWindow(QMainWindow):
             # curve fit results
             cfr = {} #use dict to allow more flexible expansion
 
+            # replace a nan value with '--'. returns a string
+            def replNan(x):
+                if type(x) in [type(str())]:
+                    return x
+                return '--' if numpy.isnan(x) else f"{x:.2f}"
+
             # background
             if exp == 4:
-                res = self.analysisGetResults(exp=4, curvefit_starttime=curvefit_starttime, curvefit_endtime=curvefit_endtime, analysis_starttime=analysis_starttime, analysis_endtime=analysis_endtime)
                 cfr["equ_background"] = QApplication.translate("Label","Bkgnd")
-                cfr["dbt_background"] = res["mse_BT"]
-                cfr["dbdbt_background"] = res["mse_deltaBT"]
-                cfr["r2_deltabt_background"] = res["r2_deltaBT"]
-                cfr['ror_fcs_delta_background'] = res['ror_fcs_delta']
-                cfr['ror_max_delta_background'] = res['ror_max_delta']
-                cfr['ror_min_delta_background'] = res['ror_min_delta']
-                cfr['ror_maxmin_delta_background'] = ("%4.1f%s%4.1f") % (res['ror_max_delta'], "/", res['ror_min_delta'])
+                res = self.analysisGetResults(exp=4, curvefit_starttime=curvefit_starttime, curvefit_endtime=curvefit_endtime, analysis_starttime=analysis_starttime, analysis_endtime=analysis_endtime)
+                cfr["dbt_background"] = replNan(res["mse_BT"])
+                cfr["dbt_background_r"] = replNan(res["rmse_BT"])
+                cfr['ror_fcs_delta_background'] = replNan(res['ror_fcs_delta'])
+                cfr['ror_min_delta_background'] = replNan(res['ror_min_delta'])
+                cfr['ror_maxmin_delta_background'] = f"{replNan(res['ror_max_delta'])}/{replNan(res['ror_min_delta'])}"
                 progress.setValue(3)
             # ln() or all
             if exp in [0,-1]:
                 res = self.analysisGetResults(exp=0, curvefit_starttime=curvefit_starttime_ln, curvefit_endtime=curvefit_endtime, analysis_starttime=analysis_starttime, analysis_endtime=analysis_endtime)
                 cfr["equ_naturallog"] = res["equ"]
-                cfr["dbt_naturallog"] = res["mse_BT"]
-                cfr["dbdbt_naturallog"] = res["mse_deltaBT"]
-                cfr["r2_deltabt_naturallog"] = res["r2_deltaBT"]
-                cfr['ror_fcs_delta_naturallog'] = res['ror_fcs_delta']
-                cfr['ror_max_delta_naturallog'] = res['ror_max_delta']
-                cfr['ror_min_delta_naturallog'] = res['ror_min_delta']
-                cfr['ror_maxmin_delta_naturallog'] = ("%4.1f%s%4.1f") % (res['ror_max_delta'], "/", res['ror_min_delta'])
+                cfr["dbt_naturallog"] = replNan(res["mse_BT"])
+                cfr["dbt_naturallog_r"] = replNan(res["rmse_BT"])
+                cfr['ror_fcs_delta_naturallog'] = replNan(res['ror_fcs_delta'])
+                cfr['ror_min_delta_naturallog'] = replNan(res['ror_min_delta'])
+                cfr['ror_maxmin_delta_naturallog'] = f"{replNan(res['ror_max_delta'])}/{replNan(res['ror_min_delta'])}"
                 progress.setValue(1 if exp == -1 else 3)
             # cubic or all
             if exp in [3,-1]:
                 res = self.analysisGetResults(exp=3, curvefit_starttime=curvefit_starttime, curvefit_endtime=curvefit_endtime, analysis_starttime=analysis_starttime, analysis_endtime=analysis_endtime)
                 cfr["equ_cubic"] = res["equ"]
-                cfr["dbt_cubic"] = res["mse_BT"]
-                cfr["dbdbt_cubic"] = res["mse_deltaBT"]
-                cfr["r2_deltabt_cubic"] = res["r2_deltaBT"]
-                cfr['ror_fcs_delta_cubic'] = res['ror_fcs_delta']
-                cfr['ror_max_delta_cubic'] = res['ror_max_delta']
-                cfr['ror_min_delta_cubic'] = res['ror_min_delta']
-                cfr['ror_maxmin_delta_cubic'] = ("%4.1f%s%4.1f") % (res['ror_max_delta'], "/", res['ror_min_delta'])
+                cfr["dbt_cubic"] = replNan(res["mse_BT"])
+                cfr["dbt_cubic_r"] = replNan(res["rmse_BT"])
+                cfr['ror_fcs_delta_cubic'] = replNan(res['ror_fcs_delta'])
+                cfr['ror_min_delta_cubic'] = replNan(res['ror_min_delta'])
+                cfr['ror_maxmin_delta_cubic'] = f"{replNan(res['ror_max_delta'])}/{replNan(res['ror_min_delta'])}"
                 progress.setValue(2 if exp == -1 else 3)
             # quadratic or all
             if exp in [2,-1]:
                 res = self.analysisGetResults(exp=2, curvefit_starttime=curvefit_starttime, curvefit_endtime=curvefit_endtime, analysis_starttime=analysis_starttime, analysis_endtime=analysis_endtime)
                 cfr["equ_quadratic"] = res["equ"]
-                cfr["dbt_quadratic"] = res["mse_BT"]
-                cfr["dbdbt_quadratic"] = res["mse_deltaBT"]
-                cfr["r2_deltabt_quadratic"] = res["r2_deltaBT"]
-                cfr['ror_fcs_delta_quadratic'] = res['ror_fcs_delta']
-                cfr['ror_max_delta_quadratic'] = res['ror_max_delta']
-                cfr['ror_min_delta_quadratic'] = res['ror_min_delta']
-                cfr['ror_maxmin_delta_quadratic'] = ("%4.1f%s%4.1f") % (res['ror_max_delta'], "/", res['ror_min_delta'])
+                cfr["dbt_quadratic"] = replNan(res["mse_BT"])
+                cfr["dbt_quadratic_r"] = replNan(res["rmse_BT"])
+                cfr['ror_fcs_delta_quadratic'] = replNan(res['ror_fcs_delta'])
+                cfr['ror_min_delta_quadratic'] = replNan(res['ror_min_delta'])
+                cfr['ror_maxmin_delta_quadratic'] = f"{replNan(res['ror_max_delta'])}/{replNan(res['ror_min_delta'])}"
                 progress.setValue(3)
 
             # build the results table
             import prettytable  # @UnresolvedImport
             tbl = prettytable.PrettyTable()
             tbl.field_names = [" ",
+                               QApplication.translate("Label","RMSE BT"),
                                QApplication.translate("Label","MSE BT"),
                                QApplication.translate("Label","RoR") +  " \u0394 " + QApplication.translate("Label","@FCs"),
                                QApplication.translate("Label","Max+/Max- RoR") + " \u0394"]
             tbl.float_format = "5.2"
             if "equ_background" in cfr and "dbt_background" in cfr and 'ror_fcs_delta_background' in cfr and 'ror_maxmin_delta_background' in cfr:
-                tbl.add_row([QApplication.translate("Label","Bkgnd"), cfr["dbt_background"], cfr['ror_fcs_delta_background'], cfr['ror_maxmin_delta_background']])
+                tbl.add_row([QApplication.translate("Label","Bkgnd"), cfr["dbt_background_r"], cfr["dbt_background"], cfr['ror_fcs_delta_background'], cfr['ror_maxmin_delta_background']])
             if "equ_quadratic" in cfr and "dbt_quadratic" in cfr and 'ror_fcs_delta_quadratic' in cfr and 'ror_maxmin_delta_quadratic' in cfr:
-                tbl.add_row([QApplication.translate("Label","x") +"\u00b2", cfr["dbt_quadratic"], cfr['ror_fcs_delta_quadratic'], cfr['ror_maxmin_delta_quadratic']])
+                tbl.add_row([QApplication.translate("Label","x") +"\u00b2", cfr["dbt_quadratic_r"], cfr["dbt_quadratic"], cfr['ror_fcs_delta_quadratic'], cfr['ror_maxmin_delta_quadratic']])
             if "equ_cubic" in cfr and "dbt_cubic" in cfr and 'ror_fcs_delta_cubic' in cfr and 'ror_maxmin_delta_cubic' in cfr:
-                tbl.add_row([QApplication.translate("Label","x") + "\u00b3", cfr["dbt_cubic"], cfr['ror_fcs_delta_cubic'], cfr['ror_maxmin_delta_cubic']])
+                tbl.add_row([QApplication.translate("Label","x") + "\u00b3", cfr["dbt_cubic_r"], cfr["dbt_cubic"], cfr['ror_fcs_delta_cubic'], cfr['ror_maxmin_delta_cubic']])
             if "equ_naturallog" in cfr and "dbt_naturallog" in cfr and 'ror_fcs_delta_naturallog' in cfr and 'ror_maxmin_delta_naturallog' in cfr:
-                tbl.add_row([QApplication.translate("Label","ln()"), cfr["dbt_naturallog"], cfr['ror_fcs_delta_naturallog'], cfr['ror_maxmin_delta_naturallog']])
+                tbl.add_row([QApplication.translate("Label","ln()"), cfr["dbt_naturallog_r"], cfr["dbt_naturallog"], cfr['ror_fcs_delta_naturallog'], cfr['ror_maxmin_delta_naturallog']])
             resultstr = "Curve Fit Analysis\n"
             resultstr += tbl.get_string(sortby=None)
 
@@ -37013,7 +37254,6 @@ class ApplicationWindow(QMainWindow):
             # convert back to Fahrenheit if the profile was converted to Celsius
             if restoreF:
                 self.qmc.convertTemperature("F", silent=True, setdefaultaxes=False)
-                self.analysisRecomputeDeltas()
 
             # create the results annotation and update the graph
             if len(resultstr) > 0:
@@ -37066,7 +37306,8 @@ class ApplicationWindow(QMainWindow):
         return artist.contains(evt)
 
     def analysisShowResults(self,cfr,resultstr,curvefit_starttime=0, curvefit_endtime=0, analysis_starttime=0, analysis_endtime=0):
-        self.qmc.redraw(recomputeAllDeltas=True)
+        self.qmc.redraw(recomputeAllDeltas = True)
+
         if len(resultstr) == 0:
             resultstr = self.qmc.analysisresultsstr
         else:
@@ -37155,81 +37396,14 @@ class ApplicationWindow(QMainWindow):
         if exp != 4:  #not using existing background so perform a curve fit that sets the background
             res['equ'] = self.qmc.lnRegression(power=exp, curvefit_starttime=curvefit_starttime, curvefit_endtime=curvefit_endtime, plot=False)
             self.deleteBackground()
-            self.setbackgroundequ(EQU=["",res['equ']],recomputeAllDeltas=True)  #redraw() called from setbackgroundequ()
+            self.setbackgroundequ(EQU=["",res['equ']],recomputeAllDeltas=True,doDraw=False)  #redraw() called from setbackgroundequ()
 
         result = self.curveSimilarity2(exp=exp, analysis_starttime=analysis_starttime, analysis_endtime=analysis_endtime)
 
         retval = {**result, **res}
         return retval
 
-    @staticmethod
-    def analysisRecomputeDeltas():
-        try:
-            smooth=True
-            sampling=False
-            decay_smoothing_p = not aw.qmc.optimalSmoothing
-
-            # we resample the temperatures to regular interval timestamps
-            if aw.qmc.timeB is not None and aw.qmc.timeB:
-                timeB_lin = numpy.linspace(aw.qmc.timeB[0],aw.qmc.timeB[-1],len(aw.qmc.timeB))
-            else:
-                timeB_lin = None
-            # we resample the temperatures to regular interval timestamps
-            if aw.qmc.timex is not None and aw.qmc.timex and len(aw.qmc.timex)>1:
-                timex_lin = numpy.linspace(aw.qmc.timex[0],aw.qmc.timex[-1],len(aw.qmc.timex))
-            else:
-                timex_lin = None
-            temp1_nogaps = fill_gaps(aw.qmc.resizeList(aw.qmc.temp1,len(aw.qmc.timex)))
-            temp2_nogaps = fill_gaps(aw.qmc.resizeList(aw.qmc.temp2,len(aw.qmc.timex)))
-
-            if smooth or len(aw.qmc.stemp1) != len(aw.qmc.timex):
-                if not aw.qmc.smooth_curves_on_recording and aw.qmc.flagon: # we don't smooth, but remove the dropouts
-                    aw.qmc.stemp1 = temp1_nogaps
-                else:
-                    aw.qmc.stemp1 = aw.qmc.smooth_list(aw.qmc.timex,temp1_nogaps,window_len=aw.qmc.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=timex_lin)
-            if smooth or len(aw.qmc.stemp2) != len(aw.qmc.timex):
-                if not aw.qmc.smooth_curves_on_recording and aw.qmc.flagon:  # we don't smooth, but remove the dropouts
-                    aw.qmc.stemp2 = fill_gaps(aw.qmc.temp2)
-                else:
-                    aw.qmc.stemp2 = aw.qmc.smooth_list(aw.qmc.timex,temp2_nogaps,window_len=aw.qmc.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=timex_lin)
-
-            #populate background delta ET (aw.qmc.delta1B) and delta BT (aw.qmc.delta2B)
-            # we populate temporary smoothed ET/BT data arrays
-            cf = aw.qmc.curvefilter*2 # we smooth twice as heavy for PID/RoR calcuation as for normal curve smoothing
-            st1 = aw.qmc.smooth_list(aw.qmc.timeB,fill_gaps(aw.qmc.temp1B),window_len=cf,decay_smoothing=decay_smoothing_p,a_lin=timeB_lin)
-            st2 = aw.qmc.smooth_list(aw.qmc.timeB,fill_gaps(aw.qmc.temp2B),window_len=cf,decay_smoothing=decay_smoothing_p,a_lin=timeB_lin)
-            # we start RoR computation 10 readings after CHARGE to avoid this initial peak
-            if aw.qmc.timeindexB[0]>-1:
-                RoRstart = min(aw.qmc.timeindexB[0]+10, len(aw.qmc.timeB)-1)
-            else:
-                RoRstart = -1
-            if aw.qmc.background_profile_sampling_interval is None:
-                dsET = None
-            else:
-                dsET = max(1,int(aw.qmc.deltaETspan / aw.qmc.background_profile_sampling_interval))
-            if aw.qmc.background_profile_sampling_interval is None:
-                dsBT = None
-            else:
-                dsBT = max(1,int(aw.qmc.deltaBTspan / aw.qmc.background_profile_sampling_interval))
-            aw.qmc.delta1B, aw.qmc.delta2B = aw.qmc.recomputeDeltas(aw.qmc.timeB,RoRstart,aw.qmc.timeindexB[6],st1,st2,optimalSmoothing=not decay_smoothing_p,timex_lin=timeB_lin,deltaETsamples=dsET,deltaBTsamples=dsBT)
-
-            #populate delta ET (aw.qmc.delta1) and delta BT (aw.qmc.delta2)
-            cf = aw.qmc.curvefilter*2 # we smooth twice as heavy for PID/RoR calcuation as for normal curve smoothing
-            decay_smoothing_p = not aw.qmc.optimalSmoothing or sampling or aw.qmc.flagon
-            t1 = aw.qmc.smooth_list(aw.qmc.timex,temp1_nogaps,window_len=cf,decay_smoothing=decay_smoothing_p,a_lin=timex_lin)
-            t2 = aw.qmc.smooth_list(aw.qmc.timex,temp2_nogaps,window_len=cf,decay_smoothing=decay_smoothing_p,a_lin=timex_lin)
-            # we start RoR computation 10 readings after CHARGE to avoid this initial peak
-            if aw.qmc.timeindex[0]>-1:
-                RoR_start = min(aw.qmc.timeindex[0]+10, len(aw.qmc.timex)-1)
-            else:
-                RoR_start = -1
-            aw.qmc.delta1, aw.qmc.delta2 = aw.qmc.recomputeDeltas(aw.qmc.timex,RoR_start,aw.qmc.timeindex[6],t1,t2,optimalSmoothing=not decay_smoothing_p,timex_lin=timex_lin)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
-            _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " analysisRecomputeDeltas(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
-
-    def setbackgroundequ(self,foreground=False, EQU=None,recomputeAllDeltas=False):
+    def setbackgroundequ(self,foreground=False,EQU=None,recomputeAllDeltas=False,doDraw=True):
         if EQU is None:
             EQU = ['','']
         # Check for incompatible vars from in the equations
@@ -37245,7 +37419,6 @@ class ApplicationWindow(QMainWindow):
             string = QApplication.translate("Message","Incompatible variables found in %s"%error)
             QMessageBox.warning(self,QApplication.translate("Message","Assignment problem"),string,
                                 QMessageBox.StandardButton.Discard)
-
         else:
             try:
                 equ = EQU[0]
@@ -37305,8 +37478,12 @@ class ApplicationWindow(QMainWindow):
                             aw.qmc.timeindexB[6] = max(0,aw.qmc.backgroundtime2index(t2))
                         aw.qmc.background = True
                         aw.qmc.backgroundprofile = True
-                        aw.qmc.redraw(recomputeAllDeltas=recomputeAllDeltas)
-                        aw.sendmessage(QApplication.translate("Message","B1 = [%s] ; B2 = [%s]"%(EQU[0],EQU[1])))
+                        if doDraw:
+                            aw.qmc.redraw(recomputeAllDeltas=recomputeAllDeltas)
+                            aw.sendmessage(QApplication.translate("Message","B1 = [%s] ; B2 = [%s]"%(EQU[0],EQU[1])))
+                        else:
+                            decay_smoothing_p = not aw.qmc.optimalSmoothing
+                            aw.qmc.smoothETBTBkgnd(recomputeAllDeltas,decay_smoothing_p)
 
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
@@ -37594,7 +37771,7 @@ def main():
     aw = None # this is to ensure that the variable aw is already defined during application initialization
 
     aw = ApplicationWindow(locale=locale_str)
-
+    
     app.setActivationWindow(aw,activateOnMessage=False) # set the activation window for the QtSingleApplication
 
 
@@ -37606,12 +37783,12 @@ def main():
         QApplication.setLayoutDirection(Qt.LayoutDirection.RightToLeft)
     else:
         QApplication.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
-    aw.settingsLoad()
+    aw.settingsLoad(redraw=False) # redraw is triggered later in the startup process again
     
     # inform the user the debug logging is on
     if debugLogLevelActive():
         aw.sendmessage(QApplication.translate("Message", "debug logging ON"))
-
+    
     # swap BT/ET lcds on startup
     if aw.qmc.swaplcds:
         tmp = QWidget()
@@ -37624,6 +37801,7 @@ def main():
         tmp.setLayout(aw.LCD4frame.layout())
         aw.LCD4frame.setLayout(aw.LCD5frame.layout())
         aw.LCD5frame.setLayout(tmp.layout())
+        
     aw.show()
 
     try:
