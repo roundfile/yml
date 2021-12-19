@@ -195,7 +195,7 @@ for:
     - chmod +x src/*.sh
     - ls -l src/artisan.pro
     - ls -l src/pylupdate6pro
-    - chmod +x src/pylupdatepro
+    - chmod +x src/pylupdate6pro
     - .ci/script-${ARTISAN_OS}.sh
 
   test_script:
