@@ -1,7 +1,7 @@
 @echo off
 
 :: comandline option LEGACY used to flag a legacy build in NSIS
-if "%~1" == "LEGACY"  (set ARTISAN_LEGACY="True") else (set ARTISAN_LEGACY="False")
+if "%~1" == "LEGACY"  (set ARTISAN_LEGACY=True) else (set ARTISAN_LEGACY=False)
 if "%~1" == "LEGACY"  (set ARTISAN_SPEC=win-legacy) else (set ARTISAN_SPEC=win)
  
 :: set the path to pyuic
