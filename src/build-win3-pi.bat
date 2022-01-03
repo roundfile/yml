@@ -1,7 +1,4 @@
 @echo off
-::dir c:\qt\6.2.2\mingw_64\bin
-::dir c:\qt\6.2.2\mingw_64\translations
-::exit
 
 :: comandline option LEGACY used to flag a legacy build in NSIS
 if "%~1" == "LEGACY"  (set ARTISAN_LEGACY="True") else (set ARTISAN_LEGACY="False")
