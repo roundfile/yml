@@ -1,5 +1,5 @@
-ls -l c:\qt\6.2
-ls -l c:\qt\6.2\tools
+ls -l c:\qt\6.2.2
+ls -l c:\qt\6.2.2\tools
 exit
 @echo off
 
