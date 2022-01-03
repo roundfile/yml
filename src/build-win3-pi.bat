@@ -1,5 +1,5 @@
-dir c:\qt\6.2.2
-dir c:\qt\6.2.2\tools
+dir c:\qt\6.2.2\mingw_64
+:: dir c:\qt\6.2.2\tools
 exit
 @echo off
 
