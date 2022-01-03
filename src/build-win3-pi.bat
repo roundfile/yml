@@ -12,10 +12,8 @@ if "%APPVEYOR%" == "True" (
 )
 if %ARTISAN_LEGACY% == "True" (
     set PYUIC=%PYTHON_PATH%\scripts\pyuic5.exe
-::    set QT_PATH=%PYTHON_PATH%\lib\site-packages\qt5_applications\Qt
 ) else (
     set PYUIC=%PYTHON_PATH%\scripts\pyuic6.exe
-::    set QT_PATH=%PYTHON_PATH%\lib\site-packages\qt6_applications\Qt
     set QT_PATH=c:\qt\6.2.2\mingw64
 )
 
