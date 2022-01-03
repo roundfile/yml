@@ -1,9 +1,7 @@
-dir c:\qt\6.2.2\mingw_64\bin
-dir c:\qt\6.2.2\mingw_64\translations
-
-:: dir c:\qt\6.2.2\tools
-exit
 @echo off
+::dir c:\qt\6.2.2\mingw_64\bin
+::dir c:\qt\6.2.2\mingw_64\translations
+::exit
 
 :: comandline option LEGACY used to flag a legacy build in NSIS
 if "%~1" == "LEGACY"  (set ARTISAN_LEGACY="True") else (set ARTISAN_LEGACY="False")
@@ -17,10 +15,11 @@ if "%APPVEYOR%" == "True" (
 )
 if %ARTISAN_LEGACY% == "True" (
     set PYUIC=%PYTHON_PATH%\scripts\pyuic5.exe
-    set QT_PATH=%PYTHON_PATH%\lib\site-packages\qt5_applications\Qt
+::    set QT_PATH=%PYTHON_PATH%\lib\site-packages\qt5_applications\Qt
 ) else (
     set PYUIC=%PYTHON_PATH%\scripts\pyuic6.exe
-    set QT_PATH=%PYTHON_PATH%\lib\site-packages\qt6_applications\Qt
+::    set QT_PATH=%PYTHON_PATH%\lib\site-packages\qt6_applications\Qt
+    set QT_PATH=c:\qt\6.2.2\mingw64
 )
 
 rem echo PYTHON_PATH %PYTHON_PATH%
