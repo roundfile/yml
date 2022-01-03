@@ -1,3 +1,6 @@
+ls -l c:\qt6.2
+ls -l c:\qt6.2\tools
+exit
 @echo off
 
 :: comandline option LEGACY used to flag a legacy build in NSIS
