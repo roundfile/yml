@@ -14,7 +14,7 @@ if %ARTISAN_LEGACY% == "True" (
     set PYUIC=%PYTHON_PATH%\scripts\pyuic5.exe
 ) else (
     set PYUIC=%PYTHON_PATH%\scripts\pyuic6.exe
-    set QT_PATH=c:\qt\6.2.2\mingw64
+    set QT_PATH=c:\qt\6.2.2\mingw_64
 )
 
 rem echo PYTHON_PATH %PYTHON_PATH%
