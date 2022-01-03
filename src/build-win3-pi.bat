@@ -1,4 +1,6 @@
-dir c:\qt\6.2.2\mingw_64
+dir c:\qt\6.2.2\mingw_64\bin
+dir c:\qt\6.2.2\mingw_64\translations
+
 :: dir c:\qt\6.2.2\tools
 exit
 @echo off
