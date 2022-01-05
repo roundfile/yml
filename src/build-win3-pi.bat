@@ -16,7 +16,8 @@ if %ARTISAN_LEGACY% == "True" (
     set PYUIC=%PYTHON_PATH%\scripts\pyuic6.exe
     set QT_PATH=c:\qt\6.2.2\msvc2019_64
 )
-rem either msvc2019_64 or mingw_64
+rem QT_PATH is either msvc2019_64 or mingw_64
+
 rem echo PYTHON_PATH %PYTHON_PATH%
 
 :: Process trasnlation files
