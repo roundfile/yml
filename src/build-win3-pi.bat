@@ -29,7 +29,7 @@ echo %QT_PATH%
 %QT_PATH%\bin\lrelease -verbose artisan.pro
 echo *****Done Executing artisan.pro
 FOR /R %%a IN (translations\qtbase_*.ts) DO (
-    echo *****Translation file %%~a
+::    echo *****Translation file %%~a
     %QT_PATH%\bin\lrelease -verbose %%~a
 )
 ::dir translations\qtbase_*.ts
