@@ -14,7 +14,7 @@ if %ARTISAN_LEGACY% == "True" (
     set PYUIC=%PYTHON_PATH%\scripts\pyuic5.exe
 ) else (
     set PYUIC=%PYTHON_PATH%\scripts\pyuic6.exe
-    set QT_PATH=c:\qt\6.2.2\msvc2019_64
+    set QT_PATH=c:\qt\5.15\msvc2019_64
 )
 rem QT_PATH is either msvc2019_64 or mingw_64
 
