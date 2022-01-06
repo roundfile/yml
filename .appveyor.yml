@@ -77,9 +77,6 @@ for:
     - 7z x libusb-win32-bin-1.2.6.0.zip
     - copy libusb-win32-bin-1.2.6.0\bin\amd64\libusb0.dll C:\Windows\SysWOW64
 
-#dave
-    - "%PYTHON%\\python.exe -m pip install pyqt6-tools"
-
   build_script:
     - echo "Windows Legacy Build"
     - cmd: cd src
@@ -152,6 +149,9 @@ for:
 ####    - curl -k -L -O https://netcologne.dl.sourceforge.net/project/libusb-win32/libusb-win32-releases/1.2.6.0/libusb-win32-bin-1.2.6.0.zip
 ####    - 7z x libusb-win32-bin-1.2.6.0.zip
 ####    - copy libusb-win32-bin-1.2.6.0\bin\amd64\libusb0.dll C:\Windows\SysWOW64
+#dave
+    - "%PYTHON%\\python.exe -m pip install pyqt6-tools"
+
 
   build_script:
     - echo "Windows Build"
