@@ -20,6 +20,8 @@ rem QT_PATH is either msvc2019_64 or mingw_64
 
 rem echo PYTHON_PATH %PYTHON_PATH%
 
+dir translations
+
 :: Process trasnlation files
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
 echo *****Exectuting artisan.pro
@@ -30,7 +32,8 @@ FOR /R %%a IN (translations\qtbase_*.ts) DO (
     echo *****Translation file %%~a
     %QT_PATH%\bin\lrelease -verbose %%~a
 )
-dir translations\qtbase_*.ts
+::dir translations\qtbase_*.ts
+dir translations
 
 rem :: build the py files from ui files
 rem FOR /R %%a IN (ui\*.ui) DO (
