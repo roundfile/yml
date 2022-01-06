@@ -27,7 +27,7 @@ echo %QT_PATH%
 echo *****Done Executing artisan.pro
 FOR /R %%a IN (translations\qtbase_*.ts) DO (
     echo *****Translation file %%~a
-    %QT_PATH%\bin\lrelease - verbose %%na
+    %QT_PATH%\bin\lrelease -verbose %%na
 )
 dir translations\qtbase_*.ts
 
