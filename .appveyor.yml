@@ -150,6 +150,7 @@ for:
 ####    - 7z x libusb-win32-bin-1.2.6.0.zip
 ####    - copy libusb-win32-bin-1.2.6.0\bin\amd64\libusb0.dll C:\Windows\SysWOW64
 #dave
+    - "%PYTHON%\\python.exe -m pip install pyqt6"
     - "%PYTHON%\\python.exe -m pip install pyqt6-tools"
 
 
