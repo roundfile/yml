@@ -24,7 +24,8 @@ rem QT_PATH is either msvc2019_64 or mingw_64
 
 rem echo PYTHON_PATH %PYTHON_PATH%
 
-dir %QT_PATH%\bin
+::dir %QT_PATH%\bin
+dir %PYTHON_PATH%\scripts
 
 
 :: Process trasnlation files
@@ -38,7 +39,7 @@ FOR /R %%a IN (translations\qtbase_*.ts) DO (
     %QT_PATH%\bin\lrelease -verbose %%~a
 )
 ::dir translations\qtbase_*.ts
-dir translations
+:: dir translations
 
 rem :: build the py files from ui files
 rem FOR /R %%a IN (ui\*.ui) DO (
