@@ -1,35 +1,38 @@
 @echo off
+:: on entry to this script the current path must be src
 
 :: comandline option LEGACY used to flag a legacy build in NSIS
 if "%~1" == "LEGACY"  (set ARTISAN_LEGACY="True") else (set ARTISAN_LEGACY="False")
 if "%~1" == "LEGACY"  (set ARTISAN_SPEC=win-legacy) else (set ARTISAN_SPEC=win)
  
-:: set the path to pyuic
+:: set paths 
 if "%APPVEYOR%" == "True" (
     set PYTHON_PATH=%PYTHON%
 ) else (
     set PYTHON_PATH=c:\Python38-64
 )
-if %ARTISAN_LEGACY% == "True" (
-    set PYUIC=%PYTHON_PATH%\scripts\pyuic5.exe
-) else (
+if %ARTISAN_LEGACY% == "False" (
     set PYUIC=%PYTHON_PATH%\scripts\pyuic6.exe
     set QT_PATH=c:\qt\6.2\msvc2019_64
+    set PYLUPDATE=pylupdate6pro
+) else (
+    set PYUIC=%PYTHON_PATH%\scripts\pyuic5.exe
+    set QT_PATH=c:\qt\5.15\msvc2019_64
+    set PYLUPDATE=pylupdate5pro
 )
 rem QT_PATH is either msvc2019_64 or mingw_64
 
 rem echo PYTHON_PATH %PYTHON_PATH%
 
-dir translations
+dir %QT_PATH%
 
 :: Process trasnlation files
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
 echo *****Exectuting artisan.pro
 echo %QT_PATH%
 %QT_PATH%\bin\lrelease -verbose artisan.pro
-echo *****Done Executing artisan.pro
+echo *****Translating qtbase_*.ts files
 FOR /R %%a IN (translations\qtbase_*.ts) DO (
-::    echo *****Translation file %%~a
     %QT_PATH%\bin\lrelease -verbose %%~a
 )
 ::dir translations\qtbase_*.ts
