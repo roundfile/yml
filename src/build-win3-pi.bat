@@ -23,6 +23,8 @@ if %ARTISAN_LEGACY% == "False" (
 rem QT_PATH is either msvc2019_64 or mingw_64
 
 rem echo PYTHON_PATH %PYTHON_PATH%
+echo ***** PATH IS BELOW
+PATH
 
 ::dir %QT_PATH%\bin
 dir %PYTHON_PATH%\scripts
@@ -30,7 +32,7 @@ dir %PYTHON_PATH%\scripts
 
 :: Process trasnlation files
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
-PYLUPDATE artisan.pro
+%PYLUPDATE% artisan.pro
 echo *****Exectuting artisan.pro
 echo %QT_PATH%
 %QT_PATH%\bin\lrelease -verbose artisan.pro
