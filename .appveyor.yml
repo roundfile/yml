@@ -110,7 +110,8 @@ for:
     fast_finish: false
 
   environment:
-    PYTHON: "C:\\Python39-x64"
+####    PYTHON: "C:\\Python39-x64"
+    PYTHON: "C:\\Python38-x64"
   #  PYINSTALLER_VER: "4.3"
     UPLOADTOOL_BODY:
       "WARNING: pre-release builds may not work. Use at your own risk."
@@ -118,7 +119,7 @@ for:
   install:
     - echo "Windows Install"
     - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
-    - set QT_DIR=C:\Qt\6.2.2\msvc2019_64
+    - set QT_DIR=C:\Qt\5.15\msvc2019_64
     - set PY_DIR=C:\Python38-x64
     - set PATH=%QT_DIR%\bin;%PY_DIR%;%PATH%    - echo "Python Version"
     - python -V
