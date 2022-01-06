@@ -121,7 +121,8 @@ for:
     - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
     - set QT_DIR=C:\Qt\5.15\msvc2019_64
     - set PY_DIR=C:\Python38-x64
-    - set PATH=%QT_DIR%\bin;%PY_DIR%;%PATH%    - echo "Python Version"
+    - set PATH=%QT_DIR%\bin;%PY_DIR%;%PATH%
+    - echo "Python Version"
     - python -V
 ####    - "%PYTHON%\\python.exe -m pip install --upgrade pip"
 ####    - "%PYTHON%\\python.exe -m pip install wheel"
