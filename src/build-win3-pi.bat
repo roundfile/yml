@@ -21,6 +21,7 @@ rem QT_PATH is either msvc2019_64 or mingw_64
 rem echo PYTHON_PATH %PYTHON_PATH%
 
 :: Process trasnlation files
+call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
 echo *****Exectuting artisan.pro
 echo %QT_PATH%
 %QT_PATH%\bin\lrelease -verbose artisan.pro
