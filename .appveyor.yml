@@ -122,6 +122,9 @@ for:
     - set QT_DIR=C:\Qt\5.15\msvc2019_64
     - set PY_DIR=C:\Python38-x64
     - set PATH=%QT_DIR%\bin;%PY_DIR%;%PATH%
+    - call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
+#    - qmake -v
+#    - python -VV
     - echo "Python Version"
     - python -V
 ####    - "%PYTHON%\\python.exe -m pip install --upgrade pip"
