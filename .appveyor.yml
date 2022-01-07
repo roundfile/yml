@@ -9,8 +9,8 @@ clone_depth: 1
 
 environment:
   matrix:
-#  - job_name: windows_legacy
-#    appveyor_build_worker_image: Visual Studio 2019
+  - job_name: windows_legacy
+    appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
     appveyor_build_worker_image: Visual Studio 2019
 #  - job_name: macos
@@ -45,7 +45,6 @@ for:
 
   environment:
     PYTHON: "C:\\Python38-x64"
-  #  PYINSTALLER_VER: "4.3"
     UPLOADTOOL_BODY:
       "WARNING: pre-release builds may not work. Use at your own risk."
 
@@ -83,6 +82,7 @@ for:
 
     # downgrade artisan-win.spec to use python 3.8
     - ps: gc artisan-win.spec | %{ $_ -replace "PYTHON = r'c\:\\python39-x64'", "PYTHON = r'c:\python38-x64'" } | out-file newfile -encoding ascii
+    - ps: gc artisan-win.spec | %{ $_ -replace "PYTHON = r'c\:\\python310-x64'", "PYTHON = r'c:\python38-x64'" } | out-file newfile -encoding ascii
     - ps: move -force newfile artisan-win.spec
 
     # update the __revision__ field with the left seven of the GIT commit hash
@@ -126,40 +126,38 @@ for:
 #    - python -VV
     - echo "Python Version"
     - python -V
-####    - "%PYTHON%\\python.exe -m pip install --upgrade pip"
-####    - "%PYTHON%\\python.exe -m pip install wheel"
-####    - "%PYTHON%\\python.exe -m pip install .ci\\pyinstaller-4.7-py3-none-any.whl"
-####  ## start: build the pyinstaller bootloader and install (using the default VS 2015)
-####  #  - curl -L -O https://github.com/pyinstaller/pyinstaller/releases/download/v%PYINSTALLER_VER%/PyInstaller-%PYINSTALLER_VER%.tar.gz
-####  #  - tar xzf PyInstaller-%PYINSTALLER_VER%.tar.gz
-####  #  - del PyInstaller-%PYINSTALLER_VER%.tar.gz
-####  #  - cd pyinstaller-%PYINSTALLER_VER%\bootloader
-####  #  - "%PYTHON%\\python.exe ./waf all --target-arch=64bit"
-####  #  - cd ..
-####  #  - "%PYTHON%\\python.exe setup.py install"
-####  #  - cd ..
-####  ## end: build the pyinstaller bootloader and install
-####    - "%PYTHON%\\python.exe -m pip install -r src\\requirements.txt"
-####    - "%PYTHON%\\python.exe -m pip install -r src\\requirements-win.txt"
-####    - curl -L -O https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe
-####  #  - curl -k -L -O https://kent.dl.sourceforge.net/project/snap7/1.4.2/snap7-full-1.4.2.7z
-####    - curl -k -L -O https://netcologne.dl.sourceforge.net/project/snap7/1.4.2/snap7-full-1.4.2.7z
-####    - 7z x snap7-full-1.4.2.7z
-####    - copy snap7-full-1.4.2\build\bin\win64\snap7.dll c:\windows
-####    - curl -k -L -O https://netcologne.dl.sourceforge.net/project/libusb-win32/libusb-win32-releases/1.2.6.0/libusb-win32-bin-1.2.6.0.zip
-####    - 7z x libusb-win32-bin-1.2.6.0.zip
-####    - copy libusb-win32-bin-1.2.6.0\bin\amd64\libusb0.dll C:\Windows\SysWOW64
-#dave
-    - "%PYTHON%\\python.exe -m pip install PyQt6==6.2.2"
+    - "%PYTHON%\\python.exe -m pip install --upgrade pip"
+    - "%PYTHON%\\python.exe -m pip install wheel"
+    - "%PYTHON%\\python.exe -m pip install .ci\\pyinstaller-4.7-py3-none-any.whl"
+  ## start: build the pyinstaller bootloader and install (using the default VS 2015)
+  #  - curl -L -O https://github.com/pyinstaller/pyinstaller/releases/download/v%PYINSTALLER_VER%/PyInstaller-%PYINSTALLER_VER%.tar.gz
+  #  - tar xzf PyInstaller-%PYINSTALLER_VER%.tar.gz
+  #  - del PyInstaller-%PYINSTALLER_VER%.tar.gz
+  #  - cd pyinstaller-%PYINSTALLER_VER%\bootloader
+  #  - "%PYTHON%\\python.exe ./waf all --target-arch=64bit"
+  #  - cd ..
+  #  - "%PYTHON%\\python.exe setup.py install"
+  #  - cd ..
+  ## end: build the pyinstaller bootloader and install
+    - "%PYTHON%\\python.exe -m pip install -r src\\requirements.txt"
+    - "%PYTHON%\\python.exe -m pip install -r src\\requirements-win.txt"
+    - curl -L -O https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe
+  #  - curl -k -L -O https://kent.dl.sourceforge.net/project/snap7/1.4.2/snap7-full-1.4.2.7z
+    - curl -k -L -O https://netcologne.dl.sourceforge.net/project/snap7/1.4.2/snap7-full-1.4.2.7z
+    - 7z x snap7-full-1.4.2.7z
+    - copy snap7-full-1.4.2\build\bin\win64\snap7.dll c:\windows
+    - curl -k -L -O https://netcologne.dl.sourceforge.net/project/libusb-win32/libusb-win32-releases/1.2.6.0/libusb-win32-bin-1.2.6.0.zip
+    - 7z x libusb-win32-bin-1.2.6.0.zip
+    - copy libusb-win32-bin-1.2.6.0\bin\amd64\libusb0.dll C:\Windows\SysWOW64
 
 
   build_script:
     - echo "Windows Build"
     - cmd: cd src
-####    # update the __revision__ field with the left seven of the GIT commit hash
-####    - ps: $GIT_VERSION=git rev-parse --verify --short HEAD
-####    - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '0'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
-####    - ps: move -force newfile artisanlib/__init__.py
+    # update the __revision__ field with the left seven of the GIT commit hash
+    - ps: $GIT_VERSION=git rev-parse --verify --short HEAD
+    - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '0'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
+    - ps: move -force newfile artisanlib/__init__.py
     # run the install script
     - cmd: build-win3-pi.bat
     - cmd: copy ..\LICENSE LICENSE.txt
