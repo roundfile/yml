@@ -284,10 +284,9 @@ def writehtmlFile(fname_in, fname_out, fname_htm):
     outfile.close()
     
 if __name__ == "__main__":
-    
     if len(sys.argv) > 1:
         currPath = (os.path.dirname(__file__)) + '/'
-        print(f"{currPath=}")
+        #print(f"{currPath=}")
         if sys.argv[1] == "all":
             for filename in os.listdir(currPath + '../input_files/'):
                 if filename.endswith(".xlsx"): 
@@ -295,7 +294,6 @@ if __name__ == "__main__":
                     fname_in =  currPath + '../input_files/' + filename
                     fname_out = currPath + '../../../src/help/' + fn + '_help.py'
                     fname_htm = currPath + '../Output_html/' + fn + '_help.html'
-                    print(filename)
                     print(f"\n{filename}")
                     writepyFile(fname_in,fname_out)
                     writehtmlFile(fname_in,fname_out,fname_htm)

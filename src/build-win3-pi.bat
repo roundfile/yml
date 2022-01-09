@@ -26,7 +26,7 @@ if %ARTISAN_LEGACY% == "False" (
 )
 
 ::
-:: build the py files from ui files
+:: convert ui files to py files
 ::
 FOR /R %%a IN (ui\*.ui) DO (
     echo %%~na
@@ -42,7 +42,7 @@ FOR /R %%a IN (ui\*.ui) DO (
 :: Process translation files
 ::
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
-echo *****Translating file defined in artisan.pro
+echo *****Translating files defined in artisan.pro
 %QT_PATH%\bin\lrelease -verbose artisan.pro
 echo *****Translating qtbase_*.ts files
 FOR /R %%a IN (translations\qtbase_*.ts) DO (
@@ -50,7 +50,7 @@ FOR /R %%a IN (translations\qtbase_*.ts) DO (
 )
 
 ::
-:: run pyinstaller and build the install .exe
+:: run pyinstaller and build the NSIS install .exe
 ::
 :: set environment variables for version and build
 FOR /F "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanlib.__version__)"`) DO (set ARTISAN_VERSION=%%~a)
@@ -58,6 +58,7 @@ FOR /F "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanl
 ::
 :: create a version file for pyinstaller
 create-version-file version-metadata.yml --outfile version_info-win.txt --version %ARTISAN_VERSION%.%ARTISAN_BUILD%
+::
 :: run pyinstaller
 pyinstaller --noconfirm artisan-%ARTISAN_SPEC%.spec
 ::

@@ -63,7 +63,7 @@ coll = COLLECT(exe,
                name=NAME)
 
 
-# assumes the Microsoft Visual C++ 2015 Redistributable Package (x64), vc_redist.x64.exe, is located above the source directory
+# assumes the Microsoft Visual C++ Redistributable Package (x64), vc_redist.x64.exe, is located above the source directory
 os.system(r'copy ..\vc_redist.x64.exe ' + TARGET)
 
 os.system('copy README.txt ' + TARGET)
