@@ -51,34 +51,34 @@ for:
 
   install:
       - .ci\install-win.bat LEGACY
-####    - echo "Windows Legacy Install"
+    - echo "Windows Legacy Install"
       - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
-####    - echo "Python Version"
-####    - python -V
-####    - "%PYTHON%\\python.exe -m pip install --upgrade pip"
-####    - "%PYTHON%\\python.exe -m pip install wheel"
-########    - "%PYTHON%\\python.exe -m pip install .ci\\pyinstaller-4.3-py3-none-any.whl"
-####    # start: build the pyinstaller bootloader and install
-#####    - curl -L -O https://github.com/pyinstaller/pyinstaller/releases/download/v%PYINSTALLER_VER%/PyInstaller-%PYINSTALLER_VER%.tar.gz
-####    - curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
-####    - 7z x v%PYINSTALLER_VER%.zip
-####    - del v%PYINSTALLER_VER%.zip
-####    - cd pyinstaller-%PYINSTALLER_VER%\bootloader
-####    - "%PYTHON%\\python.exe ./waf all --target-arch=64bit"
-####    - cd ..
-####    - "%PYTHON%\\python.exe setup.py -q install"
-####    - cd ..
-####    # end: build the pyinstaller bootloader and install
-####    - "%PYTHON%\\python.exe -m pip install -r src\\requirements.txt"
-####    - "%PYTHON%\\python.exe -m pip install -r src\\requirements-win-legacy.txt"
-####    - curl -L -O https://aka.ms/vs/17/release/vc_redist.x64.exe
-####  #  - curl -L -O https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe
-####    - curl -k -L -O https://netcologne.dl.sourceforge.net/project/snap7/1.4.2/snap7-full-1.4.2.7z
-####    - 7z x snap7-full-1.4.2.7z
-####    - copy snap7-full-1.4.2\build\bin\win64\snap7.dll c:\windows
-####    - curl -k -L -O https://netcologne.dl.sourceforge.net/project/libusb-win32/libusb-win32-releases/1.2.6.0/libusb-win32-bin-1.2.6.0.zip
-####    - 7z x libusb-win32-bin-1.2.6.0.zip
-####    - copy libusb-win32-bin-1.2.6.0\bin\amd64\libusb0.dll C:\Windows\SysWOW64
+    - echo "Python Version"
+    - python -V
+    - "%PYTHON%\\python.exe -m pip install --upgrade pip"
+    - "%PYTHON%\\python.exe -m pip install wheel"
+####    - "%PYTHON%\\python.exe -m pip install .ci\\pyinstaller-4.3-py3-none-any.whl"
+    # start: build the pyinstaller bootloader and install
+#    - curl -L -O https://github.com/pyinstaller/pyinstaller/releases/download/v%PYINSTALLER_VER%/PyInstaller-%PYINSTALLER_VER%.tar.gz
+    - curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
+    - 7z x v%PYINSTALLER_VER%.zip
+    - del v%PYINSTALLER_VER%.zip
+    - cd pyinstaller-%PYINSTALLER_VER%\bootloader
+    - "%PYTHON%\\python.exe ./waf all --target-arch=64bit"
+    - cd ..
+    - "%PYTHON%\\python.exe setup.py -q install"
+    - cd ..
+    # end: build the pyinstaller bootloader and install
+    - "%PYTHON%\\python.exe -m pip install -r src\\requirements.txt"
+    - "%PYTHON%\\python.exe -m pip install -r src\\requirements-win-legacy.txt"
+    - curl -L -O https://aka.ms/vs/17/release/vc_redist.x64.exe
+  #  - curl -L -O https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe
+    - curl -k -L -O https://netcologne.dl.sourceforge.net/project/snap7/1.4.2/snap7-full-1.4.2.7z
+    - 7z x snap7-full-1.4.2.7z
+    - copy snap7-full-1.4.2\build\bin\win64\snap7.dll c:\windows
+    - curl -k -L -O https://netcologne.dl.sourceforge.net/project/libusb-win32/libusb-win32-releases/1.2.6.0/libusb-win32-bin-1.2.6.0.zip
+    - 7z x libusb-win32-bin-1.2.6.0.zip
+    - copy libusb-win32-bin-1.2.6.0\bin\amd64\libusb0.dll C:\Windows\SysWOW64
 
   build_script:
     - echo "Windows Legacy Build"
