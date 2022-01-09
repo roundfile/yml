@@ -50,9 +50,9 @@ for:
       "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
-      - .ci\install-win.bat LEGACY
+    - .ci\install-win.bat LEGACY
     - echo "Windows Legacy Install"
-      - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+    - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
     - echo "Python Version"
     - python -V
     - "%PYTHON%\\python.exe -m pip install --upgrade pip"
