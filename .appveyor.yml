@@ -59,9 +59,9 @@ for:
 ####    - "%PYTHON%\\python.exe -m pip install .ci\\pyinstaller-4.3-py3-none-any.whl"
     # start: build the pyinstaller bootloader and install
 #    - curl -L -O https://github.com/pyinstaller/pyinstaller/releases/download/v%PYINSTALLER_VER%/PyInstaller-%PYINSTALLER_VER%.tar.gz
-    - curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.tar.gz
-    - tar xzf PyInstaller-%PYINSTALLER_VER%.tar.gz
-    - del PyInstaller-%PYINSTALLER_VER%.tar.gz
+    - curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
+    - 7z x v%PYINSTALLER_VER%.zip
+    - del v%PYINSTALLER_VER%.zip
     - cd pyinstaller-%PYINSTALLER_VER%\bootloader
     - "%PYTHON%\\python.exe ./waf all --target-arch=64bit"
     - cd ..
@@ -134,9 +134,9 @@ for:
 ####    - "%PYTHON%\\python.exe -m pip install .ci\\pyinstaller-4.7-py3-none-any.whl"
   # start: build the pyinstaller bootloader and install
     #- curl -L -O https://github.com/pyinstaller/pyinstaller/releases/download/v%PYINSTALLER_VER%/PyInstaller-%PYINSTALLER_VER%.tar.gz
-    - curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.tar.gz
-    - tar xzf PyInstaller-%PYINSTALLER_VER%.tar.gz
-    - del PyInstaller-%PYINSTALLER_VER%.tar.gz
+    - curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
+    - 7z x v%PYINSTALLER_VER%.zip
+    - del v%PYINSTALLER_VER%.zip
     - cd pyinstaller-%PYINSTALLER_VER%\bootloader
     - "%PYTHON%\\python.exe ./waf all --target-arch=64bit"
     - cd ..
