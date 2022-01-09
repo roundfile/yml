@@ -4,8 +4,15 @@
 ::
 :: comandline option LEGACY used to flag a legacy build in NSIS
 ::
-if "%~1" == "LEGACY"  (set ARTISAN_LEGACY="True") else (set ARTISAN_LEGACY="False")
-if "%~1" == "LEGACY"  (set ARTISAN_SPEC=win-legacy) else (set ARTISAN_SPEC=win)
+if "%~1" == "LEGACY"  (
+    set ARTISAN_LEGACY="True"
+    set ARTISAN_SPEC=win-legacy
+    set PYTHON_LOCAL=c:\Python38-64
+) else (
+    set ARTISAN_LEGACY="False"
+    set ARTISAN_SPEC=win
+    set PYTHON_LOCAL=c:\Python310-64
+)
  
 ::
 :: set paths through environment variables 
@@ -13,7 +20,7 @@ if "%~1" == "LEGACY"  (set ARTISAN_SPEC=win-legacy) else (set ARTISAN_SPEC=win)
 if "%APPVEYOR%" == "True" (
     set PYTHON_PATH=%PYTHON%
 ) else (
-    set PYTHON_PATH=c:\Python38-64
+    set PYTHON_PATH=%PYTHON_LOCAL%
 )
 if %ARTISAN_LEGACY% == "False" (
     set PYUIC=%PYTHON_PATH%\scripts\pyuic6.exe
