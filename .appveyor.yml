@@ -80,14 +80,14 @@ for:
 ####    - 7z x libusb-win32-bin-1.2.6.0.zip
 ####    - copy libusb-win32-bin-1.2.6.0\bin\amd64\libusb0.dll C:\Windows\SysWOW64
 ####
-####  build_script:
-####    - echo "Windows Legacy Build"
-####    - cmd: cd src
-####
-####    # downgrade artisan-win.spec to use python 3.8
-####    - ps: gc artisan-win.spec | %{ $_ -replace "PYTHON = r'c\:\\python39-x64'", "PYTHON = r'c:\python38-x64'" } | out-file newfile -encoding ascii
-####    - ps: gc artisan-win.spec | %{ $_ -replace "PYTHON = r'c\:\\python310-x64'", "PYTHON = r'c:\python38-x64'" } | out-file newfile -encoding ascii
-####    - ps: move -force newfile artisan-win.spec
+  build_script:
+    - echo "Windows Legacy Build"
+    - cmd: cd src
+
+    # downgrade artisan-win.spec to use python 3.8
+    - ps: gc artisan-win.spec | %{ $_ -replace "PYTHON = r'c\:\\python39-x64'", "PYTHON = r'c:\python38-x64'" } | out-file newfile -encoding ascii
+    - ps: gc artisan-win.spec | %{ $_ -replace "PYTHON = r'c\:\\python310-x64'", "PYTHON = r'c:\python38-x64'" } | out-file newfile -encoding ascii
+    - ps: move -force newfile artisan-win.spec
 
     # update the __revision__ field with the left seven of the GIT commit hash
     - ps: $GIT_VERSION=git rev-parse --verify --short HEAD
