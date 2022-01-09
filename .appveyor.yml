@@ -50,9 +50,9 @@ for:
       "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
-    - .ci\install-win.bat LEGACY
 ####    - echo "Windows Legacy Install"
-####    - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+    - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+    - .ci\install-win.bat LEGACY
 ####    - echo "Python Version"
 ####    - python -V
 ####    - "%PYTHON%\\python.exe -m pip install --upgrade pip"
@@ -83,11 +83,7 @@ for:
   build_script:
     - echo "Windows Legacy Build"
     - cmd: cd src
-
-    # downgrade artisan-win.spec to use python 3.8
-    - ps: gc artisan-win.spec | %{ $_ -replace "PYTHON = r'c\:\\python39-x64'", "PYTHON = r'c:\python38-x64'" } | out-file newfile -encoding ascii
-    - ps: gc artisan-win.spec | %{ $_ -replace "PYTHON = r'c\:\\python310-x64'", "PYTHON = r'c:\python38-x64'" } | out-file newfile -encoding ascii
-    - ps: move -force newfile artisan-win.spec
+    - cd
 
     # update the __revision__ field with the left seven of the GIT commit hash
     - ps: $GIT_VERSION=git rev-parse --verify --short HEAD
@@ -95,6 +91,7 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the install script
+    - cmd: cd
     - cmd: build-win3-pi.bat LEGACY
     - cmd: copy ..\LICENSE LICENSE.txt
     - cmd: 7z a artisan-win-legacy-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
