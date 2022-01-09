@@ -48,9 +48,7 @@ FOR /R %%a IN (ui\*.ui) DO (
 ::
 :: Process translation files
 ::
-set VCVARSALL=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat
-call %VCVARSALL% x86_amd64
-::call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat x86_amd64"
+call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
 echo *****Translating files defined in artisan.pro
 %QT_PATH%\bin\lrelease -verbose artisan.pro
 echo *****Translating qtbase_*.ts files

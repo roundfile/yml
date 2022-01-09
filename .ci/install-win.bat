@@ -60,14 +60,14 @@ curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINST
 7z x v%PYINSTALLER_VER%.zip
 del v%PYINSTALLER_VER%.zip
 cd pyinstaller-%PYINSTALLER_VER%\bootloader
-%PYTHON_PATH%\\python.exe ./waf all --target-arch=64bit
+%PYTHON_PATH%\python.exe ./waf all --target-arch=64bit
 cd ..
-%PYTHON_PATH%\\python.exe setup.py -q install
+%PYTHON_PATH%\python.exe setup.py -q install
 cd ..
 :: end: build the pyinstaller bootloader and install
 
 %PYTHON%\python.exe -m pip install -r src\\requirements.txt
-%PYTHON%\\python.exe -m pip install -r src\\requirements-win-legacy.txt
+%PYTHON%\python.exe -m pip install -r src\\requirements-win-legacy.txt
 curl -L -O %VC_REDIST%
 ::curl -L -O https://aka.ms/vs/17/release/vc_redist.x64.exe
 ::curl -L -O https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe
