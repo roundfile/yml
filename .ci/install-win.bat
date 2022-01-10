@@ -45,11 +45,11 @@ if "%~1" NEQ "LEGACY"  (
     set PYLUPDATE=pylupdate5pro
     set VC_REDIST=https://aka.ms/vs/17/release/vc_redist.x64.exe
 )
-::  
-:: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\\Scripts;%PATH%"
-:: 
-:: echo Python Version
-:: python -V
+ 
+set PATH=%PYTHON_PATH%;%PYTHON_PATH%\\Scripts;%PATH%"
+
+echo Python Version
+python -V
 :: 
 :: %PYTHON_PATH%\python.exe -m pip install --upgrade pip
 :: %PYTHON_PATH%\python.exe -m pip install wheel
