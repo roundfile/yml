@@ -19,6 +19,7 @@ if "%APPVEYOR%" NEQ "True" (
     )
 )
 echo ******* 1
+path
 :: path already updated in the Appveyor environment
 if "%APPVEYOR%" NEQ "True" (
     set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
