@@ -21,8 +21,9 @@ if "%APPVEYOR%" NEQ "True" (
     )
 )
 :: path already updated in the Appveyor environment
+SETLOCAL ENABLEDELAYEDEXPANSION
 if "%APPVEYOR%" NEQ "True" (
-    set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
+    set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
 )
 
 ::

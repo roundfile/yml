@@ -54,11 +54,12 @@ for:
     UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
-    - "SET PATH=%PYTHON_PATH%;%PYTHON_PATH%\\Scripts;%PATH%"
+#    - "SET PATH=%PYTHON_PATH%;%PYTHON_PATH%\\Scripts;%PATH%"
 #    - .ci\install-win.bat LEGACY
-#    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
-    - path
-    - .ci\install-win.bat LEGACY
+    - cmd: echo Windows Legacy Install
+    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
+#    - path
+    - cmd: .ci\install-win.bat LEGACY
 
   build_script:
 #    - echo "Windows Legacy Build"
@@ -103,12 +104,12 @@ for:
 
   install:
 #    - echo "Windows Install"
-    - "SET PATH=%PYTHON_PATH%;%PYTHON_PATH%\\Scripts;%PATH%"
+#    - "SET PATH=%PYTHON_PATH%;%PYTHON_PATH%\\Scripts;%PATH%"
 #    - .ci\install-win.bat
     - cmd: path
     - cmd: echo Windows Install
-#    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
-    - .ci\install-win.bat
+    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
+    - cmd: .ci\install-win.bat
 
   build_script:
 #    - echo "Windows Build"
