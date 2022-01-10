@@ -4,25 +4,25 @@ echo ****** CD
 cd
 
 
-:: ::
-:: :: comandline option LEGACY is used to flag a legacy build in NSIS
-:: ::
-:: 
-:: ::
-:: :: Set the Python path, update the local path and pyinstaller version here
-:: ::
-:: if "%APPVEYOR%" == "True" (
-::     echo True
-::     set PYTHON_PATH=%PYTHON%
-:: ) else (
-::     if "%~1" NEQ "LEGACY" (
-::         set PYTHON_PATH=c:\Python310-64
-::         set PYINSTALLER_VER=4.7
-::     ) else (
-::         set PYTHON_PATH=c:\Python38-64
-::         set PYINSTALLER_VER=4.3
-::     )
-:: )
+::
+:: comandline option LEGACY is used to flag a legacy build in NSIS
+::
+
+::
+:: Set the Python path, update the local path and pyinstaller version here
+::
+if "%APPVEYOR%" == "True" (
+    echo True
+    set PYTHON_PATH=%PYTHON%
+) else (
+    if "%~1" NEQ "LEGACY" (
+        set PYTHON_PATH=c:\Python310-64
+        set PYINSTALLER_VER=4.7
+    ) else (
+        set PYTHON_PATH=c:\Python38-64
+        set PYINSTALLER_VER=4.3
+    )
+)
 :: 
 :: ::
 :: :: Set some env variables based on if ths is a regular or LEGACY build
