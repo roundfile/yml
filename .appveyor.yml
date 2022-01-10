@@ -52,7 +52,7 @@ for:
   install:
 ####    - echo "Windows Legacy Install"
     - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
-#    - .ci\install-win.bat LEGACY
+    - .ci\install-win.bat LEGACY
 ####    - echo "Python Version"
 ####    - python -V
 ####    - "%PYTHON%\\python.exe -m pip install --upgrade pip"
