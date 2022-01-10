@@ -41,7 +41,7 @@ cd pyinstaller-%PYINSTALLER_VER%\bootloader
 %PYTHON_PATH%\python.exe ./waf all --target-arch=64bit
 cd ..
 %PYTHON_PATH%\python.exe setup.py -q install
-rem cd ..
+cd ..
 :: end: build the pyinstaller bootloader and install
 
 %PYTHON_PATH%\python.exe -m pip install -r src\requirements.txt
