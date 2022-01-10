@@ -50,7 +50,7 @@ for:
       "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
-    - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+    - "SET PATH=%PYTHON%;%PYTHON%\Scripts;%PATH%"
     - .ci\install-win.bat LEGACY
 
   build_script:
