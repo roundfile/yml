@@ -6,8 +6,8 @@
 :: when running locally these paths need to be set here 
 ::
 SETLOCAL ENABLEDELAYEDEXPANSION
-if "%APPVEYOR%" NEQ "True" (
-    if "%~1" == "LEGACY" (
+if /i "%APPVEYOR%" NEQ "True" (
+    if /i "%~1" == "LEGACY" (
         set PYTHON_PATH=c:\Python38-64
         set ARTISAN_LEGACY=True
         set ARTISAN_SPEC=win-legacy
@@ -23,14 +23,14 @@ if "%APPVEYOR%" NEQ "True" (
     set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
 )
 :: path already updated in the Appveyor environment
-if "%APPVEYOR%" NEQ "True" (
+if /i "%APPVEYOR%" NEQ "True" (
     set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
 )
 
 ::
 :: convert ui files to py files
 ::
-FOR /R %%a IN (ui\*.ui) DO (
+for /r %%a IN (ui\*.ui) DO (
     echo %%~na
     %PYUIC% -o uic\%%~na.py --from-imports ui\%%~na.ui
 )
@@ -47,7 +47,7 @@ call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary
 echo *****Translating files defined in artisan.pro
 %QT_PATH%\bin\lrelease -verbose artisan.pro
 echo *****Translating qtbase_*.ts files
-FOR /R %%a IN (translations\qtbase_*.ts) DO (
+for /r %%a IN (translations\qtbase_*.ts) DO (
     %QT_PATH%\bin\lrelease -verbose %%~a
 )
 
@@ -55,8 +55,8 @@ FOR /R %%a IN (translations\qtbase_*.ts) DO (
 :: run pyinstaller and build the NSIS install .exe
 ::
 :: set environment variables for version and build
-FOR /F "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanlib.__version__)"`) DO (set ARTISAN_VERSION=%%~a)
-FOR /F "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanlib.__build__)"`) DO (set ARTISAN_BUILD=%%~a)
+for /f "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanlib.__version__)"`) DO (set ARTISAN_VERSION=%%~a)
+for /f "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanlib.__build__)"`) DO (set ARTISAN_BUILD=%%~a)
 ::
 :: create a version file for pyinstaller
 create-version-file version-metadata.yml --outfile version_info-win.txt --version %ARTISAN_VERSION%.%ARTISAN_BUILD%
@@ -81,6 +81,8 @@ echo ARTISAN_VERSION %ARTISAN_VERSION%, ARTISAN_BUILD %ARTISAN_BUILD%
 ::
 :: package the zip file 
 ::
-if "%APPVEYOR%" == "True" (
-    7z a artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip Setup*.exe ..\LICENSE.txt README.txt
+if /i "%APPVEYOR%" == "True" (
+    copy ..\LICENSE LICENSE.txt
+    7z a artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
+    del LICENSE.txt
 )

@@ -6,8 +6,8 @@
 :: when running locally these paths need to be set here 
 ::
 SETLOCAL ENABLEDELAYEDEXPANSION
-if "%APPVEYOR%" NEQ "True" (
-    if "%~1" == "LEGACY" (
+if /i "%APPVEYOR%" NEQ "True" (
+    if /i "%~1" == "LEGACY" (
         set PYTHON_PATH=c:\Python38-64
         set QT_PATH=c:\qt\5.15\msvc2019_64
         set PYINSTALLER_VER=4.3
