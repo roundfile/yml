@@ -48,6 +48,7 @@ for:
     QT_PATH: "c:\\qt\\5.15\\msvc2019_64"
     PYUIC: "pyuic5.exe"
     PYINSTALLER_VER: "4.3"
+    ARTISAN_LEGACY: "True"
     ARTISAN_SPEC: "win-legacy"
     VC_REDIST: "https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe"
     UPLOADTOOL_BODY:
@@ -91,6 +92,7 @@ for:
     PYTHON_APV: "C:\\Python310-x64"
     QT_APV: "C:\\qt\\6.2\\msvc2019_64"
     PYINSTALLER_VER: "4.7"
+    ARTISAN_LEGACY: "False"
     ARTISAN_SPEC: "win"
     VC_REDIST: "https://aka.ms/vs/17/release/vc_redist.x64.exe"
     UPLOADTOOL_BODY:

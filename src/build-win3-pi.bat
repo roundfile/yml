@@ -8,11 +8,13 @@
 if "%APPVEYOR%" NEQ "True" (
     if "%~1" == "LEGACY" (
         set PYTHON_PATH=c:\Python38-64
+        set ARTISAN_LEGACY=True
         set ARTISAN_SPEC=win-legacy
         set PYUIC=%PYTHON_PATH%\scripts\pyuic5.exe
         set QT_PATH=c:\qt\5.15\msvc2019_64
     ) else (
         set PYTHON_PATH=c:\Python310-64
+        set ARTISAN_LEGACY=False
         set ARTISAN_SPEC=win
         set PYUIC=%PYTHON_PATH%\scripts\pyuic6.exe
         set QT_PATH=c:\qt\6.2\msvc2019_64
