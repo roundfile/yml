@@ -18,14 +18,11 @@ if "%APPVEYOR%" NEQ "True" (
         set VC_REDIST=https://aka.ms/vs/17/release/vc_redist.x64.exe
     )
 )
-echo ******* 1
-path
 :: path already updated in the Appveyor environment
 if "%APPVEYOR%" NEQ "True" (
     set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 )
 
-echo ******* 2
 echo Python Version
 python -V
 
