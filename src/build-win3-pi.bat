@@ -4,6 +4,7 @@
 ::
 :: comandline option LEGACY used to flag a legacy build
 :: when running locally these paths need to be set here 
+::   normally they are set in appveyor.yml
 ::
 SETLOCAL ENABLEDELAYEDEXPANSION
 if /i "%APPVEYOR%" NEQ "True" (
@@ -24,7 +25,7 @@ if /i "%APPVEYOR%" NEQ "True" (
 )
 
 ::
-:: convert ui files to py files
+:: convert .ui files to .py files
 ::
 for /r %%a IN (ui\*.ui) DO (
     echo %%~na
@@ -41,15 +42,15 @@ for /r %%a IN (ui\*.ui) DO (
 :: Process translation files
 ::
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
-echo *****Translating files defined in artisan.pro
+echo Processing translation files defined in artisan.pro
 %QT_PATH%\bin\lrelease -verbose artisan.pro
-echo *****Translating qtbase_*.ts files
+echo Processing translation qtbase_*.ts files
 for /r %%a IN (translations\qtbase_*.ts) DO (
     %QT_PATH%\bin\lrelease -verbose %%~a
 )
 
 ::
-:: run pyinstaller and build the NSIS install .exe
+:: run pyinstaller and NSIS to gnerate the install .exe
 ::
 :: set environment variables for version and build
 for /f "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanlib.__version__)"`) DO (set ARTISAN_VERSION=%%~a)
@@ -67,11 +68,6 @@ if exist "C:\Program Files\NSIS\makensis.exe"       set NSIS_EXE="C:\Program Fil
 if exist "%ProgramFiles%\NSIS\makensis.exe"         set NSIS_EXE="%ProgramFiles%\NSIS\makensis.exe"
 if exist "%ProgramFiles(x86)%\NSIS\makensis.exe"    set NSIS_EXE="%ProgramFiles(x86)%\NSIS\makensis.exe"
 ::
-::dave
-echo.
-echo.
-echo ARTISAN_SPEC %ARTISAN_SPEC%, ARTISAN_VERSION %ARTISAN_VERSION%, ARTISAN_BUILD %ARTISAN_BUILD%
-
 :: run NSIS to build the install .exe file
 %NSIS_EXE% /DPRODUCT_VERSION=%ARTISAN_VERSION%.%ARTISAN_BUILD% /DLEGACY=%ARTISAN_LEGACY% setup-install3-pi.nsi
 
@@ -83,6 +79,3 @@ if /i "%APPVEYOR%" == "True" (
     7z a artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
     del LICENSE.txt
 )
-::dave
-echo *** Directory
-dir *.zip

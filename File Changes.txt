@@ -11,7 +11,7 @@ New:
 
 
 All version and path information set in appveyor.yml, when run locally set in build-win3-pi.bat and install-win.bat
-Always use latest vc_redist.x64.exe
+Win build uses the latest vc_redist.x64.exe (2015-2022), legacy uses (2015-2019)
 Generate Help files
 Generate Translation files (lrelease only)
 Generate UIC .py files
@@ -24,4 +24,5 @@ Set Windows to use
     Python 3.10
     PyQt 6.2
     pyinstaller 4.7 (would like to find a way to auto use the latest release)    
+Commented test script section.
 

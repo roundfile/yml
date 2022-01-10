@@ -13,10 +13,10 @@ environment:
     appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
     appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: macos
-#    appveyor_build_worker_image: macos
-#  - job_name: linux
-#    appveyor_build_worker_image: Ubuntu2004
+  - job_name: macos
+    appveyor_build_worker_image: macos
+  - job_name: linux
+    appveyor_build_worker_image: Ubuntu2004
 #  - job_name: rpi
 #    appveyor_build_worker_image: Ubuntu1604
 
@@ -50,22 +50,17 @@ for:
     PYINSTALLER_VER: "4.3"
     ARTISAN_LEGACY: "True"
     ARTISAN_SPEC: "win-legacy"
-    VC_REDIST: "https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe"
+    VC_REDIST: "https://aka.ms/vs/16/release/vc_redist.x64.exe"
     UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
-#    - "SET PATH=%PYTHON_PATH%;%PYTHON_PATH%\\Scripts;%PATH%"
-#    - .ci\install-win.bat LEGACY
     - cmd: echo Windows Legacy Install
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
-#    - path
     - cmd: .ci\install-win.bat LEGACY
 
   build_script:
-#    - echo "Windows Legacy Build"
     - cmd: echo Windows Legacy Build
     - cmd: cd src
-    - cd
 
     # update the __revision__ field with the left seven of the GIT commit hash
     - ps: $GIT_VERSION=git rev-parse --verify --short HEAD
@@ -73,10 +68,10 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the install script
-    - cmd: cd
     - cmd: build-win3-pi.bat LEGACY
-#    - cmd: copy ..\LICENSE LICENSE.txt
-#    - cmd: 7z a artisan-win-legacy-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
+
+#  test_script:
+#    - cmd: python -m unittest discover
 
 #  artifacts:
 #    - path: 'src\artisan-*.zip'
@@ -103,31 +98,24 @@ for:
     UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
-#    - echo "Windows Install"
-#    - "SET PATH=%PYTHON_PATH%;%PYTHON_PATH%\\Scripts;%PATH%"
-#    - .ci\install-win.bat
     - cmd: echo Windows Install
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
     - cmd: .ci\install-win.bat
 
   build_script:
-#    - echo "Windows Build"
     - cmd: echo Windows Build
     - cmd: cd src
+
     # update the __revision__ field with the left seven of the GIT commit hash
     - ps: $GIT_VERSION=git rev-parse --verify --short HEAD
     - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '0'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
     - ps: move -force newfile artisanlib/__init__.py
-    #dave
-    - cd
+
     # run the install script
     - cmd: build-win3-pi.bat
-#    - cmd: copy ..\LICENSE LICENSE.txt
-#    - cmd: 7z a artisan-win-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
 
-  test_script:
-#    - python -m unittest discover
-    - cmd: python -m unittest discover
+#  test_script:
+#    - cmd: python -m unittest discover
 
 #  artifacts:
 #    - path: 'src\artisan-*.zip'
