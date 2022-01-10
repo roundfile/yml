@@ -54,16 +54,16 @@ python -V
 %PYTHON_PATH%\python.exe -m pip install --upgrade pip
 %PYTHON_PATH%\python.exe -m pip install wheel
 
-::%PYTHON_PATH%\\python.exe -m pip install .ci\\pyinstaller-4.3-py3-none-any.whl
+%PYTHON_PATH%\\python.exe -m pip install .ci\\pyinstaller-4.3-py3-none-any.whl
 :: build the pyinstaller bootloader and install
-curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
-7z x v%PYINSTALLER_VER%.zip
-del v%PYINSTALLER_VER%.zip
-cd pyinstaller-%PYINSTALLER_VER%\bootloader
-%PYTHON_PATH%\python.exe ./waf all --target-arch=64bit
-cd ..
-%PYTHON_PATH%\python.exe setup.py -q install
-cd ..
+rem curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
+rem 7z x v%PYINSTALLER_VER%.zip
+rem del v%PYINSTALLER_VER%.zip
+rem cd pyinstaller-%PYINSTALLER_VER%\bootloader
+rem %PYTHON_PATH%\python.exe ./waf all --target-arch=64bit
+rem cd ..
+rem %PYTHON_PATH%\python.exe setup.py -q install
+rem cd ..
 :: end: build the pyinstaller bootloader and install
 
 %PYTHON%\python.exe -m pip install -r src\\requirements.txt
