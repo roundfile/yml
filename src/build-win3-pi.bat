@@ -11,23 +11,21 @@ if "%APPVEYOR%" NEQ "True" (
         set PYTHON_PATH=c:\Python38-64
         set ARTISAN_LEGACY=True
         set ARTISAN_SPEC=win-legacy
-        set PYUIC=%PYTHON_PATH%\scripts\pyuic5.exe
+        set PYUIC=pyuic5.exe
         set QT_PATH=c:\qt\5.15\msvc2019_64
     ) else (
         set PYTHON_PATH=c:\Python310-64
         set ARTISAN_LEGACY=False
         set ARTISAN_SPEC=win
-        set PYUIC=%PYTHON_PATH%\scripts\pyuic6.exe
+        set PYUIC=pyuic6.exe
         set QT_PATH=c:\qt\6.2\msvc2019_64
     )
     set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
 )
 :: path already updated in the Appveyor environment
-rem SETLOCAL ENABLEDELAYEDEXPANSION
-rem if "%APPVEYOR%" NEQ "True" (
-rem     set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
-rem )
-dir C:\Python38-x64\Scripts
+if "%APPVEYOR%" NEQ "True" (
+    set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
+)
 
 ::
 :: convert ui files to py files
@@ -79,3 +77,7 @@ echo ARTISAN_VERSION %ARTISAN_VERSION%, ARTISAN_BUILD %ARTISAN_BUILD%
 
 :: run NSIS to build the install .exe file
 %NSIS_EXE% /DPRODUCT_VERSION=%ARTISAN_VERSION%.%ARTISAN_BUILD% /DLEGACY=%ARTISAN_LEGACY% setup-install3-pi.nsi
+
+if "%APPVEYOR%" NEQ "True" (
+    7z a artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip Setup*.exe ..\LICENSE.txt README.txt
+)
