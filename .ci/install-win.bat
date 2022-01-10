@@ -12,9 +12,9 @@ cd
 :: Set the Python path, update the local path and pyinstaller version here
 ::
 if "%APPVEYOR%" == "True" (
-    echo True
     set PYTHON_PATH=%PYTHON%
 ) else (
+    set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
     if "%~1" NEQ "LEGACY" (
         set PYTHON_PATH=c:\Python310-64
         set PYINSTALLER_VER=4.7
@@ -25,12 +25,11 @@ if "%APPVEYOR%" == "True" (
 )
 
 ::
-:: Set some env variables based on if ths is a regular or LEGACY build
+:: Set some env variables based on if this is a regular or LEGACY build
 ::
 if "%~1" NEQ "LEGACY"  (
     echo "Windows Install"
     set PYUIC=%PYTHON_PATH%\scripts\pyuic6.exe
-    set ARTISAN_LEGACY="False"
     set ARTISAN_SPEC=win
     set QT_PATH=c:\qt\6.2\msvc2019_64
     set PYLUPDATE=pylupdate6pro
@@ -39,14 +38,11 @@ if "%~1" NEQ "LEGACY"  (
 ) else (
     echo "Windows Legacy Install"
     set PYUIC=%PYTHON_PATH%\scripts\pyuic5.exe
-    set ARTISAN_LEGACY="True"
     set ARTISAN_SPEC=win-legacy
     set QT_PATH=c:\qt\5.15\msvc2019_64
     set PYLUPDATE=pylupdate5pro
     set VC_REDIST=https://aka.ms/vs/17/release/vc_redist.x64.exe
 )
- 
-set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 
 echo Python Version
 python -V

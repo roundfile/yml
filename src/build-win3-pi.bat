@@ -2,36 +2,33 @@
 :: on entry to this script the current path must be the src folder
 
 ::
-:: comandline option LEGACY used to flag a legacy build in NSIS
-::
-if "%~1" == "LEGACY"  (
-    set ARTISAN_LEGACY="True"
-    set ARTISAN_SPEC=win-legacy
-    set PYTHON_LOCAL=c:\Python38-64
-) else (
-    set ARTISAN_LEGACY="False"
-    set ARTISAN_SPEC=win
-    set PYTHON_LOCAL=c:\Python310-64
-)
- 
-::
 :: set paths through environment variables 
 ::
 if "%APPVEYOR%" == "True" (
     set PYTHON_PATH=%PYTHON%
 ) else (
-    set PYTHON_PATH=%PYTHON_LOCAL%
+    set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
+    if "%~1" NEQ "LEGACY" (
+        set PYTHON_PATH=c:\Python310-64
+    ) else (
+        set PYTHON_PATH=c:\Python38-64
+    )
 )
-if %ARTISAN_LEGACY% == "False" (
+::
+:: comandline option LEGACY used to flag a legacy build in NSIS
+::
+if "%~1" NEQ "LEGACY"  (
+    set ARTISAN_SPEC=win
     set PYUIC=%PYTHON_PATH%\scripts\pyuic6.exe
     set QT_PATH=c:\qt\6.2\msvc2019_64
     set PYLUPDATE=pylupdate6pro
 ) else (
+    set ARTISAN_SPEC=win-legacy
     set PYUIC=%PYTHON_PATH%\scripts\pyuic5.exe
     set QT_PATH=c:\qt\5.15\msvc2019_64
     set PYLUPDATE=pylupdate5pro
 )
-
+ 
 ::
 :: convert ui files to py files
 ::
