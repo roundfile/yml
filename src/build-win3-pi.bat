@@ -4,47 +4,47 @@
 ::
 :: comandline option LEGACY used to flag a legacy build in NSIS
 ::
-:: if "%~1" == "LEGACY"  (
+if "%~1" == "LEGACY"  (
     set ARTISAN_LEGACY="True"
     set ARTISAN_SPEC=win-legacy
     set PYTHON_LOCAL=c:\Python38-64
-:: ) else (
-::     set ARTISAN_LEGACY="False"
-::     set ARTISAN_SPEC=win
-::     set PYTHON_LOCAL=c:\Python310-64
-:: )
+) else (
+    set ARTISAN_LEGACY="False"
+    set ARTISAN_SPEC=win
+    set PYTHON_LOCAL=c:\Python310-64
+)
  
 ::
 :: set paths through environment variables 
 ::
-:: if "%APPVEYOR%" == "True" (
+if "%APPVEYOR%" == "True" (
     set PYTHON_PATH=%PYTHON%
-:: ) else (
-::     set PYTHON_PATH=%PYTHON_LOCAL%
-:: )
-:: if %ARTISAN_LEGACY% == "False" (
-::     set PYUIC=%PYTHON_PATH%\scripts\pyuic6.exe
-::     set QT_PATH=c:\qt\6.2\msvc2019_64
-::     set PYLUPDATE=pylupdate6pro
-:: ) else (
+) else (
+    set PYTHON_PATH=%PYTHON_LOCAL%
+)
+if %ARTISAN_LEGACY% == "False" (
+    set PYUIC=%PYTHON_PATH%\scripts\pyuic6.exe
+    set QT_PATH=c:\qt\6.2\msvc2019_64
+    set PYLUPDATE=pylupdate6pro
+) else (
     set PYUIC=%PYTHON_PATH%\scripts\pyuic5.exe
     set QT_PATH=c:\qt\5.15\msvc2019_64
     set PYLUPDATE=pylupdate5pro
-:: )
+)
 
-:: ::
-:: :: convert ui files to py files
-:: ::
-:: FOR /R %%a IN (ui\*.ui) DO (
-::     echo %%~na
-::     %PYUIC% -o uic\%%~na.py --from-imports ui\%%~na.ui
-:: )
-:: 
-:: ::
-:: :: convert help files from .xlsx to .py
-:: ::
-:: %PYTHON_PATH%\python.exe ..\doc\help_dialogs\Script\xlsx_to_artisan_help.py all
-:: 
+::
+:: convert ui files to py files
+::
+FOR /R %%a IN (ui\*.ui) DO (
+    echo %%~na
+    %PYUIC% -o uic\%%~na.py --from-imports ui\%%~na.ui
+)
+
+::
+:: convert help files from .xlsx to .py
+::
+%PYTHON_PATH%\python.exe ..\doc\help_dialogs\Script\xlsx_to_artisan_help.py all
+
 ::
 :: Process translation files
 ::
