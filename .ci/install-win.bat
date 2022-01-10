@@ -1,30 +1,30 @@
  @echo off
 :: the current directory on entry to this script must be the folder above src
 
-echo Appveyor %APPVEYOR%
 ::
 :: script comandline option LEGACY used to flag a legacy build
 :: when running locally these paths need to be set here 
 ::
-if "%APPVEYOR%" NEQ "True" (echo How you get up there)
-rem if "%APPVEYOR%" NEQ "True" (
-rem     if "%~1" == "LEGACY" (
-rem         set PYTHON_PATH=c:\Python38-64
-rem         set QT_PATH=c:\qt\5.15\msvc2019_64
-rem         set PYINSTALLER_VER=4.3
-rem         set VC_REDIST=https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe
-rem     ) else (
-rem         set PYTHON_PATH=c:\Python310-64
-rem         set QT_PATH=c:\qt\6.2\msvc2019_64
-rem         set PYINSTALLER_VER=4.7
-rem         set VC_REDIST=https://aka.ms/vs/17/release/vc_redist.x64.exe
-rem     )
-rem )
-:: path already updated in the Appveyor environment
 SETLOCAL ENABLEDELAYEDEXPANSION
 if "%APPVEYOR%" NEQ "True" (
+    if "%~1" == "LEGACY" (
+        set PYTHON_PATH=c:\Python38-64
+        set QT_PATH=c:\qt\5.15\msvc2019_64
+        set PYINSTALLER_VER=4.3
+        set VC_REDIST=https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe
+    ) else (
+        set PYTHON_PATH=c:\Python310-64
+        set QT_PATH=c:\qt\6.2\msvc2019_64
+        set PYINSTALLER_VER=4.7
+        set VC_REDIST=https://aka.ms/vs/17/release/vc_redist.x64.exe
+    )
     set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
 )
+:: path already updated in the Appveyor environment
+rem SETLOCAL ENABLEDELAYEDEXPANSION
+rem if "%APPVEYOR%" NEQ "True" (
+rem     set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
+rem )
 
 echo Python Version
 python -V
@@ -32,15 +32,15 @@ python -V
 %PYTHON_PATH%\python.exe -m pip install --upgrade pip
 %PYTHON_PATH%\python.exe -m pip install wheel
 
-%PYTHON_PATH%\\python.exe -m pip install .ci\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
+::%PYTHON_PATH%\\python.exe -m pip install .ci\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
 :: build the pyinstaller bootloader and install
-rem curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
-rem 7z x v%PYINSTALLER_VER%.zip
-rem del v%PYINSTALLER_VER%.zip
-rem cd pyinstaller-%PYINSTALLER_VER%\bootloader
-rem %PYTHON_PATH%\python.exe ./waf all --target-arch=64bit
-rem cd ..
-rem %PYTHON_PATH%\python.exe setup.py -q install
+curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
+7z x v%PYINSTALLER_VER%.zip
+del v%PYINSTALLER_VER%.zip
+cd pyinstaller-%PYINSTALLER_VER%\bootloader
+%PYTHON_PATH%\python.exe ./waf all --target-arch=64bit
+cd ..
+%PYTHON_PATH%\python.exe setup.py -q install
 rem cd ..
 :: end: build the pyinstaller bootloader and install
 
