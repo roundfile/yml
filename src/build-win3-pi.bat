@@ -7,13 +7,14 @@
 if "%APPVEYOR%" == "True" (
     set PYTHON_PATH=%PYTHON%
 ) else (
-    set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
     if "%~1" NEQ "LEGACY" (
         set PYTHON_PATH=c:\Python310-64
     ) else (
         set PYTHON_PATH=c:\Python38-64
     )
 )
+set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
+
 ::
 :: comandline option LEGACY used to flag a legacy build in NSIS
 ::

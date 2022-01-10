@@ -21,8 +21,8 @@ if "%APPVEYOR%" == "True" (
         set PYTHON_PATH=c:\Python38-64
         set PYINSTALLER_VER=4.3
     )
-    set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 )
+set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 
 ::
 :: Set some env variables based on if this is a regular or LEGACY build
