@@ -33,20 +33,21 @@ python -V
 %PYTHON_PATH%\python.exe -m pip install --upgrade pip
 %PYTHON_PATH%\python.exe -m pip install wheel
 
-:: custom build the pyinstaller bootloader and install
-echo curl pyinstaller v%PYINSTALLER_VER%
-curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
-7z x v%PYINSTALLER_VER%.zip
-del v%PYINSTALLER_VER%.zip
-cd pyinstaller-%PYINSTALLER_VER%\bootloader
-%PYTHON_PATH%\python.exe ./waf all --target-arch=64bit
-cd ..
-%PYTHON_PATH%\python.exe setup.py -q install
-cd ..
-:: end build the pyinstaller bootloader and install
-::
-:: alternate - install pre-built pyinstaller wheel
-::%PYTHON_PATH%\\python.exe -m pip install .ci\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
+:: custom build the pyinstaller bootloader or install a prebuilt
+%BUILD_APPVEYOR%=False
+if /i "%BUILD_APPVEYOR%"=="True" (
+    echo curl pyinstaller v%PYINSTALLER_VER%
+    curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
+    7z x v%PYINSTALLER_VER%.zip
+    del v%PYINSTALLER_VER%.zip
+    cd pyinstaller-%PYINSTALLER_VER%\bootloader
+    %PYTHON_PATH%\python.exe ./waf all --target-arch=64bit
+    cd ..
+    %PYTHON_PATH%\python.exe setup.py -q install
+    cd ..
+) else (
+    %PYTHON_PATH%\\python.exe -m pip install .ci\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
+)
 
 ::
 :: install Artisan required libraries from pip
