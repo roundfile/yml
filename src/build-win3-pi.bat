@@ -22,10 +22,6 @@ if /i "%APPVEYOR%" NEQ "True" (
     )
     set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
 )
-:: path already updated in the Appveyor environment
-if /i "%APPVEYOR%" NEQ "True" (
-    set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
-)
 
 ::
 :: convert ui files to py files
@@ -74,7 +70,7 @@ if exist "%ProgramFiles(x86)%\NSIS\makensis.exe"    set NSIS_EXE="%ProgramFiles(
 ::dave
 echo.
 echo.
-echo ARTISAN_VERSION %ARTISAN_VERSION%, ARTISAN_BUILD %ARTISAN_BUILD%
+echo ARTISAN_SPEC %ARTISAN_SPEC%, ARTISAN_VERSION %ARTISAN_VERSION%, ARTISAN_BUILD %ARTISAN_BUILD%
 
 :: run NSIS to build the install .exe file
 %NSIS_EXE% /DPRODUCT_VERSION=%ARTISAN_VERSION%.%ARTISAN_BUILD% /DLEGACY=%ARTISAN_LEGACY% setup-install3-pi.nsi
@@ -87,3 +83,6 @@ if /i "%APPVEYOR%" == "True" (
     7z a artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
     del LICENSE.txt
 )
+::dave
+echo *** Directory
+dir *.zip

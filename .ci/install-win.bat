@@ -10,21 +10,18 @@ if /i "%APPVEYOR%" NEQ "True" (
     if /i "%~1" == "LEGACY" (
         set PYTHON_PATH=c:\Python38-64
         set QT_PATH=c:\qt\5.15\msvc2019_64
+        set ARTISAN_SPEC=win-legacy
         set PYINSTALLER_VER=4.3
         set VC_REDIST=https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe
     ) else (
         set PYTHON_PATH=c:\Python310-64
         set QT_PATH=c:\qt\6.2\msvc2019_64
+        set ARTISAN_SPEC=win
         set PYINSTALLER_VER=4.7
         set VC_REDIST=https://aka.ms/vs/17/release/vc_redist.x64.exe
     )
     set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
 )
-:: path already updated in the Appveyor environment
-rem SETLOCAL ENABLEDELAYEDEXPANSION
-rem if "%APPVEYOR%" NEQ "True" (
-rem     set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
-rem )
 
 echo Python Version
 python -V
