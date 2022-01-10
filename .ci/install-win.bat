@@ -27,7 +27,7 @@ python -V
 %PYTHON_PATH%\python.exe -m pip install --upgrade pip
 %PYTHON_PATH%\python.exe -m pip install wheel
 
-%PYTHON_PATH%\\python.exe -m pip install .ci\\pyinstaller-4.3-py3-none-any.whl
+::%PYTHON_PATH%\\python.exe -m pip install .ci\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
 :: build the pyinstaller bootloader and install
 curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
 7z x v%PYINSTALLER_VER%.zip
