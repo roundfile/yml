@@ -54,11 +54,14 @@ for:
     UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
-    - "SET PATH=%PYTHON_APV%;%PYTHON_APV%\\Scripts;%PATH%"
-    - .ci\install-win.bat LEGACY
+#    - "SET PATH=%PYTHON_APV%;%PYTHON_APV%\\Scripts;%PATH%"
+#    - .ci\install-win.bat LEGACY
+    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\\Scripts;%PATH%
+    - cmd: .ci\install-win.bat LEGACY
 
   build_script:
-    - echo "Windows Legacy Build"
+#    - echo "Windows Legacy Build"
+    - cmd: echo Windows Legacy Build
     - cmd: cd src
     - cd
 
@@ -98,12 +101,16 @@ for:
     UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
-    - echo "Windows Install"
-    - "SET PATH=%PYTHON_PATH%;%PYTHON_PATH%\\Scripts;%PATH%"
-    - .ci\install-win.bat
+#    - echo "Windows Install"
+#    - "SET PATH=%PYTHON_PATH%;%PYTHON_PATH%\\Scripts;%PATH%"
+#    - .ci\install-win.bat
+    - cmd: echo Windows Install
+    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\\Scripts;%PATH%
+    - cmd: .ci\install-win.bat
 
   build_script:
-    - echo "Windows Build"
+#    - echo "Windows Build"
+    - cmd: echo Windows Build
     - cmd: cd src
     # update the __revision__ field with the left seven of the GIT commit hash
     - ps: $GIT_VERSION=git rev-parse --verify --short HEAD
@@ -115,7 +122,8 @@ for:
     - cmd: 7z a artisan-win-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
 
   test_script:
-    - python -m unittest discover
+#    - python -m unittest discover
+    - cmd: python -m unittest discover
 
 #  artifacts:
 #    - path: 'src\artisan-*.zip'

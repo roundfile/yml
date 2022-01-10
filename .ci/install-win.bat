@@ -1,6 +1,15 @@
  @echo off
 :: the current directory on entry to this script must be the folder above src
 
+if "%APPVEYOR%" NEQ "True" (
+    if "%~1" == "LEGACY" (
+        set foobar=legacy
+    ) else (
+        set foobar=not legacy
+    )
+)
+set foobar
+
 ::
 :: script comandline option LEGACY used to flag a legacy build
 :: when running locally these paths need to be set here 
