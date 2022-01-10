@@ -1,7 +1,7 @@
  @echo off
 :: the current directory on entry to this script must be the folder above src
 
-if "%APPVEYOR%" NEQ "True" (
+if "%APPVEYOR%" == "True" (
     if "%~1" == "LEGACY" (
         set foobar=legacy
     ) else (
