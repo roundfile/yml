@@ -21,6 +21,7 @@ if "%APPVEYOR%" == "True" (
         set PYTHON_PATH=c:\Python38-64
         set PYINSTALLER_VER=4.3
     )
+    set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 )
 
 ::
