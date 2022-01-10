@@ -44,8 +44,8 @@ cd ..
 rem cd ..
 :: end: build the pyinstaller bootloader and install
 
-%PYTHON_PATH%\python.exe -m pip install -r src\\requirements.txt
-%PYTHON_PATH%\python.exe -m pip install -r src\\requirements-%ARTISAN_SPEC%.txt
+%PYTHON_PATH%\python.exe -m pip install -r src\requirements.txt
+%PYTHON_PATH%\python.exe -m pip install -r src\requirements-%ARTISAN_SPEC%.txt
 echo curl vc_redist.x64.exe
 curl -L -O %VC_REDIST%
 echo curl snap7
