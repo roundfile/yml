@@ -14,7 +14,6 @@ echo ***** 1
 if "%APPVEYOR%" == "True" (
     set PYTHON_PATH=%PYTHON%
 ) else (
-    set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
     if "%~1" NEQ "LEGACY" (
         set PYTHON_PATH=c:\Python310-64
         set PYINSTALLER_VER=4.7
