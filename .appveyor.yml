@@ -119,6 +119,9 @@ for:
     - ps: $GIT_VERSION=git rev-parse --verify --short HEAD
     - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '0'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
     - ps: move -force newfile artisanlib/__init__.py
+    #dave
+    - cd
+    - type artisanlib/__init__.py
     # run the install script
     - cmd: build-win3-pi.bat
     - cmd: copy ..\LICENSE LICENSE.txt
