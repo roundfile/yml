@@ -118,9 +118,9 @@ for:
       "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
-      - .ci\install-win.bat
 ####    - echo "Windows Install"
-####    - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+    - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+    - .ci\install-win.bat
 ######$$##    - set QT_DIR=C:\Qt\6.2\msvc2019_64
 ######$$##    - set PY_DIR=C:\Python38-x64
 ######$$##    - set PATH=%QT_DIR%\bin;%PY_DIR%;%PATH%
