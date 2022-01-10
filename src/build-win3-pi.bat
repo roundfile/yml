@@ -50,7 +50,7 @@ FOR /R %%a IN (ui\*.ui) DO (
 ::
 set PATH=C:\Program Files (x86)\microsoft Visual Studio\2019\Community\VC\Auxiliary\Build;%PATH%
 type "C:\Program Files (x86)\microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat"
-call vcvarsall.bat x86_amd64
+vcvarsall.bat x86_amd64
 ::call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
 echo *****Translating files defined in artisan.pro
 %QT_PATH%\bin\lrelease -verbose artisan.pro
