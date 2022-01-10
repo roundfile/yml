@@ -1,0 +1,26 @@
+CHANGED FILES:
+.appveyor.xml
+build-win3-pi.bat
+artisan-win.spec
+artisan-win-legacy.spec
+setup-install3-pi.bat
+xlsx_to_artisan_help.py
+
+New:
+.ci\install-win.bat
+
+
+Always use latest vc_redist.x64.exe
+Generate Help files
+Generate Translation files (lrelease only)
+Generate UIC .py files
+?Build latest (or specified version) pyinstaller
+Set LEGACY to use 
+    Python 3.8
+    PyQt 5.15
+    pyinstaller 4.3
+Set Windows to use
+    Python 3.10
+    PyQt 6.2
+    pyinstaller 4.7 (would like to find a way to auto use the latest release)    
+

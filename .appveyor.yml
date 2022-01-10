@@ -52,7 +52,7 @@ for:
   install:
 ####    - echo "Windows Legacy Install"
     - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
-    - .ci\install-win.bat LEGACY
+#    - .ci\install-win.bat LEGACY
 ####    - echo "Python Version"
 ####    - python -V
 ####    - "%PYTHON%\\python.exe -m pip install --upgrade pip"
@@ -80,6 +80,7 @@ for:
 ####    - 7z x libusb-win32-bin-1.2.6.0.zip
 ####    - copy libusb-win32-bin-1.2.6.0\bin\amd64\libusb0.dll C:\Windows\SysWOW64
 ####
+
   build_script:
     - echo "Windows Legacy Build"
     - cmd: cd src
