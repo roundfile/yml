@@ -3,7 +3,7 @@
 echo ****** CD
 cd
 
-
+echo ***** 1
 ::
 :: comandline option LEGACY is used to flag a legacy build in NSIS
 ::
@@ -27,6 +27,7 @@ if "%APPVEYOR%" == "True" (
 ::
 :: Set some env variables based on if this is a regular or LEGACY build
 ::
+echo ***** 2
 if "%~1" NEQ "LEGACY"  (
     echo "Windows Install"
     set PYUIC=%PYTHON_PATH%\scripts\pyuic6.exe
