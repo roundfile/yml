@@ -1,11 +1,11 @@
  @echo off
 :: the current directory on entry to this script must be the folder above src
 
+echo Appveyor %APPVEYOR%
 ::
 :: script comandline option LEGACY used to flag a legacy build
 :: when running locally these paths need to be set here 
 ::
-
 if "%APPVEYOR%" NEQ "True" (
     if "%~1" == "LEGACY" (
         set PYTHON_PATH=c:\Python38-64
@@ -19,7 +19,6 @@ if "%APPVEYOR%" NEQ "True" (
         set VC_REDIST=https://aka.ms/vs/17/release/vc_redist.x64.exe
     )
 )
-
 :: path already updated in the Appveyor environment
 if "%APPVEYOR%" NEQ "True" (
     set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
