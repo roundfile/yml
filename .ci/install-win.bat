@@ -39,8 +39,8 @@ cd ..
 cd ..
 :: end: build the pyinstaller bootloader and install
 
-%PYTHON%\python.exe -m pip install -r src\\requirements.txt
-%PYTHON%\python.exe -m pip install -r src\\requirements-win-legacy.txt
+%PYTHON_PATH%\python.exe -m pip install -r src\\requirements.txt
+%PYTHON_PATH%\python.exe -m pip install -r src\\requirements-win-legacy.txt
 echo curl vc_redist.x64.exe
 curl -L -O %VC_REDIST%
 ::curl -L -O https://aka.ms/vs/17/release/vc_redist.x64.exe
