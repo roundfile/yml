@@ -18,7 +18,7 @@ if "%APPVEYOR%" NEQ "True" (
         set VC_REDIST=https://aka.ms/vs/17/release/vc_redist.x64.exe
     )
 )
-:: already set in the Appveyor environment
+:: path already updated in the Appveyor environment
 if "%APPVEYOR%" NEQ "True" (
     set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 )
