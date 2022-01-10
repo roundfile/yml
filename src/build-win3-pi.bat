@@ -2,33 +2,23 @@
 :: on entry to this script the current path must be the src folder
 
 ::
-:: set paths through environment variables 
+:: comandline option LEGACY used to flag a legacy build
+:: when running locally these paths need to be set here 
 ::
-if "%APPVEYOR%" == "True" (
-    set PYTHON_PATH=%PYTHON%
-) else (
-    if "%~1" NEQ "LEGACY" (
-        set PYTHON_PATH=c:\Python310-64
-    ) else (
+if "%APPVEYOR%" NEQ "True" (
+    if "%~1" == "LEGACY" (
         set PYTHON_PATH=c:\Python38-64
+        set ARTISAN_SPEC=win-legacy
+        set PYUIC=%PYTHON_PATH%\scripts\pyuic5.exe
+        set QT_PATH=c:\qt\5.15\msvc2019_64
+    ) else (
+        set PYTHON_PATH=c:\Python310-64
+        set ARTISAN_SPEC=win
+        set PYUIC=%PYTHON_PATH%\scripts\pyuic6.exe
+        set QT_PATH=c:\qt\6.2\msvc2019_64
     )
 )
 set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
-
-::
-:: comandline option LEGACY used to flag a legacy build in NSIS
-::
-if "%~1" NEQ "LEGACY"  (
-    set ARTISAN_SPEC=win
-    set PYUIC=%PYTHON_PATH%\scripts\pyuic6.exe
-    set QT_PATH=c:\qt\6.2\msvc2019_64
-    set PYLUPDATE=pylupdate6pro
-) else (
-    set ARTISAN_SPEC=win-legacy
-    set PYUIC=%PYTHON_PATH%\scripts\pyuic5.exe
-    set QT_PATH=c:\qt\5.15\msvc2019_64
-    set PYLUPDATE=pylupdate5pro
-)
  
 ::
 :: convert ui files to py files
