@@ -121,11 +121,10 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
     #dave
     - cd
-    - type artisanlib/__init__.py
     # run the install script
     - cmd: build-win3-pi.bat
-    - cmd: copy ..\LICENSE LICENSE.txt
-    - cmd: 7z a artisan-win-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
+#    - cmd: copy ..\LICENSE LICENSE.txt
+#    - cmd: 7z a artisan-win-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
 
   test_script:
 #    - python -m unittest discover

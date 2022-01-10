@@ -78,6 +78,9 @@ echo ARTISAN_VERSION %ARTISAN_VERSION%, ARTISAN_BUILD %ARTISAN_BUILD%
 :: run NSIS to build the install .exe file
 %NSIS_EXE% /DPRODUCT_VERSION=%ARTISAN_VERSION%.%ARTISAN_BUILD% /DLEGACY=%ARTISAN_LEGACY% setup-install3-pi.nsi
 
-if "%APPVEYOR%" NEQ "True" (
+::
+:: package the zip file 
+::
+if "%APPVEYOR%" == "True" (
     7z a artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip Setup*.exe ..\LICENSE.txt README.txt
 )
