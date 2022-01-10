@@ -21,8 +21,9 @@ rem         set VC_REDIST=https://aka.ms/vs/17/release/vc_redist.x64.exe
 rem     )
 rem )
 :: path already updated in the Appveyor environment
+SETLOCAL ENABLEDELAYEDEXPANSION
 if "%APPVEYOR%" NEQ "True" (
-    set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
+    set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
 )
 
 echo Python Version
