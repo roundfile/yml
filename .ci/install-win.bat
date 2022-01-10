@@ -23,28 +23,28 @@ if "%APPVEYOR%" == "True" (
         set PYINSTALLER_VER=4.3
     )
 )
-:: 
-:: ::
-:: :: Set some env variables based on if ths is a regular or LEGACY build
-:: ::
-:: if "%~1" NEQ "LEGACY"  (
-::     echo "Windows Install"
-::     set PYUIC=%PYTHON_PATH%\scripts\pyuic6.exe
-::     set ARTISAN_LEGACY="False"
-::     set ARTISAN_SPEC=win
-::     set QT_PATH=c:\qt\6.2\msvc2019_64
-::     set PYLUPDATE=pylupdate6pro
-::     set VC_REDIST=https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe
-:: 
-:: ) else (
-::     echo "Windows Legacy Install"
-::     set PYUIC=%PYTHON_PATH%\scripts\pyuic5.exe
-::     set ARTISAN_LEGACY="True"
-::     set ARTISAN_SPEC=win-legacy
-::     set QT_PATH=c:\qt\5.15\msvc2019_64
-::     set PYLUPDATE=pylupdate5pro
-::     set VC_REDIST=https://aka.ms/vs/17/release/vc_redist.x64.exe
-:: )
+
+::
+:: Set some env variables based on if ths is a regular or LEGACY build
+::
+if "%~1" NEQ "LEGACY"  (
+    echo "Windows Install"
+    set PYUIC=%PYTHON_PATH%\scripts\pyuic6.exe
+    set ARTISAN_LEGACY="False"
+    set ARTISAN_SPEC=win
+    set QT_PATH=c:\qt\6.2\msvc2019_64
+    set PYLUPDATE=pylupdate6pro
+    set VC_REDIST=https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe
+
+) else (
+    echo "Windows Legacy Install"
+    set PYUIC=%PYTHON_PATH%\scripts\pyuic5.exe
+    set ARTISAN_LEGACY="True"
+    set ARTISAN_SPEC=win-legacy
+    set QT_PATH=c:\qt\5.15\msvc2019_64
+    set PYLUPDATE=pylupdate5pro
+    set VC_REDIST=https://aka.ms/vs/17/release/vc_redist.x64.exe
+)
 ::  
 :: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\\Scripts;%PATH%"
 :: 
