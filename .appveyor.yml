@@ -9,8 +9,8 @@ clone_depth: 1
 
 environment:
   matrix:
-#  - job_name: windows_legacy
-#    appveyor_build_worker_image: Visual Studio 2019
+  - job_name: windows_legacy
+    appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
     appveyor_build_worker_image: Visual Studio 2019
 #  - job_name: macos
@@ -51,8 +51,7 @@ for:
     ARTISAN_LEGACY: "True"
     ARTISAN_SPEC: "win-legacy"
     VC_REDIST: "https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe"
-    UPLOADTOOL_BODY:
-      "WARNING: pre-release builds may not work. Use at your own risk."
+    UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
     - "SET PATH=%PYTHON_APV%;%PYTHON_APV%\\Scripts;%PATH%"
@@ -96,13 +95,11 @@ for:
     ARTISAN_LEGACY: "False"
     ARTISAN_SPEC: "win"
     VC_REDIST: "https://aka.ms/vs/17/release/vc_redist.x64.exe"
-    UPLOADTOOL_BODY:
-      "WARNING: pre-release builds may not work. Use at your own risk."
+    UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
-    - set ARTISAN_LEGACY
     - echo "Windows Install"
-    - "SET PATH=%PYTHON_APV%;%PYTHON_APV%\\Scripts;%PATH%"
+    - "SET PATH=%PYTHON_PATH%;%PYTHON_PATH%\\Scripts;%PATH%"
     - .ci\install-win.bat
 
   build_script:

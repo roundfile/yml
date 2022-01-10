@@ -20,8 +20,11 @@ if "%APPVEYOR%" NEQ "True" (
         set QT_PATH=c:\qt\6.2\msvc2019_64
     )
 )
-set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
- 
+:: path already updated in the Appveyor environment
+if "%APPVEYOR%" NEQ "True" (
+    set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
+)
+
 ::
 :: convert ui files to py files
 ::
