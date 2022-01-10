@@ -22,7 +22,7 @@ if "%APPVEYOR%" NEQ "True" (
 if "%APPVEYOR%" NEQ "True" (
     set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 )
-
+path
 echo Python Version
 python -V
 
