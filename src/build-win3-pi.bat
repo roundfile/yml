@@ -27,6 +27,7 @@ rem SETLOCAL ENABLEDELAYEDEXPANSION
 rem if "%APPVEYOR%" NEQ "True" (
 rem     set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
 rem )
+path
 
 ::
 :: convert ui files to py files
