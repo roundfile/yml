@@ -68,12 +68,15 @@ rem cd ..
 
 %PYTHON%\python.exe -m pip install -r src\\requirements.txt
 %PYTHON%\python.exe -m pip install -r src\\requirements-win-legacy.txt
+echo curl vc_redist.x64.exe
 curl -L -O %VC_REDIST%
 ::curl -L -O https://aka.ms/vs/17/release/vc_redist.x64.exe
 ::curl -L -O https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe
+echo curl snap7
 curl -k -L -O https://netcologne.dl.sourceforge.net/project/snap7/1.4.2/snap7-full-1.4.2.7z
 7z x snap7-full-1.4.2.7z
 copy snap7-full-1.4.2\build\bin\win64\snap7.dll c:\windows
+echo curl libusb-win32
 curl -k -L -O https://netcologne.dl.sourceforge.net/project/libusb-win32/libusb-win32-releases/1.2.6.0/libusb-win32-bin-1.2.6.0.zip
 7z x libusb-win32-bin-1.2.6.0.zip
 copy libusb-win32-bin-1.2.6.0\bin\amd64\libusb0.dll C:\Windows\SysWOW64
