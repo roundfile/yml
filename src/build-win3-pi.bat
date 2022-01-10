@@ -5,6 +5,7 @@
 :: comandline option LEGACY used to flag a legacy build
 :: when running locally these paths need to be set here 
 ::
+SETLOCAL ENABLEDELAYEDEXPANSION
 if "%APPVEYOR%" NEQ "True" (
     if "%~1" == "LEGACY" (
         set PYTHON_PATH=c:\Python38-64
@@ -19,12 +20,13 @@ if "%APPVEYOR%" NEQ "True" (
         set PYUIC=%PYTHON_PATH%\scripts\pyuic6.exe
         set QT_PATH=c:\qt\6.2\msvc2019_64
     )
-)
-:: path already updated in the Appveyor environment
-SETLOCAL ENABLEDELAYEDEXPANSION
-if "%APPVEYOR%" NEQ "True" (
     set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
 )
+:: path already updated in the Appveyor environment
+rem SETLOCAL ENABLEDELAYEDEXPANSION
+rem if "%APPVEYOR%" NEQ "True" (
+rem     set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
+rem )
 
 ::
 :: convert ui files to py files

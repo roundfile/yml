@@ -104,11 +104,11 @@ for:
 
   install:
 #    - echo "Windows Install"
-#    - "SET PATH=%PYTHON_PATH%;%PYTHON_PATH%\\Scripts;%PATH%"
+    - "SET PATH=%PYTHON_PATH%;%PYTHON_PATH%\\Scripts;%PATH%"
 #    - .ci\install-win.bat
     - cmd: path
     - cmd: echo Windows Install
-    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
+#    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
     - cmd: .ci\install-win.bat
 
   build_script:
