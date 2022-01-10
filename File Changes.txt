@@ -10,7 +10,7 @@ New:
 .ci\install-win.bat
 
 
-All verion and path information set in appveyor.yml, when run locally set in build-win3-pi.bat and install-win.bat
+All version and path information set in appveyor.yml, when run locally set in build-win3-pi.bat and install-win.bat
 Always use latest vc_redist.x64.exe
 Generate Help files
 Generate Translation files (lrelease only)

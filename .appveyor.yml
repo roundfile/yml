@@ -9,8 +9,8 @@ clone_depth: 1
 
 environment:
   matrix:
-  - job_name: windows_legacy
-    appveyor_build_worker_image: Visual Studio 2019
+#  - job_name: windows_legacy
+#    appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
     appveyor_build_worker_image: Visual Studio 2019
 #  - job_name: macos
@@ -99,6 +99,7 @@ for:
       "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
+    - set ARTISAN_LEGACY
     - echo "Windows Install"
     - "SET PATH=%PYTHON_APV%;%PYTHON_APV%\\Scripts;%PATH%"
     - .ci\install-win.bat
