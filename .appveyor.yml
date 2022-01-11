@@ -151,9 +151,6 @@ for:
   build_script:
     - echo "MacOS Build"
     - chmod +x src/*.sh
-    - ls -l src/artisan.pro
-    - ls -l src/pylupdate6pro
-    - chmod +x src/pylupdate6pro
     - .ci/script-${ARTISAN_OS}.sh
 
   test_script:

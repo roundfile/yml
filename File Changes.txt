@@ -1,13 +1,13 @@
 CHANGED FILES:
-.appveyor.xml
-build-win3-pi.bat
-artisan-win.spec
-artisan-win-legacy.spec
-setup-install3-pi.bat
-xlsx_to_artisan_help.py
+o .appveyor.xml
+o build-win3-pi.bat
+o artisan-win.spec
+o artisan-win-legacy.spec
+o setup-install3-pi.bat
+o xlsx_to_artisan_help.py
 
 New:
-.ci\install-win.bat
+o .ci\install-win.bat
 
 
 All version and path information set in appveyor.yml, when run locally set in build-win3-pi.bat and install-win.bat
@@ -23,6 +23,6 @@ Set LEGACY to use
 Set Windows to use
     Python 3.10
     PyQt 6.2
-    pyinstaller 4.7 (would like to find a way to auto use the latest release)    
+    pyinstaller 4.7
 Commented test script section.
 
