@@ -6,7 +6,7 @@
 :: when running locally these paths need to be set here 
 ::   normally they are set in appveyor.yml
 ::
-SETLOCAL ENABLEDELAYEDEXPANSION
+setlocal enabledelayedexpansion
 if /i "%APPVEYOR%" NEQ "True" (
     if /i "%~1" == "LEGACY" (
         set PYTHON_PATH=c:\Python38-64
