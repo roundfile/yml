@@ -38,6 +38,7 @@ echo PythonPath %PYTHON_PATH%
 echo Artisan_Legacy %ARTISAN_LEGACY%
 echo Artisan_Spec %ARTISAN_SPEC%
 echo Build_PyInstaller %BUILD_PYINSTALLER%
+echo CMD %PYTHON_PATH%\python.exe -m pip install -r src\requirements-%ARTISAN_SPEC%.txt
 echo --
 set
 echo -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
