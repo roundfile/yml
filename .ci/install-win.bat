@@ -24,9 +24,9 @@ if /i "%APPVEYOR%" NEQ "True" (
     set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
 ) else (
     if /i "%ARTISAN_LEGACY%" NEQ "True" (
-        set ARTISAN_SPEC=win-legacy
+        set ARTISAN_SPEC=win
     ) else (
-        set ARTISAN_SPEC=win    
+        set ARTISAN_SPEC=win-legacy    
     )
 )
 
