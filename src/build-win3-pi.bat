@@ -11,11 +11,13 @@ if /i "%APPVEYOR%" NEQ "True" (
     if /i "%~1" == "LEGACY" (
         set PYTHON_PATH=c:\Python38-64
         set ARTISAN_LEGACY=True
+        set ARTISAN_SPEC=win-legacy
         set PYUIC=pyuic5.exe
         set QT_PATH=c:\qt\5.15\msvc2019_64
     ) else (
         set PYTHON_PATH=c:\Python310-64
         set ARTISAN_LEGACY=False
+        set ARTISAN_SPEC=win
         set PYUIC=pyuic6.exe
         set QT_PATH=c:\qt\6.2\msvc2019_64
     )
@@ -24,7 +26,7 @@ if /i "%APPVEYOR%" NEQ "True" (
     if /i "%ARTISAN_LEGACY%" NEQ "True" (
         set ARTISAN_SPEC=win
     ) else (
-        set ARTISAN_SPEC=win-legacy    
+        set ARTISAN_SPEC=win-legacy
     )
 )
 

@@ -33,6 +33,11 @@ if /i "%APPVEYOR%" NEQ "True" (
 echo Python Version
 python -V
 
+echo -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+echo PythonPath %PYTHON_PATH%
+echo Artisan_Legacy %ARTISAN_LEGACY%
+echo -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
+
 ::
 :: get pip up to date
 ::
