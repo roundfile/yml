@@ -68,17 +68,14 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
 ::
 echo curl vc_redist.x64.exe
 curl -L -O %VC_REDIST%
-if not exist %VC_REDIST% (exit /b 91)
 
 echo curl snap7
 curl -k -L -O https://netcologne.dl.sourceforge.net/project/snap7/1.4.2/snap7-full-1.4.2.7z
 7z x snap7-full-1.4.2.7z
-if not exist snap7-full-1.4.2\build\bin\win64\snap7.dll (exit /b 92)
 copy snap7-full-1.4.2\build\bin\win64\snap7.dll c:\windows
 
 echo curl libusb-win32
 curl -k -L -O https://netcologne.dl.sourceforge.net/project/libusb-win32/libusb-win32-releases/1.2.6.0/libusb-win32-bin-1.2.6.0.zip
 7z x libusb-win32-bin-1.2.6.0.zip
-if not exist libusb-win32-bin-1.2.6.0\bin\amd64\libusb0.dll (exit /b 93)
 copy libusb-win32-bin-1.2.6.0\bin\amd64\libusb0.dll C:\Windows\SysWOW64
 
