@@ -36,6 +36,7 @@ python -V
 echo -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 echo PythonPath %PYTHON_PATH%
 echo Artisan_Legacy %ARTISAN_LEGACY%
+echo Artisan_Spec %ARTISAN_SPEC%
 echo -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 ::
