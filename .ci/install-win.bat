@@ -26,7 +26,7 @@ if /i "%APPVEYOR%" NEQ "True" (
     if /i "%ARTISAN_LEGACY%" NEQ "True" (
         set ARTISAN_SPEC=win
     ) else (
-        set ARTISAN_SPEC=win-legacy    
+        set ARTISAN_SPEC=win-legacy
     )
 )
 
