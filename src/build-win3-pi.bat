@@ -28,13 +28,6 @@ if /i "%APPVEYOR%" NEQ "True" (
     )
 )
 
-::dave
-echo ************************************************
-echo %PATH%
-echo ************************************************
-set
-::dave end
-
 ::
 :: convert .ui files to .py files
 ::

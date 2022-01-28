@@ -45,35 +45,21 @@ python -V
 %PYTHON_PATH%\python.exe -m pip install -r src\requirements.txt
 %PYTHON_PATH%\python.exe -m pip install -r src\requirements-%ARTISAN_SPEC%.txt
 
-:: dave
-echo # # # # # # # # # # # # # # # # # # # # # # #
-echo %ARTISAN_SPEC%
-:: dave end
-
 :: custom build the pyinstaller bootloader or install a prebuilt
 ::%BUILD_PYINSTALLER%=False
 if /i "%BUILD_PYINSTALLER%"=="True" (
     echo curl pyinstaller v%PYINSTALLER_VER%
     curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
-    
-    echo ----------------
-    dir
-    echo ----------------
-    
-    
     7z x v%PYINSTALLER_VER%.zip
     del v%PYINSTALLER_VER%.zip
-    
-    if not exist pyinstaller-%PYINSTALLER_VER%\bootloader\ (exit /b 90)
-    
-    
+    if not exist pyinstaller-%PYINSTALLER_VER%\bootloader\ (exit /b 101)
     cd pyinstaller-%PYINSTALLER_VER%\bootloader
     %PYTHON_PATH%\python.exe ./waf all --target-arch=64bit
     cd ..
     %PYTHON_PATH%\python.exe setup.py -q install
     cd ..
 ) else (
-    if not exist .ci\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 99)
+    if not exist .ci\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 102)
     %PYTHON_PATH%\\python.exe -m pip install .ci\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
 )
 
@@ -82,14 +68,17 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
 ::
 echo curl vc_redist.x64.exe
 curl -L -O %VC_REDIST%
+if not exist %VC_REDIST% (exit /b 91)
 
 echo curl snap7
 curl -k -L -O https://netcologne.dl.sourceforge.net/project/snap7/1.4.2/snap7-full-1.4.2.7z
 7z x snap7-full-1.4.2.7z
+if not exist snap7-full-1.4.2\build\bin\win64\snap7.dll (exit /b 92)
 copy snap7-full-1.4.2\build\bin\win64\snap7.dll c:\windows
 
 echo curl libusb-win32
 curl -k -L -O https://netcologne.dl.sourceforge.net/project/libusb-win32/libusb-win32-releases/1.2.6.0/libusb-win32-bin-1.2.6.0.zip
 7z x libusb-win32-bin-1.2.6.0.zip
+if not exist libusb-win32-bin-1.2.6.0\bin\amd64\libusb0.dll (exit /b 93)
 copy libusb-win32-bin-1.2.6.0\bin\amd64\libusb0.dll C:\Windows\SysWOW64
 
