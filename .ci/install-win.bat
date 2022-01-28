@@ -34,8 +34,8 @@ python -V
 %PYTHON_PATH%\python.exe -m pip install wheel
 
 :: custom build the pyinstaller bootloader or install a prebuilt
-::%BUILD_APPVEYOR%=False
-if /i "%BUILD_APPVEYOR%"=="True" (
+::%BUILD_PYINSTALLER%=False
+if /i "%BUILD_PYINSTALLER%"=="True" (
     echo curl pyinstaller v%PYINSTALLER_VER%
     curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
     7z x v%PYINSTALLER_VER%.zip
