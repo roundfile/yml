@@ -22,8 +22,8 @@ if /i "%APPVEYOR%" NEQ "True" (
     set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
 )
 :: select the appropriate .spec file to use
-if /i "%ARTISAN_LEGACY% NEQ "True" (
-    set ARTISAN_SPEC=win-legacy    
+if /i "%ARTISAN_LEGACY%" NEQ "True" (
+    set ARTISAN_SPEC=win-legacy
 ) else (
     set ARTISAN_SPEC=win    
 )
