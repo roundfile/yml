@@ -39,6 +39,17 @@ python -V
 %PYTHON_PATH%\python.exe -m pip install --upgrade pip
 %PYTHON_PATH%\python.exe -m pip install wheel
 
+::
+:: install Artisan required libraries from pip
+::
+%PYTHON_PATH%\python.exe -m pip install -r src\requirements.txt
+%PYTHON_PATH%\python.exe -m pip install -r src\requirements-%ARTISAN_SPEC%.txt
+
+:: dave
+echo # # # # # # # # # # # # # # # # # # # # # # #
+echo %ARTISAN_SPEC%
+:: dave end
+
 :: custom build the pyinstaller bootloader or install a prebuilt
 ::%BUILD_PYINSTALLER%=False
 if /i "%BUILD_PYINSTALLER%"=="True" (
@@ -52,14 +63,9 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     %PYTHON_PATH%\python.exe setup.py -q install
     cd ..
 ) else (
+    if not exist .ci\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 99)
     %PYTHON_PATH%\\python.exe -m pip install .ci\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
 )
-
-::
-:: install Artisan required libraries from pip
-::
-%PYTHON_PATH%\python.exe -m pip install -r src\requirements.txt
-%PYTHON_PATH%\python.exe -m pip install -r src\requirements-%ARTISAN_SPEC%.txt
 
 ::
 :: download and install required libraries not available on pip
