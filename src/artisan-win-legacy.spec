@@ -7,7 +7,7 @@ if os.environ.get('APPVEYOR'):
   ARTISAN_SRC = r'C:\projects\artisan\src'
   PYTHON = r'c:\python38-x64'
 else:
-  ARTISAN_SRC = r'C:\Users\luther\Desktop\src'
+  ARTISAN_SRC = r'C:\Users\roast\Documents\artisan-roaster-scope\src'
   PYTHON = r'C:\Program Files\Python38'
 NAME = 'artisan'
 

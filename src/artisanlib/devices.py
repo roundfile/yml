@@ -117,12 +117,13 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         self.sorted_devices = sorted(dev)
         self.devicetypeComboBox = MyQComboBox()
         
-#        self.devicetypeComboBox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-#        self.devicetypeComboBox.view().setTextElideMode(Qt.TextElideMode.ElideNone)
-        # HACK: only needed for the macintosh UI on Qt 5.12 onwords; without long items get cutted in the popup
-        #  note the -7 as the width of the popup is too large if given the correct maximum characters
-#        self.devicetypeComboBox.setMinimumContentsLength(max(22,len(max(dev, key=len)) - 7)) # expects # characters, but is to wide
-        self.devicetypeComboBox.setSizePolicy(QSizePolicy.Policy.Expanding,self.devicetypeComboBox.sizePolicy().verticalPolicy())
+##        self.devicetypeComboBox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+##        self.devicetypeComboBox.view().setTextElideMode(Qt.TextElideMode.ElideNone)
+#        # HACK: only needed for the macintosh UI on Qt 5.12 onwords; without long items get cutted in the popup
+#        #  note the -7 as the width of the popup is too large if given the correct maximum characters
+##        self.devicetypeComboBox.setMinimumContentsLength(max(22,len(max(dev, key=len)) - 7)) # expects # characters, but is to wide
+# the following "hack" helped on PyQt5, but seems not to be needed on PyQt6 any longer
+#        self.devicetypeComboBox.setSizePolicy(QSizePolicy.Policy.Expanding,self.devicetypeComboBox.sizePolicy().verticalPolicy())
 
         self.devicetypeComboBox.addItems(self.sorted_devices)
         self.programedit = QLineEdit(self.aw.ser.externalprogram)
@@ -147,17 +148,17 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         ###################################################
         # PID
         controllabel =QLabel(QApplication.translate("Label", "Control ET"))
+        # 0 = FujiPXG, 1 = FujiPXR3, 2 = DTA, 3 = not used, 4 = PXF
+        supported_ET_pids = [("Fuji PXF", 4), ("Fuji PXG", 0), ("Fuji PXR", 1), ("Delta DTA", 2)]
         self.controlpidtypeComboBox = QComboBox()
-        self.controlpidtypeComboBox.addItems(["Fuji PXG","Fuji PXR","Delta DTA","Fuji PXF"])
+        self.controlpidtypeComboBox.addItems([item[0] for item in supported_ET_pids])
         cp = self.aw.ser.controlETpid[0]
-        if cp < 3:
-            self.controlpidtypeComboBox.setCurrentIndex(cp)  #pid type is index 0
-        else:
-            self.controlpidtypeComboBox.setCurrentIndex(cp-1)  #pid type is index 0 PXF has an index offset of 1 as index 3 is not used
+        self.controlpidtypeComboBox.setCurrentIndex([y[1] for y in supported_ET_pids].index(cp))
         btlabel =QLabel(QApplication.translate("Label", "Read BT"))
+        supported_BT_pids = [("", 2), ("Fuji PXF", 4), ("Fuji PXG", 0), ("Fuji PXR", 1), ("Delta DTA", 3)]
         self.btpidtypeComboBox = QComboBox()
-        self.btpidtypeComboBox.addItems(["Fuji PXG","Fuji PXR","None","Delta DTA","Fuji PXF"])
-        self.btpidtypeComboBox.setCurrentIndex(self.aw.ser.readBTpid[0]) #pid type is index 0
+        self.btpidtypeComboBox.addItems([item[0] for item in supported_BT_pids])
+        self.btpidtypeComboBox.setCurrentIndex([y[1] for y in supported_BT_pids].index(self.aw.ser.readBTpid[0])) #pid type is index 0
         label1 = QLabel(QApplication.translate("Label", "Type"))
         label2 = QLabel(QApplication.translate("Label", "RS485 Unit ID"))
         #rs485 possible unit IDs (1-32); unit 0 is master (computer)
@@ -1406,7 +1407,8 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 for i in range(nddevices):
                     try:
                         typeComboBox =  MyQComboBox()
-                        typeComboBox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents) # AdjustToMinimumContentsLengthWithIcon
+#                        typeComboBox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+#                        typeComboBox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
                         typeComboBox.addItems(devices[:])
                         try:
                             dev_name = self.aw.qmc.devices[max(0,self.aw.qmc.extradevices[i]-1)]
@@ -1497,14 +1499,13 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                         self.devicetable.setCellWidget(i,14,Fill2SpinBox)
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
-                self.devicetable.resizeColumnsToContents()
-                self.devicetable.setColumnWidth(0,150)
                 header = self.devicetable.horizontalHeader()
                 header.setStretchLastSection(True)
+                self.devicetable.resizeColumnsToContents()
                 # remember the columnwidth
                 for i in range(len(self.aw.qmc.devicetablecolumnwidths)):
                     try:
-                        self.devicetable.setColumnWidth(i,self.aw.qmc.devicetablecolumnwidths[i])
+                        self.devicetable.setColumnWidth(i, self.aw.qmc.devicetablecolumnwidths[i])
                     except Exception: # pylint: disable=broad-except
                         pass
         except Exception as e: # pylint: disable=broad-except
@@ -1999,7 +2000,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 elif str(self.btpidtypeComboBox.currentText()) == "Fuji PXR":
                     self.aw.ser.readBTpid[0] = 1
                     str2 = "Fuji PXR"
-                elif str(self.btpidtypeComboBox.currentText()) == "None":
+                elif str(self.btpidtypeComboBox.currentText()) == "":
                     self.aw.ser.readBTpid[0] = 2
                     str2 = "None"
                 elif str(self.btpidtypeComboBox.currentText()) == "Delta DTA":

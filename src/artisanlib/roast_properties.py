@@ -27,6 +27,7 @@ import plus.config  # @UnusedImport
 import plus.util
 import plus.stock
 import plus.controller
+import plus.queue
 
 #from artisanlib.suppress_errors import suppress_stdout_stderr
 from artisanlib.util import deltaLabelUTF8, appFrozen, stringfromseconds,stringtoseconds, toInt, toFloat, abbrevString
@@ -1708,6 +1709,8 @@ class editGraphDlg(ArtisanResizeablDialog):
         self.aw.qmc.roastersize_setup = self.setup_ui.doubleSpinBoxRoasterSize.value()
         self.aw.qmc.roasterheating_setup = self.setup_ui.comboBoxHeating.currentIndex()
         self.aw.qmc.drumspeed_setup = self.setup_ui.lineEditDrumSpeed.text()
+        self.populateSetupDefaults()
+        self.setupEdited()
     
     pyqtSlot(bool)
     def SetupDefaults(self,_):
@@ -1718,6 +1721,7 @@ class editGraphDlg(ArtisanResizeablDialog):
         self.setup_ui.doubleSpinBoxRoasterSize.setValue(self.aw.qmc.roastersize_setup)
         self.setup_ui.comboBoxHeating.setCurrentIndex(self.aw.qmc.roasterheating_setup)
         self.setup_ui.lineEditDrumSpeed.setText(self.aw.qmc.drumspeed_setup)
+        self.setupEdited()
     
     def enableBatchEdit(self):
         if not self.aw.superusermode and not self.batcheditmode:
@@ -2867,6 +2871,8 @@ class editGraphDlg(ArtisanResizeablDialog):
             
             self.energy_ui.EnergyGroupBox.clicked.connect(self.toggleEnergyCO2Result)
             self.energy_ui.CO2GroupBox.clicked.connect(self.toggleEnergyCO2Result)
+            
+            self.loadsEdited()
 
             # Protocol
             
@@ -2894,6 +2900,9 @@ class editGraphDlg(ArtisanResizeablDialog):
             self.energy_ui.electricEnergyMixSpinBox.valueChanged.connect(self.electric_energy_mix_valuechanged)
             
             self.energy_ui.resultunitComboBox.currentIndexChanged.connect(self.energyresultunitComboBox_indexchanged)
+            
+            self.protocolEdited()
+            
             #
             self.energy_ui.loadsSetDefaultsButton.clicked.connect(self.setEnergyLoadDefaults)
             self.energy_ui.loadsDefaultsButtons.clicked.connect(self.restoreEnergyLoadDefaults)
@@ -3329,11 +3338,13 @@ class editGraphDlg(ArtisanResizeablDialog):
         if focusWidget:
             focusWidget.clearFocus()
         self.aw.qmc.setEnergyLoadDefaults()
+        self.loadsEdited()
         
     @pyqtSlot(bool)
     def restoreEnergyLoadDefaults(self,_=False):
         self.aw.qmc.restoreEnergyLoadDefaults()
         self.updateEnergyTab()
+        self.loadsEdited()
         
     @pyqtSlot(bool)
     def setEnergyProtocolDefaults(self,_=False):
@@ -3342,11 +3353,13 @@ class editGraphDlg(ArtisanResizeablDialog):
         if focusWidget:
             focusWidget.clearFocus()
         self.aw.qmc.setEnergyProtocolDefaults()
+        self.protocolEdited()
         
     @pyqtSlot(bool)
     def restoreEnergyProtocolDefaults(self,_=False):
         self.aw.qmc.restoreEnergyProtocolDefaults()
         self.updateEnergyTab()
+        self.protocolEdited()
 
     @pyqtSlot(bool)
     def copyEnergyDataTabletoClipboard(self,_=False):
@@ -3393,12 +3406,34 @@ class editGraphDlg(ArtisanResizeablDialog):
 
     ##
     
+    # returns True if the energy loads in the dialog are different to the set defaults
+    def energyLoadsModified(self) -> bool:
+        return (
+            self.aw.qmc.loadlabels != self.aw.qmc.loadlabels_setup or
+            self.aw.qmc.loadratings != self.aw.qmc.loadratings_setup or
+            self.aw.qmc.ratingunits != self.aw.qmc.ratingunits_setup or
+            self.aw.qmc.sourcetypes != self.aw.qmc.sourcetypes_setup or
+            self.aw.qmc.load_etypes != self.aw.qmc.load_etypes_setup or
+            self.aw.qmc.presssure_percents != self.aw.qmc.presssure_percents_setup or
+            self.aw.qmc.loadevent_zeropcts != self.aw.qmc.loadevent_zeropcts_setup or
+            self.aw.qmc.loadevent_hundpcts != self.aw.qmc.loadevent_hundpcts_setup or
+            self.aw.qmc.electricEnergyMix != self.aw.qmc.electricEnergyMix_setup)
+    
+    # enables/disables the Defaults/SetDefaults buttons if loads values differ from their set defaults
+    def loadsEdited(self):
+        modified = self.energyLoadsModified()
+        self.energy_ui.loadsSetDefaultsButton.setEnabled(modified)
+        self.energy_ui.loadsDefaultsButtons.setEnabled(modified)
+        
+    ##
+    
     @pyqtSlot()
     def loadlabels_editingfinished(self):
         for w in [self.energy_ui.loadlabel0,self.energy_ui.loadlabel1,self.energy_ui.loadlabel2,self.energy_ui.loadlabel3]:
             if w.isModified():
                 w.setText(w.text().strip())
         self.updateLoadLabels()
+        self.loadsEdited()
 
     @pyqtSlot()
     def loadratings_editingfinished(self):
@@ -3407,24 +3442,29 @@ class editGraphDlg(ArtisanResizeablDialog):
                 w.setText(self.validateNumText(w.text()))
         self.updateLoadRatings()
         self.updateEnergyLabels()
+        self.loadsEdited()
 
     @pyqtSlot()
     def ratingunits_currentindexchanged(self):
         self.updateLoadUnits()
         self.updateEnergyUnitLabels()
+        self.loadsEdited()
 
     @pyqtSlot()
     def sourcetypes_currentindexchanged(self):
         self.updateSourceTypes()
+        self.loadsEdited()
 
     @pyqtSlot()
     def load_etypes_currentindexchanged(self):
         self.updateEnableZHpct()
         self.updateLoadEvents()
+        self.loadsEdited()
 
     @pyqtSlot(int)
     def pressureCheckBox_statechanged(self,_):
         self.updatePressurePercent()
+        self.loadsEdited()
     
     @pyqtSlot()
     def loadevent_zeropcts0_valuechanged(self):
@@ -3467,18 +3507,47 @@ class editGraphDlg(ArtisanResizeablDialog):
             else:
                 hundpcts.setValue(zeropcts.value()+1)
         self.updateLoadPcts()
+        self.loadsEdited()
+    
+    @pyqtSlot()
+    def electric_energy_mix_valuechanged(self):
+        self.updateElectricEnergyMix()
+        self.loadsEdited()
+    
+    #
+    
+    # returns True if the energy loads in the dialog are different to the set defaults
+    def energyProtocolModified(self) -> bool:
+        return (
+            self.aw.qmc.preheatDuration != self.aw.qmc.preheatDuration_setup or
+            self.aw.qmc.preheatenergies != self.aw.qmc.preheatenergies_setup or
+            self.aw.qmc.betweenbatchDuration != self.aw.qmc.betweenbatchDuration_setup or
+            self.aw.qmc.betweenbatchenergies != self.aw.qmc.betweenbatchenergies_setup or
+            self.aw.qmc.coolingDuration != self.aw.qmc.coolingDuration_setup or
+            self.aw.qmc.coolingenergies != self.aw.qmc.coolingenergies_setup or
+            self.aw.qmc.betweenbatch_after_preheat != self.aw.qmc.betweenbatch_after_preheat_setup or
+            self.aw.qmc.electricEnergyMix != self.aw.qmc.electricEnergyMix_setup)
+    
+    # enables/disables the Defaults/SetDefaults buttons if loads values differ from their set defaults
+    def protocolEdited(self):
+        modified = self.energyProtocolModified()
+        self.energy_ui.protocolSetDefaultsButton.setEnabled(modified)
+        self.energy_ui.protocolDefaultsButton.setEnabled(modified)
     
     @pyqtSlot()
     def preheatDuration_editingfinished(self):
         self.updatePreheatDuration()
+        self.protocolEdited()
 
     @pyqtSlot()
     def betweenBatchesDuration_editingfinished(self):
         self.updateBetweenBatchesDuration()
+        self.protocolEdited()
 
     @pyqtSlot()
     def coolingDuration_editingfinished(self):
         self.updateCoolingDuration()
+        self.protocolEdited()
 
     @pyqtSlot()
     def preheatenergies_editingfinished(self):
@@ -3489,6 +3558,7 @@ class editGraphDlg(ArtisanResizeablDialog):
             if w.isModified():
                 w.setText(self.validatePctText(w.text()))
         self.updatePreheatEnergies()
+        self.protocolEdited()
 
     @pyqtSlot()
     def betweenbatchenergies_editingfinished(self):
@@ -3499,6 +3569,7 @@ class editGraphDlg(ArtisanResizeablDialog):
             if w.isModified():
                 w.setText(self.validatePctText(w.text()))
         self.updateBetweenBatchesEnergies()
+        self.protocolEdited()
 
     @pyqtSlot()
     def coolingenergies_editingfinished(self):
@@ -3509,14 +3580,14 @@ class editGraphDlg(ArtisanResizeablDialog):
             if w.isModified():
                 w.setText(self.validatePctText(w.text()))
         self.updateCoolingEnergies()
+        self.protocolEdited()
 
     @pyqtSlot(int)
     def betweenbatch_after_preheat_statechanged(self,_):
         self.updateBBPafterPreHeat()
+        self.protocolEdited()
     
-    @pyqtSlot()
-    def electric_energy_mix_valuechanged(self):
-        self.updateElectricEnergyMix()
+    #
 
     @pyqtSlot()
     def energyresultunitComboBox_indexchanged(self):
@@ -3614,6 +3685,31 @@ class editGraphDlg(ArtisanResizeablDialog):
 
 
     ###### SETUP TAB #####
+    
+    def populateSetupDefaults(self):
+        self.setup_ui.labelOrganizationDefault.setText(self.aw.qmc.organization_setup)
+        self.setup_ui.labelOperatorDefault.setText(self.aw.qmc.operator_setup)
+        self.setup_ui.labelMachineSizeDefault.setText(f"{self.aw.qmc.roastertype_setup} {self.aw.qmc.roastersize_setup}kg")
+        self.setup_ui.labelHeatingDefault.setText(self.aw.qmc.heating_types[self.aw.qmc.roasterheating_setup])
+        self.setup_ui.labelDrumSpeedDefault.setText(self.aw.qmc.drumspeed_setup)
+    
+    # returns True if the setup in the dialog is different to the set defaults
+    def setupModified(self) -> bool:
+        return (
+            self.setup_ui.lineEditOrganization.text() != self.aw.qmc.organization_setup or
+            self.setup_ui.lineEditOperator.text() != self.aw.qmc.operator_setup  or
+            self.setup_ui.lineEditMachine.text() != self.aw.qmc.roastertype_setup or
+            self.setup_ui.doubleSpinBoxRoasterSize.value() != self.aw.qmc.roastersize_setup or
+            self.setup_ui.comboBoxHeating.currentIndex() != self.aw.qmc.roasterheating_setup or
+            self.setup_ui.lineEditDrumSpeed.text() != self.aw.qmc.drumspeed_setup)
+    
+    # enables/disables the Defaults/SetDefaults buttons if setup values differ from their set defaults
+    @pyqtSlot()
+    @pyqtSlot(int)
+    def setupEdited(self,_idx=0):
+        modified = self.setupModified()
+        self.setup_ui.SetDefaults.setEnabled(modified)
+        self.setup_ui.Defaults.setEnabled(modified)
 
     def initSetupTab(self):
         if not self.tabInitialized[5]:
@@ -3628,6 +3724,8 @@ class editGraphDlg(ArtisanResizeablDialog):
             self.setup_ui.labelMachine.setText(QApplication.translate("Label", "Model"))
             self.setup_ui.labelHeating.setText(QApplication.translate("Label", "Heating"))
             self.setup_ui.labelDrumSpeed.setText(QApplication.translate("Label", "Drum Speed"))
+            # populate defaults
+            self.populateSetupDefaults()
             # popuplate comboBox
             self.setup_ui.comboBoxHeating.addItems(self.aw.qmc.heating_types)
             self.setup_ui.SetDefaults.setText(QApplication.translate("Button", "Save Defaults"))
@@ -3644,12 +3742,24 @@ class editGraphDlg(ArtisanResizeablDialog):
             self.setup_ui.doubleSpinBoxRoasterSize.setValue(self.aw.qmc.roastersize)
             self.setup_ui.comboBoxHeating.setCurrentIndex(self.aw.qmc.roasterheating)
             self.setup_ui.lineEditDrumSpeed.setText(self.aw.qmc.drumspeed)
+
+            # connect widget signals
+            self.setup_ui.lineEditOrganization.editingFinished.connect(self.setupEdited)
+            self.setup_ui.lineEditOperator.editingFinished.connect(self.setupEdited)
+            self.setup_ui.lineEditMachine.editingFinished.connect(self.setupEdited)
+            self.setup_ui.doubleSpinBoxRoasterSize.editingFinished.connect(self.setupEdited)
+            self.setup_ui.comboBoxHeating.currentIndexChanged.connect(self.setupEdited)
+            self.setup_ui.lineEditDrumSpeed.editingFinished.connect(self.setupEdited)
+            
             # connect button signals
             self.setup_ui.SetDefaults.clicked.connect(self.SetupSetDefaults)
             self.setup_ui.Defaults.clicked.connect(self.SetupDefaults)
             
             # mark tab as initialized
             self.tabInitialized[5] = True
+            
+            # update button states
+            self.setupEdited()
             
     @pyqtSlot(bool)
     def showenergyhelp(self,_=False):
@@ -4862,6 +4972,12 @@ class editGraphDlg(ArtisanResizeablDialog):
         
         if not self.aw.qmc.flagon:
             self.aw.sendmessage(QApplication.translate("Message","Roast properties updated but profile not saved to disk"))
+        # if recording, dirty and CHARGE and DROP set we send changes to artisan.plus
+        if self.aw.qmc.flagstart and self.aw.qmc.safesaveflag and self.aw.qmc.timeindex[0] > -1 and self.aw.qmc.timeindex[6] > 0:
+            try:
+                plus.queue.addRoast()
+            except Exception as e: # pylint: disable=broad-except
+                _log.exception(e)
         self.close()
     
     def getMeasuredvalues(self,title,func_updatefields,fields,loadEnergy,func_updateduration, durationfield, duration):

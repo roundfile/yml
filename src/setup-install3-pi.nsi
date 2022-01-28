@@ -300,7 +300,57 @@ Section Uninstall
   Delete "$INSTDIR\*.dll"
   Delete "$INSTDIR\base_library.zip"
 
-  !insertmacro Rmdir_Wildcard "$INSTDIR\*" ${__LINE__}
+  RMDir /r "$INSTDIR\certifi"
+  RMDir /r "$INSTDIR\gevent"
+  RMDir /r "$INSTDIR\greenlet"
+  RMDir /r "$INSTDIR\Icons"
+  RMDir /r "$INSTDIR\Include"
+  RMDir /r "$INSTDIR\lib"
+  RMDir /r "$INSTDIR\lib2to3"
+  RMDir /r "$INSTDIR\lxml"
+  RMDir /r "$INSTDIR\Machines"
+  RMDir /r "$INSTDIR\markupsafe"
+  RMDir /r "$INSTDIR\matplotlib"
+  RMDir /r "$INSTDIR\mpl-data"
+  RMDir /r "$INSTDIR\numpy"
+  RMDir /r "$INSTDIR\openpyxl"
+  RMDir /r "$INSTDIR\PIL"
+  RMDir /r "$INSTDIR\pyinstaller"
+  RMDir /r "$INSTDIR\pytz"
+  RMDir /r "$INSTDIR\scipy"
+  RMDir /r "$INSTDIR\tcl"
+  RMDir /r "$INSTDIR\tcl8"
+  RMDir /r "$INSTDIR\Themes"
+  RMDir /r "$INSTDIR\Themes"
+  RMDir /r "$INSTDIR\tk"
+  RMDir /r "$INSTDIR\tornado"
+  RMDir /r "$INSTDIR\translations"
+  RMDir /r "$INSTDIR\wcwidth"
+  RMDir /r "$INSTDIR\Wheels"
+  RMDir /r "$INSTDIR\win32com"
+  RMDir /r "$INSTDIR\wx"
+  RMDir /r "$INSTDIR\yaml"
+  RMDir /r "$INSTDIR\zope"
+
+  !insertmacro Rmdir_Wildcard "$INSTDIR\PyQt*" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\qt*_plugins" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\altgraph*.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\cffi*.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\gevent*.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\gevent*.egg-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\greenlet*.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\importlib_metadata*.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\importlib_metadata*.egg-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\keyring*.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\keyring*.egg-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\prettytable*.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\prettytable*.egg-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\pycparser*.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\pyinstaller*.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\setuptools*.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\wheel*.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\zope.event*.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\zope.interface*.dist-info" ${__LINE__}
 
   Delete "$INSTDIR\artisan.png"
   Delete "$INSTDIR\LICENSE.txt"

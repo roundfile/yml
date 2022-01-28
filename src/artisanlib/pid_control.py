@@ -1188,7 +1188,7 @@ class PIDcontrol():
                         vp = abs(100 - v)
                     else:
                         vp = v
-                    vp = min(100,max(0,int(vp)))
+                    vp = min(100,max(0,int(round(vp))))
                     # we need to map the duty [0%,100%] to the [slidermin,slidermax] range
                     heat = int(round(numpy.interp(vp,[0,100],[self.aw.eventslidermin[slidernr],self.aw.eventslidermax[slidernr]])))
                     self.aw.block_quantification_sampling_ticks[slidernr] = self.aw.sampling_ticks_to_block_quantifiction
@@ -1279,8 +1279,20 @@ class PIDcontrol():
                 self.time_pidON = self.aw.qmc.on_timex[-1]
                 if self.svMode == 1:
                     # turn the timer LCD color blue if in RS mode and not recording
-                    self.aw.lcd1.setStyleSheet("QLCDNumber { border-radius: 4; color: %s; background-color: %s;}"%(self.aw.lcdpaletteF["rstimer"],self.aw.lcdpaletteB["rstimer"]))
-                    self.aw.qmc.setTimerLargeLCDcolorSignal.emit(self.aw.lcdpaletteF["rstimer"],self.aw.lcdpaletteB["rstimer"])
+                    self.aw.setTimerColor("rstimer")
+
+    # the internal software PID should be configured on ON, but not be activated yet to warm it up
+    def confSoftwarePID(self):
+        if self.aw.pidcontrol.externalPIDControl() not in [1, 2] and not(self.aw.qmc.device == 19 and self.aw.qmc.PIDbuttonflag) and self.aw.qmc.Controlbuttonflag:
+            # software PID
+            self.aw.qmc.pid.setPID(self.pidKp,self.pidKi,self.pidKd,self.pOnE)
+            self.aw.qmc.pid.setLimits((-100 if self.aw.pidcontrol.pidNegativeTarget else 0),(100 if self.aw.pidcontrol.pidPositiveTarget else 0))
+            self.aw.qmc.pid.setDutySteps(self.aw.pidcontrol.dutySteps)
+            self.aw.qmc.pid.setDutyMin(self.aw.pidcontrol.dutyMin)
+            self.aw.qmc.pid.setDutyMax(self.aw.pidcontrol.dutyMax)
+            self.aw.qmc.pid.setControl(self.aw.pidcontrol.setEnergy)
+            if self.aw.pidcontrol.svMode == 0:
+                self.aw.pidcontrol.setSV(self.aw.sliderSV.value())
 
     def pidOn(self):
         if self.aw.qmc.flagon:
@@ -1334,8 +1346,7 @@ class PIDcontrol():
 
     def pidOff(self):
         self.aw.sendmessage(QApplication.translate("Message","PID OFF"))
-        self.aw.lcd1.setStyleSheet("QLCDNumber { border-radius: 4; color: %s; background-color: %s;}"%(self.aw.lcdpaletteF["timer"],self.aw.lcdpaletteB["timer"]))
-        self.aw.qmc.setTimerLargeLCDcolorSignal.emit(self.aw.lcdpaletteF["timer"],self.aw.lcdpaletteB["timer"])
+        self.aw.setTimerColor("timer")
         if self.aw.qmc.flagon and not self.aw.qmc.flagstart:
             self.aw.qmc.setLCDtime(0)
         # MODBUS hardware PID
@@ -1598,6 +1609,7 @@ class PIDcontrol():
                 sv = self.aw.pidcontrol.sv
             else:
                 sv = min(self.svSliderMax, max(self.svSliderMin, self.aw.pidcontrol.svValue))
+            sv = int(round(sv))
             self.aw.updateSVSliderLCD(sv)
             self.aw.sliderSV.setValue(sv)
             self.aw.sliderSV.blockSignals(False)

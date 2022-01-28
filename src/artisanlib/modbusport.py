@@ -103,7 +103,7 @@ class modbusport():
 
     __slots__ = [ 'aw', 'modbus_serial_read_delay', 'modbus_serial_write_delay', 'readRetries', 'comport', 'baudrate', 'bytesize', 'parity', 'stopbits', 
         'timeout', 'PID_slave_ID', 'PID_SV_register', 'PID_p_register', 'PID_i_register', 'PID_d_register', 'PID_ON_action', 'PID_OFF_action',
-        'channels', 'inputSlaves', 'inputRegisters', 'inputFloats', 'inputBCDs', 'inputFloatsAsInt', 'inputBCDsAsInt', 'inputCodes', 'inputDivs',
+        'channels', 'inputSlaves', 'inputRegisters', 'inputFloats', 'inputBCDs', 'inputFloatsAsInt', 'inputBCDsAsInt', 'inputSigned', 'inputCodes', 'inputDivs',
         'inputModes', 'optimizer', 'fetch_max_blocks', 'reset_socket', 'activeRegisters', 'readingsCache', 'SVmultiplier', 'PIDmultiplier',
         'byteorderLittle', 'wordorderLittle', 'master', 'COMsemaphore', 'host', 'port', 'type', 'lastReadResult', 'commError' ]
 
@@ -133,10 +133,13 @@ class modbusport():
         self.channels = 8
         self.inputSlaves = [0]*self.channels
         self.inputRegisters = [0]*self.channels
-        self.inputFloats = [False]*self.channels
-        self.inputBCDs = [False]*self.channels
-        self.inputFloatsAsInt = [False]*self.channels  # 32bit Integers
-        self.inputBCDsAsInt = [False]*self.channels
+        # decoding (default: 16bit uInt)
+        self.inputFloats = [False]*self.channels       # 32bit Floats
+        self.inputBCDs = [False]*self.channels         # 32bit uInt BCD decoded
+        self.inputFloatsAsInt = [False]*self.channels  # 32bit uInt/sInt
+        self.inputBCDsAsInt = [False]*self.channels    # 16bit uInt/sInt
+        self.inputSigned = [False]*self.channels       # if True, decode Integers as signed otherwise as unsigned
+        #
         self.inputCodes = [3]*self.channels
         self.inputDivs = [0]*self.channels # 0: none, 1: 1/10, 2:1/100
         self.inputModes = ["C"]*self.channels
@@ -422,15 +425,8 @@ class modbusport():
                                     register,
                                     code,
                                     len(res.registers))
+                            _log.debug(ser_str)
                             self.aw.addserial(ser_str)
-                        _log.debug("readActiveRegisters : %s ms => %s:%s || Slave = %s || Register = %s || Code == %s || Rx# == %s",
-                            self.formatMS(tx,time.time()),
-                            self.host,
-                            self.port,
-                            slave,
-                            register,
-                            code,
-                            len(res.registers))
                         
                         if res is not None:
                             if self.commError: # we clear the previous error and send a message
@@ -828,7 +824,8 @@ class modbusport():
     # function 3 (Read Multiple Holding Registers) and 
     # function 4 (Read Input Registers)
     # if force the readings cache is ignored and fresh readings are requested
-    def readSingleRegister(self,slave,register,code=3,force=False):
+    # if signed is True, the received data is interpreted as signed integer, otherwise as unsigned
+    def readSingleRegister(self,slave,register,code=3,force=False,signed=False):
         _log.debug("readSingleRegister(%d,%d,%d,%s)", slave, register, code, force)
         if slave == 0:
             return None
@@ -843,7 +840,10 @@ class modbusport():
                 # cache hit
                 res = self.readingsCache[code][slave][register]
                 decoder = getBinaryPayloadDecoderFromRegisters([res], self.byteorderLittle, self.wordorderLittle)
-                r = decoder.decode_16bit_uint()
+                if signed:
+                    r = decoder.decode_16bit_int()
+                else:
+                    r = decoder.decode_16bit_uint()
                 _log.debug("return cached value => %d", r)
                 return r
             self.connect()
@@ -865,7 +865,7 @@ class modbusport():
                         retry = retry - 1
                         #time.sleep(0.020)  # no retry delay as timeout time should already be larger enough
                     else:
-                        raise Exception("Exception response")
+                        raise Exception("readSingleRegister({},{},{},{},{}) failed".format(slave,register,code,force,signed))
                 else:
                     break
             if code in [1,2]:
@@ -878,7 +878,10 @@ class modbusport():
                     self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Resumed"))
                 return r
             decoder = getBinaryPayloadDecoderFromRegisters(res.registers, self.byteorderLittle, self.wordorderLittle)
-            r = decoder.decode_16bit_uint()
+            if signed:
+                r = decoder.decode_16bit_int()
+            else:
+                r = decoder.decode_16bit_uint()
             if self.commError: # we clear the previous error and send a message
                 self.commError = False
                 self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Resumed"))
@@ -927,7 +930,7 @@ class modbusport():
 
     # function 3 (Read Multiple Holding Registers) and 4 (Read Input Registers)
     # if force the readings cache is ignored and fresh readings are requested
-    def readInt32(self,slave,register,code=3,force=False):
+    def readInt32(self,slave,register,code=3,force=False,signed=False):
         _log.debug("readInt32(%d,%d,%d,%s)", slave, register, code, force)
         if slave == 0:
             return None
@@ -943,7 +946,10 @@ class modbusport():
                 # cache hit
                 res = [self.readingsCache[code][slave][register],self.readingsCache[code][slave][register+1]]
                 decoder = getBinaryPayloadDecoderFromRegisters(res, self.byteorderLittle, self.wordorderLittle)
-                r = decoder.decode_32bit_uint()
+                if signed:
+                    r = decoder.decode_32bit_int()
+                else:
+                    r = decoder.decode_32bit_uint()
                 _log.debug("return cached value => %d", r)
                 return r
             self.connect()
@@ -961,7 +967,10 @@ class modbusport():
                 else:
                     break
             decoder = getBinaryPayloadDecoderFromRegisters(res.registers, self.byteorderLittle, self.wordorderLittle)
-            r = decoder.decode_32bit_uint()
+            if signed:
+                r = decoder.decode_32bit_int()
+            else:
+                r = decoder.decode_32bit_uint()
             if self.commError: # we clear the previous error and send a message
                 self.commError = False
                 self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Resumed"))

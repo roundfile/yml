@@ -306,8 +306,8 @@ class BleInterface(QtCore.QObject):
 #        _log.debug("addDevice()")
         # pylint: disable=maybe-no-member
         if self.m_device is None and device.coreConfigurations() & QtBluetooth.QBluetoothDeviceInfo.CoreConfiguration.LowEnergyCoreConfiguration:
-#            _log.debug("discovered LE Device name: %s,  address: %s", device.name(), device.address().toString())
             m_device = QtBluetooth.QBluetoothDeviceInfo(device)            
+#            _log.debug("discovered LE Device name: %s,  device: %s", device.name(), m_device.deviceUuid().toString())
             if self.device_names is None:
                 _log.debug("check device for matching services")
                 for (uuid_service, _) in self.UUID_SERVICE_CHAR_TUPLES:

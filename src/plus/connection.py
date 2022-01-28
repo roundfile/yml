@@ -24,10 +24,10 @@
 
 try:
     #pylint: disable = E, W, R, C
-    from PyQt6.QtCore import QSemaphore # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt6.QtCore import QSemaphore, QTimer # @UnusedImport @Reimport  @UnresolvedImport
 except Exception:
     #pylint: disable = E, W, R, C
-    from PyQt5.QtCore import QSemaphore # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt5.QtCore import QSemaphore, QTimer # @UnusedImport @Reimport  @UnresolvedImport
 
 from artisanlib import __version__
 from typing import Any, Optional, Dict, Final
@@ -37,6 +37,7 @@ import gzip
 import json
 import platform
 import logging
+import dateutil.parser
 
 from plus import config, account, util
 
@@ -48,7 +49,6 @@ JSON = Any
 token_semaphore = QSemaphore(
     1
 )  # protects access to the session token which is manipulated only here
-
 
 def getToken() -> Optional[str]:
     try:
@@ -155,26 +155,8 @@ def setKeyring() -> None:
     except Exception as e:  # pylint: disable=broad-except
         _log.exception(e)
 
-
-# res is assumed to be a dict with non-empty res["result"]["user"]
-def extractUserInfo(res, attr: str, default):
-    if attr in res and isinstance(res[attr], str) and res[attr] != "":
-        return res[attr]
-    return default
-
-# takes a JSON result and updates the account limits
-def updateLimits(res):
-    try:
-        if res and config.app_window and "ol" in res:
-            ol = res["ol"]
-            if "rlimit" in ol and "rused" in ol:
-                rlimit = ol["rlimit"]
-                used = ol["rused"]
-                config.app_window.updatePlusLimitsSignal.emit(rlimit, used)
-    except Exception as e:  # pylint: disable=broad-except
-        _log.exception(e)
-
 # returns True on successful authentification
+# NOTE: authentify might be called from outside the GUI thread
 def authentify() -> bool:
     _log.info("authentify()")
     import requests # @Reimport
@@ -212,7 +194,7 @@ def authentify() -> bool:
                 "email": config.app_window.plus_account,
                 "password": config.passwd,
             }  # @UndefinedVariable
-            r = postData(config.auth_url, data, False)
+            r = sendData(config.auth_url, data, "POST", False)
             _log.debug(
                 "-> authentifying reply status code: %s",
                 r.status_code,
@@ -230,54 +212,72 @@ def authentify() -> bool:
                     "-> authentified, token received"
                 )
                 # extract in user/account data
-                nickname = extractUserInfo(
+                nickname = util.extractInfo(
                     res["result"]["user"], "nickname", None
                 )
-                config.app_window.plus_language = extractUserInfo(
+                config.app_window.plus_language = util.extractInfo(
                     res["result"]["user"], "language", "en"
                 )
+                
                 config.app_window.plus_paidUntil = None
                 config.app_window.plus_subscription = None
+                config.app_window.plus_rlimit = 0
+                config.app_window.plus_used = 0
                 if "account" in res["result"]["user"]:
-                    config.app_window.plus_subscription = extractUserInfo(
-                        res["result"]["user"]["account"],
-                        "subscription",
-                        None,
+                    res_account = res["result"]["user"]["account"]
+                    subscription = util.extractInfo(
+                        res_account, "subscription", ""
                     )
-                    paidUntil = extractUserInfo(
-                        res["result"]["user"]["account"], "paidUntil", None
+                    config.app_window.updateSubscriptionSignal.emit(subscription)
+                    paidUntil = util.extractInfo(
+                        res_account, "paidUntil", ""
                     )
+                    rlimit = -1
+                    rused = -1
+                    notifications = 0 # unqualified notifications
+                    machines = [] # list of machine names with matching notifications
                     try:
-                        if paidUntil is not None:
-                            config.app_window.plus_paidUntil = (
-                                util.ISO86012datetime(paidUntil)
-                            )
+                        if "limit" in res["result"]["user"]["account"]:
+                            ol = res_account["limit"]
+                            if "rlimit" in ol:
+                                rlimit = ol["rlimit"]
+                            if "rused" in ol:
+                                rused = ol["rused"]
                     except Exception as e:  # pylint: disable=broad-except
                         _log.exception(e)
                     
-                    if "limit" in res["result"]["user"]["account"]:
-                        ol = res["result"]["user"]["account"]["limit"]
-                        if "rlimit" in ol and "rused" in ol:
-                            rlimit = ol["rlimit"]
-                            used = ol["rused"]
-                            config.app_window.updatePlusLimitsSignal.emit(rlimit, used)
-                        
-                if config.app_window.plus_paidUntil is not None and (
-                    config.app_window.plus_paidUntil.date()
-                    - datetime.datetime.now().date()
-                ).days < (-config.expired_subscription_max_days):
-                    _log.debug(
-                        (
-                            "-> authentication failed due to"
-                            " long expired subscription"
-                        )
-                    )
-                    if "error" in res:
-                        config.app_window.sendmessage(
-                            res["error"]
-                        )  # @UndefinedVariable
-                    clearCredentials()
-                    return False
+                    if "notifications" in res:
+                        notificationDict = res["notifications"]
+                        if notificationDict:
+                            notifications = util.extractInfo(notificationDict, "unqualified", 0)
+                            machines = util.extractInfo(notificationDict, "machines", [])
+                        try:
+                            config.app_window.updateLimitsSignal.emit(rlimit,rused,paidUntil,notifications,machines)
+                        except Exception as e:  # pylint: disable=broad-except
+                            _log.exception(e)
+                    
+                    
+                    # note, here we have to convert the dateUtil string locally here, instead of accessing aw.plus_paidUntil which might not yet set via the signal processing above
+                    try:
+                        if paidUntil != "" and (
+                            dateutil.parser.parse(paidUntil).date()
+                            - datetime.datetime.now().date()
+                        ).days < (-config.expired_subscription_max_days):
+                            _log.debug(
+                                (
+                                    "-> authentication failed due to"
+                                    " long expired subscription"
+                                )
+                            )
+                            if "error" in res:
+                                config.app_window.sendmessage(
+                                    res["error"]
+                                )  # @UndefinedVariable
+                            clearCredentials()
+                            return False
+                    except Exception as e:  # pylint: disable=broad-except
+                        _log.exception(e)
+                
                 if "readonly" in res["result"]["user"] and isinstance(
                     res["result"]["user"]["readonly"], bool
                 ):
@@ -311,7 +311,7 @@ def authentify() -> bool:
     except requests.exceptions.RequestException as e:
         _log.exception(e)
         raise (e)
-    except Exception as e:
+    except Exception as e:  # pylint: disable=broad-except
         _log.exception(e)
         clearCredentials()
         raise (e)
@@ -342,17 +342,6 @@ def getHeaders(
     return headers
 
 
-def sendData(url: str, data: Dict[Any, Any], verb: str) -> Any:
-    if verb == "POST":
-        return postData(url, data)
-    return putData(url, data)
-
-
-# TODO: implement! # pylint: disable=fixme
-def putData(url: str, data: Dict[Any, Any]) -> Any:
-    del url, data
-
-
 def getHeadersAndData(authorized: bool, compress: bool, jsondata: JSON):
     headers = getHeaders(authorized, decompress=compress)
     headers["Content-Type"] = "application/json"
@@ -365,25 +354,35 @@ def getHeadersAndData(authorized: bool, compress: bool, jsondata: JSON):
     return headers, postdata
 
 
-def postData(
+def sendData(
     url: str,
-    data,
+    data: Dict[Any, Any],
+    verb: str, # POST or PUT
     authorized: bool = True,
     compress: bool = config.compress_posts,
 ) -> Any:
     # don't log POST data as it might contain credentials!
-    _log.info("postData(%s,_data_,%s)", url, authorized)
+    _log.info("sendData(%s,_data_,%s,%s)", url, verb, authorized)
     jsondata = json.dumps(data).encode("utf8")
     _log.debug("-> size %s", len(jsondata))
     headers, postdata = getHeadersAndData(authorized, compress, jsondata)
     import requests  # @Reimport
-    r = requests.post(
-        url,
-        headers=headers,
-        data=postdata,
-        verify=config.verify_ssl,
-        timeout=(config.connect_timeout, config.read_timeout),
-    )
+    if verb == "POST":
+        r = requests.post(
+            url,
+            headers=headers,
+            data=postdata,
+            verify=config.verify_ssl,
+            timeout=(config.connect_timeout, config.read_timeout),
+        )
+    else:
+        r = requests.put(
+            url,
+            headers=headers,
+            data=postdata,
+            verify=config.verify_ssl,
+            timeout=(config.connect_timeout, config.read_timeout),
+        )
     _log.debug("-> status %s, time %s", r.status_code, r.elapsed.total_seconds())
     if authorized and r.status_code == 401:  # authorisation failed
         _log.debug("-> session token outdated (401)")
@@ -392,26 +391,37 @@ def postData(
             headers, postdata = getHeadersAndData(
                 authorized, compress, jsondata
             )  # recreate header with new token
-            r = requests.post(
-                url,
-                headers=headers,
-                data=postdata,
-                verify=config.verify_ssl,
-                timeout=(config.connect_timeout, config.read_timeout),
-            )
+            if verb == "POST":
+                r = requests.post(
+                    url,
+                    headers=headers,
+                    data=postdata,
+                    verify=config.verify_ssl,
+                    timeout=(config.connect_timeout, config.read_timeout),
+                )
+            else:
+                r = requests.put(
+                    url,
+                    headers=headers,
+                    data=postdata,
+                    verify=config.verify_ssl,
+                    timeout=(config.connect_timeout, config.read_timeout),
+                )
             _log.debug("-> status %s, time %s", r.status_code, r.elapsed.total_seconds())
     return r
 
 
-def getData(url: str, authorized: bool = True) -> Any:
-    _log.info("getData(%s,%s)", url, authorized)
+def getData(url: str, authorized: bool = True, params=None) -> Any:
+    _log.info("getData(%s,%s,%s)", url, authorized, params)
     headers = getHeaders(authorized)
+    params = params or {}
     #    _log.debug("-> request headers %s",headers)
     import requests  # @Reimport
     r = requests.get(
         url,
         headers=headers,
         verify=config.verify_ssl,
+        params=params,
         timeout=(config.connect_timeout, config.read_timeout),
     )
     _log.debug("-> status %s", r.status_code)
@@ -428,6 +438,7 @@ def getData(url: str, authorized: bool = True) -> Any:
             url,
             headers=headers,
             verify=config.verify_ssl,
+            params=params,
             timeout=(config.connect_timeout, config.read_timeout),
         )
         _log.debug("-> status %s", r.status_code)
@@ -437,7 +448,9 @@ def getData(url: str, authorized: bool = True) -> Any:
         )
     try:
         _log.debug("-> size %s", len(r.content))
-    #        _log.debug("-> data %s",r.json())
+#        _log.debug("-> data %s",r.json())
     except Exception:  # pylint: disable=broad-except
         pass
     return r
+
+
