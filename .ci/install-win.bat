@@ -55,8 +55,18 @@ echo %ARTISAN_SPEC%
 if /i "%BUILD_PYINSTALLER%"=="True" (
     echo curl pyinstaller v%PYINSTALLER_VER%
     curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
+    
+    echo ----------------
+    dir
+    echo ----------------
+    
+    
     7z x v%PYINSTALLER_VER%.zip
     del v%PYINSTALLER_VER%.zip
+    
+    if not exist pyinstaller-%PYINSTALLER_VER%\bootloader\ (exit /b 90)
+    
+    
     cd pyinstaller-%PYINSTALLER_VER%\bootloader
     %PYTHON_PATH%\python.exe ./waf all --target-arch=64bit
     cd ..
