@@ -22,6 +22,12 @@ if /i "%APPVEYOR%" NEQ "True" (
         set VC_REDIST=https://aka.ms/vs/17/release/vc_redist.x64.exe
     )
     set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
+) else (
+    if /i "%ARTISAN_LEGACY%" NEQ "True" (
+        set ARTISAN_SPEC=win-legacy
+    ) else (
+        set ARTISAN_SPEC=win    
+    )
 )
 
 echo Python Version

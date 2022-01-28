@@ -20,12 +20,12 @@ if /i "%APPVEYOR%" NEQ "True" (
         set QT_PATH=c:\qt\6.2\msvc2019_64
     )
     set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
-)
-:: select the appropriate .spec file to use
-if /i "%ARTISAN_LEGACY%" NEQ "True" (
-    set ARTISAN_SPEC=win-legacy
 ) else (
-    set ARTISAN_SPEC=win    
+    if /i "%ARTISAN_LEGACY%" NEQ "True" (
+        set ARTISAN_SPEC=win-legacy
+    ) else (
+        set ARTISAN_SPEC=win    
+    )
 )
 
 ::dave
