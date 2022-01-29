@@ -1,4 +1,4 @@
- @echo off
+@echo off
 :: the current directory on entry to this script must be the folder above src
 
 ::
@@ -34,16 +34,6 @@ if /i "%APPVEYOR%" NEQ "True" (
 
 echo Python Version
 %PYTHON_PATH%\python -V
-
-::echo -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
-::echo PythonPath %PYTHON_PATH%
-::echo Artisan_Legacy %ARTISAN_LEGACY%
-::echo Artisan_Spec %ARTISAN_SPEC%
-::echo Build_PyInstaller %BUILD_PYINSTALLER%
-::echo CMD %PYTHON_PATH%\python.exe -m pip install -r src\requirements-%ARTISAN_SPEC%.txt
-::echo --
-::set
-::echo -*-*-*-*-*-*-*-*-*-*-*-*-*-*-*
 
 ::
 :: get pip up to date
