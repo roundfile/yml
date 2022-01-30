@@ -59,6 +59,7 @@ for:
     - cmd: .ci\install-win.bat LEGACY
 
   build_script:
+    - cmd: echo off
     - cmd: echo Windows Legacy Build
     - cmd: cd src
 
