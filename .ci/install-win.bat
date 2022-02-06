@@ -50,6 +50,7 @@ echo Python Version
 :: custom build the pyinstaller bootloader or install a prebuilt
 ::%BUILD_PYINSTALLER%=False
 if /i "%BUILD_PYINSTALLER%"=="True" (
+    echo ***** Start build pyinstaller v%PYINSTALLER_VER%
     echo curl pyinstaller v%PYINSTALLER_VER%
     curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
     7z x v%PYINSTALLER_VER%.zip
@@ -63,13 +64,16 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     echo Building Wheel
     %PYTHON_PATH%\python.exe setup.py bdist_wheel
     if not exist dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 103)
-    echo Installing Wheel
+    echo ***** Finished build pyinstaller v%PYINSTALLER_VER%
+    echo ***** Start install pyinstaller v%PYINSTALLER_VER%
     %PYTHON_PATH%\python.exe -m pip install dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
     cd ..
 ) else (
     if not exist .ci\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 102)
+    echo ***** Start install pyinstaller v%PYINSTALLER_VER%
     %PYTHON_PATH%\\python.exe -m pip install .ci\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
 )
+echo ***** Finished install pyinstaller v%PYINSTALLER_VER%
 
 ::
 :: download and install required libraries not available on pip
