@@ -58,7 +58,10 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     cd pyinstaller-%PYINSTALLER_VER%\bootloader
     %PYTHON_PATH%\python.exe ./waf all --target-arch=64bit
     cd ..
-    %PYTHON_PATH%\python.exe setup.py -q install
+::    %PYTHON_PATH%\python.exe setup.py -q install
+    %PYTHON_PATH%\python.exe setup.py bdist_wheel
+    if not exist dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 103)
+    %PYTHON_PATH%\python.exe -m pip install dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
     cd ..
 ) else (
     if not exist .ci\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 102)
