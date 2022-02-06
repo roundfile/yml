@@ -56,11 +56,14 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     del v%PYINSTALLER_VER%.zip
     if not exist pyinstaller-%PYINSTALLER_VER%\bootloader\ (exit /b 101)
     cd pyinstaller-%PYINSTALLER_VER%\bootloader
+    echo Running WAF
     %PYTHON_PATH%\python.exe ./waf all --target-arch=64bit
     cd ..
 ::    %PYTHON_PATH%\python.exe setup.py -q install
+    echo Building Wheel
     %PYTHON_PATH%\python.exe setup.py bdist_wheel
     if not exist dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 103)
+    echo Installing Wheel
     %PYTHON_PATH%\python.exe -m pip install dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
     cd ..
 ) else (
