@@ -63,11 +63,12 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     cd ..
 ::    %PYTHON_PATH%\python.exe setup.py -q install
     echo ***** Building Wheel
-    %PYTHON_PATH%\python.exe setup.py bdist_wheel %REDIR_CONSOLE_OUTPUT%>bdist_wheel_output.txt
+    %PYTHON_PATH%\python.exe setup.py -q bdist_wheel
     if not exist dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 103)
     echo ***** Finished build pyinstaller v%PYINSTALLER_VER%
     echo ***** Start install pyinstaller v%PYINSTALLER_VER%
-    %PYTHON_PATH%\python.exe -m pip install dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
+::    %PYTHON_PATH%\python.exe -m pip install dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
+    %PYTHON_PATH%\python.exe -m pip install -q dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
     cd ..
 ) else (
     if not exist .ci\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 102)
