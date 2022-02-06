@@ -47,22 +47,23 @@ echo Python Version
 %PYTHON_PATH%\python.exe -m pip install -r src\requirements.txt
 %PYTHON_PATH%\python.exe -m pip install -r src\requirements-%ARTISAN_SPEC%.txt
 
+:: REDIR_CONSOLE_OUTPUT = 0:show all, 1:redirect std outout, 2: redirect stderr output
+set REDIR_CONSOLE_OUTPUT=1
 :: custom build the pyinstaller bootloader or install a prebuilt
-::%BUILD_PYINSTALLER%=False
 if /i "%BUILD_PYINSTALLER%"=="True" (
     echo ***** Start build pyinstaller v%PYINSTALLER_VER%
-    echo curl pyinstaller v%PYINSTALLER_VER%
+    echo ***** curl pyinstaller v%PYINSTALLER_VER%
     curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
     7z x v%PYINSTALLER_VER%.zip
     del v%PYINSTALLER_VER%.zip
     if not exist pyinstaller-%PYINSTALLER_VER%\bootloader\ (exit /b 101)
     cd pyinstaller-%PYINSTALLER_VER%\bootloader
-    echo Running WAF
-    %PYTHON_PATH%\python.exe ./waf all --target-arch=64bit
+    echo ***** Running WAF
+    %PYTHON_PATH%\python.exe ./waf all --target-arch=64bit %REDIR_CONSOLE_OUTPUT%>waf_output.txt
     cd ..
 ::    %PYTHON_PATH%\python.exe setup.py -q install
-    echo Building Wheel
-    %PYTHON_PATH%\python.exe setup.py bdist_wheel
+    echo ***** Building Wheel
+    %PYTHON_PATH%\python.exe setup.py bdist_wheel %REDIR_CONSOLE_OUTPUT%>bdist_wheel_output.txt
     if not exist dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 103)
     echo ***** Finished build pyinstaller v%PYINSTALLER_VER%
     echo ***** Start install pyinstaller v%PYINSTALLER_VER%
