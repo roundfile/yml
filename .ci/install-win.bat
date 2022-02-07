@@ -61,7 +61,8 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     echo ***** Running WAF
     %PYTHON_PATH%\python.exe ./waf all --target-arch=64bit
     cd ..
-::    %PYTHON_PATH%\python.exe setup.py -q install
+    ::setup install is deprecated
+    ::%PYTHON_PATH%\python.exe setup.py -q install
     echo ***** Building Wheel
     %PYTHON_PATH%\python.exe setup.py -q bdist_wheel
     if not exist dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 102)
