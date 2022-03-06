@@ -85,7 +85,7 @@ if exist "%ProgramFiles(x86)%\NSIS\makensis.exe"    set NSIS_EXE="%ProgramFiles(
 ::
 :: echo the file date since makensis does not have a version command
 for %%x in (%NSIS_EXE%) do set NSIS_DATE=%%~tx
-echo NSIS date %NSIS_DATE%
+echo NSIS makensis.exe file date %NSIS_DATE%
 ::
 :: run NSIS to build the install .exe file
 %NSIS_EXE% /DPRODUCT_VERSION=%ARTISAN_VERSION%.%ARTISAN_BUILD% /DLEGACY=%ARTISAN_LEGACY% setup-install3-pi.nsi
