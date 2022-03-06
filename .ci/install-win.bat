@@ -47,6 +47,10 @@ echo Python Version
 %PYTHON_PATH%\python.exe -m pip install -r src\requirements.txt
 %PYTHON_PATH%\python.exe -m pip install -r src\requirements-%ARTISAN_SPEC%.txt
 
+:: DEBUG YOCTO
+echo *****  YOCTO 1 *****
+dir c:\python310-x64\Lib\site-packages\yoctopuce\cdll
+
 ::
 :: custom build the pyinstaller bootloader or install a prebuilt
 ::
