@@ -1,13 +1,17 @@
 # -*- coding: utf-8 -*-
 #
 # ABOUT
-# RUBASE CSV Roast Profile importer for Artisan
+# RUBASSE CSV Roast Profile importer for Artisan
 
 import os
 import io
 import csv
 import logging
-from typing import Final
+try:
+    from typing import Final
+except ImportError:
+    # for Python 3.7:
+    from typing_extensions import Final
 
 try:
     #pylint: disable = E, W, R, C
@@ -19,12 +23,11 @@ except:
 
 _log: Final = logging.getLogger(__name__)
 
-# returns a dict containing all profile information contained in the given Rubase CSV file
-def extractProfileRubaseCSV(file,aw):
+# returns a dict containing all profile information contained in the given Rubasse CSV file
+def extractProfileRubasseCSV(file,aw):
     res = {} # the interpreted data set
 
     res["samplinginterval"] = 1.0
-    # set profile date from the file name if it has the format "IKAWA yyyy-mm-dd hhmmss.csv"
     filename = os.path.basename(file)
     res["title"] = filename
 

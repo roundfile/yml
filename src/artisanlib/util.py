@@ -7,9 +7,15 @@ import sys
 import math
 import os
 import re
+import numpy
 import functools
 from pathlib import Path
-from typing import Final, Optional
+from typing import Optional
+try:
+    from typing import Final
+except ImportError:
+    # for Python 3.7:
+    from typing_extensions import Final
 from matplotlib import colors
 
 
@@ -121,47 +127,38 @@ def stringtoseconds(string):
     return seconds    #return negative number
 
 def fromFtoC(Ffloat):
-    if Ffloat in [-1,None]:
+    if Ffloat in [-1,None,numpy.nan]:
         return Ffloat
     return (Ffloat-32.0)*(5.0/9.0)
 
 def fromCtoF(Cfloat):
-    if Cfloat in [-1,None]:
+    if Cfloat in [-1,None,numpy.nan]:
         return Cfloat
     return (Cfloat*9.0/5.0)+32.0
         
 def RoRfromCtoF(CRoR):
-    if CRoR in [-1,None]:
+    if CRoR in [-1,None,numpy.nan]:
         return CRoR
     return (CRoR*9.0/5.0)
 
 def RoRfromFtoC(FRoR):
-    if FRoR in [-1,None]:
+    if FRoR in [-1,None,numpy.nan]:
         return FRoR
     return FRoR*(5.0/9.0)
 
 def convertRoR(r,source_unit,target_unit):
+    if source_unit == target_unit:
+        return r
     if source_unit == "C":
-        if target_unit == "C":
-            return r
         return RoRfromCtoF(r)
-    if source_unit == "F":
-        if target_unit == "F":
-            return r
-        return RoRfromFtoC(r)
-    return r
-        
-def convertTemp(t,source_unit,target_unit):
-    if source_unit == "C":
-        if target_unit == "C":
-            return t
-        return fromCtoF(t)
-    if source_unit == "F":
-        if target_unit == "F":
-            return t
-        return fromFtoC(t)
-    return t
+    return RoRfromFtoC(r)
 
+def convertTemp(t,source_unit,target_unit):
+    if source_unit == target_unit:
+        return t
+    if source_unit == "C":
+        return fromCtoF(t)
+    return fromFtoC(t)
 
 def path2url(path):
     import urllib.parse as urlparse  # @Reimport
@@ -193,12 +190,15 @@ def toFloat(x):
     except Exception: # pylint: disable=broad-except
         return 0.
 def toBool(x):
-    if x is None:
-        return False
     if isinstance(x,str):
-        if x in ["false","False"]:
+        if x == "false":
             return False
-        return True
+        if x == "true":
+            return True
+        try:
+            return bool(eval(x)) # pylint: disable=eval-used
+        except Exception: # pylint: disable=broad-except
+            return False
     return bool(x)
 def toStringList(x):
     if x:
@@ -213,9 +213,9 @@ def removeAll(l,s):
 # fills in intermediate interpolated values replacing -1 values based on surrounding values
 # [1, 2, 3, -1, -1, -1, 10, 11] => [1, 2, 3, 4.75, 6.5, 8.25, 11]
 # [1,2,3,-1,-1,-1,-1] => [1,2,3,-1,-1,-1,-1] # no final value to interpolate too, so trailing -1 are kept!
-# [-1,-1,2] => [2, 2, 2] # a prefix of -1 of max length 5 will be replaced by the first value in l that is not -1
+# [-1,-1,2] => [2, 2, 2] # a prefix of -1 of max length 'interpolate_max' will be replaced by the first value in l that is not -1
 # INVARIANT: the resulting list has always the same lenght as l
-# only gaps of length interpolate_max, if not None, are interpolated
+# only gaps of length interpolate_max (should be set to the global aw.qmc.interpolatemax), if not None, are interpolated
 def fill_gaps(l, interpolate_max=3):
     res = []
     last_val = -1
@@ -266,6 +266,7 @@ def fill_gaps(l, interpolate_max=3):
 # setting of the app
 # eg. ~/Library/Application Support/Artisan-Scope/Artisan (macOS)
 #     C:/Users/<USER>/AppData/Local/Artisan-Scope/Artisan" (Windows)
+#     ~/.local/shared/Artisan-Scope/Artisan" (Linux)
 
 # getDataDirectory() returns the Artisan data directory
 # if app is not yet initialized None is returned
@@ -279,7 +280,7 @@ def getDataDirectory():
     return None
 
 # internal function to return
-@functools.lru_cache
+@functools.lru_cache(maxsize=None)
 def _getAppDataDirectory(app):
     # temporarily switch app name to Artisan (as it might be ArtisanViewer)
     appName = app.applicationName()
@@ -295,7 +296,7 @@ def _getAppDataDirectory(app):
     except Exception:  # pylint: disable=broad-except
         return None
 
-@functools.lru_cache
+@functools.lru_cache(maxsize=None)
 def getAppPath():
     res = ""
     platf = platform.system()
@@ -313,7 +314,7 @@ def getAppPath():
         res = QCoreApplication.applicationDirPath() + "/"
     return res
 
-@functools.lru_cache
+@functools.lru_cache(maxsize=None)
 def getResourcePath():
     res = ""
     platf = platform.system()
@@ -361,14 +362,14 @@ def getDirectory(
 
         
 # creates QLinearGradient style from light to dark by default, or from dark to light if reverse is True
-@functools.lru_cache
+@functools.lru_cache(maxsize=None)
 def createGradient(rgb, tint_factor=0.1, shade_factor=0.1, reverse=False):
     light_grad,dark_grad = createRGBGradient(rgb,tint_factor,shade_factor)
     if reverse:
         # dark to light
-        return f"QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {dark_grad}, stop: 1 {light_grad})"
+        return f"QLinearGradient(x1:0,y1:0,x2:0,y2:1,stop:0 {dark_grad}, stop:1 {light_grad})"
     # light to dark (default)
-    return f"QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {light_grad}, stop: 1 {dark_grad})"
+    return f"QLinearGradient(x1:0,y1:0,x2:0,y2:1,stop:0 {light_grad}, stop:1 {dark_grad})"
 
 def createRGBGradient(rgb, tint_factor=0.3, shade_factor=0.3):
     try:
@@ -392,7 +393,7 @@ def createRGBGradient(rgb, tint_factor=0.3, shade_factor=0.3):
 
 # Logging
 
-@functools.lru_cache
+@functools.lru_cache(maxsize=None)
 def getLoggers():
     return [logging.getLogger(name) for name in logging.root.manager.loggerDict if ("." not in name)]  # @UndefinedVariable pylint: disable=no-member
 
@@ -425,7 +426,6 @@ def setFileLogLevels(level) -> None:
 
 # returns True if new log level of loggers is DEBUG, False otherwise
 def debugLogLevelToggle() -> bool:
-    _log.info("debugLogLevelToggle()")
     # first get all module loggers
     newDebugLevel = not debugLogLevelActive()
     setDebugLogLevel(newDebugLevel)

@@ -26,7 +26,11 @@ if sys.platform.startswith("darwin"):
     # import module to detect if OS X dark mode is active or not
     import darkdetect # @UnresolvedImport # pylint: disable=import-error
 import logging
-from typing import Final
+try:
+    from typing import Final
+except ImportError:
+    # for Python 3.7:
+    from typing_extensions import Final
 
 from artisanlib.util import deltaLabelUTF8, decodeLocal, stringfromseconds, appFrozen, fromFtoC, fromCtoF, fill_gaps
 from artisanlib.suppress_errors import suppress_stdout_stderr
@@ -718,7 +722,8 @@ class roastCompareDlg(ArtisanDialog):
 
     __slots__ = [ 'foreground', 'background', 'maxentries', 'basecolors', 'profiles', 'label_number', 'l_align', 'legend', 'legendloc_pos', 'addButton',
         'deleteButton', 'alignnames', 'alignComboBox', 'etypes', 'eventsComboBox', 'cb', 'model', 'button_7_org_state_hidden', 'button_1_org_state_hidden',
-        'button_2_org_state_hidden', 'button_10_org_state_hidden', 'pick_handler_id' ]
+        'button_2_org_state_hidden', 'button_10_org_state_hidden', 'pick_handler_id', 'BBPCheckBox', 'buttonCONTROL_org_state_hidden', 'buttonONOFF_org_state_hidden',
+        'buttonRESET_org_state_hidden', 'buttonSTARTSTOP_org_state_hidden', 'profileTable' ]
     
     def __init__(self, parent = None, aw = None, foreground = None, background = None):
         super().__init__(parent, aw)

@@ -30,9 +30,13 @@
 import time as libtime
 import numpy
 import logging
-from typing import Final
+try:
+    from typing import Final
+except ImportError:
+    # for Python 3.7:
+    from typing_extensions import Final
 
-from artisanlib.util import decs2string, fromCtoF, fromFtoC, hex2int, str2cmd, stringfromseconds
+from artisanlib.util import decs2string, fromCtoF, fromFtoC, hex2int, str2cmd, stringfromseconds, cmd2str
 
 try:
     #pylint: disable = E, W, R, C
@@ -727,6 +731,8 @@ class FujiPID():
                 reg = self.aw.modbus.address2register(reg_dict[svkey][1],6)
                 self.aw.modbus.writeSingleRegister(self.aw.ser.controlETpid[1],reg,int(value*10))
             else:
+#                value = int(round(value)) # not sure why this is needed, but a FUJI PXF seems not to work without this and value as full floating point numbers!?
+# this hack seems not to help
                 command = self.message2send(self.aw.ser.controlETpid[1],6,reg_dict[svkey][1],int(value*10))
                 r = self.aw.ser.sendFUJIcommand(command,8)
             #check response
@@ -743,7 +749,12 @@ class FujiPID():
                 if move:
                     self.aw.moveSVslider(value,setValue=False)
             else:
-                self.aw.qmc.adderror(QApplication.translate("Error Message","Exception:") + " setsv()")
+                # error response
+                Rx = ""
+                if len(r):
+                    import binascii
+                    Rx = cmd2str(binascii.hexlify(r))
+                self.aw.qmc.adderror(QApplication.translate("Error Message","Exception:") + " setsv(): Rx = " + Rx)
         #Fuji PXR
         elif self.aw.ser.controlETpid[0] == 1:  
             if self.aw.ser.useModbusPort:
@@ -1131,7 +1142,6 @@ class PIDcontrol():
         self.pidKp = 15.0
         self.pidKi = 0.01
         self.pidKd = 20.0
-        self.lastEnergy = None
         # Proposional on Measurement mode see: http://brettbeauregard.com/blog/2017/06/introducing-proportional-on-measurement/
         self.pOnE = True # True for Proposional on Error mode, False for Proposional on Measurement Mode
         # pidSource
@@ -1179,34 +1189,31 @@ class PIDcontrol():
              
     # v is from [-min,max]
     def setEnergy(self,v):
-        # only update control signal if different to previous (cache reset by PID_ON)
-        if self.lastEnergy is None or self.lastEnergy != v:
-            try: 
-                if self.aw.pidcontrol.pidPositiveTarget:
-                    slidernr = self.aw.pidcontrol.pidPositiveTarget - 1
-                    if self.aw.pidcontrol.invertControl:
-                        vp = abs(100 - v)
-                    else:
-                        vp = v
-                    vp = min(100,max(0,int(round(vp))))
-                    # we need to map the duty [0%,100%] to the [slidermin,slidermax] range
-                    heat = int(round(numpy.interp(vp,[0,100],[self.aw.eventslidermin[slidernr],self.aw.eventslidermax[slidernr]])))
-                    self.aw.block_quantification_sampling_ticks[slidernr] = self.aw.sampling_ticks_to_block_quantifiction
-                    self.aw.qmc.temporarymovepositiveslider = (slidernr,heat)
-                if self.aw.pidcontrol.pidNegativeTarget:
-                    slidernr = self.aw.pidcontrol.pidNegativeTarget - 1
-                    if self.aw.pidcontrol.invertControl:
-                        vn = 0 - v
-                    else:
-                        vn = v
-                    vn = min(0,max(-100,int(vn)))
-                    # we need to map the duty [0%,-100%] to the [slidermin,slidermax] range
-                    self.aw.block_quantification_sampling_ticks[slidernr] = self.aw.sampling_ticks_to_block_quantifiction
-                    cool = int(round(numpy.interp(vn,[-100,0],[self.aw.eventslidermax[slidernr],self.aw.eventslidermin[slidernr]])))
-                    self.aw.qmc.temporarymovenegativeslider = (slidernr,cool)
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
-        self.lastEnergy = v
+        try: 
+            if self.aw.pidcontrol.pidPositiveTarget:
+                slidernr = self.aw.pidcontrol.pidPositiveTarget - 1
+                if self.aw.pidcontrol.invertControl:
+                    vp = abs(100 - v)
+                else:
+                    vp = v
+                vp = min(100,max(0,int(round(vp))))
+                # we need to map the duty [0%,100%] to the [slidermin,slidermax] range
+                heat = int(round(numpy.interp(vp,[0,100],[self.aw.eventslidermin[slidernr],self.aw.eventslidermax[slidernr]])))
+                self.aw.block_quantification_sampling_ticks[slidernr] = self.aw.sampling_ticks_to_block_quantifiction
+                self.aw.qmc.temporarymovepositiveslider = (slidernr,heat)
+            if self.aw.pidcontrol.pidNegativeTarget:
+                slidernr = self.aw.pidcontrol.pidNegativeTarget - 1
+                if self.aw.pidcontrol.invertControl:
+                    vn = 0 - v
+                else:
+                    vn = v
+                vn = min(0,max(-100,int(vn)))
+                # we need to map the duty [0%,-100%] to the [slidermin,slidermax] range
+                self.aw.block_quantification_sampling_ticks[slidernr] = self.aw.sampling_ticks_to_block_quantifiction
+                cool = int(round(numpy.interp(vn,[-100,0],[self.aw.eventslidermax[slidernr],self.aw.eventslidermin[slidernr]])))
+                self.aw.qmc.temporarymovenegativeslider = (slidernr,cool)
+        except Exception as e: # pylint: disable=broad-except
+            _log.exception(e)
 
     def conv2celsius(self):
         try:
@@ -1296,10 +1303,11 @@ class PIDcontrol():
 
     def pidOn(self):
         if self.aw.qmc.flagon:
+            if not self.pidActive:
+                self.aw.sendmessage(QApplication.translate("StatusBar","PID ON"))
             self.pidModeInit()
                     
             self.aw.qmc.temporayslider_force_move = True
-            self.lastEnergy = None
             # TC4 hardware PID
             # MODBUS hardware PID
             if (self.aw.pidcontrol.externalPIDControl() == 1 and self.aw.modbus.PID_ON_action and self.aw.modbus.PID_ON_action != ""):
@@ -1345,7 +1353,8 @@ class PIDcontrol():
                 self.setSV(self.svValue)
 
     def pidOff(self):
-        self.aw.sendmessage(QApplication.translate("Message","PID OFF"))
+        if self.pidActive:
+            self.aw.sendmessage(QApplication.translate("Message","PID OFF"))
         self.aw.setTimerColor("timer")
         if self.aw.qmc.flagon and not self.aw.qmc.flagstart:
             self.aw.qmc.setLCDtime(0)

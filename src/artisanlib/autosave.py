@@ -69,6 +69,12 @@ class autosaveDlg(ArtisanDialog):
         self.autopdfcheckbox.setChecked(self.aw.qmc.autosaveimage)
         self.imageTypesComboBox = QComboBox()
         self.imageTypesComboBox.addItems(self.aw.qmc.autoasaveimageformat_types)
+        try:
+            if not self.aw.QtWebEngineSupport:
+                # disable "PDF Report" item if QtWebEngine Support is not available
+                self.imageTypesComboBox.model().item(self.aw.qmc.autoasaveimageformat_types.index("PDF Report")).setEnabled(False)
+        except Exception: # pylint: disable=broad-except
+            pass
         self.imageTypesComboBox.setCurrentIndex(self.aw.qmc.autoasaveimageformat_types.index(self.aw.qmc.autosaveimageformat))
         prefixlabel = QLabel()
         prefixlabel.setAlignment(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight)
@@ -181,7 +187,7 @@ class autosaveDlg(ArtisanDialog):
         self.aw.qmc.autosaveimage = self.autopdfcheckbox.isChecked()
         self.aw.qmc.autosaveimageformat = self.imageTypesComboBox.currentText()
         self.aw.qmc.autosaveaddtorecentfilesflag = self.addtorecentfiles.isChecked()
-        self.aw.closeEventSettings()
+#        self.aw.closeEventSettings()
         self.close()
 
     @pyqtSlot()

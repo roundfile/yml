@@ -17,7 +17,11 @@
 # Marko Luther, 2018
 
 import logging
-from typing import Final
+try:
+    from typing import Final
+except ImportError:
+    # for Python 3.7:
+    from typing_extensions import Final
 
 from Phidget22.Devices.Manager import Manager
 from Phidget22.DeviceID import DeviceID
@@ -71,7 +75,7 @@ class PhidgetManager():
             _log.exception(e)
     
     def addChannel(self,channel):
-        _log.debug("addChannel: %s %s", channel, type(channel))
+#        _log.debug("addChannel: %s %s", channel, type(channel))
         try:
             self.managersemaphore.acquire(1)
             state = True

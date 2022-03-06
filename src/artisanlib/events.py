@@ -19,11 +19,15 @@
 import sys
 import platform
 import logging
-from typing import Final
+try:
+    from typing import Final
+except ImportError:
+    # for Python 3.7:
+    from typing_extensions import Final
 
 from artisanlib.util import uchr
 from artisanlib.dialogs import ArtisanResizeablDialog, ArtisanDialog
-from artisanlib.widgets import MyQComboBox
+from artisanlib.widgets import MyQComboBox, MyQDoubleSpinBox
 
 from uic import SliderCalculatorDialog
 
@@ -33,7 +37,7 @@ try:
     from PyQt6.QtCore import (Qt, pyqtSlot, QSettings, QCoreApplication) # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtGui import (QColor, QFont, QIntValidator) # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QPushButton, QSpinBox, QDoubleSpinBox, QWidget, QTabWidget, QDialogButtonBox, # @UnusedImport @Reimport  @UnresolvedImport
+                                 QPushButton, QSpinBox, QWidget, QTabWidget, QDialogButtonBox, # @UnusedImport @Reimport  @UnresolvedImport
                                  QGridLayout, QGroupBox, QTableWidget, QHeaderView, QToolButton) # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6 import sip # @UnusedImport @Reimport  @UnresolvedImport
 except Exception:
@@ -41,9 +45,12 @@ except Exception:
     from PyQt5.QtCore import (Qt, pyqtSlot, QSettings, QCoreApplication) # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtGui import (QColor, QFont, QIntValidator) # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QPushButton, QSpinBox, QDoubleSpinBox, QWidget, QTabWidget, QDialogButtonBox, # @UnusedImport @Reimport  @UnresolvedImport
+                                 QPushButton, QSpinBox, QWidget, QTabWidget, QDialogButtonBox, # @UnusedImport @Reimport  @UnresolvedImport
                                  QGridLayout, QGroupBox, QTableWidget, QHeaderView, QToolButton) # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt5 import sip  # @UnusedImport @Reimport  @UnresolvedImport
+    try:
+        from PyQt5 import sip # @Reimport @UnresolvedImport @UnusedImport
+    except Exception: # pylint: disable=broad-except
+        import sip  # @Reimport @UnresolvedImport @UnusedImport
 
 
 _log: Final = logging.getLogger(__name__)
@@ -188,7 +195,7 @@ class EventsDlg(ArtisanResizeablDialog):
         C7Widget.setLayout(tab7Layout)
 
         ## TAB 1
-        self.eventsbuttonflag = QCheckBox(QApplication.translate("CheckBox","Button"))
+        self.eventsbuttonflag = QCheckBox(QApplication.translate("ComboBox","Event Button"))
         self.eventsbuttonflag.setChecked(bool(self.aw.eventsbuttonflag))
         self.eventsbuttonflag.stateChanged.connect(self.eventsbuttonflagChanged)
         self.annotationsflagbox = QCheckBox(QApplication.translate("CheckBox","Annotations"))
@@ -213,10 +220,6 @@ class EventsDlg(ArtisanResizeablDialog):
         
         if self.aw.qmc.eventsGraphflag not in [2,3,4]:
             self.eventsclampflag.setEnabled(False)
-        self.minieventsflag = QCheckBox(QApplication.translate("CheckBox","Mini Editor"))
-        self.minieventsflag.setToolTip(QApplication.translate("Tooltip","Allows to enter a description of the last event"))
-        self.minieventsflag.setChecked(bool(self.aw.minieventsflag))
-        self.minieventsflag.stateChanged.connect(self.minieventsflagChanged)
         barstylelabel = QLabel(QApplication.translate("Label","Markers"))
         barstyles = ["",
                     QApplication.translate("ComboBox","Flag"),
@@ -384,28 +387,28 @@ class EventsDlg(ArtisanResizeablDialog):
         self.E4thicknessSpinBox.setRange(1,10)
         self.E4thicknessSpinBox.setValue(int(round(self.aw.qmc.Evaluelinethickness[3])))
         self.E4thicknessSpinBox.valueChanged.connect(self.setElinethickness3)
-        self.E1alphaSpinBox = QDoubleSpinBox()
+        self.E1alphaSpinBox = MyQDoubleSpinBox()
         self.E1alphaSpinBox.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E1alphaSpinBox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E1alphaSpinBox.setRange(.1,1.)
         self.E1alphaSpinBox.setSingleStep(.1)
         self.E1alphaSpinBox.setValue(self.aw.qmc.Evaluealpha[0])
         self.E1alphaSpinBox.valueChanged.connect(self.setElinealpha0)
-        self.E2alphaSpinBox = QDoubleSpinBox()
+        self.E2alphaSpinBox = MyQDoubleSpinBox()
         self.E2alphaSpinBox.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E2alphaSpinBox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E2alphaSpinBox.setRange(.1,1.)
         self.E2alphaSpinBox.setSingleStep(.1)
         self.E2alphaSpinBox.setValue(self.aw.qmc.Evaluealpha[1])
         self.E1alphaSpinBox.valueChanged.connect(self.setElinealpha1)
-        self.E3alphaSpinBox = QDoubleSpinBox()
+        self.E3alphaSpinBox = MyQDoubleSpinBox()
         self.E3alphaSpinBox.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E3alphaSpinBox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E3alphaSpinBox.setRange(.1,1.)
         self.E3alphaSpinBox.setSingleStep(.1)
         self.E3alphaSpinBox.setValue(self.aw.qmc.Evaluealpha[2])
         self.E3alphaSpinBox.valueChanged.connect(self.setElinealpha2)
-        self.E4alphaSpinBox = QDoubleSpinBox()
+        self.E4alphaSpinBox = MyQDoubleSpinBox()
         self.E4alphaSpinBox.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E4alphaSpinBox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E4alphaSpinBox.setRange(.1,1.)
@@ -656,45 +659,45 @@ class EventsDlg(ArtisanResizeablDialog):
         self.E2command = QLineEdit(self.aw.eventslidercommands[1])
         self.E3command = QLineEdit(self.aw.eventslidercommands[2])
         self.E4command = QLineEdit(self.aw.eventslidercommands[3])
-        self.E1offset = QDoubleSpinBox()
+        self.E1offset = MyQDoubleSpinBox()
         self.E1offset.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E1offset.setRange(-9999,9999)
         self.E1offset.setDecimals(2)
         self.E1offset.setValue(self.aw.eventslideroffsets[0])
-        self.E2offset = QDoubleSpinBox()
+        self.E2offset = MyQDoubleSpinBox()
         self.E2offset.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E2offset.setRange(-9999,9999)
         self.E2offset.setDecimals(2)
         self.E2offset.setValue(self.aw.eventslideroffsets[1])
-        self.E3offset = QDoubleSpinBox()
+        self.E3offset = MyQDoubleSpinBox()
         self.E3offset.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E3offset.setRange(-9999,9999)
         self.E3offset.setDecimals(2)
         self.E3offset.setValue(self.aw.eventslideroffsets[2])
-        self.E4offset = QDoubleSpinBox()
+        self.E4offset = MyQDoubleSpinBox()
         self.E4offset.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E4offset.setRange(-9999,9999)
         self.E4offset.setDecimals(2)
         self.E4offset.setValue(self.aw.eventslideroffsets[3])
-        self.E1factor = QDoubleSpinBox()
+        self.E1factor = MyQDoubleSpinBox()
         self.E1factor.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E1factor.setRange(-999,999)
         self.E1factor.setDecimals(4)
         self.E1factor.setValue(self.aw.eventsliderfactors[0])
         self.E1factor.setMaximumWidth(70)
-        self.E2factor = QDoubleSpinBox()
+        self.E2factor = MyQDoubleSpinBox()
         self.E2factor.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E2factor.setRange(-999,999)
         self.E2factor.setDecimals(4)
         self.E2factor.setValue(self.aw.eventsliderfactors[1])
         self.E2factor.setMaximumWidth(70)
-        self.E3factor = QDoubleSpinBox()
+        self.E3factor = MyQDoubleSpinBox()
         self.E3factor.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E3factor.setRange(-999,999)
         self.E3factor.setDecimals(4)
         self.E3factor.setValue(self.aw.eventsliderfactors[2])
         self.E3factor.setMaximumWidth(70)
-        self.E4factor = QDoubleSpinBox()
+        self.E4factor = MyQDoubleSpinBox()
         self.E4factor.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E4factor.setRange(-999,999)
         self.E4factor.setDecimals(4)
@@ -871,15 +874,19 @@ class EventsDlg(ArtisanResizeablDialog):
         self.E1quantifierSV = QCheckBox()
         self.E1quantifierSV.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E1quantifierSV.setChecked(bool(self.aw.eventquantifierSV[0]))
+        self.E1quantifierSV.setToolTip(QApplication.translate("Tooltip", "If source is a Set Value quantification gets never blocked"))
         self.E2quantifierSV = QCheckBox()
         self.E2quantifierSV.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E2quantifierSV.setChecked(bool(self.aw.eventquantifierSV[1]))
+        self.E2quantifierSV.setToolTip(QApplication.translate("Tooltip", "If source is a Set Value quantification gets never blocked"))
         self.E3quantifierSV = QCheckBox()
         self.E3quantifierSV.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E3quantifierSV.setChecked(bool(self.aw.eventquantifierSV[2]))
+        self.E3quantifierSV.setToolTip(QApplication.translate("Tooltip", "If source is a Set Value quantification gets never blocked"))
         self.E4quantifierSV = QCheckBox()
         self.E4quantifierSV.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E4quantifierSV.setChecked(bool(self.aw.eventquantifierSV[3]))
+        self.E4quantifierSV.setToolTip(QApplication.translate("Tooltip", "If source is a Set Value quantification gets never blocked"))
         
         self.curvenames = []
         self.curvenames.append(QApplication.translate("ComboBox","ET"))
@@ -951,8 +958,6 @@ class EventsDlg(ArtisanResizeablDialog):
         FlagsLayout = QHBoxLayout()
         FlagsLayout.addStretch()
         FlagsLayout.addWidget(self.eventsbuttonflag)
-        FlagsLayout.addSpacing(5)
-        FlagsLayout.addWidget(self.minieventsflag)
         FlagsLayout.addSpacing(5)
         FlagsLayout.addWidget(self.showeventsonbtbox)
         FlagsLayout.addSpacing(5)
@@ -2444,8 +2449,8 @@ class EventsDlg(ArtisanResizeablDialog):
             self.aw.extraeventbuttontextcolor[visualIndex] = self.extraeventbuttontextcolor[i]
 
         #Apply Event Button Changes
-        self.aw.settooltip()
         self.aw.realignbuttons()
+        self.aw.settooltip() # has to be done after realignbuttons() to have set the aw.buttonlist correctly!
         self.aw.update_extraeventbuttons_visibility()
 
     @pyqtSlot()
@@ -2586,7 +2591,6 @@ class EventsDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def delextraeventbutton(self,_):
-        self.disconnectTableItemActions() # we ensure that signals from to be deleted items are not fired anymore
         bindex = len(self.extraeventstypes)-1
         selected = self.eventbuttontable.selectedRanges()
 
@@ -2594,6 +2598,7 @@ class EventsDlg(ArtisanResizeablDialog):
             bindex = selected[0].topRow()
 
         if bindex >= 0:
+            self.disconnectTableItemActions() # we ensure that signals from to be deleted items are not fired anymore
             self.extraeventslabels.pop(bindex)
             self.extraeventsdescriptions.pop(bindex)
             self.extraeventstypes.pop(bindex)
@@ -2736,15 +2741,6 @@ class EventsDlg(ArtisanResizeablDialog):
     def changeShowEtypes(self,etype):
         self.aw.qmc.showEtypes[etype] = not self.aw.qmc.showEtypes[etype]
         self.aw.qmc.redraw(recomputeAllDeltas=False)
-        
-    @pyqtSlot(int)
-    def minieventsflagChanged(self,_):
-        if self.minieventsflag.isChecked():
-            self.aw.minieventsflag = 1
-        else:
-            self.aw.minieventsflag = 0
-        if self.aw.qmc.flagon:
-            self.aw.update_minieventline_visibility()
 
     @pyqtSlot(int)
     def eventsGraphTypeflagChanged(self,_):
@@ -2877,7 +2873,6 @@ class EventsDlg(ArtisanResizeablDialog):
         self.annotationsflagstored = self.aw.qmc.annotationsflag
         self.showeventsonbtstored = self.aw.qmc.showeventsonbt
         self.showEtypesstored = self.aw.qmc.showEtypes[:]
-        self.minieventsflagstored = self.aw.minieventsflag
         self.eventsGraphflagstored = self.aw.qmc.eventsGraphflag
         self.etypesstored = self.aw.qmc.etypes
         self.etypeComboBoxstored = self.aw.etypeComboBox
@@ -2940,7 +2935,6 @@ class EventsDlg(ArtisanResizeablDialog):
         self.aw.qmc.annotationsflag = self.annotationsflagstored
         self.aw.qmc.showeventsonbt = self.showeventsonbtstored
         self.aw.qmc.showEtypes = self.showEtypesstored[:]
-        self.aw.minieventsflag = self.minieventsflagstored
         self.aw.qmc.eventsGraphflag = self.eventsGraphflagstored
         self.aw.qmc.etypes = self.etypesstored
         self.aw.etypeComboBox = self.etypeComboBoxstored
@@ -3094,7 +3088,7 @@ class EventsDlg(ArtisanResizeablDialog):
                 self.aw.updateSlidersProperties() # set visibility and event names on slider widgets
             #save special event annotations
             self.saveAnnotationsSettings()
-            self.aw.closeEventSettings()
+#            self.aw.closeEventSettings()
             # restart PhidgetManager
             try:
                 self.aw.qmc.restartPhidgetManager()

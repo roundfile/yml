@@ -17,17 +17,18 @@
 # Marko Luther, 2020
 
 from artisanlib.dialogs import ArtisanDialog
+from artisanlib.widgets import MyQDoubleSpinBox
 
 try:
     #pylint: disable = E, W, R, C
     from PyQt6.QtCore import Qt, pyqtSlot, QSettings # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtWidgets import (QApplication, QHBoxLayout, QVBoxLayout, QCheckBox, QGridLayout, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QDialogButtonBox, QDoubleSpinBox, QLayout, QMessageBox) # @UnusedImport @Reimport  @UnresolvedImport
+                                 QDialogButtonBox, QLayout, QMessageBox) # @UnusedImport @Reimport  @UnresolvedImport
 except Exception:
     #pylint: disable = E, W, R, C
     from PyQt5.QtCore import Qt, pyqtSlot, QSettings # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QVBoxLayout, QCheckBox, QGridLayout, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QDialogButtonBox, QDoubleSpinBox, QLayout, QMessageBox) # @UnusedImport @Reimport  @UnresolvedImport
+                                 QDialogButtonBox, QLayout, QMessageBox) # @UnusedImport @Reimport  @UnresolvedImport
 
 class SamplingDlg(ArtisanDialog):
     def __init__(self, parent = None, aw = None):
@@ -47,7 +48,7 @@ class SamplingDlg(ArtisanDialog):
         self.openCompletedFlag.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.openCompletedFlag.setChecked(bool(self.aw.qmc.flagOpenCompleted))
         
-        self.interval = QDoubleSpinBox()
+        self.interval = MyQDoubleSpinBox()
         self.interval.setSingleStep(1)
         self.interval.setValue(self.aw.qmc.delay/1000.)
         self.interval.setRange(self.aw.qmc.min_delay/1000.,40.)
@@ -115,9 +116,9 @@ class SamplingDlg(ArtisanDialog):
         self.aw.qmc.flagKeepON = bool(self.keepOnFlag.isChecked())
         self.aw.qmc.flagOpenCompleted = bool(self.openCompletedFlag.isChecked())
         self.aw.qmc.delay = int(self.interval.value()*1000.)
-        if self.aw.qmc.delay < self.aw.qmc.default_delay:
-            QMessageBox.warning(self.aw,QApplication.translate("Message", "Warning",None),QApplication.translate("Message", "A tight sampling interval might lead to instability on some machines. We suggest a minimum of 3s.")) 
+#        if self.aw.qmc.delay < self.aw.qmc.default_delay:
+#            QMessageBox.warning(self.aw,QApplication.translate("Message", "Warning",None),QApplication.translate("Message", "A tight sampling interval might lead to instability on some machines. We suggest a minimum of 3s.")) 
         self.storeSettings() 
-        self.aw.closeEventSettings()
+#        self.aw.closeEventSettings()
         self.accept()
 

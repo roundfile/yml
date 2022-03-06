@@ -51,7 +51,8 @@ DATA_FILES = [
     ("../translations", [QTDIR + r'/translations/qtbase_ko.qm']),
 #    ("../translations", [QTDIR + r'/translations/qtbase_pt.qm']),    # empty/missing
     ("../translations", [QTDIR + r'/translations/qtbase_pl.qm']),
-    ("../translations", [QTDIR + r'/translations/qtbase_ru.qm']),
+#    ("../translations", [QTDIR + r'/translations/qtbase_ru.qm']),
+    ("../translations", [QTDIR + r'/translations/qtbase_uk.qm']),
 #    ("../translations", [QTDIR + r'/translations/qtbase_sv.qm']),    # empty/missing
     ("../translations", [QTDIR + r'/translations/qtbase_tr.qm']),     # new in Qt 5.15.2
 #    ("../translations", [QTDIR + r'/translations/qtbase_zh_CN.qm']), # empty/missing
@@ -72,7 +73,8 @@ DATA_FILES = [
     ("../translations", [r'translations/artisan_pt.qm']),
     ("../translations", [r'translations/artisan_pt_BR.qm']),
     ("../translations", [r'translations/artisan_pl.qm']),
-    ("../translations", [r'translations/artisan_ru.qm']),
+#    ("../translations", [r'translations/artisan_ru.qm']),
+    ("../translations", [r'translations/artisan_uk.qm']),
     ("../translations", [r"translations/artisan_sv.qm"]),
     ("../translations", [r"translations/artisan_no.qm"]),
     ("../translations", [r"translations/artisan_nl.qm"]),
@@ -189,11 +191,10 @@ try:
 except:
     PYTHONPATH = r'/Library/Frameworks/Python.framework/Versions/3.10/lib/python3.10/'
 
-try:
-    PYTHON_V = os.environ["PYTHON_V"]
-except:
-    PYTHON_V = '3.10'
-    
+#try:
+#    PYTHON_V = os.environ["PYTHON_V"]
+#except:
+#    PYTHON_V = '3.10'
 # (independent) matplotlib (installed via pip) shared libs are not copied by py2app (both cp are needed!)
 # UPDATE 9/2020: pip install of MPL v3.3.x does not come with a .dylibs directory any longer
 #subprocess.check_call(r'mkdir Artisan.app/Contents/Resources/lib/python' + PYTHON_V + '/lib-dynload/matplotlib/.dylibs',shell = True)
@@ -224,15 +225,15 @@ for lang in ['ar', 'da', 'de','el','en','es','fa','fi','fr','gd', 'he','hu','id'
 #
 # to get libusb installed
 try:
-    subprocess.check_call(r'cp /usr/local/Cellar/libusb/1.0.24/lib/libusb-1.0.0.dylib Artisan.app/Contents/Frameworks/libusb-1.0.dylib',shell = True)
+    subprocess.check_call(r'cp /usr/local/Cellar/libusb/1.0.25/lib/libusb-1.0.0.dylib Artisan.app/Contents/Frameworks/libusb-1.0.dylib',shell = True)
 except:
     try:
-        subprocess.check_call(r'cp /usr/local/Cellar/libusb/1.0.23/lib/libusb-1.0.0.dylib Artisan.app/Contents/Frameworks/libusb-1.0.dylib',shell = True)
+        subprocess.check_call(r'cp /usr/local/Cellar/libusb/1.0.24/lib/libusb-1.0.0.dylib Artisan.app/Contents/Frameworks/libusb-1.0.dylib',shell = True)
     except Exception as e:
         try:
-            subprocess.check_call(r'cp /usr/local/Cellar/libusb/1.0.22/lib/libusb-1.0.0.dylib Artisan.app/Contents/Frameworks/libusb-1.0.dylib',shell = True)
+            subprocess.check_call(r'cp /usr/local/Cellar/libusb/1.0.23/lib/libusb-1.0.0.dylib Artisan.app/Contents/Frameworks/libusb-1.0.dylib',shell = True)
         except Exception as e:
-            subprocess.check_call(r'cp /usr/local/Cellar/libusb/1.0.21/lib/libusb-1.0.0.dylib Artisan.app/Contents/Frameworks/libusb-1.0.dylib',shell = True)
+            subprocess.check_call(r'cp /usr/local/Cellar/libusb/1.0.22/lib/libusb-1.0.0.dylib Artisan.app/Contents/Frameworks/libusb-1.0.dylib',shell = True)
     
 
             

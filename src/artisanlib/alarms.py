@@ -19,7 +19,11 @@
 import os
 import sys
 import logging
-from typing import Final
+try:
+    from typing import Final
+except ImportError:
+    # for Python 3.7:
+    from typing_extensions import Final
 
 
 from artisanlib.util import deltaLabelUTF8
@@ -690,7 +694,7 @@ class AlarmDlg(ArtisanResizeablDialog):
         settings = QSettings()
         #save window geometry
         settings.setValue("AlarmsGeometry",self.saveGeometry())
-        self.aw.closeEventSettings()
+#        self.aw.closeEventSettings()
         
         self.aw.AlarmDlg_activeTab = self.TabWidget.currentIndex()
         self.accept()

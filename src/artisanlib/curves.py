@@ -24,7 +24,11 @@ import sys
 import platform
 import numpy
 import logging
-from typing import Final
+try:
+    from typing import Final
+except ImportError:
+    # for Python 3.7:
+    from typing_extensions import Final
 
 from artisanlib.util import (deltaLabelBigPrefix, deltaLabelPrefix, deltaLabelUTF8, 
                              stringtoseconds, stringfromseconds, toFloat)
@@ -293,6 +297,7 @@ class CurvesDlg(ArtisanDialog):
         self.org_DeltaETlcd = self.aw.qmc.DeltaETlcdflag
         self.org_DeltaBTlcd = self.aw.qmc.DeltaBTlcdflag
         self.org_Projection = self.aw.qmc.projectFlag
+        self.org_ProjectionDelta = self.aw.qmc.projectDeltaFlag
         self.org_patheffects = self.aw.qmc.patheffects
         self.org_graphstyle = self.aw.qmc.graphstyle
         self.org_graphfont = self.aw.qmc.graphfont
@@ -418,15 +423,21 @@ class CurvesDlg(ArtisanDialog):
         self.maxLimit.setValue(self.aw.qmc.filterDropOut_tmax)
         #show projection
         self.projectCheck = QCheckBox(QApplication.translate("CheckBox", "Projection"))
+        self.projectDeltaCheck = QCheckBox(deltaLabelUTF8 + QApplication.translate("CheckBox", "Projection"))
         self.projectionmodeComboBox = QComboBox()
         self.projectionmodeComboBox.addItems([QApplication.translate("ComboBox","linear"),
-                                              QApplication.translate("ComboBox","newton")])
+                                              QApplication.translate("ComboBox","quadratic")
+#                                              ,QApplication.translate("ComboBox","newton") # disabled
+                                              ])
         self.projectionmodeComboBox.setCurrentIndex(self.aw.qmc.projectionmode)
         self.projectionmodeComboBox.currentIndexChanged.connect(self.changeProjectionMode)
         self.projectCheck.setChecked(self.aw.qmc.projectFlag)
+        self.projectDeltaCheck.setChecked(self.aw.qmc.projectDeltaFlag)
+        self.projectDeltaCheck.setEnabled(self.aw.qmc.projectFlag)
         self.DeltaET.stateChanged.connect(self.changeDeltaET)         #toggle
         self.DeltaBT.stateChanged.connect(self.changeDeltaBT)         #toggle
         self.projectCheck.stateChanged.connect(self.changeProjection) #toggle
+        self.projectDeltaCheck.stateChanged.connect(self.changeDeltaProjection) #toggle
         
         deltaSpanLabel = QLabel(QApplication.translate("Label", "Delta Span"))
         self.spanitems = range(0,31)
@@ -458,6 +469,8 @@ class CurvesDlg(ArtisanDialog):
         rorBoxLayout.addStretch()
         rorBoxLayout.addWidget(self.projectCheck)
         rorBoxLayout.addWidget(self.projectionmodeComboBox)
+        rorBoxLayout.addSpacing(10)
+        rorBoxLayout.addWidget(self.projectDeltaCheck)
         self.DeltaETlcd = QCheckBox()
         self.DeltaETlcd.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.DeltaETlcd.setChecked(self.aw.qmc.DeltaETlcdflag)
@@ -2362,6 +2375,14 @@ class CurvesDlg(ArtisanDialog):
         if not self.aw.qmc.projectFlag:
             #erase old projections
             self.aw.qmc.resetlines()
+        self.projectDeltaCheck.setEnabled(self.aw.qmc.projectFlag)
+
+    @pyqtSlot(int)
+    def changeDeltaProjection(self,_=0):
+        self.aw.qmc.projectDeltaFlag = not self.aw.qmc.projectDeltaFlag
+        if not self.aw.qmc.projectDeltaFlag:
+            #erase old projections
+            self.aw.qmc.resetlines()
 
     @pyqtSlot(int)
     def changeProjectionMode(self,i):
@@ -2403,6 +2424,7 @@ class CurvesDlg(ArtisanDialog):
         self.aw.qmc.DeltaETlcdflag = self.org_DeltaETlcd
         self.aw.qmc.DeltaBTlcdflag = self.org_DeltaBTlcd
         self.aw.qmc.projectFlag = self.org_Projection
+        self.aw.qmc.projectDeltaFlag = self.org_ProjectionDelta
         self.aw.qmc.patheffects = self.org_patheffects
         self.aw.qmc.graphstyle = self.org_graphstyle
         self.aw.qmc.graphfont = self.org_graphfont
@@ -2496,5 +2518,5 @@ class CurvesDlg(ArtisanDialog):
         self.aw.qmc.resetlinecountcaches()
         self.aw.qmc.resetlines()
         self.aw.qmc.redraw(recomputeAllDeltas=True)
-        self.aw.closeEventSettings()
+#        self.aw.closeEventSettings()
         self.accept()

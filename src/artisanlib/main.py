@@ -70,7 +70,12 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 
 import logging.config
 from yaml import safe_load as yaml_load
-from typing import Final, Optional, List
+from typing import Optional, List
+try:
+    from typing import Final
+except ImportError:
+    # for Python 3.7:
+    from typing_extensions import Final
 
 from functools import reduce as freduce
 
@@ -103,6 +108,7 @@ except Exception: # pylint: disable=broad-except
 #    syslog.syslog(syslog.LOG_ALERT, str(e))
 #    syslog.syslog(syslog.LOG_ALERT, str(traceback.format_exc()))
 
+QtWebEngineSupport = False # set to True if the QtWebEngine was successfully imported
 
 try:
     #pylint: disable-next = E, W, R, C
@@ -118,12 +124,17 @@ try:
                                 QPixmap,QColor,QDesktopServices,QIcon, # @Reimport @UnresolvedImport @UnusedImport
                                 QRegularExpressionValidator,QDoubleValidator, QPainter, QCursor, QFont) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt6.QtPrintSupport import (QPrinter,QPrintDialog) # @Reimport @UnresolvedImport @UnusedImport
-    from PyQt6.QtCore import (QLibraryInfo, QTranslator, QLocale, QFileInfo, PYQT_VERSION_STR, pyqtSignal, pyqtSlot, # @Reimport @UnresolvedImport @UnusedImport
+    from PyQt6.QtCore import (QLibraryInfo, QTranslator, QLocale, QFileInfo, PYQT_VERSION_STR, pyqtSignal, pyqtSlot, pyqtProperty, QSize, # @Reimport @UnresolvedImport @UnusedImport
                               qVersion, QTime, QTimer, QFile, QIODevice, QTextStream, QSettings, # @Reimport @UnresolvedImport @UnusedImport
                               QRegularExpression, QDate, QUrl, QDir, Qt, QEvent, QDateTime, QObject, QThread, QSemaphore, qInstallMessageHandler) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt6.QtNetwork import QLocalSocket # @Reimport @UnresolvedImport @UnusedImport
     #QtWebEngineWidgets must be imported before a QCoreApplication instance is created
-    from PyQt6.QtWebEngineWidgets import QWebEngineView # @Reimport @UnresolvedImport @UnusedImport
+    try:
+        from PyQt6.QtWebEngineWidgets import QWebEngineView # @Reimport @UnresolvedImport @UnusedImport  # pylint: disable=import-error,no-name-in-module
+        QtWebEngineSupport = True
+    except Exception: # pylint: disable=broad-except
+        # on the RPi platform there is no native package PyQt-WebEngine nor PyQt6-WebEngine for Raspebarry 32bit
+        pass
     from PyQt6 import sip # @Reimport @UnresolvedImport @UnusedImport
 except Exception:
     #pylint: disable = E, W, R, C
@@ -139,13 +150,22 @@ except Exception:
                                 QPixmap,QColor,QDesktopServices,QIcon, # @Reimport @UnresolvedImport @UnusedImport
                                 QRegularExpressionValidator,QDoubleValidator, QPainter, QCursor, QFont) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt5.QtPrintSupport import (QPrinter,QPrintDialog) # @Reimport @UnresolvedImport @UnusedImport
-    from PyQt5.QtCore import (QLibraryInfo, QTranslator, QLocale, QFileInfo, PYQT_VERSION_STR, pyqtSignal, pyqtSlot, # @Reimport @UnresolvedImport @UnusedImport
+    from PyQt5.QtCore import (QLibraryInfo, QTranslator, QLocale, QFileInfo, PYQT_VERSION_STR, pyqtSignal, pyqtSlot, pyqtProperty, QSize, # @Reimport @UnresolvedImport @UnusedImport
                               qVersion, QTime, QTimer, QFile, QIODevice, QTextStream, QSettings,  # @Reimport @UnresolvedImport @UnusedImport
                               QRegularExpression, QDate, QUrl, QUrlQuery, QDir, Qt, QPoint, QEvent, QDateTime, QObject, QThread, QSemaphore, qInstallMessageHandler) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt5.QtNetwork import QLocalSocket # @Reimport @UnresolvedImport @UnusedImport
     #QtWebEngineWidgets must be imported before a QCoreApplication instance is created
-    from PyQt5.QtWebEngineWidgets import QWebEngineView # @Reimport @UnresolvedImport @UnusedImport
-    from PyQt5 import sip # @Reimport @UnresolvedImport @UnusedImport
+    try:
+        from PyQt5.QtWebEngineWidgets import QWebEngineView # @Reimport @UnresolvedImport @UnusedImport # pylint: disable=import-error,no-name-in-module
+        QtWebEngineSupport = True
+    except Exception: # pylint: disable=broad-except
+        # on the RPi platform there is no native package PyQt-WebEngine nor PyQt6-WebEngine for Raspebarry 32bit
+        pass
+    try:
+        from PyQt5 import sip # @Reimport @UnresolvedImport @UnusedImport
+    except Exception: # pylint: disable=broad-except
+        import sip # @Reimport @UnresolvedImport @UnusedImport
+        
 
 
 from artisanlib.suppress_errors import suppress_stdout_stderr
@@ -374,8 +394,11 @@ class Artisan(QtSingleApplication):
             self._isRunning = self._outSocket.waitForConnected(-1)
             if self.isRunning():
                 self._outStream = QTextStream(self._outSocket)
-                self._outStream.setCodec('UTF-8')
+#                self._outStream.setCodec('UTF-8')
                 return self.sendMessage(message)
+            return False
+        except Exception as e:
+            _log.exception(e)
             return False
         finally:
             self._outSocket = None
@@ -581,7 +604,7 @@ from artisanlib.slider_style import artisan_slider_style
 from artisanlib.event_button_style import artisan_event_button_style
 from artisanlib.simulator import Simulator
 from artisanlib.dialogs import ArtisanMessageBox, HelpDlg, ArtisanInputDialog, ArtisanComboBoxDialog
-from artisanlib.large_lcds import (LargeMainLCDs, LargeDeltaLCDs, LargePIDLCDs, LargeExtraLCDs, LargePhasesLCDs)
+from artisanlib.large_lcds import (LargeMainLCDs, LargeDeltaLCDs, LargePIDLCDs, LargeExtraLCDs, LargePhasesLCDs, LargeScaleLCDs)
 from artisanlib.logs import (serialLogDlg, errorDlg, messageDlg)
 from artisanlib.comm import serialport, colorport, scaleport
 from artisanlib.pid_dialogs import (PXRpidDlgControl, PXG4pidDlgControl, 
@@ -603,6 +626,7 @@ import plus.queue
 import plus.controller
 import plus.register
 import plus.notifications
+import plus.blend
 
 #######################################################################################
 #################### Ambient Data Collection  #########################################
@@ -624,6 +648,8 @@ class AmbientWorker(QObject): # pylint: disable=too-few-public-methods
 #################### GRAPH DRAWING WINDOW  ############################################
 #######################################################################################
 
+# NOTE: to have pylint to verify proper __slot__ definitions one has to remove the super class FigureCanvas here temporarily
+#   as this does not has __slot__ definitions and thus __dict__ is contained which suppresses the warnings
 class tgraphcanvas(FigureCanvas):
     updategraphicsSignal = pyqtSignal()
     updateLargeLCDsTimeSignal = pyqtSignal(str)
@@ -663,7 +689,7 @@ class tgraphcanvas(FigureCanvas):
     }
 
     __slots__ = [ 'locale_str', 'alpha', 'palette', 'palette1', 'EvalueColor_default', 'EvalueTextColor_default', 'artisanflavordefaultlabels', 'customflavorlabels',
-        'SCCAflavordefaultlabels', 'CQIflavordefaultlabels', 'SweetMariasflavordefaultlabels', 'Cflavordefaultlabels', 'Eflavordefaultlabels', 'coffeegeekflavordefaultlabels',
+        'SCAAflavordefaultlabels', 'SCAflavordefaultlabels', 'CQIflavordefaultlabels', 'SweetMariasflavordefaultlabels', 'Cflavordefaultlabels', 'Eflavordefaultlabels', 'coffeegeekflavordefaultlabels',
         'Intelligentsiaflavordefaultlabels', 'IstitutoInternazionaleAssaggiatoriCaffe', 'WorldCoffeeRoastingChampionship', 'ax1', 'ax2', 'ambiWorker', 'ambiThread', 'afterTP',
         'decay_weights', 'temp_decay_weights', 'flavorlabels', 'flavors', 'flavorstartangle', 'flavoraspect', 'flavorchart_plotf', 'flavorchart_angles', 'flavorchart_plot',
         'flavorchart_fill', 'flavorchart_labels', 'flavorchart_total', 'mode', 'mode_tempsliders', 'errorlog', 'default_delay', 'delay', 'min_delay', 'extra_event_sampling_delay',
@@ -687,16 +713,16 @@ class tgraphcanvas(FigureCanvas):
         'extralinewidths1', 'extralinewidths2', 'extramarkers1', 'extramarkers2', 'extramarkersizes1', 'extramarkersizes2', 'devicetablecolumnwidths', 'extraNoneTempHint1',
         'extraNoneTempHint2', 'plotcurves', 'plotcurvecolor', 'overlapList', 'tight_layout_params', 'fig', 'ax', 'delta_ax', 'legendloc', 'legendloc_pos', 'onclick_cid',
         'oncpick_cid', 'ondraw_cid', 'rateofchange1', 'rateofchange2', 'flagon', 'flagstart', 'flagKeepON', 'flagOpenCompleted', 'flagsampling', 'flagsamplingthreadrunning',
-        'manuallogETflag', 'zoom_follow', 'alignEvent', 'compareAlignEvent', 'compareEvents', 'compareET', 'compareBT', 'compareDeltaET', 'compareDeltaBT', 'compareMainEvents',
+        'manuallogETflag', 'zoom_follow', 'alignEvent', 'compareAlignEvent', 'compareEvents', 'compareET', 'compareBT', 'compareDeltaET', 'compareDeltaBT', 'compareMainEvents', 'compareBBP',
         'replayType', 'replayedBackgroundEvents', 'beepedBackgroundEvents', 'roastpropertiesflag', 'roastpropertiesAutoOpenFlag', 'roastpropertiesAutoOpenDropFlag',
         'title', 'title_show_always', 'ambientTemp', 'ambientTempSource', 'ambient_temperature_device', 'ambient_pressure', 'ambient_pressure_device', 'ambient_humidity',
         'ambient_humidity_device', 'elevation', 'temperaturedevicefunctionlist', 'humiditydevicefunctionlist', 'pressuredevicefunctionlist', 'moisture_greens', 'moisture_roasted',
         'greens_temp', 'beansize', 'beansize_min', 'beansize_max', 'whole_color', 'ground_color', 'color_systems', 'color_system_idx', 'heavyFC_flag', 'lowFC_flag', 'lightCut_flag',
-        'darkCut_flag', 'drops_flag', 'oily_flag', 'uneven_flag', 'tipping_flag', 'scorching_flag', 'divots_flag', 'timex', 'smooth_curves_on_recording', 
-        'temp1', 'temp2', 'delta1', 'delta2', 'stemp1', 'stemp2', 'tstemp1', 'tstemp2', 'ctimex1', 'ctimex2', 'ctemp1', 'ctemp2', 'unfiltereddelta1', 'unfiltereddelta2',
-        'on_timex', 'on_temp1', 'on_temp2', 'on_ctimex1', 'on_ctimex2', 'on_ctemp1', 'on_ctemp2','on_tstemp1', 'on_tstemp2', 'on_stemp1', 'on_stemp2', 'on_unfiltereddelta1', 
+        'darkCut_flag', 'drops_flag', 'oily_flag', 'uneven_flag', 'tipping_flag', 'scorching_flag', 'divots_flag', 'timex', 
+        'temp1', 'temp2', 'delta1', 'delta2', 'stemp1', 'stemp2', 'tstemp1', 'tstemp2', 'ctimex1', 'ctimex2', 'ctemp1', 'ctemp2', 'unfiltereddelta1', 'unfiltereddelta2',  'unfiltereddelta1_pure', 'unfiltereddelta2_pure',
+        'on_timex', 'on_temp1', 'on_temp2', 'on_ctimex1', 'on_ctimex2', 'on_ctemp1', 'on_ctemp2','on_tstemp1', 'on_tstemp2', 'on_unfiltereddelta1', 
         'on_unfiltereddelta2', 'on_delta1', 'on_delta2', 'on_extratemp1', 'on_extratemp2', 'on_extratimex', 'on_extractimex1', 'on_extractemp1', 'on_extractimex2', 'on_extractemp2',
-        'timeindex', 'ETfunction', 'BTfunction', 'DeltaETfunction', 'DeltaBTfunction', 'safesaveflag', 'pid', 'background', 'backgroundprofile', 'backgroundDetails',
+        'timeindex', 'ETfunction', 'BTfunction', 'DeltaETfunction', 'DeltaBTfunction', 'safesaveflag', 'pid', 'background', 'backgroundprofile', 'backgroundprofile_moved_x', 'backgroundprofile_moved_y', 'backgroundDetails',
         'backgroundeventsflag', 'backgroundpath', 'backgroundUUID', 'backgroundUUID', 'backgroundShowFullflag', 'titleB', 'roastbatchnrB', 'roastbatchprefixB',
         'roastbatchposB', 'temp1B', 'temp2B', 'temp1BX', 'temp2BX', 'timeB', 'temp1Bdelta', 'temp2Bdelta',
         'stemp1B', 'stemp2B', 'stemp1BX', 'stemp2BX', 'extraname1B', 'extraname2B', 'extratimexB', 'xtcurveidx', 'ytcurveidx', 'delta1B', 'delta2B', 'timeindexB',
@@ -709,7 +735,7 @@ class tgraphcanvas(FigureCanvas):
         'organization_setup', 'operator_setup', 'roastertype_setup', 'roastersize_setup', 'roasterheating_setup', 'drumspeed_setup', 'machinesetup_energy_ratings',
         'machinesetup', 'roastingnotes', 'cuppingnotes', 'roastdate', 'roastepoch', 'lastroastepoch', 'batchcounter', 'batchsequence', 'batchprefix', 'neverUpdateBatchCounter', 
         'roastbatchnr', 'roastbatchprefix', 'roastbatchpos', 'roasttzoffset', 'roastUUID', 'plus_default_store', 'plus_store', 'plus_store_label', 'plus_coffee',
-        'plus_coffee_label', 'plus_blend_spec', 'plus_blend_spec_labels', 'plus_blend_label', 'plus_sync_record_hash', 'beans', 'projectFlag', 'curveVisibilityCache', 'ETcurve', 'BTcurve',
+        'plus_coffee_label', 'plus_blend_spec', 'plus_blend_spec_labels', 'plus_blend_label', 'plus_custom_blend', 'plus_sync_record_hash', 'beans', 'projectFlag', 'curveVisibilityCache', 'ETcurve', 'BTcurve',
         'ETlcd', 'BTlcd', 'swaplcds', 'LCDdecimalplaces', 'foregroundShowFullflag', 'DeltaETflag', 'DeltaBTflag', 'DeltaETlcdflag', 'DeltaBTlcdflag', 
         'swapdeltalcds', 'PIDbuttonflag', 'Controlbuttonflag', 'deltaETfilter', 'deltaBTfilter', 'curvefilter', 'deltaETspan', 'deltaBTspan',
         'deltaETsamples', 'deltaBTsamples', 'profile_sampling_interval', 'background_profile_sampling_interval', 'profile_meter', 'optimalSmoothing', 'polyfitRoRcalc',
@@ -742,7 +768,7 @@ class tgraphcanvas(FigureCanvas):
         'locktimex_end', 'xgrid', 'ygrid', 'zgrid', 'gridstyles', 'gridlinestyle', 'gridthickness', 'gridalpha', 'xrotation',
         'statisticsheight', 'statisticsupper', 'statisticslower', 'autosaveflag', 'autosaveprefix', 'autosavepath', 'autosavealsopath',
         'autosaveaddtorecentfilesflag', 'autosaveimage', 'autosaveimageformat', 'autoasaveimageformat_types', 'ystep_down', 'ystep_up', 'backgroundETcurve', 'backgroundBTcurve',
-        'l_temp1', 'l_temp2', 'l_delta1', 'l_delta2', 'l_back1', 'l_back2', 'l_back3', 'l_back4', 'l_delta1B', 'l_delta2B', 'l_BTprojection',
+        'l_temp1', 'l_temp2', 'l_delta1', 'l_delta2', 'l_back1', 'l_back2', 'l_back3', 'l_back4', 'l_delta1B', 'l_delta2B', 'l_BTprojection', 'l_DeltaETprojection', 'l_DeltaBTprojection',
         'l_ETprojection', 'l_AUCguide', 'l_horizontalcrossline', 'l_verticalcrossline', 'l_timeline', 'legend', 'l_eventtype1dots', 'l_eventtype2dots',
         'l_eventtype3dots', 'l_eventtype4dots', 'l_eteventannos', 'l_bteventannos', 'l_eventtype1annos', 'l_eventtype2annos', 'l_eventtype3annos',
         'l_eventtype4annos', 'l_annotations', 'l_background_annotations', 'l_annotations_dict', 'l_annotations_pos_dict', 'l_event_flags_dict',
@@ -752,7 +778,7 @@ class tgraphcanvas(FigureCanvas):
         'filterDropOut_replaceRoR_period', 'filterDropOut_spikeRoR_period', 'filterDropOut_tmin_C_default', 'filterDropOut_tmax_C_default', 
         'filterDropOut_tmin_F_default', 'filterDropOut_tmax_F_default', 'filterDropOut_spikeRoR_dRoR_limit_C_default', 'filterDropOut_spikeRoR_dRoR_limit_F_default',
         'filterDropOuts', 'filterDropOut_tmin', 'filterDropOut_tmax', 'filterDropOut_spikeRoR_dRoR_limit', 'minmaxLimits',
-        'dropSpikes', 'dropDuplicates', 'dropDuplicatesLimit', 'swapETBT', 'wheelflag', 'wheelnames', 'segmentlengths', 'segmentsalpha',
+        'dropSpikes', 'dropDuplicates', 'dropDuplicatesLimit', 'interpolatemax', 'swapETBT', 'wheelflag', 'wheelnames', 'segmentlengths', 'segmentsalpha',
         'wheellabelparent', 'wheelcolor', 'wradii', 'startangle', 'projection', 'wheeltextsize', 'wheelcolorpattern', 'wheeledge',
         'wheellinewidth', 'wheellinecolor', 'wheeltextcolor', 'wheelconnections', 'wheelx', 'wheelz', 'wheellocationx', 'wheellocationz',
         'wheelaspect', 'samplingSemaphore', 'profileDataSemaphore', 'messagesemaphore', 'errorsemaphore', 'serialsemaphore', 'seriallogsemaphore',
@@ -774,17 +800,17 @@ class tgraphcanvas(FigureCanvas):
         'eventmessagetimer', 'resizeredrawing', 'logoimg', 'analysisresultsloc_default', 'analysisresultsloc', 'analysispickflag', 'analysisresultsstr',
         'analysisstartchoice', 'analysisoffset', 'curvefitstartchoice', 'curvefitoffset', 'segmentresultsloc_default', 'segmentresultsloc',
         'segmentpickflag', 'segmentdeltathreshold', 'segmentsamplesthreshold', 'stats_summary_rect', 'title_text', 'title_artist', 'title_width',
-        'background_title_width', 'xlabel_text', 'xlabel_artist', 'xlabel_width', 'lazyredraw_on_resize_timer', 'mathdictionary_base' ]
-        
-        
-        
+        'background_title_width', 'xlabel_text', 'xlabel_artist', 'xlabel_width', 'lazyredraw_on_resize_timer', 'mathdictionary_base',
+        'ambient_pressure_sampled', 'ambient_humidity_sampled', 'ambientTemp_sampled', 'backgroundmovespeed', 'chargeTimerPeriod', 'flavors_default_value',
+        'fmt_data_ON', 'l_subtitle', 'projectDeltaFlag', 'weight_units']
+    
     
     def __init__(self, parent, dpi, *, locale):
 
         #default palette of colors
         self.locale_str = locale
         self.alpha = {"analysismask":0.4,"statsanalysisbkgnd":1.0,"legendbg":0.4}
-        self.palette = {"background":'#FFFFFF',"grid":'#E5E5E5',"ylabel":'#808080',"xlabel":'#808080',"title":'#0C6AA6',
+        self.palette = {"background":'#FFFFFF',"grid":'#E5E5E5',"ylabel":'#808080',"xlabel":'#808080',"title":'#0C6AA6', "title_focus":'#cc0f50',
                         "rect1":'#E5E5E5',"rect2":'#B2B2B2',"rect3":'#E5E5E5',"rect4":'#BDE0EE',"rect5":'#D3D3D3',
                         "et":'#cc0f50',"bt":'#0A5C90',"xt":'#404040',"yt":'#404040',"deltaet":'#cc0f50',
                         "deltabt":'#0A5C90',"markers":'#000000',"text":'#000000',"watermarks":'#FFFF00',"timeguide":'#0A5C90',
@@ -820,24 +846,49 @@ class tgraphcanvas(FigureCanvas):
         # custom labels are stored in the application settings and can be edited by the user
         self.customflavorlabels = self.artisanflavordefaultlabels
 
-        self.SCCAflavordefaultlabels: Final = [QApplication.translate("Textbox", "Sour"),
+# old SCAA spec (note the typo in the variable name):
+# replaced by the specification below for v2.6.0:
+#        self.SCCAflavordefaultlabels: Final = [[QApplication.translate("Textbox", "Sour"),
+#                                        QApplication.translate("Textbox", "Flavor"),
+#                                        QApplication.translate("Textbox", "Critical\nStimulus"),
+#                                        QApplication.translate("Textbox", "Aftertaste"),
+#                                        QApplication.translate("Textbox", "Bitter"),
+#                                        QApplication.translate("Textbox", "Astringency"),
+#                                        QApplication.translate("Textbox", "Solubles\nConcentration"),
+#                                        QApplication.translate("Textbox", "Mouthfeel"),
+#                                        QApplication.translate("Textbox", "Other"),
+#                                        QApplication.translate("Textbox", "Aromatic\nComplexity"),
+#                                        QApplication.translate("Textbox", "Roast\nColor"),
+#                                        QApplication.translate("Textbox", "Aromatic\nPungency"),
+#                                        QApplication.translate("Textbox", "Sweet"),
+#                                        QApplication.translate("Textbox", "Acidity"),
+#                                        QApplication.translate("Textbox", "pH"),
+#                                        QApplication.translate("Textbox", "Balance")]
+        
+        self.SCAAflavordefaultlabels: Final = [QApplication.translate("Textbox", "Fragrance-Aroma"),
                                         QApplication.translate("Textbox", "Flavor"),
-                                        QApplication.translate("Textbox", "Critical\nStimulus"),
                                         QApplication.translate("Textbox", "Aftertaste"),
-                                        QApplication.translate("Textbox", "Bitter"),
-                                        QApplication.translate("Textbox", "Astringency"),
-                                        QApplication.translate("Textbox", "Solubles\nConcentration"),
-                                        QApplication.translate("Textbox", "Mouthfeel"),
-                                        QApplication.translate("Textbox", "Other"),
-                                        QApplication.translate("Textbox", "Aromatic\nComplexity"),
-                                        QApplication.translate("Textbox", "Roast\nColor"),
-                                        QApplication.translate("Textbox", "Aromatic\nPungency"),
-                                        QApplication.translate("Textbox", "Sweet"),
                                         QApplication.translate("Textbox", "Acidity"),
-                                        QApplication.translate("Textbox", "pH"),
-                                        QApplication.translate("Textbox", "Balance")]
-
-        self.CQIflavordefaultlabels: Final =  [QApplication.translate("Textbox", "Fragance"),
+                                        QApplication.translate("Textbox", "Body"),
+                                        QApplication.translate("Textbox", "Uniformity"),
+                                        QApplication.translate("Textbox", "Balance"),
+                                        QApplication.translate("Textbox", "Clean Cup"),
+                                        QApplication.translate("Textbox", "Sweetness"),
+                                        QApplication.translate("Textbox", "Overall")]
+        
+        self.SCAflavordefaultlabels: Final = [QApplication.translate("Textbox", "Fragrance-Aroma"),
+                                        QApplication.translate("Textbox", "Flavor"),
+                                        QApplication.translate("Textbox", "Aftertaste"),
+                                        QApplication.translate("Textbox", "Acidity"),
+                                        QApplication.translate("Textbox", "Intensity"),
+                                        QApplication.translate("Textbox", "Body"),
+                                        QApplication.translate("Textbox", "Uniformity"),
+                                        QApplication.translate("Textbox", "Balance"),
+                                        QApplication.translate("Textbox", "Clean Cup"),
+                                        QApplication.translate("Textbox", "Sweetness"),
+                                        QApplication.translate("Textbox", "Overall")]
+        
+        self.CQIflavordefaultlabels: Final = [QApplication.translate("Textbox", "Fragance"),
                                         QApplication.translate("Textbox", "Aroma"),
                                         QApplication.translate("Textbox", "Flavor"),
                                         QApplication.translate("Textbox", "Acidity"),
@@ -919,7 +970,8 @@ class tgraphcanvas(FigureCanvas):
 
         self.flavorlabels = list(self.artisanflavordefaultlabels)
         #Initial flavor parameters.
-        self.flavors = [5., 5., 5., 5., 5., 5., 5., 5., 5.]
+        self.flavors_default_value = 5.
+        self.flavors = [5.]*len(self.flavorlabels)
         self.flavorstartangle = 90
         self.flavoraspect = 1.0  #aspect ratio
         # flavor chart graph plots and annotations
@@ -945,7 +997,7 @@ class tgraphcanvas(FigureCanvas):
         self.errorlog = []
 
         # default delay between readings in miliseconds
-        self.default_delay: Final = 3000 # default 3s
+        self.default_delay: Final = 2000 # default 2s
         self.delay = self.default_delay
         self.min_delay = 250 # 500 # 1000
 
@@ -1263,6 +1315,9 @@ class tgraphcanvas(FigureCanvas):
                        "Phidget VCP1000",           #123
                        "Phidget VCP1001",           #124
                        "Phidget VCP1002",           #125
+                       "ARC BT/ET",                 #126
+                       "+ARC MET/IT",               #127
+                       "+ARC AT"                    #128
                        ]
 
         # ADD DEVICE:
@@ -1361,6 +1416,8 @@ class tgraphcanvas(FigureCanvas):
         self.extratemp1,self.extratemp2 = [],[]                     # extra temp1, temp2. List of lists
         self.extrastemp1,self.extrastemp2 = [],[]                   # smoothed extra temp1, temp2. List of lists
         self.extractimex1,self.extractimex2,self.extractemp1,self.extractemp2 = [],[],[],[] # variants of extratimex/extratemp1/extratemp2 with -1 dropout values removed (or replaced by None)
+        # NOTE: those extractimexN, extractempBN lists can be shorter than the regular extratimexN, extratempN lists,
+        # however, the invariants len(extractimex1) = len(extractemp1) and len(extractimex2) = len(extractemp2) always hold
         self.extratemp1lines,self.extratemp2lines = [],[]           # lists with extra lines for speed drawing
         self.extraname1,self.extraname2 = [],[]                     # name of labels for line (like ET or BT) - legend
         self.extramathexpression1,self.extramathexpression2 = [],[]           # list with user defined math evaluating strings. Example "2*cos(x)"
@@ -1450,6 +1507,7 @@ class tgraphcanvas(FigureCanvas):
         self.compareDeltaET = False
         self.compareDeltaBT = True
         self.compareMainEvents = True
+        self.compareBBP = False
 
         self.replayType = 0 # 0: by time, 1: by BT, 2: by ET
         self.replayedBackgroundEvents = [] # set of BackgroundEvent indicies that have already been replayed (cleared in ClearMeasurements)
@@ -1518,15 +1576,16 @@ class tgraphcanvas(FigureCanvas):
         #list to store the time in seconds of each reading. Most IMPORTANT variable.
         self.timex = []
 
-        self.smooth_curves_on_recording = False # by default we do not smooth curves during recording
-
         #lists to store temps and rates of change. Second most IMPORTANT variables. All need same dimension.
         #self.temp1 = ET ; self.temp2 = BT; self.delta1 = deltaMET; self.delta2 = deltaBT
         self.temp1,self.temp2,self.delta1, self.delta2 = [],[],[],[]
         self.stemp1,self.stemp2 = [],[] # smoothed versions of temp1/temp2 used in redraw()
         self.tstemp1,self.tstemp2 = [],[] # (temporarily) smoothed version of temp1/temp2 used in sample() to compute the RoR
-        self.ctimex1, self.ctimex2, self.ctemp1,self.ctemp2 = [], [],[],[] # (potential shorter) variants of timex/temp1/temp2 with -1 dropout values removed
-        self.unfiltereddelta1, self.unfiltereddelta2 = [],[] # used in sample()
+        self.ctimex1, self.ctimex2, self.ctemp1,self.ctemp2 = [], [],[],[] # (potential shorter) variants of timex/temp1/temp2 with -1 dropout values removed (or replaced by None)
+        # NOTE: those ctimexN, ctempN lists can be shorter than the original timex/tempN lists as some dropout values may have been removed,
+        # however, the invariants len(ctimex1) = len(ctemp1) and len(timex2) = len(ctemp2) always hold
+        self.unfiltereddelta1, self.unfiltereddelta2 = [],[] # Delta mathexpressions applied; used in sample()
+        self.unfiltereddelta1_pure, self.unfiltereddelta2_pure = [],[] # Delta mathexpressions not applied; used in sample() and by projections
 
         # arrays to use while monitoring but not recording
         self.on_timex = []
@@ -1538,8 +1597,6 @@ class tgraphcanvas(FigureCanvas):
         self.on_ctemp2 = []
         self.on_tstemp1 = []
         self.on_tstemp2 = []
-        self.on_stemp1 = []
-        self.on_stemp2 = []
         self.on_unfiltereddelta1 = []
         self.on_unfiltereddelta2 = []
         self.on_delta1 = []
@@ -1575,6 +1632,8 @@ class tgraphcanvas(FigureCanvas):
         #background profile 
         self.background = False # set to True if loaded background profile is shown and False if hidden
         self.backgroundprofile = None # if not None, a background profile is loaded
+        self.backgroundprofile_moved_x = 0 # background profile moved in horizontal direction
+        self.backgroundprofile_moved_y = 0 # background profile moved in vertical direction
         self.backgroundDetails = True
         self.backgroundeventsflag = True
         self.backgroundpath = ""
@@ -1687,6 +1746,7 @@ class tgraphcanvas(FigureCanvas):
         self.plus_blend_spec = None # the plus blend structure [<blend_label>,[[<coffee_label>,<hr_id>,<ratio>],...,[<coffee_label>,<hr_id>,<ratio>]]] # label + ingredients
         self.plus_blend_spec_labels = None # a list of labels as long as the list of ingredients in self.plus_blend_spec or None
         self.plus_blend_label = None # holds the plus selected label of the selected blend of the current profile or None
+        self.plus_custom_blend = None # holds the one custom blend, an instance of plus.blend.Blend, or None
         self.plus_sync_record_hash = None
 
         self.beans = ""
@@ -1695,6 +1755,7 @@ class tgraphcanvas(FigureCanvas):
         
         #flags to show projections, draw Delta ET, and draw Delta BT
         self.projectFlag = True
+        self.projectDeltaFlag = False
         self.ETcurve = True
         self.BTcurve = True
         self.ETlcd = True
@@ -1770,7 +1831,7 @@ class tgraphcanvas(FigureCanvas):
 
         # projection variables of change of rate
         self.projectionconstant = 1
-        self.projectionmode = 0     # 0 = linear; 1 = newton
+        self.projectionmode = 0     # 0 = linear; 1 = quadratic;   # 2 = newton#disabled
 
         # profile transformator mapping mode
         self.transMappingMode = 0 # 0: discrete, 1: linear, 2: quadratic
@@ -2048,8 +2109,8 @@ class tgraphcanvas(FigureCanvas):
         # system fixed RoR limits (only applied if flag is True; usually higher than the user configurable once and always applied)
         self.maxRoRlimit: Final = 170
         # axis limits
-        self.endofx = self.endofx_default
-        self.startofx = self.startofx_default
+        self.endofx = self.endofx_default     # endofx is the display time in seconds of the right x-axis limit (excluding any shift of CHARGE time)
+        self.startofx = self.startofx_default # startofx is the time in seconds of the left x-axis limit in data time (display time in seconds of the left x-axis limit plus the CHARGE time in seconds)
         self.resetmaxtime = 600  #time when pressing RESET: 10min*60
         self.chargemintime = self.startofx_default  #time when pressing CHARGE: -30sec
         self.fixmaxtime = False # if true, do not automatically extend the endofx by 3min if needed because the measurements get out of the x-axis
@@ -2132,9 +2193,13 @@ class tgraphcanvas(FigureCanvas):
         self.l_back4 = None # second extra background curve
         self.l_delta1B = None
         self.l_delta2B = None
+        
+        self.l_subtitle = None # the subtitle artist if any as used to render the background title
 
         self.l_BTprojection = None
         self.l_ETprojection = None
+        self.l_DeltaBTprojection = None
+        self.l_DeltaETprojection = None
 
         self.l_AUCguide = None
 
@@ -2171,8 +2236,7 @@ class tgraphcanvas(FigureCanvas):
         ###########################  TIME  CLOCK     ##########################
         # create an object time to measure and record time (in miliseconds)
 
-        self.timeclock = ArtisanTime() #QTime()
-        self.timeclock.setHMS(0,0,0,0)
+        self.timeclock = ArtisanTime()
 
         ############################  Thread Server #################################################
         #server that spawns a thread dynamically to sample temperature (press button ON to make a thread press OFF button to kill it)
@@ -2224,6 +2288,8 @@ class tgraphcanvas(FigureCanvas):
         self.dropSpikes = False
         self.dropDuplicates = False
         self.dropDuplicatesLimit = 0.3
+
+        self.interpolatemax = 3 # maximal number of droppped readings (-1) that will be interpolated
 
         self.swapETBT = False
 
@@ -2669,11 +2735,12 @@ class tgraphcanvas(FigureCanvas):
     # both deltaBTsamples and deltaETsamples are at least one
     def updateDeltaSamples(self):
         if self.flagstart or self.profile_sampling_interval is None:
-            interval = self.delay / 1000.
+            speed = self.timeclock.getBase()/1000
+            interval = speed * (self.delay / 1000)
         else:
             interval = self.profile_sampling_interval
-        self.deltaBTsamples = max(1,int(self.deltaBTspan / interval))
-        self.deltaETsamples = max(1,int(self.deltaETspan / interval))
+        self.deltaBTsamples = max(1,int(round(self.deltaBTspan / interval)))
+        self.deltaETsamples = max(1,int(round(self.deltaETspan / interval)))
 
     def updateBackground(self):
         if not self.block_update and aw.qmc.ax is not None:
@@ -2693,7 +2760,7 @@ class tgraphcanvas(FigureCanvas):
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    self.fig.canvas.draw() # the triggered _draw_event(self,evt) function resets the self.in_draw_event if done
+                    self.fig.canvas.draw() # this triggers _draw_event(self,evt)
                 #self.fig.canvas.draw_idle() # ask the canvas to kindly draw it self some time in the future when Qt thinks it is convenient
                 # make sure that the GUI framework has a chance to run its event loop
                 # and clear any GUI events.  This needs to be in a try/except block
@@ -3006,7 +3073,7 @@ class tgraphcanvas(FigureCanvas):
                                 self.met_annotate.set_visible(not self.met_annotate.get_visible())
                         except Exception: # pylint: disable=broad-except
                             pass
-                    if label==aw.BTname:
+                    elif label==aw.BTname:
                         label = "BT"  #allows for a match below to the label in legend_lines
                         try:
                             for a in self.l_bteventannos:
@@ -3248,13 +3315,27 @@ class tgraphcanvas(FigureCanvas):
         if action.key[0] >= 0:
             # we check if this is the first DROP mark on this roast
             firstDROP = (action.key[0] == 6 and self.timeindex[6] == 0)
+            timeindex_before = self.timeindex[action.key[0]]
             self.timeindex[action.key[0]] = action.key[1]
             # clear custom label positions cache entry
             if action.key[0] in aw.qmc.l_annotations_dict:
                 del aw.qmc.l_annotations_dict[action.key[0]]
             if action.key[0] == 0: # CHARGE
                 # realign to background
-                if not self.flagon:
+                if self.flagon:
+                    try:
+                        if self.locktimex:
+                            self.startofx = self.locktimex_start + self.timex[self.timeindex[0]]
+                        else:
+                            self.startofx = self.chargemintime + self.timex[self.timeindex[0]] # we set the min x-axis limit to the CHARGE Min time
+                    except Exception: # pylint: disable=broad-except
+                        pass
+                else:
+                    # we keep xaxis limit the same but adjust to updated timeindex[0] mark
+                    if timeindex_before > -1:
+                        self.startofx += (self.timex[self.timeindex[0]] - self.timex[timeindex_before])
+                    else:
+                        self.startofx += self.timex[self.timeindex[0]]
                     aw.autoAdjustAxis(deltas=False)
                 aw.qmc.timealign(redraw=True,recompute=False) # redraws at least the canvas if redraw=True, so no need here for doing another canvas.draw()
             elif action.key[0] == 6: # DROP
@@ -3275,6 +3356,8 @@ class tgraphcanvas(FigureCanvas):
                         plus.queue.addRoast()
                     except Exception: # pylint: disable=broad-except
                         pass
+                if not self.flagon:
+                    aw.autoAdjustAxis(deltas=False)
 
             # update phases
             elif action.key[0] == 1 and self.phasesbuttonflag: # DRY
@@ -3293,7 +3376,8 @@ class tgraphcanvas(FigureCanvas):
                 self.specialeventstype.append(dlg.type) # default: "--"
                 self.specialeventsStrings.append(dlg.description)
                 self.specialeventsvalue.append(dlg.value)
-                aw.qmc.fileDirtySignal.emit()
+                aw.orderEvents()
+                self.fileDirtySignal.emit()
                 self.redraw(recomputeAllDeltas=(action.key[0] in [0,6])) # on moving CHARGE or DROP, we have to recompute the Deltas
             try:
                 dlg.dialogbuttons.accepted.disconnect()
@@ -3402,6 +3486,15 @@ class tgraphcanvas(FigureCanvas):
                 aw.largePIDLCDs_dialog.updateValues([sv],[duty])
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
+
+    # note that partial values might be given here    
+    @staticmethod
+    def updateLargeScaleLCDs(weight=None, total=None):
+        try:
+            if aw.largeScaleLCDs_dialog is not None:
+                aw.largeScaleLCDs_dialog.updateValues([weight],[total])
+        except Exception as e: # pylint: disable=broad-except
+            _log.exception(e)
     
     @staticmethod
     def updateLargeExtraLCDs(extra1=None, extra2=None):
@@ -3475,7 +3568,7 @@ class tgraphcanvas(FigureCanvas):
 
     def update_additional_artists(self):
         if aw.qmc.flagstart and ((aw.qmc.device == 18 and aw.simulator is None) or aw.qmc.showtimeguide): # not NONE device
-            tx = aw.qmc.timeclock.elapsed()/1000.
+            tx = aw.qmc.timeclock.elapsedMilli()
             if aw.qmc.l_timeline is None:
                 self.l_timeline = self.ax.axvline(tx,color = self.palette["timeguide"],
                                         label=aw.arabicReshape(QApplication.translate("Label", "TIMEguide")),
@@ -3488,6 +3581,12 @@ class tgraphcanvas(FigureCanvas):
                 aw.qmc.ax.draw_artist(self.l_BTprojection)
             if self.l_ETprojection is not None and aw.qmc.ETcurve:
                 aw.qmc.ax.draw_artist(self.l_ETprojection)
+            if aw.qmc.projectDeltaFlag:
+                if self.l_DeltaBTprojection is not None and aw.qmc.DeltaBTflag:
+                    aw.qmc.ax.draw_artist(self.l_DeltaBTprojection)
+                if self.l_DeltaETprojection is not None and aw.qmc.DeltaETflag:
+                    aw.qmc.ax.draw_artist(self.l_DeltaETprojection)
+                
         if aw.qmc.AUCguideFlag and aw.qmc.AUCguideTime and aw.qmc.AUCguideTime > 0:
             aw.qmc.ax.draw_artist(self.l_AUCguide)
 
@@ -3542,11 +3641,11 @@ class tgraphcanvas(FigureCanvas):
                 return temp
             # try to improve a previously corrected reading timex/temp[-1] based on the current reading time/temp (just in this case the actual reading is not a drop)
             if (aw.qmc.minmaxLimits or aw.qmc.dropSpikes or aw.qmc.dropDuplicates):
-                if len(tempx) > 3 and tempx[-1] == tempx[-2] == tempx[-3] and tempx[-1] != -1 and tempx[-1] != temp: # previous reading was a drop and replaced by reading[-2] and same for rthe one before
+                if len(tempx) > 2 and tempx[-1] == tempx[-2] == tempx[-3] and tempx[-1] != -1 and tempx[-1] != temp and temp!=-1: # previous reading was a drop and replaced by reading[-2] and same for the one before
                     delta = (tempx[-3] - temp) / 3.0
                     tempx[-1] = tempx[-3] - 2*delta
                     tempx[-2] = tempx[-3] - delta
-                elif len(tempx) > 2 and tempx[-1] == tempx[-2] and tempx[-1] != -1 and tempx[-1] != temp: # previous reading was a drop and replaced by reading[-2]
+                elif len(tempx) > 1 and tempx[-1] == tempx[-2] and tempx[-1] != -1 and tempx[-1] != temp and temp!=-1: # previous reading was a drop and replaced by reading[-2]
                     tempx[-1] = (tempx[-2] + temp) / 2.0
             return temp
         except Exception as e: # pylint: disable=broad-except
@@ -3557,12 +3656,23 @@ class tgraphcanvas(FigureCanvas):
 
     # the temp get's averaged using the given decay weights after resampling
     # to linear time based on tx and the current sampling interval
+    # -1 and None values are skipped/ignored
     @staticmethod
-    def decay_average(tx,temp,decay_weights):
-        if len(tx) != len(temp):
-            if len(temp)>0:
-                return temp[-1]
+    def decay_average(tx_in,temp_in,decay_weights):
+        if len(tx_in) != len(temp_in):
+            if len(temp_in)>0:
+                return temp_in[-1]
             return -1
+        # remove items where temp[i]=None to fulfil precond. of numpy.interp
+        tx = []
+        temp = []
+        for i in range(len(temp_in)):
+            if temp_in[i] not in [None, -1, numpy.NaN]:
+                tx.append(tx_in[i])
+                temp.append(temp_in[i])
+        if len(temp) == 0:
+            return -1
+        #
         l = min(len(decay_weights),len(temp))
         d = aw.qmc.delay / 1000.
         tx_org = tx[-l:] # as len(tx)=len(temp) here, it is guranteed that len(tx_org)=l
@@ -3603,16 +3713,14 @@ class tgraphcanvas(FigureCanvas):
                     sample_timex = aw.qmc.timex
                     sample_temp1 = aw.qmc.temp1
                     sample_temp2 = aw.qmc.temp2
-                    sample_ctimex1 = aw.qmc.ctimex1
-                    sample_ctemp1 = aw.qmc.ctemp1
-                    sample_ctimex2 = aw.qmc.ctimex2
-                    sample_ctemp2 = aw.qmc.ctemp2
+                    sample_ctimex1 = self.ctimex1
+                    sample_ctemp1 = self.ctemp1
+                    sample_ctimex2 = self.ctimex2
+                    sample_ctemp2 = self.ctemp2
                     sample_tstemp1 = aw.qmc.tstemp1
                     sample_tstemp2 = aw.qmc.tstemp2
-                    sample_stemp1 = aw.qmc.stemp1
-                    sample_stemp2 = aw.qmc.stemp2
-                    sample_unfiltereddelta1 = aw.qmc.unfiltereddelta1
-                    sample_unfiltereddelta2 = aw.qmc.unfiltereddelta2
+                    sample_unfiltereddelta1 = aw.qmc.unfiltereddelta1 # no sample_unfiltereddelta1_pure as used only during recording for projections
+                    sample_unfiltereddelta2 = aw.qmc.unfiltereddelta2 # no sample_unfiltereddelta2_pure as used only during recording for projections
                     sample_delta1 = aw.qmc.delta1
                     sample_delta2 = aw.qmc.delta2
                     # list of lists:
@@ -3628,16 +3736,14 @@ class tgraphcanvas(FigureCanvas):
                     sample_timex = aw.qmc.on_timex = aw.qmc.on_timex[-m_len:]
                     sample_temp1 = aw.qmc.on_temp1 = aw.qmc.on_temp1[-m_len:]
                     sample_temp2 = aw.qmc.on_temp2 = aw.qmc.on_temp2[-m_len:]
-                    sample_ctimex1 = aw.qmc.on_ctimex1 = aw.qmc.on_ctimex1[-m_len:]
-                    sample_ctemp1 = aw.qmc.on_ctemp1 = aw.qmc.on_ctemp1[-m_len:]
-                    sample_ctimex2 = aw.qmc.on_ctimex2 = aw.qmc.on_ctimex2[-m_len:]
-                    sample_ctemp2 = aw.qmc.on_ctemp2 = aw.qmc.on_ctemp2[-m_len:]
+                    sample_ctimex1 = self.on_ctimex1 = self.on_ctimex1[-m_len:]
+                    sample_ctemp1 = self.on_ctemp1 = self.on_ctemp1[-m_len:]
+                    sample_ctimex2 = self.on_ctimex2 = self.on_ctimex2[-m_len:]
+                    sample_ctemp2 = self.on_ctemp2 = self.on_ctemp2[-m_len:]
                     sample_tstemp1 = aw.qmc.on_tstemp1 = aw.qmc.on_tstemp1[-m_len:]
                     sample_tstemp2 = aw.qmc.on_tstemp2 = aw.qmc.on_tstemp2[-m_len:]
-                    sample_stemp1 = aw.qmc.on_stemp1 = aw.qmc.on_stemp1[-m_len:]
-                    sample_stemp2 = aw.qmc.on_stemp2 = aw.qmc.on_stemp2[-m_len:]
-                    sample_unfiltereddelta1 = aw.qmc.on_unfiltereddelta1 = aw.qmc.on_unfiltereddelta1[-m_len:]
-                    sample_unfiltereddelta2 = aw.qmc.on_unfiltereddelta2 = aw.qmc.on_unfiltereddelta2[-m_len:]
+                    sample_unfiltereddelta1 = aw.qmc.on_unfiltereddelta1 = aw.qmc.on_unfiltereddelta1[-m_len:] # no sample_unfiltereddelta1_pure as used only during recording for projections
+                    sample_unfiltereddelta2 = aw.qmc.on_unfiltereddelta2 = aw.qmc.on_unfiltereddelta2[-m_len:] # no sample_unfiltereddelta2_pure as used only during recording for projections
                     sample_delta1 = aw.qmc.on_delta1 = aw.qmc.on_delta1[-m_len:]
                     sample_delta2 = aw.qmc.on_delta2 = aw.qmc.on_delta2[-m_len:]
                     # list of lists:
@@ -3656,7 +3762,7 @@ class tgraphcanvas(FigureCanvas):
                     sample_extractemp1 = aw.qmc.on_extractemp1
                     sample_extractimex2 = aw.qmc.on_extractimex2
                     sample_extractemp2 = aw.qmc.on_extractemp2
-
+                
                 #if using a meter (thermocouple device)
                 if aw.qmc.device != 18 or aw.simulator is not None: # not NONE device
 
@@ -3736,13 +3842,13 @@ class tgraphcanvas(FigureCanvas):
                                 if extrat1 != -1:
                                     sample_extractimex1[i].append(float(extratx))
                                     sample_extractemp1[i].append(float(extrat1))
-                                elif len(sample_extratemp1[i])>3 and all(v == -1 for v in sample_extratemp1[i][-3:]):
+                                elif len(sample_extratemp1[i])>(aw.qmc.interpolatemax+1) and all(v == -1 for v in sample_extratemp1[i][-(aw.qmc.interpolatemax+1):]):
                                     sample_extractimex1[i].append(float(extratx))
                                     sample_extractemp1[i].append(None)
-                                if extrat2 != -1 or (len(sample_extractemp2[i])>3 and all(v == -1 for v in sample_extractemp2[i][-3:])):
+                                if extrat2 != -1:
                                     sample_extractimex2[i].append(float(extratx))
                                     sample_extractemp2[i].append(float(extrat2))
-                                elif len(sample_extratemp2[i])>3 and all(v == -1 for v in sample_extratemp2[i][-3:]):
+                                elif len(sample_extratemp2[i])>(aw.qmc.interpolatemax+1) and all(v == -1 for v in sample_extratemp2[i][-(aw.qmc.interpolatemax+1):]):
                                     sample_extractimex2[i].append(float(extratx))
                                     sample_extractemp2[i].append(None)
                                     
@@ -3831,13 +3937,13 @@ class tgraphcanvas(FigureCanvas):
                     if t1_final != -1:
                         sample_ctimex1.append(tx)
                         sample_ctemp1.append(t1_final)
-                    elif len(sample_temp1)>3 and all(v == -1 for v in sample_temp1[-3:]):
+                    elif len(sample_temp1)>(aw.qmc.interpolatemax+1) and all(v == -1 for v in sample_temp1[-(aw.qmc.interpolatemax+1):]):
                         sample_ctimex1.append(tx)
                         sample_ctemp1.append(None)
                     if t2_final != -1:
                         sample_ctimex2.append(tx)
                         sample_ctemp2.append(t2_final)
-                    elif len(sample_temp2)>3 and all(v == -1 for v in sample_temp2[-3:]):
+                    elif len(sample_temp2)>(aw.qmc.interpolatemax+1) and all(v == -1 for v in sample_temp2[-(aw.qmc.interpolatemax+1):]):
                         sample_ctimex2.append(tx)
                         sample_ctemp2.append(None)
                     
@@ -3867,44 +3973,12 @@ class tgraphcanvas(FigureCanvas):
                     # register smoothed values
                     sample_tstemp1.append(st1)
                     sample_tstemp2.append(st2)
-
-                    if aw.qmc.smooth_curves_on_recording:
-                        cf = aw.qmc.curvefilter
-                        if self.temp_decay_weights is None or len(self.temp_decay_weights) != cf: # recompute only on changes
-                            self.temp_decay_weights = numpy.arange(1,cf+1)
-                        # we don't smooth st'x if last, or butlast temperature value were a drop-out not to confuse the RoR calculation
-                        if -1 in sample_temp1[-(cf+1):]:
-                            dw1 = [1]
-                        else:
-                            dw1 = self.temp_decay_weights
-                        if -1 in sample_temp2[-(cf+1):]:
-                            dw2 = [1]
-                        else:
-                            dw2 = self.temp_decay_weights
-                        # average smoothing
-                        if len(sample_ctemp1) > 0:
-                            sst1 = self.decay_average(sample_ctimex1,sample_ctemp1,dw1)
-                        else:
-                            sst1 = -1
-                        if len(sample_ctemp2) > 0:
-                            sst2 = self.decay_average(sample_ctimex2,sample_ctemp2,dw2)
-                        else:
-                            sst2 = -1
-                        # register smoothed values
-                        sample_stemp1.append(sst1)
-                        sample_stemp2.append(sst2)
                     
                     if local_flagstart:
                         if aw.qmc.ETcurve:
-                            if aw.qmc.smooth_curves_on_recording:
-                                aw.qmc.l_temp1.set_data(sample_ctimex1, sample_stemp1)
-                            else:
-                                aw.qmc.l_temp1.set_data(sample_ctimex1, sample_ctemp1)
+                            aw.qmc.l_temp1.set_data(sample_ctimex1, sample_ctemp1)
                         if aw.qmc.BTcurve:
-                            if aw.qmc.smooth_curves_on_recording:
-                                aw.qmc.l_temp2.set_data(sample_ctimex2, sample_stemp2)
-                            else:
-                                aw.qmc.l_temp2.set_data(sample_ctimex2, sample_ctemp2)
+                            aw.qmc.l_temp2.set_data(sample_ctimex2, sample_ctemp2)
 
                     #we need a minimum of two readings to calculate rate of change
 #                    if local_flagstart and length_of_qmc_timex > 1:
@@ -3939,11 +4013,6 @@ class tgraphcanvas(FigureCanvas):
                                 timed = sample_ctimex1[-1] - sample_ctimex1[-left_index]   #time difference between last aw.qmc.deltaETsamples readings
                                 aw.qmc.rateofchange1 = ((sample_tstemp1[-1] - sample_tstemp1[-left_index])/timed)*60.  #delta ET (degress/minute)
                             
-                            if aw.qmc.DeltaETfunction is not None and len(aw.qmc.DeltaETfunction):
-                                try:
-                                    aw.qmc.rateofchange1 = aw.qmc.eval_math_expression(aw.qmc.DeltaETfunction,tx,RTsname="R1",RTsval=aw.qmc.rateofchange1)
-                                except Exception as e: # pylint: disable=broad-except
-                                    _log.exception(e)
                         # compute T2 RoR
                         if t2_final == -1 or len(sample_ctimex2)<2:  # we repeat the last RoR if underlying temperature dropped
                             if sample_unfiltereddelta2:
@@ -3973,15 +4042,27 @@ class tgraphcanvas(FigureCanvas):
                                 timed = sample_ctimex2[-1] - sample_ctimex2[-left_index]   #time difference between last aw.qmc.deltaBTsamples readings
                                 aw.qmc.rateofchange2 = ((sample_tstemp2[-1] - sample_tstemp2[-left_index])/timed)*60.  #delta BT (degress/minute)
 
-                            if aw.qmc.DeltaBTfunction is not None and len(aw.qmc.DeltaBTfunction):
-                                try:
-                                    aw.qmc.rateofchange2 = aw.qmc.eval_math_expression(aw.qmc.DeltaBTfunction,tx,RTsname="R2",RTsval=aw.qmc.rateofchange2)
-                                except Exception as e: # pylint: disable=broad-except
-                                    _log.exception(e)
 
+                        # aw.qmc.unfiltereddelta{1,2}_pure contain the RoR values respecting the delta_span, but without any delta smoothing NOR delta mathformulas applied
+                        aw.qmc.unfiltereddelta1_pure.append(aw.qmc.rateofchange1)
+                        aw.qmc.unfiltereddelta2_pure.append(aw.qmc.rateofchange2)
+
+                        # apply the math formula before the delta smoothing
+                        if aw.qmc.DeltaETfunction is not None and len(aw.qmc.DeltaETfunction):
+                            try:
+                                aw.qmc.rateofchange1 = aw.qmc.eval_math_expression(aw.qmc.DeltaETfunction,tx,RTsname="R1",RTsval=aw.qmc.rateofchange1)
+                            except Exception as e: # pylint: disable=broad-except
+                                _log.exception(e)
+                        if aw.qmc.DeltaBTfunction is not None and len(aw.qmc.DeltaBTfunction):
+                            try:
+                                aw.qmc.rateofchange2 = aw.qmc.eval_math_expression(aw.qmc.DeltaBTfunction,tx,RTsname="R2",RTsval=aw.qmc.rateofchange2)
+                            except Exception as e: # pylint: disable=broad-except
+                                _log.exception(e)
+
+                        # unfiltereddelta1/2 contains the RoRs respecting the delta_span, but without any delta smoothing AND delta mathformulas applied
                         sample_unfiltereddelta1.append(aw.qmc.rateofchange1)
                         sample_unfiltereddelta2.append(aw.qmc.rateofchange2)
-
+                                    
                         #######   filter deltaBT deltaET
                         # decay smoothing
                         if aw.qmc.deltaETfilter:
@@ -4017,27 +4098,30 @@ class tgraphcanvas(FigureCanvas):
                     if local_flagstart:
                         ror_start = 0
                         ror_end = length_of_qmc_timex
-                        if aw.qmc.timeindex[6] > 0:
-                            ror_end = aw.qmc.timeindex[6]+1
-                        if aw.qmc.DeltaETflag:
-                            if aw.qmc.timeindex[0] > -1:
-                                ror_start = max(aw.qmc.timeindex[0],int(round(aw.qmc.deltaETfilter/2.)) + max(2,(aw.qmc.deltaETsamples + 1)))
-                                aw.qmc.l_delta1.set_data(sample_timex[ror_start:ror_end], sample_delta1[ror_start:ror_end])
+                        if self.timeindex[6] > 0:
+                            ror_end = self.timeindex[6]+1
+                        if self.DeltaETflag:
+                            if self.timeindex[0] > -1:
+                                ror_start = max(self.timeindex[0],self.timeindex[0]+int(round(self.deltaETfilter/2.)) + max(2,(self.deltaETsamples + 1)))
+                                self.l_delta1.set_data(sample_timex[ror_start:ror_end], sample_delta1[ror_start:ror_end])
                             else:
-                                aw.qmc.l_delta1.set_data([], [])
-                        if aw.qmc.DeltaBTflag:
-                            if aw.qmc.timeindex[0] > -1:
-                                ror_start = max(aw.qmc.timeindex[0],int(round(aw.qmc.deltaBTfilter/2.)) + max(2,(aw.qmc.deltaBTsamples + 1)))
-                                aw.qmc.l_delta2.set_data(sample_timex[ror_start:ror_end], sample_delta2[ror_start:ror_end])
+                                self.l_delta1.set_data([], [])
+                        if self.DeltaBTflag:
+                            if self.timeindex[0] > -1:
+                                ror_start = max(self.timeindex[0],self.timeindex[0]+int(round(self.deltaBTfilter/2.)) + max(2,(self.deltaBTsamples + 1)))
+                                self.l_delta2.set_data(sample_timex[ror_start:ror_end], sample_delta2[ror_start:ror_end])
                             else:
-                                aw.qmc.l_delta2.set_data([], [])
+                                self.l_delta2.set_data([], [])
+                        
                         #readjust xlimit of plot if needed
-                        if  not aw.qmc.fixmaxtime and not aw.qmc.locktimex and sample_timex[-1] > (aw.qmc.endofx - 45):            # if difference is smaller than 30 seconds
-                            aw.qmc.endofx = int(sample_timex[-1] + 180.)         # increase x limit by 3 minutes
-                            aw.qmc.xaxistosm()
-                        if aw.qmc.projectFlag:
-                            aw.qmc.updateProjection()
-
+                        if  not self.fixmaxtime and not self.locktimex:
+                            now = (sample_timex[-1] if self.timeindex[0] == -1 else sample_timex[-1] - sample_timex[self.timeindex[0]])
+                            if now > (self.endofx - 45):            # if difference is smaller than 45 seconds
+                                self.endofx = int(now + 180.)       # increase x limit by 3 minutes
+                                self.xaxistosm()
+                        if self.projectFlag:
+                            self.updateProjection()
+                        
                         # autodetect CHARGE event
                         # only if BT > 77C/170F
                         if not aw.qmc.autoChargeIdx and aw.qmc.autoChargeFlag and aw.qmc.autoCHARGEenabled and aw.qmc.timeindex[0] < 0 and length_of_qmc_timex >= 5 and \
@@ -4258,10 +4342,12 @@ class tgraphcanvas(FigureCanvas):
                 else:
                     tx = int(aw.qmc.timeclock.elapsed()/1000.)
                     #readjust xlimit of plot if needed
-                    if  not aw.qmc.fixmaxtime and not aw.qmc.locktimex and tx > (aw.qmc.endofx - 45):            # if difference is smaller than 45 seconds
-                        aw.qmc.endofx = tx + 180              # increase x limit by 3 minutes (180)
-                        aw.qmc.ax.set_xlim(aw.qmc.startofx,aw.qmc.endofx)
-                        aw.qmc.xaxistosm(redraw=False) # don't redraw within the sampling process!!
+                    if  not self.fixmaxtime and not self.locktimex:
+                        now = (tx if self.timeindex[0] == -1 else tx - sample_timex[self.timeindex[0]])
+                        if now > (self.endofx - 45):            # if difference is smaller than 45 seconds
+                            self.endofx = now + 180              # increase x limit by 3 minutes (180)
+                            self.ax.set_xlim(aw.qmc.startofx,self.endofx)
+                            self.xaxistosm()
                     # also in the manual case we check for TP
                     if local_flagstart:
                         # check for TP event if already CHARGEed and not yet recognized
@@ -4315,7 +4401,7 @@ class tgraphcanvas(FigureCanvas):
             ## ET LCD:
             etstr = resLCD
             try: # if temp1 is None, which should never be the case, this fails
-                if temp1 and idx is not None and idx < len(temp1) and temp1[idx] not in [None, -1]:
+                if temp1 and idx is not None and idx < len(temp1) and temp1[idx] not in [None, -1, numpy.NaN]:
                     if -100 < temp1[idx] < 1000:
                         etstr = lcdformat%temp1[idx]
                     elif self.LCDdecimalplaces and -10000 < temp1[idx] < 100000:
@@ -4327,7 +4413,7 @@ class tgraphcanvas(FigureCanvas):
             ## BT LCD:
             btstr = resLCD
             try:
-                if temp2 and idx is not None and idx < len(temp2) and temp2[idx] not in [None, -1]:
+                if temp2 and idx is not None and idx < len(temp2) and temp2[idx] not in [None, -1, numpy.NaN]:
                     if -100 < temp2[idx] < 1000:
                         btstr = lcdformat%temp2[idx]            # BT
                     elif self.LCDdecimalplaces and -10000 < temp2[idx] < 100000:
@@ -4340,13 +4426,13 @@ class tgraphcanvas(FigureCanvas):
             deltaetstr = resLCD
             deltabtstr = resLCD
             try:
-                if delta1 and idx is not None and idx < len(delta1) and delta1[idx] not in [None, -1]:
+                if delta1 and idx is not None and idx < len(delta1) and delta1[idx] not in [None, -1, numpy.NaN]:
                     if -100 < delta1[idx] < 1000:
                         deltaetstr = lcdformat%delta1[idx]        # rate of change ET (degress per minute)
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
             try:
-                if delta2 and idx is not None and idx < len(delta2) and delta2[idx] not in [None, -1]:
+                if delta2 and idx is not None and idx < len(delta2) and delta2[idx] not in [None, -1, numpy.NaN]:
                     if -100 < delta2[idx] < 1000:
                         deltabtstr = lcdformat%delta2[idx]        # rate of change BT (degrees per minute)
             except Exception as e: # pylint: disable=broad-except
@@ -4363,7 +4449,7 @@ class tgraphcanvas(FigureCanvas):
                 if aw.ser.showFujiLCDs and self.device in (0, 26):
                     pidsvstr = resLCD
                     piddutystr = resLCD
-                    if PID_SV not in [None, -1] and PID_DUTY not in [None, -1]:
+                    if PID_SV not in [None, -1, numpy.NaN] and PID_DUTY not in [None, -1, numpy.NaN]:
                         pidsvstr = lcdformat%PID_SV
                         piddutystr = lcdformat%PID_DUTY
                     aw.lcd6.display(pidsvstr)
@@ -4785,10 +4871,15 @@ class tgraphcanvas(FigureCanvas):
     
     def updateLCDtime(self):
         if self.flagstart and self.flagon:
-            tx = self.timeclock.elapsed()/1000.
-            nextreading = 1000. - 1000.*(tx%1.)
+            tx = self.timeclock.elapsedMilli()
+            if aw.simulator is not None:
+                speed = self.timeclock.getBase()/1000
+                nextreading = (1000. - 1000.*(tx%1.) ) / speed
+            else:
+                nextreading = 1000. - 1000.*(tx%1.)
+            
             try:
-                if type(self.timeindex) is list and len(self.timeindex) == 8: # ensure we have a valid self.timeindex array
+                if aw.sample_loop_running and type(self.timeindex) is list and len(self.timeindex) == 8: # ensure we have a valid self.timeindex array
 
                     if self.timeindex[0] != -1 and type(self.timex) is list and len(self.timex) > self.timeindex[0]:
                         ts = tx - self.timex[self.timeindex[0]]
@@ -4811,7 +4902,7 @@ class tgraphcanvas(FigureCanvas):
                             ts = 0
 
                     self.setLCDtime(ts)
-            except Exception as e:
+            except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
             finally:
                 QTimer.singleShot(int(round(nextreading)),self.updateLCDtime)
@@ -4932,7 +5023,9 @@ class tgraphcanvas(FigureCanvas):
         aw.qmc.linecount = None
         aw.qmc.deltalinecount = None
 
-    # NOTE: delta lines are now drawn on the main ax
+    # NOTE: delta lines are also drawn on the main ax
+    # ATTENTION: all lines that should be populated need to established in self.ax.lines thus for example delta lines should be established (with empty point lists)
+    #   even if they are not drawn before CHARGE to ensure that the linecount corresponds to the fixes lines in self.ax.lines!!
     def resetlines(self):
         if self.ax is not None and not bool(aw.comparator):
             #note: delta curves are now in self.delta_ax and have been removed from the count of resetlines()
@@ -5223,8 +5316,8 @@ class tgraphcanvas(FigureCanvas):
             #needed when using device NONE
             if len(self.timex) and self.timeindexB[6] and not self.timeindex[6]:
                 if ((aw.qmc.replayType == 0 and self.timeB[self.timeindexB[6]] - self.timeclock.elapsed()/1000. <= 0) or # by time
-                    (aw.qmc.replayType == 1 and aw.qmc.TPalarmtimeindex and self.stemp2B[self.timeindexB[6]] - self.ctemp2[-1] <= 0) or # by BT
-                    (aw.qmc.replayType == 2 and aw.qmc.TPalarmtimeindex and self.stemp21[self.timeindexB[6]] - self.ctemp1[-1] <= 0)): # by ET
+                    (aw.qmc.replayType == 1 and aw.qmc.TPalarmtimeindex and self.ctemp2[-1] != None and self.stemp2B[self.timeindexB[6]] - self.ctemp2[-1] <= 0) or # by BT
+                    (aw.qmc.replayType == 2 and aw.qmc.TPalarmtimeindex and self.ctemp1[-1] != None and self.stemp1B[self.timeindexB[6]] - self.ctemp1[-1] <= 0)): # by ET
                     aw.qmc.autoDropIdx = len(aw.qmc.timex) - 2
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
@@ -5243,20 +5336,25 @@ class tgraphcanvas(FigureCanvas):
                 for i in range(len(self.backgroundEvents)):
                     if i not in aw.qmc.replayedBackgroundEvents: # never replay one event twice
                         timed = self.timeB[self.backgroundEvents[i]] - self.timeclock.elapsed()/1000.
+                        delta = 1 # by default don't trigger this one
                         if aw.qmc.replayType == 0: # replay by time
                             delta = timed
                         elif not next_byTemp_checked and aw.qmc.replayType == 1: # replay by BT (after TP)
                             if aw.qmc.TPalarmtimeindex:
-                                delta = self.stemp2B[self.backgroundEvents[i]] - self.ctemp2[-1]
+                                if self.ctemp2[-1] != None:
+                                    delta = self.stemp2B[self.backgroundEvents[i]] - self.ctemp2[-1]
+                                    next_byTemp_checked = True
                             else: # before TP we switch back to time-based
                                 delta = timed
-                            next_byTemp_checked = True
+                                next_byTemp_checked = True
                         elif not next_byTemp_checked and aw.qmc.replayType == 2: # replay by ET (after TP)
                             if aw.qmc.TPalarmtimeindex:
-                                delta = self.stemp1B[self.backgroundEvents[i]] - self.ctemp1[-1]
+                                if self.ctemp1[-1] != None:
+                                    delta = self.stemp1B[self.backgroundEvents[i]] - self.ctemp1[-1]
+                                    next_byTemp_checked = True
                             else: # before TP we switch back to time-based
                                 delta = timed
-                            next_byTemp_checked = True
+                                next_byTemp_checked = True
                         else:
                             delta = 1 # don't trigger this one
                         if reproducing is None and aw.qmc.backgroundReproduce and 0 < timed < self.detectBackgroundEventTime:
@@ -5344,81 +5442,189 @@ class tgraphcanvas(FigureCanvas):
     #make a projection of change of rate of BT on the graph
     def updateProjection(self):
         try:
-            if len(aw.qmc.ctemp2) > 1:  #Need this because viewProjections use rate of change (two values needed)
+            # projections are only drawn after CHARGE and before DROP
+            if (self.timeindex[0] != -1 and self.timeindex[6] == 0) and len(self.timex)>0:
+                charge = self.timex[self.timeindex[0]] # in data time (corresponds to display time 00:00)
+                now = self.timex[-1]                   # in data time (incl. time to charge)
+                _,xlim_right = self.ax.get_xlim()      # in data time like timex (incl. time to charge)
                 #self.resetlines()
-                if self.timeindex[0] != -1:
-                    starttime = self.timex[self.timeindex[0]]
-                else:
-                    starttime = 0
-                if self.projectionmode == 0:
+                if self.projectionmode == 0 or (self.projectionmode == 1 and (self.timex[-1]-charge)<=60*5): # linear temperature projection mode based on current RoR
                     #calculate the temperature endpoint at endofx acording to the latest rate of change
-                    xcoords = None
                     if self.l_BTprojection is not None:
-                        if aw.qmc.BTcurve and len(aw.qmc.delta2) > 0 and aw.qmc.delta2[-1] is not None and len(self.ctemp2) > 0:
+                        if self.BTcurve and len(self.unfiltereddelta2_pure) > 0 and self.unfiltereddelta2_pure[-1] is not None and len(self.ctemp2) > 0 and self.ctemp2[-1] not in [None, -1, numpy.NaN]:
                             # projection extended to the plots current endofx
-                            left = self.timex[-1]
-                            _,right = aw.qmc.ax.get_xlim()
-                            right = max(left,right) # never have the right point be left of left;)
-                            xcoords = [left,right]
-                            BTprojection = self.ctemp2[-1] + aw.qmc.delta2[-1]*(right - self.timex[-1])/60.
-                            #plot projections
-                            self.l_BTprojection.set_data(xcoords, [self.ctemp2[-1], BTprojection])
-                        elif self.l_BTprojection:
+                            left = now
+                            right = max(left, xlim_right + charge) # never have the right point be left of left;)
+                            BTprojection = self.ctemp2[-1] + self.unfiltereddelta2_pure[-1]*(right - left)/60.
+                            #plot projection
+                            self.l_BTprojection.set_data([left,right], [self.ctemp2[-1], BTprojection])
+                        else:
                             self.l_BTprojection.set_data([],[])
                     if self.l_ETprojection is not None:
-                        if aw.qmc.ETcurve and len(aw.qmc.delta1) > 0 and aw.qmc.delta1[-1] is not None and len(self.ctemp1) > 0:
-                            if xcoords is None:
-                                # projection extended to the plots current endofx
-                                left = self.timex[-1]
-                                _,right = aw.qmc.ax.get_xlim()
-                                right = max(left,right) # never have the right point be left of left;)
-                                xcoords = [left,right]
-                            ETprojection = self.ctemp1[-1] + aw.qmc.delta1[-1]*(xcoords[1] - self.timex[-1])/60.
-                            self.l_ETprojection.set_data(xcoords, [self.ctemp1[-1], ETprojection])
-                        elif self.l_ETprojection:
-                            self.l_ETprojection.set_data([],[])
-                elif self.projectionmode == 1:
-                    # Under Test. Newton's Law of Cooling
-                    # This comes from the formula of heating (with ET) a cool (colder) object (BT).
-                    # The difference equation (discrete with n elements) is: DeltaT = T(n+1) - T(n) = K*(ET - BT)
-                    # The formula is a natural decay towards ET. The closer BT to ET, the smaller the change in DeltaT
-                    # projectionconstant is a multiplier factor. It depends on
-                    # 1 Damper or fan. Heating by convection is _faster_ than heat by conduction,
-                    # 2 Mass of beans. The heavier the mass, the _slower_ the heating of BT
-                    # 3 Gas or electric power: gas heats BT _faster_ because of hoter air.
-                    # Every roaster will have a different constantN (self.projectionconstant).
-
-                    if len(self.ctemp1) > 0 and len(self.ctemp2) > 0:
-                        den = self.ctemp1[-1] - self.ctemp2[-1]  #denominator ETn - BTn
-                        if den > 0 and len(aw.qmc.delta2)>0 and aw.qmc.delta2[-1]: # if ETn > BTn
-                            #get x points
-                            xpoints = list(numpy.arange(self.timex[-1],self.endofx + starttime, self.delay/1000.))  #do two minutes after endofx (+ 120 seconds); why? now +starttime
-                            #get y points
-                            ypoints = [self.ctemp2[-1]]                                  # start initializing with last BT
-                            K =  self.projectionconstant*aw.qmc.delta2[-1]/den/60.                 # multiplier
-                            for _ in range(len(xpoints)-1):                                     # create new points from previous points
-                                DeltaT = K*(self.ctemp1[-1]- ypoints[-1])                        # DeltaT = K*(ET - BT)
-                                ypoints.append(ypoints[-1]+ DeltaT)                             # add DeltaT to the next ypoint
-    
-                            #plot ET level (straight line) and BT curve
-                            if self.l_ETprojection is not None:
-                                self.l_ETprojection.set_data([self.timex[-1],self.endofx + starttime], [self.ctemp1[-1], self.ctemp1[-1]])
-                            if self.l_BTprojection is not None:
-                                self.l_BTprojection.set_data(xpoints, ypoints)
+                        if self.ETcurve and len(self.unfiltereddelta1_pure) > 0 and self.unfiltereddelta1_pure[-1] is not None and len(self.ctemp1) > 0 and self.ctemp1[-1] not in [None, -1, numpy.NaN]:
+                            # projection extended to the plots current endofx
+                            left = now
+                            right = max(left,xlim_right + charge) # never have the right point be left of left;)
+                            ETprojection = self.ctemp1[-1] + self.unfiltereddelta1_pure[-1]*(right - left)/60.
+                            #plot projection
+                            self.l_ETprojection.set_data([left,right], [self.ctemp1[-1], ETprojection])
                         else:
-                            if self.l_ETprojection:
-                                self.l_ETprojection.set_data([],[])
-                            if self.l_BTprojection:
-                                self.l_BTprojection.set_data([],[])
-                    else:
-                        if self.l_ETprojection:
                             self.l_ETprojection.set_data([],[])
-                        if self.l_BTprojection:
+
+                # quadratic temperature projection based on linear RoR approximation
+                # only active 5min after CHARGE
+                elif self.projectionmode == 1 and (self.timex[-1]-charge)>60*5:
+                    delta_interval_BT = max(10, self.deltaBTsamples) # at least a span of 10 readings
+                    delta_interval_ET = max(10, self.deltaETsamples) # at least a span of 10 readings
+                    deltadeltalimit = 0.002
+                    delay = self.delay/1000.
+                    
+                    # NOTE: we use the unfiltered deltas here to make this work also with a delta symbolic formula like x/2 to render RoR in C/30sec
+                    if self.l_BTprojection is not None:
+                        if (len(self.ctemp2) > 0 and self.ctemp2[-1] not in [None, -1, numpy.NaN] and
+                                len(self.unfiltereddelta2_pure)>delta_interval_BT and 
+                                self.unfiltereddelta2_pure[-1] and 
+                                self.unfiltereddelta2_pure[-1]>0 and 
+                                self.unfiltereddelta2_pure[-delta_interval_BT] and
+                                self.unfiltereddelta2_pure[-delta_interval_BT]>0):
+                            
+                            deltadelta_secsec = (((self.unfiltereddelta2_pure[-1] - self.unfiltereddelta2_pure[-delta_interval_BT])/60) / 
+                                    (now - self.timex[-delta_interval_BT])) # linear BT RoRoR   C/sec/sec
+                            # limit deltadelta
+                            deltadelta_secsec = max(-deltadeltalimit,min(deltadeltalimit,deltadelta_secsec))
+                            xpoints = numpy.arange(now, xlim_right, delay)
+                            ypoints = [self.ctemp2[-1]]
+                            delta_sec = self.unfiltereddelta2_pure[-1]/60
+                            for _ in range(len(xpoints)-1):
+                                ypoints.append(ypoints[-1] + delta_sec*delay)
+                                delta_sec = delta_sec + deltadelta_secsec*delay
+                            #plot BT curve
+                            self.l_BTprojection.set_data(xpoints, ypoints)
+                        else:
                             self.l_BTprojection.set_data([],[])
+
+                    if self.l_ETprojection is not None:
+                        if (len(self.ctemp1) > 0 and self.ctemp1[-1] not in [None, -1, numpy.NaN] and
+                                len(self.unfiltereddelta1_pure)>delta_interval_BT and 
+                                self.unfiltereddelta1_pure[-1] and 
+                                self.unfiltereddelta1_pure[-1]>0 and 
+                                self.unfiltereddelta1_pure[-delta_interval_BT] and
+                                self.unfiltereddelta1_pure[-delta_interval_BT]>0):
+                            
+                            deltadelta_secsec = (((self.unfiltereddelta1_pure[-1] - self.unfiltereddelta1_pure[-delta_interval_ET])/60) / 
+                                    (self.timex[-1] - self.timex[-delta_interval_ET])) # linear ET RoRoR   C/sec/sec
+                            # limit deltadelta
+                            deltadelta_secsec = max(-deltadeltalimit,min(deltadeltalimit,deltadelta_secsec))
+                            xpoints = numpy.arange(now, xlim_right, delay)
+                            ypoints = [self.ctemp1[-1]]
+                            delta_sec = self.unfiltereddelta1_pure[-1]/60
+                            for _ in range(len(xpoints)-1):
+                                ypoints.append(ypoints[-1] + delta_sec*delay)
+                                delta_sec = delta_sec + deltadelta_secsec*delay
+                            #plot ET curve
+                            self.l_ETprojection.set_data(xpoints, ypoints)
+                        else:   
+                            self.l_ETprojection.set_data([],[])   
+                
+                # RoR projections
+                if self.projectDeltaFlag and (self.timex[-1]-charge)>60*5:
+                    delay = self.delay/1000.
+                    
+                    if self.l_DeltaBTprojection is not None:
+                        delta_interval_BT = max(10, self.deltaBTsamples*2) # at least a span of 10 readings
+                        if (self.DeltaBTflag and len(self.delta2)>0 and len(self.delta2)>delta_interval_BT and
+                                self.delta2[-1] and 
+                                self.delta2[-1]>0 and 
+                                self.delta2[-delta_interval_BT] and
+                                self.delta2[-delta_interval_BT]>0):
+                            # compute deltadelta_secsec from delta2 adjusted to delta math forumlas
+                            deltadelta_secsec = (((self.delta2[-1] - self.delta2[-delta_interval_BT])/60) / 
+                                (now - self.timex[-delta_interval_BT])) # linear BT RoRoR   C/sec/sec
+                            left = now
+                            right = max(left, xlim_right) # never have the right point be left of left;)
+                            DeltaBTprojection = self.delta2[-1] + deltadelta_secsec * (right - left) * 60
+                            # projection extended to the plots current endofx
+                            self.l_DeltaBTprojection.set_data([left,right], [self.delta2[-1], DeltaBTprojection])
+                        else:
+                            self.l_DeltaBTprojection.set_data([],[])
+                    
+                    if self.l_DeltaETprojection is not None:
+                        delta_interval_ET = max(10, self.deltaETsamples*2) # at least a span of 10 readings
+                        if (self.DeltaETflag and len(self.delta1)>0 and len(self.delta1)>delta_interval_ET and
+                                self.delta1[-1] and 
+                                self.delta1[-1]>0 and 
+                                self.delta1[-delta_interval_ET] and
+                                self.delta1[-delta_interval_ET]>0):
+                            # compute deltadelta_secsec from delta1 adjusted to delta math forumlas
+                            deltadelta_secsec = (((self.delta1[-1] - self.delta1[-delta_interval_ET])/60) / 
+                                (now - self.timex[-delta_interval_ET])) # linear ET RoRoR   C/sec/sec
+                            left = now
+                            right = max(left, xlim_right) # never have the right point be left of left;)
+                            DeltaETprojection = self.delta1[-1] + deltadelta_secsec * (right - left) * 60
+                            # projection extended to the plots current endofx
+                            self.l_DeltaETprojection.set_data([left,right], [self.delta1[-1], DeltaETprojection])
+                        else:
+                            self.l_DeltaETprojection.set_data([],[])
+
+# disabled
+#                elif self.projectionmode == 2:
+#                    # Under Test. Newton's Law of Cooling
+#                    # This comes from the formula of heating (with ET) a cool (colder) object (BT).
+#                    # The difference equation (discrete with n elements) is: DeltaT = T(n+1) - T(n) = K*(ET - BT)
+#                    # The formula is a natural decay towards ET. The closer BT to ET, the smaller the change in DeltaT
+#                    # projectionconstant is a multiplier factor. It depends on
+#                    # 1 Damper or fan. Heating by convection is _faster_ than heat by conduction,
+#                    # 2 Mass of beans. The heavier the mass, the _slower_ the heating of BT
+#                    # 3 Gas or electric power: gas heats BT _faster_ because of hoter air.
+#                    # Every roaster will have a different constantN (self.projectionconstant).
+#                    
+#                    if self.l_BTprojection is not None:
+#                        if len(self.ctemp2) > 0 and self.ctemp2[-1] not in [None, -1, numpy.NaN] and len(self.ctemp1) > 0 and self.ctemp1[-1] not in [None, -1, numpy.NaN]:
+#                            den = self.ctemp1[-1] - self.ctemp2[-1]  #denominator ETn - BTn
+#                            if den > 0 and len(self.delta2)>0 and self.delta2[-1]: # if ETn > BTn
+#                                starttime = self.timex[self.timeindex[0]]
+#                                #get x points
+#                                xpoints = list(numpy.arange(self.timex[-1],self.endofx + starttime, self.delay/1000.))
+#                                #get y points
+#                                ypoints = [self.ctemp2[-1]]                                  # start initializing with last BT
+#                                K =  self.projectionconstant*self.delta2[-1]/den/60.         # multiplier
+#                                for _ in range(len(xpoints)-1):                              # create new points from previous points
+#                                    DeltaT = K*(self.ctemp1[-1]- ypoints[-1])                # DeltaT = K*(ET - BT)
+#                                    ypoints.append(ypoints[-1]+ DeltaT)                      # add DeltaT to the next ypoint
+#                                self.l_BTprojection.set_data(xpoints, ypoints)
+#                            else:
+#                                self.l_BTprojection.set_data([],[])
+#                        else:
+#                            self.l_BTprojection.set_data([],[])
+#                    if self.l_ETprojection is not None:
+#                        if len(self.ctemp1) > 0 and self.ctemp1[-1] not in [None, -1, numpy.NaN]:
+#                            starttime = self.timex[self.timeindex[0]]
+#                            self.l_ETprojection.set_data([self.timex[-1],self.endofx + starttime], [self.ctemp1[-1], self.ctemp1[-1]])
+#                        else:
+#                            self.l_ETprojection.set_data([],[])
+            else:
+                if self.l_BTprojection is not None:
+                    self.l_BTprojection.set_data([],[])
+                if self.l_ETprojection is not None:
+                    self.l_ETprojection.set_data([],[])
+                if self.l_DeltaBTprojection is not None:
+                    self.l_DeltaBTprojection.set_data([],[])
+                if self.l_DeltaETprojection is not None:
+                    self.l_DeltaETprojection.set_data([],[])
+                    
+                    
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " updateProjection() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.adderror((QApplication.translate("Error Message","Exception:") + " updateProjection() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            if self.l_BTprojection is not None:
+                self.l_BTprojection.set_data([],[])
+            if self.l_ETprojection is not None:
+                self.l_ETprojection.set_data([],[])
+            if self.l_DeltaBTprojection is not None:
+                self.l_DeltaBTprojection.set_data([],[])
+            if self.l_DeltaETprojection is not None:
+                self.l_DeltaETprojection.set_data([],[])
 
     # takes array with readings, the current index, the sign of the shift as character and the shift value
     # returns val, evalsign
@@ -6121,9 +6327,9 @@ class tgraphcanvas(FigureCanvas):
             self.ax.set_xlim(startofx,endtime)
             
             if self.xgrid != 0:
-        
-                mfactor1 =  round(float(2. + int(starttime)/int(self.xgrid)))
-                mfactor2 =  round(float(2. + int(endofx)/int(self.xgrid)))
+                
+                mfactor1 =  round(float(2. + abs(int(round(startofx))/int(round(self.xgrid)))))
+                mfactor2 =  round(float(2. + abs(int(round(endofx))/int(round(self.xgrid)))))
         
                 majorloc = numpy.arange(starttime-(self.xgrid*mfactor1),starttime+(self.xgrid*mfactor2), self.xgrid)
                 if self.xgrid == 60:
@@ -6166,7 +6372,7 @@ class tgraphcanvas(FigureCanvas):
                 self.updateBackground()
             else:
                 self.ax_background = None
-        except Exception as e:
+        except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
 
     def fmt_timedata(self,x):
@@ -6191,7 +6397,7 @@ class tgraphcanvas(FigureCanvas):
                 # depending on the z-order of ax vs delta_ax the one or the other one is correct
                 #res = (self.ax.transData.inverted().transform((0,self.delta_ax.transData.transform((0,x))[1]))[1])
                 res = (self.delta_ax.transData.inverted().transform((0,self.ax.transData.transform((0,x))[1]))[1])
-            except Exception:
+            except Exception: # pylint: disable=broad-except
                 pass
         if aw.qmc.LCDdecimalplaces:
             return aw.float2float(res)
@@ -6298,10 +6504,16 @@ class tgraphcanvas(FigureCanvas):
             self.fileCleanSignal.emit()
             self.rateofchange1 = 0.0
             self.rateofchange2 = 0.0
+            charge = 0
+            if self.timeindex[0] > -1:
+                charge = self.timex[self.timeindex[0]]
             self.temp1, self.temp2, self.delta1, self.delta2, self.timex, self.stemp1, self.stemp2, self.ctimex1, self.ctimex2, self.ctemp1, self.ctemp2 = [],[],[],[],[],[],[],[],[],[],[]
             self.tstemp1,self.tstemp2 = [],[]
             self.unfiltereddelta1,self.unfiltereddelta2 = [],[]
+            self.unfiltereddelta1_pure,self.unfiltereddelta2_pure = [],[]
             self.timeindex = [-1,0,0,0,0,0,0,0]
+            # we set startofx to x-axis min limit as timeindex[0] is no cleared, to keep the axis limits constant (note that startx depends on timeindex[0]!)
+            self.startofx = self.startofx - charge
             #extra devices
             for i in range(min(len(self.extradevices),len(self.extratimex),len(self.extratemp1),len(self.extratemp2),len(self.extrastemp1),len(self.extrastemp2))):
                 self.extratimex[i],self.extratemp1[i],self.extratemp2[i],self.extrastemp1[i],self.extrastemp2[i] = [],[],[],[],[]            #reset all variables that need to be reset (but for the actually measurements that will be treated separately at the end of this function)
@@ -6333,11 +6545,11 @@ class tgraphcanvas(FigureCanvas):
             # detach IO Phidgets
             try:
                 aw.qmc.closePhidgetOUTPUTs()
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-except
                 _log.exception(e)
             try:
                 aw.qmc.closePhidgetAMBIENTs()
-            except Exception as e:
+            except Exception as e:  # pylint: disable=broad-except
                 _log.exception(e)
         self.reset()
 
@@ -6447,7 +6659,6 @@ class tgraphcanvas(FigureCanvas):
                 self.weight = [0,0,self.weight[2]]
                 self.volume = [0,0,self.volume[2]]
                 self.density = [0,self.density[1],1,self.density[3]]
-                self.density_roasted = [0,self.density_roasted[1],1,self.density_roasted[3]]
                 # we reset ambient values to the last sampled readings in this session
                 self.ambientTemp = self.ambientTemp_sampled
                 self.ambient_humidity = self.ambient_humidity_sampled
@@ -6465,6 +6676,7 @@ class tgraphcanvas(FigureCanvas):
             self.whole_color = 0
             self.ground_color = 0
             self.moisture_roasted = 0.
+            self.density_roasted = [0,self.density_roasted[1],1,self.density_roasted[3]]
 
             # reset running AUC values
             self.AUCvalue = 0
@@ -6498,19 +6710,9 @@ class tgraphcanvas(FigureCanvas):
             #used to find length of arms in annotations
             self.ystep_down = 0
             self.ystep_up = 0
-
+            
             # reset keyboard mode
             aw.keyboardmoveindex = 0 # points to the last activated button in keyboardButtonList; we start with the CHARGE button            aw.resetKeyboardButtonMarks()
-
-            if not (aw.qmc.autotimex and aw.qmc.background):
-                if self.locktimex:
-                    self.startofx = self.locktimex_start
-                    self.endofx = self.locktimex_end
-                else:
-                    self.startofx = self.chargemintime
-                    self.endofx = self.resetmaxtime
-            if self.endofx < 1:
-                self.endofx = 60
 
             aw.setTimerColor("timer")
 
@@ -6558,9 +6760,7 @@ class tgraphcanvas(FigureCanvas):
             try:
                 # reset color of last pressed button
                 if aw.lastbuttonpressed != -1:
-                    buttonstyle = "min-width:75px;border-style:solid; border-radius:3;border-color:grey; border-width:1;"
-                    normalstyle = "QPushButton {" + buttonstyle + "font-size: 10pt; font-weight: bold; color: %s; background-color: %s}"%(aw.extraeventbuttontextcolor[aw.lastbuttonpressed],createGradient(aw.extraeventbuttoncolor[aw.lastbuttonpressed]))
-                    aw.buttonlist[aw.lastbuttonpressed].setStyleSheet(normalstyle)
+                    aw.setExtraEventButtonStyle(aw.lastbuttonpressed, style="normal")
                 # reset lastbuttonpressed
                 aw.lastbuttonpressed = -1
             except Exception as e: # pylint: disable=broad-except
@@ -6593,9 +6793,10 @@ class tgraphcanvas(FigureCanvas):
             self.autoFCsIdx = 0
 
             self.l_annotations = [] # initiate the event annotations
-            self.l_annotations_dict = {} # initiate the event id to temp/time annotation dict for annotations
+            # we initialize the annotation position dict of the foreground profile
+            self.deleteAnnoPositions(foreground=True, background=False)
             self.l_event_flags_dict = {} # initiate the event id to temp/time annotation dict for flags
-            self.l_background_annotations = [] # initiate the event annotations
+            self.l_background_annotations = [] # initiate the background event annotations
 
             if not sampling:
                 aw.hideDefaultButtons()
@@ -6628,16 +6829,39 @@ class tgraphcanvas(FigureCanvas):
             if aw.qmc.profileDataSemaphore.available() < 1:
                 aw.qmc.profileDataSemaphore.release(1)
         # now clear all measurements and redraw
+        
         self.clearMeasurements()
         #clear PhasesLCDs
         aw.updatePhasesLCDs()
         #clear AUC LCD
         aw.updateAUCLCD()
+        
+        # if background is loaded we move it back to its original position (after regular load):
+        if self.backgroundprofile:
+            moved = self.backgroundprofile_moved_x != 0 or self.backgroundprofile_moved_y != 0
+            if self.backgroundprofile_moved_x != 0:
+                self.movebackground("left",self.backgroundprofile_moved_x)
+            if self.backgroundprofile_moved_y != 0:
+                self.movebackground("down",self.backgroundprofile_moved_y)
+            if moved:
+                self.timealign(redraw=False)
+                
+        if not (self.autotimex and self.background):
+            if self.locktimex:
+                self.startofx = self.locktimex_start
+                self.endofx = self.locktimex_end
+            elif keepProperties:
+                self.startofx = self.chargemintime
+                self.endofx = self.resetmaxtime
+        if self.endofx < 1:
+            self.endofx = 60
             
-        aw.autoAdjustAxis()
+        aw.autoAdjustAxis(background=not keepProperties) # if reset() triggered by ON, we ignore background on adjusting the axis and adjust according to RESET min/max
+
         ### REDRAW  ##
         if redraw:
             self.redraw(True,sampling=sampling,smooth=aw.qmc.optimalSmoothing) # we need to re-smooth with standard smoothing if ON and optimal-smoothing is ticked
+                
         #QApplication.processEvents() # this one seems to be needed for a proper redraw in fullscreen mode on OS X if a profile was loaded and NEW is pressed
         #   this processEvents() seems not to be needed any longer!?
         return True
@@ -6661,12 +6885,14 @@ class tgraphcanvas(FigureCanvas):
             y[:-j,-(i+1)] = x[j:]
             y[-j:,-(i+1)] = x[-1]
         return numpy.median(y, axis=1)
+#        return numpy.nanmedian(y, axis=1) # produces artefacts
 
-    # smoothes a list of values 'y' at taken at times indicated by the numbers in list 'x'
+    # smoothes a list (or numpy.array) of values 'y' at taken at times indicated by the numbers in list 'x'
     # 'flat', 'hanning', 'hamming', 'bartlett', 'blackman'
     # 'flat' results in moving average
     # window_len should be odd
     # based on http://wiki.scipy.org/Cookbook/SignalSmooth
+    # returns a smoothed numpy array or the original y argument
     @staticmethod
     def smooth(x, y, window_len=15, window='hanning'):
         try:
@@ -6706,14 +6932,80 @@ class tgraphcanvas(FigureCanvas):
             aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " smooth() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             return x
 
+    # re-sample, filter and smooth slice
+    # takes numpy arrays a (time) and b (temp) of the same length and returns a numpy array representing the processed b values
+    # precondition: (aw.qmc.filterDropOuts or window_len>2)
+    def smooth_slice(self, a, b, 
+        window_len=7, window='hanning',decay_weights=None,decay_smoothing=False,
+        re_sample=True,back_sample=True,a_lin=None):
 
+        # 1. re-sample
+        if re_sample:
+            if a_lin is None or len(a_lin) != len(a):
+                a_mod = numpy.linspace(a[0],a[-1],len(a))
+            else:
+                a_mod = a_lin
+            b = numpy.interp(a_mod, a, b) # resample data to linear spaced time
+        else:
+            a_mod = a
+        res = b # just in case the precondition (aw.qmc.filterDropOuts or window_len>2) does not hold
+        # 2. filter spikes
+        if aw.qmc.filterDropOuts:
+            try:
+                b = self.medfilt(b,5)  # k=3 seems not to catch all spikes in all cases; k must be odd!
+# scipyernative which performs equal, but produces larger artefacts at the borders and for intermediate NaN values for k>3
+#                from scipy.signal import medfilt as scipy_medfilt
+#                b = scipy_medfilt(b,3)
+                res = b
+            except Exception as e: # pylint: disable=broad-except
+                _log.error(e)
+                res = b
+        # 3. smooth data
+        if window_len>2:
+            if decay_smoothing:
+                # decay smoothing
+                if decay_weights is None:
+                    decay_weights = numpy.arange(1,window_len+1)
+                else:
+                    window_len = len(decay_weights)
+                # invariant: window_len = len(decay_weights)
+                if decay_weights.sum() == 0:
+                    res = b
+                else:
+                    res = []
+                    # ignore -1 readings in averaging and ensure a good ramp
+                    for i in range(len(b)):
+                        seq = b[max(0,i-window_len + 1):i+1]
+#                        # we need to surpress -1 drop out values from this
+#                        seq = list(filter(lambda item: item != -1,seq)) # -1 drop out values in b have already been replaced by numpy.nan above
+                        
+                        w = decay_weights[max(0,window_len-len(seq)):]  # preCond: len(decay_weights)=window_len and len(seq) <= window_len; postCond: len(w)=len(seq)
+                        if len(w) == 0:
+                            res.append(b[i]) # we don't average if there is are no weights (e.g. if the original seq did only contain -1 values and got empty)
+                        else:
+                            res.append(numpy.average(seq,weights=w)) # works only if len(seq) = len(w)
+                    # postCond: len(res) = len(b)
+            else:
+                # optimal smoothing (the default)
+                win_len = max(0,window_len)
+                if win_len != 1: # at the lowest level we turn smoothing completely off
+                    res = self.smooth(a_mod,b,win_len,window)
+                else:
+                    res = b
+        # 4. sample back
+        if re_sample and back_sample:
+            res = numpy.interp(a, a_mod, res) # re-sampled back to orginal timestamps
+        return res
+
+    # takes lists a (time array) and b (temperature array) containing invalid segments of -1/None values and returns a list with all segments of valid values smoothed
     # a: list of timestamps
     # b: list of readings
     # re_sample: if true re-sample readings to a linear spaced time before smoothing
     # back_sample: if true results are back-sampled to original timestamps given in "a" after smoothing
     # a_lin: pre-computed linear spaced timestamps of equal length than a
     # NOTE: result can contain NaN items on places where the input array contains the error element -1
-    def smooth_list(self, a, b, window_len=7, window='hanning',decay_weights=None,decay_smoothing=False,fromIndex=-1,toIndex=0,re_sample=True,back_sample=True,a_lin=None):  # default 'hanning'
+    # result is a numpy array or the b as numpy array with drop out readings -1 replaced by NaN
+    def smooth_list(self, a, b, window_len=7, window='hanning',decay_weights=None,decay_smoothing=False,fromIndex=-1,toIndex=0,re_sample=True,back_sample=True,a_lin=None):
         if len(a) > 1 and len(a) == len(b) and (aw.qmc.filterDropOuts or window_len>2):
             #pylint: disable=E1103
             # 1. truncate
@@ -6723,77 +7015,148 @@ class tgraphcanvas(FigureCanvas):
             else: # smooth list on full length
                 fromIndex = 0
                 toIndex = len(a)
-            # we replace the error value -1 by numpy.nan to avoid strange smoothing artifacts
-            a = numpy.array([numpy.nan if x == -1 else x for x in a],dtype='float64')[fromIndex:toIndex]
-            b = numpy.array([numpy.nan if x == -1 else x for x in b],dtype='float64')[fromIndex:toIndex]
-            # 2. re-sample
-            if re_sample:
-                if a_lin is None or len(a_lin) != len(a):
-                    a_mod = numpy.linspace(a[0],a[-1],len(a))
+            a = numpy.array(a[fromIndex:toIndex], dtype=numpy.double)
+            # we mask the error value -1 and Numpy  in the temperature array
+            mb = numpy.ma.masked_equal(numpy.ma.masked_equal(b[fromIndex:toIndex], -1), None)
+            # split in masked and
+            unmasked_slices = [(x,False) for x in numpy.ma.clump_unmasked(mb)] # the valid readings
+            masked_slices = [(x,True) for x in numpy.ma.clump_masked(mb)] # the dropped values
+            sorted_slices = sorted(unmasked_slices + masked_slices, key=lambda tup: tup[0].start)
+            b_smoothed = [] # b_smoothed collects the smoothed segments in order
+            b_smoothed.append(numpy.full(fromIndex, numpy.nan, dtype=numpy.double)) # append initial segment to the list of resulting segments
+            # we just smooth the unmsked slices and add the unmasked slices with NaN values
+            for (s, m) in sorted_slices:
+                if m:
+                    # a slice with all masked (invalid) readings
+                    b_smoothed.append(numpy.full(s.stop - s.start, numpy.nan, dtype=numpy.double))
                 else:
-                    a_mod = a_lin
-                b = numpy.interp(a_mod, a, b) # resample data to linear spaced time
-            else:
-                a_mod = a
-            # 3. filter spikes
-            if aw.qmc.filterDropOuts:
-                try:
-                    b = self.medfilt(numpy.array(b),5)  # k=3 seems not to catch all spikes in all cases; k must be odd!
-## scipy alternative which performs equal
-#                    from scipy.signal import medfilt as scipy_medfilt
-#                    b = scipy_medfilt(numpy.array(b),5)
-                    res = b
-                except Exception: # pylint: disable=broad-except
-                    pass
-            # 4. smooth data
-            if window_len>2:
-                if decay_smoothing:
-                    # decay smoothing
-                    if decay_weights is None:
-                        decay_weights = numpy.arange(1,window_len+1)
-                    else:
-                        window_len = len(decay_weights)
-                    # invariant: window_len = len(decay_weights)
-                    if decay_weights.sum() == 0:
-                        res = b
-                    else:
-                        res = []
-                        # ignore -1 readings in averaging and ensure a good ramp
-                        for i in range(len(b)):
-                            seq = b[max(0,i-window_len + 1):i+1]
-                            # we need to surpress -1 drop out values from this
-                            seq = list(filter(lambda item: item != -1,seq))
-                            
-                            w = decay_weights[max(0,window_len-len(seq)):]  # preCond: len(decay_weights)=window_len and len(seq) <= window_len; postCond: len(w)=len(seq)
-                            if len(w) == 0:
-                                res.append(b[i]) # we don't average if there is are no weights (e.g. if the original seq did only contain -1 values and got empty)
-                            else:
-                                res.append(numpy.average(seq,weights=w)) # works only if len(seq) = len(w)
-                        # postCond: len(res) = len(b)
-                else:
-                    # optimal smoothing (the default)
-                    win_len = max(0,window_len)
-                    if win_len != 1: # at the lowest level we turn smoothing completely off
-                        res = self.smooth(a_mod,b,win_len,window)
-                    else:
-                        res = b
-            # 4. sample back
-            if re_sample and back_sample:
-                res = numpy.interp(a, a_mod, res) # re-sampled back to orginal timestamps
-            return numpy.concatenate(([None]*(fromIndex),res.tolist(),[None]*(len(a)-toIndex))).tolist()
+                    # a slice with proper data
+                    b_smoothed.append(self.smooth_slice(a[s], mb[s], window_len, window, decay_weights, decay_smoothing, re_sample, back_sample, a_lin))
+            b_smoothed.append(numpy.full(len(a)-toIndex, numpy.nan, dtype=numpy.double)) # append the final segment to the list of resulting segments
+            return numpy.concatenate(b_smoothed)
+        b = numpy.array(b, dtype=numpy.double)
+        b[b == -1] = numpy.nan
         return b
+
+
+# REPLACED BY above slicing smooth_list
+#    # a: list of timestamps
+#    # b: list of readings
+#    # re_sample: if true re-sample readings to a linear spaced time before smoothing
+#    # back_sample: if true results are back-sampled to original timestamps given in "a" after smoothing
+#    # a_lin: pre-computed linear spaced timestamps of equal length than a
+#    # NOTE: result can contain NaN items on places where the input array contains the error element -1
+#    # result is always a list (and not a numpy array)
+#    def smooth_list(self, a, b, window_len=7, window='hanning',decay_weights=None,decay_smoothing=False,fromIndex=-1,toIndex=0,re_sample=True,back_sample=True,a_lin=None):  # default 'hanning'
+#        if len(a) > 1 and len(a) == len(b) and (aw.qmc.filterDropOuts or window_len>2):
+#            #pylint: disable=E1103
+#            # 1. truncate
+#            if fromIndex > -1: # if fromIndex is set, replace prefix up to fromIndex by None
+#                if toIndex==0: # no limit
+#                    toIndex=len(a)
+#            else: # smooth list on full length
+#                fromIndex = 0
+#                toIndex = len(a)
+#            # we replace the error value -1  in the temperature array by numpy.nan to avoid strange smoothing artifacts
+#            # no need to substitute anything in the time array!
+#            a = numpy.array(a[fromIndex:toIndex], dtype=numpy.double)
+#            b = numpy.array(b[fromIndex:toIndex], dtype=numpy.double) # None replaced by numpy.nan
+#            b[b==-1] = numpy.nan # -1 replaced by numpy.nan
+#            # 2. re-sample
+#            if re_sample:
+#                if a_lin is None or len(a_lin) != len(a):
+#                    a_mod = numpy.linspace(a[0],a[-1],len(a))
+#                else:
+#                    a_mod = a_lin
+#                b = numpy.interp(a_mod, a, b) # resample data to linear spaced time
+#            else:
+#                a_mod = a
+#            # 3. filter spikes
+#            if aw.qmc.filterDropOuts:
+#                try:
+#                    b = self.medfilt(b,5)  # k=3 seems not to catch all spikes in all cases; k must be odd!
+### scipy alternative which performs equal, but produces larger artefacts at the borders and for intermediate NaN values for k>3
+##                    from scipy.signal import medfilt as scipy_medfilt
+##                    b = scipy_medfilt(b,3)
+#                    res = b
+#                except Exception as e: # pylint: disable=broad-except
+#                    _log.error(e)
+#                    res = b
+#            # 4. smooth data
+#            if window_len>2:
+#                if decay_smoothing:
+#                    # decay smoothing
+#                    if decay_weights is None:
+#                        decay_weights = numpy.arange(1,window_len+1)
+#                    else:
+#                        window_len = len(decay_weights)
+#                    # invariant: window_len = len(decay_weights)
+#                    if decay_weights.sum() == 0:
+#                        res = b
+#                    else:
+#                        res = []
+#                        # ignore -1 readings in averaging and ensure a good ramp
+#                        for i in range(len(b)):
+#                            seq = b[max(0,i-window_len + 1):i+1]
+##                            # we need to surpress -1 drop out values from this
+##                            seq = list(filter(lambda item: item != -1,seq)) # -1 drop out values in b have already been replaced by numpy.nan above
+#                            
+#                            w = decay_weights[max(0,window_len-len(seq)):]  # preCond: len(decay_weights)=window_len and len(seq) <= window_len; postCond: len(w)=len(seq)
+#                            if len(w) == 0:
+#                                res.append(b[i]) # we don't average if there is are no weights (e.g. if the original seq did only contain -1 values and got empty)
+#                            else:
+#                                res.append(numpy.average(seq,weights=w)) # works only if len(seq) = len(w)
+#                        # postCond: len(res) = len(b)
+#                else:
+#                    # optimal smoothing (the default)
+#                    win_len = max(0,window_len)
+#                    if win_len != 1: # at the lowest level we turn smoothing completely off
+#                        res = self.smooth(a_mod,b,win_len,window)
+#                    else:
+#                        res = b
+#            # 4. sample back
+#            if re_sample and back_sample:
+#                res = numpy.interp(a, a_mod, res) # re-sampled back to orginal timestamps
+#            # Note: at this point res might be a list or a numpy array as decay smoothing generates a list which might not be back_sampled and optimal smoothing a numpy array.
+#            return numpy.concatenate(([None]*(fromIndex),res,[None]*(len(a)-toIndex))).tolist()
+#        return b
+
+    # deletes saved annotation positions from l_annotations_dict
+    # forground annotations have position keys <=6, background annotation positions have keys > 6, 
+    def deleteAnnoPositions(self, foreground:bool = False, background:bool = False):
+        if background and foreground:
+            self.l_annotations_dict = {}
+        else:
+            for k in list(self.l_annotations_dict.keys()):
+                if (background and k > 6) or (foreground and k <= 6):
+                    self.l_annotations_dict.pop(k)
+    
+    def moveBackgroundAnnoPositionsX(self, step):
+        for k in list(self.l_annotations_dict.keys()):
+            if k > 6:
+                for anno in self.l_annotations_dict[k]:
+                    x,y = anno.get_position()
+                    anno.set_position((x+step,y))
+                    
+    def moveBackgroundAnnoPositionsY(self, step):
+        for k in list(self.l_annotations_dict.keys()):
+            if k > 6:
+                for anno in self.l_annotations_dict[k]:
+                    x,y = anno.get_position()
+                    anno.set_position((x,y+step))
 
     # returns the position of the main event annotations as list of lists of the form
     #   [[id,temp_x,temp_y,time_x,time_y],...]
-    # with id the main event id like -1 for TP, 0 for CHARGE, 1 for DRY,..
+    # with id the main event id like -1 for TP, 0 for CHARGE, 1 for DRY,.., 6 for DROP (keys above 6 as used for background profile annotations are ignored)
     def getAnnoPositions(self):
         res = []
         for k,v in self.l_annotations_dict.items():
-            temp_anno = v[0].xyann
-            time_anno = v[1].xyann
-            if all((not numpy.isnan(e) for e in temp_anno + time_anno)):
-                # we add the entry only if all of the coordinates are proper numpers and not nan
-                res.append([k,temp_anno[0],temp_anno[1],time_anno[0],time_anno[1]])
+            if k<7:
+                temp_anno = v[0].xyann
+                time_anno = v[1].xyann
+                if all((not numpy.isnan(e) for e in temp_anno + time_anno)):
+                    # we add the entry only if all of the coordinates are proper numpers and not nan
+                    res.append([k,temp_anno[0],temp_anno[1],time_anno[0],time_anno[1]])
         return res
 
     def setAnnoPositions(self,anno_positions):
@@ -6843,7 +7206,7 @@ class tgraphcanvas(FigureCanvas):
         else:
             fmtstr = "%.0f"
         if draggable and draggable_anno_key is not None and draggable_anno_key in self.l_annotations_pos_dict:
-            # we first look into the position dictionary loaded from file
+            # we first look into the position dictionary loaded from file, those are removed after first rendering
             xytext = self.l_annotations_pos_dict[draggable_anno_key][0]
         elif draggable and draggable_anno_key is not None and draggable_anno_key in self.l_annotations_dict:
             # next we check the "live" dictionary
@@ -6858,8 +7221,9 @@ class tgraphcanvas(FigureCanvas):
                             fontproperties=fontprop_small)
         try:
             temp_anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
-            temp_anno.draggable(use_blit=True)
-            temp_anno.set_picker(aw.draggable_text_box_picker)
+            if draggable:
+                temp_anno.draggable(use_blit=True)
+                temp_anno.set_picker(aw.draggable_text_box_picker)
         except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
             pass
         #anotate time
@@ -6891,6 +7255,11 @@ class tgraphcanvas(FigureCanvas):
         ystep_down = ystep_up = 0
         anno_artists = []
         #Add markers for CHARGE
+        # add offset to annotation keys for background annotations to prevent them from being confused with those of the foreground profile and to prevent persisting them to alog files
+        if startB == None:
+            anno_key_offset = 0
+        else:
+            anno_key_offset = 10
         try:
             if len(timex) > 0:
                 if timeindex[0] != -1 and len(timex) > timeindex[0]:
@@ -6912,7 +7281,7 @@ class tgraphcanvas(FigureCanvas):
                             st1 = self.__to_ascii(st1)
                         e = 0
                         a = 1.
-                    time_temp_annos = self.annotate(temp[t0idx],st1,t0,y,ystep_up,ystep_down,e,a,draggable,0)
+                    time_temp_annos = self.annotate(temp[t0idx],st1,t0,y,ystep_up,ystep_down,e,a,draggable,0+anno_key_offset)
                     anno_artists += time_temp_annos
 
                 #Add TP marker
@@ -6922,7 +7291,7 @@ class tgraphcanvas(FigureCanvas):
                         st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","TP {0}"), stringfromseconds(timex[TP_index]-t0,False))
                         a = 1.
                         e = 0
-                        anno_artists += self.annotate(temp[TP_index],st1,timex[TP_index],stemp[TP_index],ystep_up,ystep_down,e,a,draggable,-1)
+                        anno_artists += self.annotate(temp[TP_index],st1,timex[TP_index],stemp[TP_index],ystep_up,ystep_down,e,a,draggable,-1+anno_key_offset)
                     elif TP_time_loaded is not None:
                         if timeindex2:
                             a = aw.qmc.backgroundalpha
@@ -6937,7 +7306,7 @@ class tgraphcanvas(FigureCanvas):
                         TP_index = self.backgroundtime2index(TP_time_loaded + shift)
                         ystep_down,ystep_up = self.findtextgap(ystep_down,ystep_up,stemp[t0idx],stemp[TP_index],d)
                         st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","TP {0}"),stringfromseconds(TP_time_loaded,False))
-                        anno_artists += self.annotate(temp[TP_index],st1,timex[TP_index],stemp[TP_index],ystep_up,ystep_down,e,a,draggable,-1)
+                        anno_artists += self.annotate(temp[TP_index],st1,timex[TP_index],stemp[TP_index],ystep_up,ystep_down,e,a,draggable,-1+anno_key_offset)
                 #Add Dry End markers
                 if timeindex[1]:
                     tidx = timeindex[1]
@@ -6948,7 +7317,7 @@ class tgraphcanvas(FigureCanvas):
                     else:
                         a = 1.
                     e = 0
-                    anno_artists += self.annotate(temp[tidx],st1,timex[tidx],stemp[tidx],ystep_up,ystep_down,e,a,draggable,1)
+                    anno_artists += self.annotate(temp[tidx],st1,timex[tidx],stemp[tidx],ystep_up,ystep_down,e,a,draggable,1+anno_key_offset)
 
                 #Add 1Cs markers
                 if timeindex[2]:
@@ -6963,7 +7332,7 @@ class tgraphcanvas(FigureCanvas):
                     else:
                         a = 1.
                     e = 0
-                    anno_artists += self.annotate(temp[tidx],st1,timex[tidx],stemp[tidx],ystep_up,ystep_down,e,a,draggable,2)
+                    anno_artists += self.annotate(temp[tidx],st1,timex[tidx],stemp[tidx],ystep_up,ystep_down,e,a,draggable,2+anno_key_offset)
                 #Add 1Ce markers
                 if timeindex[3]:
                     tidx = timeindex[3]
@@ -6974,7 +7343,7 @@ class tgraphcanvas(FigureCanvas):
                     else:
                         a = 1.
                     e = 0
-                    anno_artists += self.annotate(temp[tidx],st1,timex[tidx],stemp[tidx],ystep_up,ystep_down,e,a,draggable,3)
+                    anno_artists += self.annotate(temp[tidx],st1,timex[tidx],stemp[tidx],ystep_up,ystep_down,e,a,draggable,3+anno_key_offset)
                     #add a water mark if FCs
                     if timeindex[2] and not timeindex2 and self.watermarksflag:
                         self.ax.axvspan(timex[timeindex[2]],timex[tidx], facecolor=self.palette["watermarks"], alpha=0.2)
@@ -6991,7 +7360,7 @@ class tgraphcanvas(FigureCanvas):
                     else:
                         a = 1.
                     e = 0
-                    anno_artists += self.annotate(temp[tidx],st1,timex[tidx],stemp[tidx],ystep_up,ystep_down,e,a,draggable,4)
+                    anno_artists += self.annotate(temp[tidx],st1,timex[tidx],stemp[tidx],ystep_up,ystep_down,e,a,draggable,4+anno_key_offset)
                 #Add 2Ce markers
                 if timeindex[5]:
                     tidx = timeindex[5]
@@ -7002,7 +7371,7 @@ class tgraphcanvas(FigureCanvas):
                     else:
                         a = 1.
                     e = 0
-                    anno_artists += self.annotate(temp[tidx],st1,timex[tidx],stemp[tidx],ystep_up,ystep_down,e,a,draggable,5)
+                    anno_artists += self.annotate(temp[tidx],st1,timex[tidx],stemp[tidx],ystep_up,ystep_down,e,a,draggable,5+anno_key_offset)
                     #do water mark if SCs
                     if timeindex[4] and not timeindex2 and self.watermarksflag:
                         self.ax.axvspan(timex[timeindex[4]],timex[tidx], facecolor=self.palette["watermarks"], alpha=0.2)
@@ -7031,7 +7400,7 @@ class tgraphcanvas(FigureCanvas):
                         a = 1.
                     e = 0
 
-                    anno_artists += self.annotate(temp[tidx],st1,timex[tidx],stemp[tidx],ystep_up,ystep_down,e,a,draggable,6)
+                    anno_artists += self.annotate(temp[tidx],st1,timex[tidx],stemp[tidx],ystep_up,ystep_down,e,a,draggable,6+anno_key_offset)
 
                     #do water mark if FCs, but no FCe nor SCs nor SCe
                     if timeindex[2] and not timeindex[3] and not timeindex[4] and not timeindex[5] and not timeindex2 and self.watermarksflag:
@@ -7327,19 +7696,19 @@ class tgraphcanvas(FigureCanvas):
             if aw.qmc.graphfont in [1,9]: # if selected font is Humor we translate the unicode title into pure ascii
                 backgroundtitle = self.__to_ascii(backgroundtitle)
             backgroundtitle = f"\n{abbrevString(backgroundtitle, 32)}"
-            
-        st_artist = self.fig.suptitle(backgroundtitle,
+        
+        self.l_subtitle = self.fig.suptitle(backgroundtitle,
                 horizontalalignment="right",verticalalignment="top",
                 fontsize="x-small",
                 x=suptitleX,y=1,
-                color=self.palette["title"])
+                color=(self.palette["title_focus"] if (self.backgroundprofile and self.backgroundPlaybackEvents) else self.palette["title"]))
         try:
-            st_artist.set_in_layout(False)  # remove title from tight_layout calculation
+            self.l_subtitle.set_in_layout(False)  # remove title from tight_layout calculation
         except Exception: # pylint: disable=broad-except  # set_in_layout not available in mpl<3.x
             pass
         try:
             if len(backgroundtitle)>0:
-                self.background_title_width = st_artist.get_window_extent(renderer=self.fig.canvas.get_renderer()).width
+                self.background_title_width = self.l_subtitle.get_window_extent(renderer=self.fig.canvas.get_renderer()).width
             else:
                 self.background_title_width = 0
         except Exception: # pylint: disable=broad-except
@@ -7497,13 +7866,13 @@ class tgraphcanvas(FigureCanvas):
             temp2_nogaps = fill_gaps(self.resizeList(self.temp2,len(self.timex)))
 
             if smooth or len(self.stemp1) != len(self.timex):
-                if not aw.qmc.smooth_curves_on_recording and aw.qmc.flagon: # we don't smooth, but remove the dropouts
+                if self.flagon: # we don't smooth, but remove the dropouts
                     self.stemp1 = temp1_nogaps
                 else:
                     self.stemp1 = self.smooth_list(self.timex,temp1_nogaps,window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=timex_lin)
             if smooth or len(self.stemp2) != len(self.timex):
-                if not aw.qmc.smooth_curves_on_recording and aw.qmc.flagon:  # we don't smooth, but remove the dropouts
-                    self.stemp2 = fill_gaps(self.temp2)
+                if self.flagon:  # we don't smooth, but remove the dropouts
+                    self.stemp2 = temp2_nogaps
                 else:
                     self.stemp2 = self.smooth_list(self.timex,temp2_nogaps,window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=timex_lin)
 
@@ -7565,7 +7934,7 @@ class tgraphcanvas(FigureCanvas):
     
     #Redraws data
     # if recomputeAllDeltas, the delta arrays; if smooth the smoothed line arrays are recomputed (incl. those of the background curves)
-    def redraw(self, recomputeAllDeltas=True, smooth=True,sampling=False, takelock=True, forceRenewAxis=False):
+    def redraw(self, recomputeAllDeltas=True, smooth=True, sampling=False, takelock=True, forceRenewAxis=False):
         if aw.qmc.designerflag:
             aw.qmc.redrawdesigner()
         elif bool(aw.comparator):
@@ -7575,1758 +7944,1799 @@ class tgraphcanvas(FigureCanvas):
                 #### lock shared resources   ####
                 if takelock:
                     aw.qmc.profileDataSemaphore.acquire(1)
-
-                decay_smoothing_p = (not aw.qmc.optimalSmoothing) or sampling or aw.qmc.flagon
-
-                rcParams['path.effects'] = []
-                if aw.qmc.graphstyle == 1:
-                    scale = 1
-                else:
-                    scale = 0
-                length = 700 # 100 (128 the default)
-                randomness = 12 # 2 (16 default)
-                rcParams['path.sketch'] = (scale, length, randomness)
-
-                rcParams['axes.linewidth'] = 0.8 # 1.5
-                rcParams['xtick.major.size'] = 6 # 8
-                rcParams['xtick.major.width'] = 1
-#                rcParams['xtick.major.pad'] = 5
-                rcParams['xtick.minor.width'] = 0.8
-
-                rcParams['ytick.major.size'] = 4 # 8
-                rcParams['ytick.major.width'] = 1
-#                rcParams['ytick.major.pad'] = 5
-                rcParams['ytick.minor.width'] = 1
-
-                rcParams['xtick.color'] = self.palette["xlabel"]
-                rcParams['ytick.color'] = self.palette["ylabel"]
-                
-                #rcParams['text.antialiased'] = True
-
-                if forceRenewAxis:
-                    self.fig.clf()
-                if self.ax is None or forceRenewAxis:
-                    self.ax = self.fig.add_subplot(111,facecolor=self.palette["background"])
-                if self.delta_ax is None or forceRenewAxis:
-                    self.delta_ax = self.ax.twinx()
-
-                # instead to remove and regenerate the axis object (we just clear and reuse it)
-                
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore')
-                    self.ax.clear()
-                self.ax.set_facecolor(self.palette["background"])
-                with warnings.catch_warnings():
-                    warnings.simplefilter('ignore')
-                    self.delta_ax.clear()
-                self.ax.set_yticks([])
-                self.ax.set_xticks([])
-                self.delta_ax.set_yticks([])
-                self.delta_ax.set_xticks([])
-
-                self.ax.set_ylim(self.ylimit_min, self.ylimit)
-                self.ax.set_autoscale_on(False)
-
-                prop = aw.mpl_fontproperties.copy()
-                prop.set_size("small")
-                fontprop_small = aw.mpl_fontproperties.copy()
-                fontprop_small.set_size("xx-small")
-
-                grid_axis = None
-                if self.temp_grid and self.time_grid:
-                    grid_axis = 'both'
-                elif self.temp_grid:
-                    grid_axis = 'y'
-                elif self.time_grid:
-                    grid_axis = 'x'
-                if grid_axis is not None:
-                    self.ax.grid(True,axis=grid_axis,color=self.palette["grid"],linestyle=self.gridstyles[self.gridlinestyle],linewidth=self.gridthickness,alpha=self.gridalpha,sketch_params=0,path_effects=[])
-
-                if aw.qmc.flagstart and not aw.qmc.title_show_always:
-                    self.setProfileTitle("")
-                else:
-                    self.setProfileTitle(self.title)
-
-                # extra event names with substitution of event names applied
-                extraname1_subst = aw.qmc.extraname1[:]
-                extraname2_subst = aw.qmc.extraname2[:]
-                for i in range(len(aw.qmc.extratimex)):
-                    try:
-                        extraname1_subst[i] = extraname1_subst[i].format(aw.qmc.etypes[0],aw.qmc.etypes[1],aw.qmc.etypes[2],aw.qmc.etypes[3])
-                    except Exception: # pylint: disable=broad-except
-                        pass
-                    try:
-                        extraname2_subst[i] = extraname2_subst[i].format(aw.qmc.etypes[0],aw.qmc.etypes[1],aw.qmc.etypes[2],aw.qmc.etypes[3])
-                    except Exception: # pylint: disable=broad-except
-                        pass
-
-                if aw.qmc.flagstart:
-                    y_label = self.ax.set_ylabel("")
-                    self.set_xlabel("")
-                else:
-                    y_label = self.ax.set_ylabel(self.mode,color=self.palette["ylabel"],rotation=0,labelpad=10,
-                            fontsize="large",
-                        fontfamily=prop.get_family()
-                        )
-                    self.set_xlabel(aw.arabicReshape(QApplication.translate("Label", "min","abbrev. of minutes")))
-
                 try:
-                    y_label.set_in_layout(False) # remove y-axis labels from tight_layout calculation
-                except Exception: # pylint: disable=broad-except # set_in_layout not available in mpl<3.x
-                    pass
-
-                two_ax_mode = (self.twoAxisMode() or
-                    any(aw.extraDelta1[:len(self.extratimex)]) or
-                    any(aw.extraDelta2[:len(self.extratimex)]))
-
-                titleB = ""
-                if not ((aw.qmc.flagstart and not aw.qmc.title_show_always) or self.title is None or self.title.strip() == ""):
-                    if self.backgroundprofile != None:
-                        if self.roastbatchnrB == 0:
-                            titleB = self.titleB
-                        else:
-                            titleB = f"{self.roastbatchprefixB}{self.roastbatchnrB} {self.titleB}"
-                    elif __release_sponsor_domain__:
-                        sponsor = QApplication.translate("About","sponsored by {}").format(__release_sponsor_domain__)
-                        titleB = "\n{}".format(sponsor)
-
-                if aw.qmc.flagon or sampling:
-                    tick_dir = 'in'
-                else:
-                    tick_dir = 'inout'
-                self.ax.tick_params(\
-                    axis='x',           # changes apply to the x-axis
-                    which='both',       # both major and minor ticks are affected
-                    bottom=True,        # ticks along the bottom edge are on
-                    top=False,          # ticks along the top edge are off
-                    direction=tick_dir,
-                    labelbottom=True)   # labels along the bottom edge are on
-                self.ax.tick_params(\
-                    axis='y',           # changes apply to the y-axis
-                    which='both',       # both major and minor ticks are affected
-                    right=False,
-                    bottom=True,        # ticks along the bottom edge are on
-                    top=False,          # ticks along the top edge are off
-                    direction=tick_dir,
-                    labelbottom=True)   # labels along the bottom edge are on
-
-                # format temperature as int, not float in the cursor position coordinate indicator
-                self.ax.fmt_ydata = self.fmt_data
-                self.ax.fmt_xdata = self.fmt_timedata
-
-                self.ax.set_zorder(self.delta_ax.get_zorder()+1) # put ax in front of delta_ax (which remains empty!)
-                if two_ax_mode:
-                    #create a second set of axes in the same position as self.ax
-                    self.delta_ax.tick_params(\
-                        axis='y',           # changes apply to the x-axis
-                        which='both',       # both major and minor ticks are affected
-                        left=False,         # ticks along the left edge are off
-                        bottom=False,       # ticks along the bottom edge are off
-                        top=False,          # ticks along the top edge are off
-                        direction="inout", # tick_dir # this does not work as ticks are not drawn at all in ON mode with this!?
-                        labelright=True,
-                        labelleft=False,
-                        labelbottom=False)   # labels along the bottom edge are on
-
-                    self.ax.patch.set_visible(True)
-                    if aw.qmc.flagstart:
-                        y_label = self.delta_ax.set_ylabel("")
+                    # prevent interleaving of updateBackground() and redraw()
+                    aw.qmc.updateBackgroundSemaphore.acquire(1)
+                    
+                    if self.flagon:
+                        # on redraw during recording we reset the linecounts to avoid issues with projection lines
+                        self.resetlines()
+    
+                    decay_smoothing_p = (not aw.qmc.optimalSmoothing) or sampling or aw.qmc.flagon
+    
+                    rcParams['path.effects'] = []
+                    if aw.qmc.graphstyle == 1:
+                        scale = 1
                     else:
-                        y_label = self.delta_ax.set_ylabel(f'{aw.qmc.mode}{aw.arabicReshape("/min")}',
-                            color = self.palette["ylabel"],
-                            fontsize="large",
+                        scale = 0
+                    length = 700 # 100 (128 the default)
+                    randomness = 12 # 2 (16 default)
+                    rcParams['path.sketch'] = (scale, length, randomness)
+    
+                    rcParams['axes.linewidth'] = 0.8 # 1.5
+                    rcParams['xtick.major.size'] = 6 # 8
+                    rcParams['xtick.major.width'] = 1
+    #                rcParams['xtick.major.pad'] = 5
+                    rcParams['xtick.minor.width'] = 0.8
+    
+                    rcParams['ytick.major.size'] = 4 # 8
+                    rcParams['ytick.major.width'] = 1
+    #                rcParams['ytick.major.pad'] = 5
+                    rcParams['ytick.minor.width'] = 1
+    
+                    rcParams['xtick.color'] = self.palette["xlabel"]
+                    rcParams['ytick.color'] = self.palette["ylabel"]
+                    
+                    #rcParams['text.antialiased'] = True
+    
+                    if forceRenewAxis:
+                        self.fig.clf()
+                    if self.ax is None or forceRenewAxis:
+                        self.ax = self.fig.add_subplot(111,facecolor=self.palette["background"])
+                    if self.delta_ax is None or forceRenewAxis:
+                        self.delta_ax = self.ax.twinx()
+    
+                    # instead to remove and regenerate the axis object (we just clear and reuse it)
+                    
+                    with warnings.catch_warnings():
+                        warnings.simplefilter('ignore')
+                        self.ax.clear()
+                    self.ax.set_facecolor(self.palette["background"])
+                    with warnings.catch_warnings():
+                        warnings.simplefilter('ignore')
+                        self.delta_ax.clear()
+                    self.ax.set_yticks([])
+                    self.ax.set_xticks([])
+                    self.delta_ax.set_yticks([])
+                    self.delta_ax.set_xticks([])
+    
+                    self.ax.set_ylim(self.ylimit_min, self.ylimit)
+                    self.ax.set_autoscale_on(False)
+    
+                    prop = aw.mpl_fontproperties.copy()
+                    prop.set_size("small")
+                    fontprop_small = aw.mpl_fontproperties.copy()
+                    fontprop_small.set_size("xx-small")
+    
+                    grid_axis = None
+                    if self.temp_grid and self.time_grid:
+                        grid_axis = 'both'
+                    elif self.temp_grid:
+                        grid_axis = 'y'
+                    elif self.time_grid:
+                        grid_axis = 'x'
+                    if grid_axis is not None:
+                        self.ax.grid(True,axis=grid_axis,color=self.palette["grid"],linestyle=self.gridstyles[self.gridlinestyle],linewidth=self.gridthickness,alpha=self.gridalpha,sketch_params=0,path_effects=[])
+    
+                    if aw.qmc.flagstart and not aw.qmc.title_show_always:
+                        self.setProfileTitle("")
+                    else:
+                        self.setProfileTitle(self.title)
+    
+                    # extra event names with substitution of event names applied
+                    extraname1_subst = aw.qmc.extraname1[:]
+                    extraname2_subst = aw.qmc.extraname2[:]
+                    for i in range(len(aw.qmc.extratimex)):
+                        try:
+                            extraname1_subst[i] = extraname1_subst[i].format(aw.qmc.etypes[0],aw.qmc.etypes[1],aw.qmc.etypes[2],aw.qmc.etypes[3])
+                        except Exception: # pylint: disable=broad-except
+                            pass
+                        try:
+                            extraname2_subst[i] = extraname2_subst[i].format(aw.qmc.etypes[0],aw.qmc.etypes[1],aw.qmc.etypes[2],aw.qmc.etypes[3])
+                        except Exception: # pylint: disable=broad-except
+                            pass
+    
+                    if aw.qmc.flagstart:
+                        y_label = self.ax.set_ylabel("")
+                        self.set_xlabel("")
+                    else:
+                        y_label = self.ax.set_ylabel(self.mode,color=self.palette["ylabel"],rotation=0,labelpad=10,
+                                fontsize="large",
                             fontfamily=prop.get_family()
                             )
+                        self.set_xlabel(aw.arabicReshape(QApplication.translate("Label", "min","abbrev. of minutes")))
+    
                     try:
                         y_label.set_in_layout(False) # remove y-axis labels from tight_layout calculation
                     except Exception: # pylint: disable=broad-except # set_in_layout not available in mpl<3.x
                         pass
-                    self.delta_ax.set_ylim(self.zlimit_min,self.zlimit)
-                    if self.zgrid > 0:
-                        self.delta_ax.yaxis.set_major_locator(ticker.MultipleLocator(self.zgrid))
-                        self.delta_ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
-                        for i in self.delta_ax.get_yticklines():
-                            i.set_markersize(10)
-                        for i in self.delta_ax.yaxis.get_minorticklines():
-                            i.set_markersize(5)
-                        for label in self.delta_ax.get_yticklabels() :
-                            label.set_fontsize("small")
-
-                    # translate y-coordinate from delta into temp range to ensure the cursor position display (x,y) coordinate in the temp axis
-                    self.delta_ax.fmt_ydata = self.fmt_data
-                    self.delta_ax.fmt_xdata = self.fmt_timedata
-                #put a right tick on the graph
-                else:
+    
+                    two_ax_mode = (self.twoAxisMode() or
+                        any(aw.extraDelta1[:len(self.extratimex)]) or
+                        any(aw.extraDelta2[:len(self.extratimex)]))
+    
+                    titleB = ""
+                    if not ((aw.qmc.flagstart and not aw.qmc.title_show_always) or self.title is None or self.title.strip() == ""):
+                        if self.backgroundprofile != None:
+                            if self.roastbatchnrB == 0:
+                                titleB = self.titleB
+                            else:
+                                titleB = f"{self.roastbatchprefixB}{self.roastbatchnrB} {self.titleB}"
+                        elif __release_sponsor_domain__:
+                            sponsor = QApplication.translate("About","sponsored by {}").format(__release_sponsor_domain__)
+                            titleB = "\n{}".format(sponsor)
+    
+                    if aw.qmc.flagon or sampling:
+                        tick_dir = 'in'
+                    else:
+                        tick_dir = 'inout'
                     self.ax.tick_params(\
-                        axis='y',
-                        which='both',
+                        axis='x',           # changes apply to the x-axis
+                        which='both',       # both major and minor ticks are affected
+                        bottom=True,        # ticks along the bottom edge are on
+                        top=False,          # ticks along the top edge are off
+                        direction=tick_dir,
+                        labelbottom=True)   # labels along the bottom edge are on
+                    self.ax.tick_params(\
+                        axis='y',           # changes apply to the y-axis
+                        which='both',       # both major and minor ticks are affected
                         right=False,
-                        labelright=False)
-
-                self.ax.spines['top'].set_color("0.40")
-                self.ax.spines['bottom'].set_color("0.40")
-                self.ax.spines['left'].set_color("0.40")
-                self.ax.spines['right'].set_color("0.40")
-                        
-                self.l_eventtype1dots = None
-                self.l_eventtype2dots = None
-                self.l_eventtype3dots = None
-                self.l_eventtype4dots = None
-                self.l_eteventannos = []
-                self.l_bteventannos = []
-                self.l_eventtype1annos = []
-                self.l_eventtype2annos = []
-                self.l_eventtype3annos = []
-                self.l_eventtype4annos = []
-                self.l_backgroundeventtype1dots = None
-                self.l_backgroundeventtype2dots = None
-                self.l_backgroundeventtype3dots = None
-                self.l_backgroundeventtype4dots = None
-
-                if aw.qmc.graphstyle:
-                    self.ax.spines['left'].set_sketch_params(scale, length, randomness)
-                    self.ax.spines['bottom'].set_sketch_params(scale, length, randomness)
-                    self.ax.spines['right'].set_sketch_params(scale, length, randomness)
-                    self.ax.spines['top'].set_sketch_params(scale, length, randomness)
-                # hide all spines from the delta_ax
-#                self.delta_ax.spines['left'].set_visible(False)
-#                self.delta_ax.spines['bottom'].set_visible(False)
-#                self.delta_ax.spines['right'].set_visible(False)
-#                self.delta_ax.spines['top'].set_visible(False)
-                self.delta_ax.set_frame_on(False) # hide all splines (as the four lines above)
-
-                if self.ygrid > 0:
-                    self.ax.yaxis.set_major_locator(ticker.MultipleLocator(self.ygrid))
-                    self.ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
-                    for i in self.ax.get_yticklines():
-                        i.set_markersize(10)
-                    for i in self.ax.yaxis.get_minorticklines():
-                        i.set_markersize(5)
-#                else: # hide all spines from the ax
-#                    self.ax.spines['left'].set_visible(False)
-#                    self.ax.spines['bottom'].set_visible(False)
-#                    self.ax.spines['right'].set_visible(False)
-#                    self.ax.spines['top'].set_visible(False)
-
-                #update X ticks, labels, and rotating_colors
-                self.xaxistosm(redraw=False)
-
-                for label in self.ax.get_xticklabels() :
-# labels not rendered in PDF exports on MPL 3.4 if fontproperties are set:
-#                    label.set_fontproperties(prop)
-                    label.set_fontsize("small")
-                for label in self.ax.get_yticklabels() :
-# labels not rendered in PDF exports on MPL 3.4 if fontproperties are set:
-#                    label.set_fontproperties(prop)
-                    label.set_fontsize("small")
-
-                rcParams['path.sketch'] = (0,0,0)
-                trans = transforms.blended_transform_factory(self.ax.transAxes,self.ax.transData)
-
-                #draw water marks for dry phase region, mid phase region, and finish phase region
-                if aw.qmc.watermarksflag:
-                    rect1 = patches.Rectangle((0,self.phases[0]), width=1, height=(self.phases[1]-self.phases[0]),
-                                              transform=trans, color=self.palette["rect1"],alpha=0.15)
-                    rect2 = patches.Rectangle((0,self.phases[1]), width=1, height=(self.phases[2]-self.phases[1]),
-                                              transform=trans, color=self.palette["rect2"],alpha=0.15)
-                    rect3 = patches.Rectangle((0,self.phases[2]), width=1, height=(self.phases[3] - self.phases[2]),
-                                              transform=trans, color=self.palette["rect3"],alpha=0.15)
-                    self.ax.add_patch(rect1)
-                    self.ax.add_patch(rect2)
-                    self.ax.add_patch(rect3)
-
-                #if self.eventsGraphflag == 0 then that means don't plot event bars
-
-                if self.eventsGraphflag == 1: #plot event bars by type
-                    # make blended transformations to help identify EVENT types
-                    if self.mode == "C":
-                        step = 5
-                        start = 20
+                        bottom=True,        # ticks along the bottom edge are on
+                        top=False,          # ticks along the top edge are off
+                        direction=tick_dir,
+                        labelbottom=True)   # labels along the bottom edge are on
+    
+                    # format temperature as int, not float in the cursor position coordinate indicator
+                    self.ax.fmt_ydata = self.fmt_data
+                    self.ax.fmt_xdata = self.fmt_timedata
+    
+                    self.ax.set_zorder(self.delta_ax.get_zorder()+1) # put ax in front of delta_ax (which remains empty!)
+                    if two_ax_mode:
+                        #create a second set of axes in the same position as self.ax
+                        self.delta_ax.tick_params(\
+                            axis='y',           # changes apply to the x-axis
+                            which='both',       # both major and minor ticks are affected
+                            left=False,         # ticks along the left edge are off
+                            bottom=False,       # ticks along the bottom edge are off
+                            top=False,          # ticks along the top edge are off
+                            direction="inout", # tick_dir # this does not work as ticks are not drawn at all in ON mode with this!?
+                            labelright=True,
+                            labelleft=False,
+                            labelbottom=False)   # labels along the bottom edge are on
+    
+                        self.ax.patch.set_visible(True)
+                        if aw.qmc.flagstart:
+                            y_label = self.delta_ax.set_ylabel("")
+                        else:
+                            y_label = self.delta_ax.set_ylabel(f'{aw.qmc.mode}{aw.arabicReshape("/min")}',
+                                color = self.palette["ylabel"],
+                                fontsize="large",
+                                fontfamily=prop.get_family()
+                                )
+                        try:
+                            y_label.set_in_layout(False) # remove y-axis labels from tight_layout calculation
+                        except Exception: # pylint: disable=broad-except # set_in_layout not available in mpl<3.x
+                            pass
+                        self.delta_ax.set_ylim(self.zlimit_min,self.zlimit)
+                        if self.zgrid > 0:
+                            self.delta_ax.yaxis.set_major_locator(ticker.MultipleLocator(self.zgrid))
+                            self.delta_ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
+                            for i in self.delta_ax.get_yticklines():
+                                i.set_markersize(10)
+                            for i in self.delta_ax.yaxis.get_minorticklines():
+                                i.set_markersize(5)
+                            for label in self.delta_ax.get_yticklabels() :
+                                label.set_fontsize("small")
+    
+                        # translate y-coordinate from delta into temp range to ensure the cursor position display (x,y) coordinate in the temp axis
+                        self.delta_ax.fmt_ydata = self.fmt_data
+                        self.delta_ax.fmt_xdata = self.fmt_timedata
+                    #put a right tick on the graph
                     else:
-                        step = 10
-                        start = 60
-                    jump = 20
-                    for i in range(4):
-                        if aw.qmc.showEtypes[3-i]:
-                            rectEvent = patches.Rectangle((0,self.phases[0]-start-jump), width=1, height = step, transform=trans, color=self.palette["rect5"],alpha=.15)
-                            self.ax.add_patch(rectEvent)
+                        self.ax.tick_params(\
+                            axis='y',
+                            which='both',
+                            right=False,
+                            labelright=False)
+    
+                    self.ax.spines['top'].set_color("0.40")
+                    self.ax.spines['bottom'].set_color("0.40")
+                    self.ax.spines['left'].set_color("0.40")
+                    self.ax.spines['right'].set_color("0.40")
+                            
+                    self.l_eventtype1dots = None
+                    self.l_eventtype2dots = None
+                    self.l_eventtype3dots = None
+                    self.l_eventtype4dots = None
+                    self.l_eteventannos = []
+                    self.l_bteventannos = []
+                    self.l_eventtype1annos = []
+                    self.l_eventtype2annos = []
+                    self.l_eventtype3annos = []
+                    self.l_eventtype4annos = []
+                    self.l_backgroundeventtype1dots = None
+                    self.l_backgroundeventtype2dots = None
+                    self.l_backgroundeventtype3dots = None
+                    self.l_backgroundeventtype4dots = None
+    
+                    if aw.qmc.graphstyle:
+                        self.ax.spines['left'].set_sketch_params(scale, length, randomness)
+                        self.ax.spines['bottom'].set_sketch_params(scale, length, randomness)
+                        self.ax.spines['right'].set_sketch_params(scale, length, randomness)
+                        self.ax.spines['top'].set_sketch_params(scale, length, randomness)
+                    # hide all spines from the delta_ax
+    #                self.delta_ax.spines['left'].set_visible(False)
+    #                self.delta_ax.spines['bottom'].set_visible(False)
+    #                self.delta_ax.spines['right'].set_visible(False)
+    #                self.delta_ax.spines['top'].set_visible(False)
+                    self.delta_ax.set_frame_on(False) # hide all splines (as the four lines above)
+    
+                    if self.ygrid > 0:
+                        self.ax.yaxis.set_major_locator(ticker.MultipleLocator(self.ygrid))
+                        self.ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
+                        for i in self.ax.get_yticklines():
+                            i.set_markersize(10)
+                        for i in self.ax.yaxis.get_minorticklines():
+                            i.set_markersize(5)
+    #                else: # hide all spines from the ax
+    #                    self.ax.spines['left'].set_visible(False)
+    #                    self.ax.spines['bottom'].set_visible(False)
+    #                    self.ax.spines['right'].set_visible(False)
+    #                    self.ax.spines['top'].set_visible(False)
+    
+                    #update X ticks, labels, and rotating_colors
+                    self.xaxistosm(redraw=False)
+    
+                    for label in self.ax.get_xticklabels() :
+    # labels not rendered in PDF exports on MPL 3.4 if fontproperties are set:
+    #                    label.set_fontproperties(prop)
+                        label.set_fontsize("small")
+                    for label in self.ax.get_yticklabels() :
+    # labels not rendered in PDF exports on MPL 3.4 if fontproperties are set:
+    #                    label.set_fontproperties(prop)
+                        label.set_fontsize("small")
+    
+                    rcParams['path.sketch'] = (0,0,0)
+                    trans = transforms.blended_transform_factory(self.ax.transAxes,self.ax.transData)
+    
+                    #draw water marks for dry phase region, mid phase region, and finish phase region
+                    if aw.qmc.watermarksflag:
+                        rect1 = patches.Rectangle((0,self.phases[0]), width=1, height=(self.phases[1]-self.phases[0]),
+                                                  transform=trans, color=self.palette["rect1"],alpha=0.15)
+                        rect2 = patches.Rectangle((0,self.phases[1]), width=1, height=(self.phases[2]-self.phases[1]),
+                                                  transform=trans, color=self.palette["rect2"],alpha=0.15)
+                        rect3 = patches.Rectangle((0,self.phases[2]), width=1, height=(self.phases[3] - self.phases[2]),
+                                                  transform=trans, color=self.palette["rect3"],alpha=0.15)
+                        self.ax.add_patch(rect1)
+                        self.ax.add_patch(rect2)
+                        self.ax.add_patch(rect3)
+    
+                    #if self.eventsGraphflag == 0 then that means don't plot event bars
+    
+                    if self.eventsGraphflag == 1: #plot event bars by type
+                        # make blended transformations to help identify EVENT types
                         if self.mode == "C":
-                            jump -= 10
+                            step = 5
+                            start = 20
                         else:
-                            jump -= 20
-
-                #plot events bars by value
-                elif self.eventsGraphflag in [2,3,4]: # 2: step lines, 3: step+, 4: combo
-                    # make blended transformations to help identify EVENT types
-                    if self.clampEvents:
-                        top = 100
-                        bot = 0
-                    else:
-                        if self.step100temp is None:
-                            top = self.phases[0]
-                        else:
-                            top = self.step100temp
-                        bot = self.ylimit_min
-                    step = (top-bot)/10
-                    start = top - bot
-                    small_step = step/10 # as we have 100 items
-                    jump = 0
-
-                    for j in range(110):
-                        i = int(j/10)
-                        barposition = top - start - jump
-                        if i == j/10.:
-                            c1 = "rect5"
-                            c2 = "background"
-                            if i == 0:
-                                color = self.palette[c1] #self.palette["rect3"] # brown
-                            elif i%2:
-                                color = self.palette[c2] #self.palette["rect2"] # orange # the uneven ones
-                            else:
-                                color = self.palette[c1] #self.palette["rect1"] # green # the even ones
-                            if (i != 10): # don't draw the first and the last bar in clamp mode
-                                rectEvent = patches.Rectangle((0,barposition), width=1, height = step, transform=trans, color=color,alpha=.15)
+                            step = 10
+                            start = 60
+                        jump = 20
+                        for i in range(4):
+                            if aw.qmc.showEtypes[3-i]:
+                                rectEvent = patches.Rectangle((0,self.phases[0]-start-jump), width=1, height = step, transform=trans, color=self.palette["rect5"],alpha=.15)
                                 self.ax.add_patch(rectEvent)
-                        self.eventpositionbars[j] = barposition
-                        jump -= small_step
-
-                rcParams['path.sketch'] = (scale, length, randomness)
-
-                #check BACKGROUND flag
-                if self.background and self.backgroundprofile:
-                    if smooth:
-                        # re-smooth background curves
-                        tb = self.timeB
-                        t1 = self.temp1B
-                        t2 = self.temp2B
-                        if tb is not None and tb:
-                            tb_lin = numpy.linspace(tb[0],tb[-1],len(tb))
-                        else:
-                            tb_lin = None
-                        self.stemp1B = self.smooth_list(tb,fill_gaps(t1),window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=tb_lin)
-                        self.stemp2B = self.smooth_list(tb,fill_gaps(t2),window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=tb_lin)
-
-                    self.l_background_annotations = []
-                    #check to see if there is both a profile loaded and a background loaded
-                    if self.backmoveflag:
-                        self.timealign(redraw=False,recompute=False)
-
-                    bcharge_idx = 0
-                    if self.timeindexB[0] > -1:
-                        bcharge_idx = self.timeindexB[0]
-                    bdrop_idx = len(self.timeB)-1
-                    if self.timeindexB[6] > 0:
-                        bdrop_idx = self.timeindexB[6]
-
-                    #draw one extra device on background stemp1BX
-                    if aw.qmc.xtcurveidx > 0:
-                        idx3 = aw.qmc.xtcurveidx - 1
-                        n3 = idx3 // 2
-                        if len(self.stemp1BX) > n3 and len(self.stemp2BX) > n3 and len(self.extratimexB) > n3:
-                            if smooth:
-                                # re-smooth the extra background curve
-                                tx = self.extratimexB[n3]
-                                if tx is not None and tx:
-                                    tx_lin = numpy.linspace(tx[0],tx[-1],len(tx))
-                                else:
-                                    tx_lin = None
-                            if aw.qmc.xtcurveidx % 2:
-                                if aw.qmc.temp1Bdelta[n3]:
-                                    trans = self.delta_ax.transData
-                                else:
-                                    trans = self.ax.transData
-                                if smooth:
-                                    stemp3B = self.smooth_list(tx,fill_gaps(self.temp1BX[n3]),window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=tx_lin)
-                                else:
-                                    stemp3B = self.stemp1BX[n3]
+                            if self.mode == "C":
+                                jump -= 10
                             else:
-                                if aw.qmc.temp2Bdelta[n3]:
-                                    trans = self.delta_ax.transData
-                                else:
-                                    trans = self.ax.transData
-                                if smooth:
-                                    stemp3B = self.smooth_list(tx,fill_gaps(self.temp2BX[n3]),window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=tx_lin)
-                                else:
-                                    stemp3B = self.stemp2BX[n3]
-                            if not self.backgroundShowFullflag:
-                                stemp3B = [None]*bcharge_idx + stemp3B[bcharge_idx:bdrop_idx+1] + [None]*(len(self.timeB)-bdrop_idx-1)
-                            try:
-                                if self.l_back3 is not None:
-                                    self.l_back3.remove()
-                            except Exception: # pylint: disable=broad-except
-                                pass
-                            # don't draw -1:
-                            stemp3B = [r if r !=-1 else None for r in stemp3B]
-                            self.l_back3, = self.ax.plot(self.extratimexB[n3], stemp3B, markersize=self.XTbackmarkersize,marker=self.XTbackmarker,
-                                                        sketch_params=None,path_effects=[],transform=trans,
-                                                        linewidth=self.XTbacklinewidth,linestyle=self.XTbacklinestyle,drawstyle=self.XTbackdrawstyle,color=self.backgroundxtcolor,
-                                                        alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundXT")))
-                    if aw.qmc.ytcurveidx > 0:
-                        idx4 = aw.qmc.ytcurveidx - 1
-                        n4 = idx4 // 2
-                        if len(self.stemp1BX) > n4 and len(self.stemp2BX) > n4 and len(self.extratimexB) > n4:
-                            if smooth:
-                                # re-smooth the extra background curve
-                                tx = self.extratimexB[n4]
-                                if tx is not None and tx:
-                                    tx_lin = numpy.linspace(tx[0],tx[-1],len(tx))
-                                else:
-                                    tx_lin = None
-                            if aw.qmc.ytcurveidx % 2:
-                                if aw.qmc.temp1Bdelta[n4]:
-                                    trans = self.delta_ax.transData
-                                else:
-                                    trans = self.ax.transData
-                                if smooth:
-                                    stemp4B = self.smooth_list(tx,fill_gaps(self.temp1BX[n4]),window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=tx_lin)
-                                else:
-                                    stemp4B = self.stemp1BX[n4]
+                                jump -= 20
+    
+                    #plot events bars by value
+                    elif self.eventsGraphflag in [2,3,4]: # 2: step lines, 3: step+, 4: combo
+                        # make blended transformations to help identify EVENT types
+                        if self.clampEvents:
+                            top = 100
+                            bot = 0
+                        else:
+                            if self.step100temp is None:
+                                top = self.phases[0]
                             else:
-                                if aw.qmc.temp2Bdelta[n4]:
-                                    trans = self.delta_ax.transData
+                                top = self.step100temp
+                            bot = self.ylimit_min
+                        step = (top-bot)/10
+                        start = top - bot
+                        small_step = step/10 # as we have 100 items
+                        jump = 0
+    
+                        for j in range(110):
+                            i = int(j/10)
+                            barposition = top - start - jump
+                            if i == j/10.:
+                                c1 = "rect5"
+                                c2 = "background"
+                                if i == 0:
+                                    color = self.palette[c1] #self.palette["rect3"] # brown
+                                elif i%2:
+                                    color = self.palette[c2] #self.palette["rect2"] # orange # the uneven ones
                                 else:
-                                    trans = self.ax.transData
+                                    color = self.palette[c1] #self.palette["rect1"] # green # the even ones
+                                if (i != 10): # don't draw the first and the last bar in clamp mode
+                                    rectEvent = patches.Rectangle((0,barposition), width=1, height = step, transform=trans, color=color,alpha=.15)
+                                    self.ax.add_patch(rectEvent)
+                            self.eventpositionbars[j] = barposition
+                            jump -= small_step
+    
+                    rcParams['path.sketch'] = (scale, length, randomness)
+    
+                    #check BACKGROUND flag
+                    if self.background and self.backgroundprofile:
+                        if smooth:
+                            # re-smooth background curves
+                            tb = self.timeB
+                            t1 = self.temp1B
+                            t2 = self.temp2B
+                            if tb is not None and tb:
+                                tb_lin = numpy.linspace(tb[0],tb[-1],len(tb))
+                            else:
+                                tb_lin = None
+                            self.stemp1B = self.smooth_list(tb,fill_gaps(t1),window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=tb_lin)
+                            self.stemp2B = self.smooth_list(tb,fill_gaps(t2),window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=tb_lin)
+    
+                        self.l_background_annotations = []
+                        #check to see if there is both a profile loaded and a background loaded
+                        if self.backmoveflag:
+                            self.timealign(redraw=False,recompute=False)
+    
+                        bcharge_idx = 0
+                        if self.timeindexB[0] > -1:
+                            bcharge_idx = self.timeindexB[0]
+                        bdrop_idx = len(self.timeB)-1
+                        if self.timeindexB[6] > 0:
+                            bdrop_idx = self.timeindexB[6]
+    
+                        #draw one extra device on background stemp1BX
+                        if aw.qmc.xtcurveidx > 0:
+                            idx3 = aw.qmc.xtcurveidx - 1
+                            n3 = idx3 // 2
+                            if len(self.stemp1BX) > n3 and len(self.stemp2BX) > n3 and len(self.extratimexB) > n3:
                                 if smooth:
-                                    stemp4B = self.smooth_list(tx,fill_gaps(self.temp2BX[n4]),window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=tx_lin)
-                                else:
-                                    stemp4B = self.stemp2BX[n4]
-                            if not self.backgroundShowFullflag:
-                                stemp4B = [None]*bcharge_idx + stemp4B[bcharge_idx:bdrop_idx+1] + [None]*(len(self.timeB)-bdrop_idx-1)
-                            try:
-                                if self.l_back4 is not None:
-                                    self.l_back4.remove()
-                            except Exception: # pylint: disable=broad-except
-                                pass  
-                            # don't draw -1:
-                            stemp4B = [r if r !=-1 else None for r in stemp4B]
-                            self.l_back4, = self.ax.plot(self.extratimexB[n4], stemp4B, markersize=self.YTbackmarkersize,marker=self.YTbackmarker,
-                                                        sketch_params=None,path_effects=[],transform=trans,
-                                                        linewidth=self.YTbacklinewidth,linestyle=self.YTbacklinestyle,drawstyle=self.YTbackdrawstyle,color=self.backgroundytcolor,
-                                                        alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundYT")))
-
-
-                    #draw background
-                    if aw.qmc.backgroundETcurve:
-                        if self.backgroundShowFullflag:
-                            temp_etb = self.stemp1B
-                        else:
-                            # only draw background curve from CHARGE to DROP
-                            temp_etb = [None]*bcharge_idx + self.stemp1B[bcharge_idx:bdrop_idx+1] + [None]*(len(self.timeB)-bdrop_idx-1)
-                    else:
-                        temp_etb = [None]*len(self.timeB)
-                    try:
-                        if self.l_back1 is not None:
-                            self.l_back1.remove()
-                    except Exception: # pylint: disable=broad-except
-                        pass
-                    # don't draw -1:
-                    temp_etb = [r if r !=-1 else None for r in temp_etb]
-                    self.l_back1, = self.ax.plot(self.timeB,temp_etb,markersize=self.ETbackmarkersize,marker=self.ETbackmarker,
-                                                sketch_params=None,path_effects=[],
-                                                linewidth=self.ETbacklinewidth,linestyle=self.ETbacklinestyle,drawstyle=self.ETbackdrawstyle,color=self.backgroundmetcolor,
-                                                alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundET")))
-                    if aw.qmc.backgroundBTcurve:
-                        if self.backgroundShowFullflag:
-                            temp_btb = self.stemp2B
-                        else:
-                            # only draw background curve from CHARGE to DROP
-                            temp_btb = [None]*bcharge_idx + self.stemp2B[bcharge_idx:bdrop_idx+1] + [None]*(len(self.timeB)-bdrop_idx-1)
-                    else:
-                        temp_btb = [None]*len(self.timeB)
-                    try:
-                        if self.l_back2 is not None:
-                            self.l_back2.remove()
-                    except Exception: # pylint: disable=broad-except
-                        pass
-                    # don't draw -1:
-                    temp_btb = [r if r !=-1 else None for r in temp_btb]
-                    self.l_back2, = self.ax.plot(self.timeB, temp_btb,markersize=self.BTbackmarkersize,marker=self.BTbackmarker,
-                                                linewidth=self.BTbacklinewidth,linestyle=self.BTbacklinestyle,drawstyle=self.BTbackdrawstyle,color=self.backgroundbtcolor,
-                                                sketch_params=None,path_effects=[],
-                                                alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundBT")))
-
-                    self.smoothETBTBkgnd(recomputeAllDeltas,decay_smoothing_p)
-                    
-                    #populate background delta ET (self.delta1B) and delta BT (self.delta2B)
-                    if self.DeltaETBflag or self.DeltaBTBflag:
-                        ##### DeltaETB,DeltaBTB curves
-                        if self.delta_ax:
-                            trans = self.delta_ax.transData #=self.delta_ax.transScale + (self.delta_ax.transLimits + self.delta_ax.transAxes)
-                            if self.DeltaETBflag and len(self.timeB) == len(self.delta1B):
-                                try:
-                                    if self.l_delta1B is not None:
-                                        self.l_delta1B.remove()
-                                except Exception: # pylint: disable=broad-except
-                                    pass
-                                self.l_delta1B, = self.ax.plot(
-                                    self.timeB,
-                                    self.delta1B,
-                                    transform=trans,
-                                    markersize=self.ETBdeltamarkersize,
-                                    sketch_params=None,path_effects=[],
-                                    marker=self.ETBdeltamarker,
-                                    linewidth=self.ETBdeltalinewidth,
-                                    linestyle=self.ETBdeltalinestyle,
-                                    drawstyle=self.ETBdeltadrawstyle,
-                                    color=self.backgrounddeltaetcolor,
-                                    alpha=self.backgroundalpha,
-                                    label=aw.arabicReshape(QApplication.translate("Label", "BackgroundDeltaET")))
-                            if self.DeltaBTBflag and len(self.timeB) == len(self.delta2B):
-                                try:
-                                    if self.l_delta2B is not None:
-                                        self.l_delta2B.remove()
-                                except Exception: # pylint: disable=broad-except
-                                    pass
-                                self.l_delta2B, = self.ax.plot(
-                                    self.timeB,
-                                    self.delta2B,
-                                    transform=trans,
-                                    markersize=self.BTBdeltamarkersize,
-                                    sketch_params=None,path_effects=[],
-                                    marker=self.BTBdeltamarker,
-                                    linewidth=self.BTBdeltalinewidth,
-                                    linestyle=self.BTBdeltalinestyle,
-                                    drawstyle=self.BTBdeltadrawstyle,
-                                    color=self.backgrounddeltabtcolor,
-                                    alpha=self.backgroundalpha,
-                                    label=aw.arabicReshape(QApplication.translate("Label", "BackgroundDeltaBT")))
-                    #check backgroundevents flag
-                    if self.backgroundeventsflag:
-                        if self.mode == "F":
-                            height = 50
-                        else:
-                            height = 20
-
-                        for p in range(len(self.backgroundEvents)):
-                            if self.eventsGraphflag not in [2,4] or self.backgroundEtypes[p] > 3:
-                                event_idx = self.backgroundEvents[p]
-                                if not self.backgroundShowFullflag and event_idx < bcharge_idx or event_idx > bdrop_idx:
-                                    continue
-                                if self.backgroundEtypes[p] < 4:
-                                    st1 = f"{self.Betypesf(self.backgroundEtypes[p])[0]}{self.eventsvaluesShort(self.backgroundEvalues[p])}"
-                                else:
-                                    st1 = self.backgroundEStrings[p].strip()[:aw.qmc.eventslabelschars]
-                                    if len(st1) == 0:
-                                        st1 = "E"
-                                # plot events on BT when showeventsonbt is true
-                                if not aw.qmc.showeventsonbt and self.temp1B[event_idx] > self.temp2B[event_idx]:
-                                    temp = self.temp1B[event_idx]
-                                else:
-                                    temp = self.temp2B[event_idx]
-                                if not aw.qmc.showEtypes[self.backgroundEtypes[p]]:
-                                    continue
-                                anno = self.ax.annotate(st1, xy=(self.timeB[event_idx], temp),path_effects=[],
-                                                    xytext=(self.timeB[event_idx], temp+height),
-                                                    va="center", ha="center",
-                                                    fontsize="x-small",
-                                                    color=self.palette["bgeventtext"],
-                                                    arrowprops=dict(arrowstyle='wedge',
-                                                                    color=self.palette["bgeventmarker"],
-                                                                    alpha=self.backgroundalpha),#relpos=(0,0)),
-                                                    alpha=min(self.backgroundalpha + 0.1, 1.0))
-                                try:
-                                    anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
-                                except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
-                                    pass
-                                self.l_background_annotations.append(anno)
-                        #background events by value
-                        if self.eventsGraphflag in [2,3,4]: # 2: step, 3: step+, 4: combo
-                            self.E1backgroundtimex,self.E2backgroundtimex,self.E3backgroundtimex,self.E4backgroundtimex = [],[],[],[]
-                            self.E1backgroundvalues,self.E2backgroundvalues,self.E3backgroundvalues,self.E4backgroundvalues = [],[],[],[]
-                            E1b_last = E2b_last = E3b_last = E4b_last = 0  #not really necessary but guarantees that Exb_last is defined
-                            event_pos_offset = self.eventpositionbars[0]
-                            event_pos_factor = self.eventpositionbars[1] - self.eventpositionbars[0]
-                            #properties for the event annotation
-                            eventannotationprop = aw.mpl_fontproperties.copy()
-                            hoffset = 3  #relative to the event dot
-                            voffset = 3  #relative to the event dot
-                            eventannotationprop.set_size("x-small")
-                            self.overlapList = []
-                            for i in range(len(self.backgroundEvents)):
-                                event_idx = self.backgroundEvents[i]
-                                if not self.backgroundShowFullflag and (event_idx < bcharge_idx or event_idx > bdrop_idx):
-                                    continue
-                                pos = max(0,int(round((self.backgroundEvalues[i]-1)*10)))
-                                if self.backgroundEtypes[i] == 0 and aw.qmc.showEtypes[0]:
-                                    self.E1backgroundtimex.append(self.timeB[self.backgroundEvents[i]])
-                                    if self.clampEvents:
-                                        self.E1backgroundvalues.append(pos)
+                                    # re-smooth the extra background curve
+                                    tx = self.extratimexB[n3]
+                                    if tx is not None and tx:
+                                        tx_lin = numpy.linspace(tx[0],tx[-1],len(tx))
                                     else:
-                                        self.E1backgroundvalues.append((pos*event_pos_factor)+event_pos_offset)
-                                    E1b_last = i
+                                        tx_lin = None
+                                if aw.qmc.xtcurveidx % 2:
+                                    if aw.qmc.temp1Bdelta[n3]:
+                                        trans = self.delta_ax.transData
+                                    else:
+                                        trans = self.ax.transData
+                                    if smooth:
+                                        stemp3B = self.smooth_list(tx,fill_gaps(self.temp1BX[n3]),window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=tx_lin)
+                                    else:
+                                        stemp3B = self.stemp1BX[n3]
+                                else:
+                                    if aw.qmc.temp2Bdelta[n3]:
+                                        trans = self.delta_ax.transData
+                                    else:
+                                        trans = self.ax.transData
+                                    if smooth:
+                                        stemp3B = self.smooth_list(tx,fill_gaps(self.temp2BX[n3]),window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=tx_lin)
+                                    else:
+                                        stemp3B = self.stemp2BX[n3]
+                                if not self.backgroundShowFullflag:
+                                    stemp3B = numpy.concatenate((
+                                        numpy.full(bcharge_idx, numpy.nan, dtype=numpy.double),
+                                        stemp3B[bcharge_idx:bdrop_idx+1],
+                                        numpy.full(len(self.timeB)-bdrop_idx-1, numpy.nan, dtype=numpy.double)))
+                                try:
+                                    if self.l_back3 is not None:
+                                        self.l_back3.remove()
+                                except Exception: # pylint: disable=broad-except
+                                    pass
+                                # don't draw -1:
+                                stemp3B = numpy.array(stemp3B, dtype=numpy.double)
+                                self.l_back3, = self.ax.plot(self.extratimexB[n3], stemp3B, markersize=self.XTbackmarkersize,marker=self.XTbackmarker,
+                                                            sketch_params=None,path_effects=[],transform=trans,
+                                                            linewidth=self.XTbacklinewidth,linestyle=self.XTbacklinestyle,drawstyle=self.XTbackdrawstyle,color=self.backgroundxtcolor,
+                                                            alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundXT")))
+                        if aw.qmc.ytcurveidx > 0:
+                            idx4 = aw.qmc.ytcurveidx - 1
+                            n4 = idx4 // 2
+                            if len(self.stemp1BX) > n4 and len(self.stemp2BX) > n4 and len(self.extratimexB) > n4:
+                                if smooth:
+                                    # re-smooth the extra background curve
+                                    tx = self.extratimexB[n4]
+                                    if tx is not None and tx:
+                                        tx_lin = numpy.linspace(tx[0],tx[-1],len(tx))
+                                    else:
+                                        tx_lin = None
+                                if aw.qmc.ytcurveidx % 2:
+                                    if aw.qmc.temp1Bdelta[n4]:
+                                        trans = self.delta_ax.transData
+                                    else:
+                                        trans = self.ax.transData
+                                    if smooth:
+                                        stemp4B = self.smooth_list(tx,fill_gaps(self.temp1BX[n4]),window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=tx_lin)
+                                    else:
+                                        stemp4B = self.stemp1BX[n4]
+                                else:
+                                    if aw.qmc.temp2Bdelta[n4]:
+                                        trans = self.delta_ax.transData
+                                    else:
+                                        trans = self.ax.transData
+                                    if smooth:
+                                        stemp4B = self.smooth_list(tx,fill_gaps(self.temp2BX[n4]),window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=tx_lin)
+                                    else:
+                                        stemp4B = self.stemp2BX[n4]
+                                if not self.backgroundShowFullflag:
+                                    stemp4B = numpy.concatenate((
+                                        numpy.full(bcharge_idx, numpy.nan, dtype=numpy.double),
+                                        stemp4B[bcharge_idx:bdrop_idx+1],
+                                        numpy.full(len(self.timeB)-bdrop_idx-1, numpy.nan, dtype=numpy.double)))
+                                try:
+                                    if self.l_back4 is not None:
+                                        self.l_back4.remove()
+                                except Exception: # pylint: disable=broad-except
+                                    pass  
+                                # don't draw -1:
+                                stemp4B = numpy.array(stemp4B, dtype=numpy.double)
+                                self.l_back4, = self.ax.plot(self.extratimexB[n4], stemp4B, markersize=self.YTbackmarkersize,marker=self.YTbackmarker,
+                                                            sketch_params=None,path_effects=[],transform=trans,
+                                                            linewidth=self.YTbacklinewidth,linestyle=self.YTbacklinestyle,drawstyle=self.YTbackdrawstyle,color=self.backgroundytcolor,
+                                                            alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundYT")))
+    
+    
+                        #draw background
+                        if aw.qmc.backgroundETcurve:
+                            if self.backgroundShowFullflag:
+                                temp_etb = self.stemp1B
+                            else:
+                                # only draw background curve from CHARGE to DROP
+                                temp_etb = numpy.concatenate((
+                                    numpy.full(bcharge_idx, numpy.nan, dtype=numpy.double),
+                                    self.stemp1B[bcharge_idx:bdrop_idx+1],
+                                    numpy.full(len(self.timeB)-bdrop_idx-1, numpy.nan, dtype=numpy.double)))
+                        else:
+                            temp_etb = numpy.full(len(self.timeB), numpy.nan, dtype=numpy.double)
+                        try:
+                            if self.l_back1 is not None:
+                                self.l_back1.remove()
+                        except Exception: # pylint: disable=broad-except
+                            pass
+                        # don't draw -1:
+                        temp_etb = [r if r !=-1 else None for r in temp_etb]
+                        self.l_back1, = self.ax.plot(self.timeB,temp_etb,markersize=self.ETbackmarkersize,marker=self.ETbackmarker,
+                                                    sketch_params=None,path_effects=[],
+                                                    linewidth=self.ETbacklinewidth,linestyle=self.ETbacklinestyle,drawstyle=self.ETbackdrawstyle,color=self.backgroundmetcolor,
+                                                    alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundET")))
+                        if aw.qmc.backgroundBTcurve:
+                            if self.backgroundShowFullflag:
+                                temp_btb = self.stemp2B
+                            else:
+                                # only draw background curve from CHARGE to DROP
+                                temp_btb = numpy.concatenate((
+                                    numpy.full(bcharge_idx, numpy.nan, dtype=numpy.double),
+                                    self.stemp2B[bcharge_idx:bdrop_idx+1],
+                                    numpy.full(len(self.timeB)-bdrop_idx-1, numpy.nan, dtype=numpy.double)))
+                        else:
+                            temp_btb = numpy.full(len(self.timeB), numpy.nan, dtype=numpy.double)
+                        try:
+                            if self.l_back2 is not None:
+                                self.l_back2.remove()
+                        except Exception: # pylint: disable=broad-except
+                            pass
+                        # don't draw -1:
+                        temp_btb = [r if r !=-1 else None for r in temp_btb]
+                        self.l_back2, = self.ax.plot(self.timeB, temp_btb,markersize=self.BTbackmarkersize,marker=self.BTbackmarker,
+                                                    linewidth=self.BTbacklinewidth,linestyle=self.BTbacklinestyle,drawstyle=self.BTbackdrawstyle,color=self.backgroundbtcolor,
+                                                    sketch_params=None,path_effects=[],
+                                                    alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundBT")))
+    
+                        self.smoothETBTBkgnd(recomputeAllDeltas,decay_smoothing_p)
+                        
+                        #populate background delta ET (self.delta1B) and delta BT (self.delta2B)
+                        if self.DeltaETBflag or self.DeltaBTBflag:
+                            ##### DeltaETB,DeltaBTB curves
+                            if self.delta_ax:
+                                trans = self.delta_ax.transData #=self.delta_ax.transScale + (self.delta_ax.transLimits + self.delta_ax.transAxes)
+                                if self.DeltaETBflag and len(self.timeB) == len(self.delta1B):
                                     try:
-                                        if (len(self.timex)==0 or self.flagon) and self.eventsGraphflag!=4 and self.backgroundDetails and self.specialeventannovisibilities[0]:
-                                            E1b_annotation = self.parseSpecialeventannotation(self.specialeventannotations[0], i, applyto="background")
-                                            temp = self.E1backgroundvalues[-1]
-                                            anno = self.ax.annotate(E1b_annotation, xy=(hoffset + self.timeB[int(self.backgroundEvents[i])], voffset + temp),
-                                                        alpha=min(self.backgroundalpha + 0.1, 1.0),
-                                                        color=self.palette["text"],
-                                                        va="bottom", ha="left",
+                                        if self.l_delta1B is not None:
+                                            self.l_delta1B.remove()
+                                    except Exception: # pylint: disable=broad-except
+                                        pass
+                                    self.l_delta1B, = self.ax.plot(
+                                        self.timeB,
+                                        self.delta1B,
+                                        transform=trans,
+                                        markersize=self.ETBdeltamarkersize,
+                                        sketch_params=None,path_effects=[],
+                                        marker=self.ETBdeltamarker,
+                                        linewidth=self.ETBdeltalinewidth,
+                                        linestyle=self.ETBdeltalinestyle,
+                                        drawstyle=self.ETBdeltadrawstyle,
+                                        color=self.backgrounddeltaetcolor,
+                                        alpha=self.backgroundalpha,
+                                        label=aw.arabicReshape(QApplication.translate("Label", "BackgroundDeltaET")))
+                                if self.DeltaBTBflag and len(self.timeB) == len(self.delta2B):
+                                    try:
+                                        if self.l_delta2B is not None:
+                                            self.l_delta2B.remove()
+                                    except Exception: # pylint: disable=broad-except
+                                        pass
+                                    self.l_delta2B, = self.ax.plot(
+                                        self.timeB,
+                                        self.delta2B,
+                                        transform=trans,
+                                        markersize=self.BTBdeltamarkersize,
+                                        sketch_params=None,path_effects=[],
+                                        marker=self.BTBdeltamarker,
+                                        linewidth=self.BTBdeltalinewidth,
+                                        linestyle=self.BTBdeltalinestyle,
+                                        drawstyle=self.BTBdeltadrawstyle,
+                                        color=self.backgrounddeltabtcolor,
+                                        alpha=self.backgroundalpha,
+                                        label=aw.arabicReshape(QApplication.translate("Label", "BackgroundDeltaBT")))
+                        #check backgroundevents flag
+                        if self.backgroundeventsflag:
+                            if self.mode == "F":
+                                height = 50
+                            else:
+                                height = 20
+    
+                            for p in range(len(self.backgroundEvents)):
+                                if self.eventsGraphflag not in [2,4] or self.backgroundEtypes[p] > 3:
+                                    event_idx = self.backgroundEvents[p]
+                                    if not self.backgroundShowFullflag and event_idx < bcharge_idx or event_idx > bdrop_idx:
+                                        continue
+                                    if self.backgroundEtypes[p] < 4:
+                                        st1 = f"{self.Betypesf(self.backgroundEtypes[p])[0]}{self.eventsvaluesShort(self.backgroundEvalues[p])}"
+                                    else:
+                                        st1 = self.backgroundEStrings[p].strip()[:aw.qmc.eventslabelschars]
+                                        if len(st1) == 0:
+                                            st1 = "E"
+                                    # plot events on BT when showeventsonbt is true
+                                    if not aw.qmc.showeventsonbt and self.temp1B[event_idx] > self.temp2B[event_idx]:
+                                        temp = self.temp1B[event_idx]
+                                    else:
+                                        temp = self.temp2B[event_idx]
+                                    if not aw.qmc.showEtypes[self.backgroundEtypes[p]]:
+                                        continue
+                                    anno = self.ax.annotate(st1, xy=(self.timeB[event_idx], temp),path_effects=[],
+                                                        xytext=(self.timeB[event_idx], temp+height),
+                                                        va="center", ha="center",
                                                         fontsize="x-small",
-                                                        path_effects=[PathEffects.withStroke(linewidth=self.patheffects,foreground=self.palette["background"])],
-                                                        )
-                                            try:
-                                                anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
-                                            except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
-                                                pass
-                                            try:
-                                                anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
-                                            except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
-                                                pass
-                                            try:
-                                                overlap = self.checkOverlap(anno)# , i, E1b_annotation)
-                                                if overlap:
-                                                    anno.remove()
-                                            except Exception: # pylint: disable=broad-except
-                                                pass
-                                    except Exception as ex: # pylint: disable=broad-except
-                                        _log.exception(ex)
-                                        _, _, exc_tb = sys.exc_info()
-                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
-                                elif self.backgroundEtypes[i] == 1 and aw.qmc.showEtypes[1]:
-                                    self.E2backgroundtimex.append(self.timeB[self.backgroundEvents[i]])
-                                    if self.clampEvents:
-                                        self.E2backgroundvalues.append(pos)
-                                    else:
-                                        self.E2backgroundvalues.append((pos*event_pos_factor)+event_pos_offset)
-                                    E2b_last = i
+                                                        color=self.palette["bgeventtext"],
+                                                        arrowprops=dict(arrowstyle='wedge',
+                                                                        color=self.palette["bgeventmarker"],
+                                                                        alpha=self.backgroundalpha),#relpos=(0,0)),
+                                                        alpha=min(self.backgroundalpha + 0.1, 1.0))
                                     try:
-                                        if (len(self.timex)==0 or self.flagon) and self.eventsGraphflag!=4 and self.backgroundDetails and self.specialeventannovisibilities[1]:
-                                            E2b_annotation = self.parseSpecialeventannotation(self.specialeventannotations[1], i, applyto="background")
-                                            temp = self.E2backgroundvalues[-1]
-                                            anno = self.ax.annotate(E2b_annotation, xy=(hoffset + self.timeB[int(self.backgroundEvents[i])], voffset + temp),
-                                                        alpha=min(self.backgroundalpha + 0.1, 1.0),
-                                                        color=self.palette["text"],
-                                                        va="bottom", ha="left",
-                                                        fontproperties=eventannotationprop,
-                                                        path_effects=[PathEffects.withStroke(linewidth=self.patheffects,foreground=self.palette["background"])],
-                                                        )
-                                            try:
-                                                anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
-                                            except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
-                                                pass
-                                            try:
-                                                anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
-                                            except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
-                                                pass
-                                            try:
-                                                overlap = self.checkOverlap(anno) #, i, E2b_annotation)
-                                                if overlap:
-                                                    anno.remove()
-                                            except Exception: # pylint: disable=broad-except
-                                                pass
-                                    except Exception as ex: # pylint: disable=broad-except
-                                        _log.exception(ex)
-                                        _, _, exc_tb = sys.exc_info()
-                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
-                                elif self.backgroundEtypes[i] == 2 and aw.qmc.showEtypes[2]:
-                                    self.E3backgroundtimex.append(self.timeB[self.backgroundEvents[i]])
-                                    if self.clampEvents:
-                                        self.E3backgroundvalues.append(pos)
-                                    else:
-                                        self.E3backgroundvalues.append((pos*event_pos_factor)+event_pos_offset)
-                                    E3b_last = i
-                                    try:
-                                        if (len(self.timex)==0 or self.flagon) and self.eventsGraphflag!=4 and self.backgroundDetails and self.specialeventannovisibilities[2]:
-                                            E3b_annotation = self.parseSpecialeventannotation(self.specialeventannotations[2], i, applyto="background")
-                                            temp = self.E3backgroundvalues[-1]
-                                            anno = self.ax.annotate(E3b_annotation, xy=(hoffset + self.timeB[int(self.backgroundEvents[i])], voffset + temp),
-                                                        alpha=min(self.backgroundalpha + 0.1, 1.0),
-                                                        color=self.palette["text"],
-                                                        va="bottom", ha="left",
-                                                        fontproperties=eventannotationprop,
-                                                        path_effects=[PathEffects.withStroke(linewidth=self.patheffects,foreground=self.palette["background"])],
-                                                        )
-                                            try:
-                                                anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
-                                            except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
-                                                pass
-                                            try:
-                                                anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
-                                            except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
-                                                pass
-                                            try:
-                                                overlap = self.checkOverlap(anno) #, i, E3b_annotation)
-                                                if overlap:
-                                                    anno.remove()
-                                            except Exception: # pylint: disable=broad-except
-                                                pass
-                                    except Exception as ex: # pylint: disable=broad-except
-                                        _log.exception(ex)
-                                        _, _, exc_tb = sys.exc_info()
-                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
-                                elif self.backgroundEtypes[i] == 3 and aw.qmc.showEtypes[3]:
-                                    self.E4backgroundtimex.append(self.timeB[self.backgroundEvents[i]])
-                                    if self.clampEvents:
-                                        self.E4backgroundvalues.append(pos)
-                                    else:
-                                        self.E4backgroundvalues.append((pos*event_pos_factor)+event_pos_offset)
-                                    E4b_last = i
-                                    try:
-                                        if (len(self.timex)==0 or self.flagon) and self.eventsGraphflag!=4 and self.backgroundDetails and self.specialeventannovisibilities[3]:
-                                            E4b_annotation = self.parseSpecialeventannotation(self.specialeventannotations[3], i, applyto="background")
-                                            temp = self.E4backgroundvalues[-1]
-                                            anno = self.ax.annotate(E4b_annotation, xy=(hoffset + self.timeB[int(self.backgroundEvents[i])], voffset + temp),
-                                                        alpha=min(self.backgroundalpha + 0.1, 1.0),
-                                                        color=self.palette["text"],
-                                                        va="bottom", ha="left",
-                                                        fontproperties=eventannotationprop,
-                                                        path_effects=[PathEffects.withStroke(linewidth=self.patheffects,foreground=self.palette["background"])],
-                                                        )
-                                            try:
-                                                anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
-                                            except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
-                                                pass
-                                            try:
-                                                anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
-                                            except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
-                                                pass
-                                            try:
-                                                overlap = self.checkOverlap(anno) #, i, E4b_annotation)
-                                                if overlap:
-                                                    anno.remove()
-                                            except Exception: # pylint: disable=broad-except
-                                                pass
-                                    except Exception as ex: # pylint: disable=broad-except
-                                        _log.exception(ex)
-                                        _, _, exc_tb = sys.exc_info()
-                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
-#                            every = None
-                            if len(self.E1backgroundtimex)>0 and len(self.E1backgroundtimex)==len(self.E1backgroundvalues):
-                                if (self.timeindexB[6] > 0 and aw.qmc.extendevents and self.timeB[self.timeindexB[6]] > self.timeB[self.backgroundEvents[E1b_last]]):   #if drop exists and last event was earlier
-                                    # repeat last value at time of DROP
-                                    self.E1backgroundtimex.append(self.timeB[self.timeindexB[6]]) #time of drop
-                                    pos = max(0,int(round((self.backgroundEvalues[E1b_last]-1)*10)))
-                                    if self.clampEvents:
-                                        self.E1backgroundvalues.append(pos)
-                                    else:
-                                        self.E1backgroundvalues.append((pos*event_pos_factor)+event_pos_offset)
-                                self.l_backgroundeventtype1dots, = self.ax.plot(self.E1backgroundtimex, self.E1backgroundvalues, color=self.EvalueColor[0],
-                                                                            marker=(self.EvalueMarker[0] if self.eventsGraphflag != 4 else None),
-                                                                            markersize = self.EvalueMarkerSize[0],
-                                                                            picker=True,
-                                                                            pickradius=2,
-                                                                            #markevery=every,
-                                                                            linestyle="-",drawstyle="steps-post",linewidth = self.Evaluelinethickness[0],alpha = min(self.backgroundalpha + 0.1, 1.0), label=self.Betypesf(0,True))
-                            if len(self.E2backgroundtimex)>0 and len(self.E2backgroundtimex)==len(self.E2backgroundvalues):
-                                if (self.timeindexB[6] > 0 and aw.qmc.extendevents and self.timeB[self.timeindexB[6]] > self.timeB[self.backgroundEvents[E2b_last]]):   #if drop exists and last event was earlier
-                                    # repeat last value at time of DROP
-                                    self.E2backgroundtimex.append(self.timeB[self.timeindexB[6]]) #time of drop
-                                    pos = max(0,int(round((self.backgroundEvalues[E2b_last]-1)*10)))
-                                    if self.clampEvents:
-                                        self.E2backgroundvalues.append(pos)
-                                    else:
-                                        self.E2backgroundvalues.append((pos*event_pos_factor)+event_pos_offset)
-                                self.l_backgroundeventtype2dots, = self.ax.plot(self.E2backgroundtimex, self.E2backgroundvalues, color=self.EvalueColor[1],
-                                                                            marker=(self.EvalueMarker[1] if self.eventsGraphflag != 4 else None),
-                                                                            markersize = self.EvalueMarkerSize[1],
-                                                                            picker=True,
-                                                                            pickradius=2,
-                                                                            #markevery=every,
-                                                                            linestyle="-",drawstyle="steps-post",linewidth = self.Evaluelinethickness[1],alpha = min(self.backgroundalpha + 0.1, 1.0), label=self.Betypesf(1,True))
-                            if len(self.E3backgroundtimex)>0 and len(self.E3backgroundtimex)==len(self.E3backgroundvalues):
-                                if (self.timeindexB[6] > 0 and aw.qmc.extendevents and self.timeB[self.timeindexB[6]] > self.timeB[self.backgroundEvents[E3b_last]]):   #if drop exists and last event was earlier
-                                    # repeat last value at time of DROP
-                                    self.E3backgroundtimex.append(self.timeB[self.timeindexB[6]]) #time of drop
-                                    pos = max(0,int(round((self.backgroundEvalues[E3b_last]-1)*10)))
-                                    if self.clampEvents:
-                                        self.E3backgroundvalues.append(pos)
-                                    else:
-                                        self.E3backgroundvalues.append((pos*event_pos_factor)+event_pos_offset)
-                                self.l_backgroundeventtype3dots, = self.ax.plot(self.E3backgroundtimex, self.E3backgroundvalues, color=self.EvalueColor[2],
-                                                                            marker=(self.EvalueMarker[2] if self.eventsGraphflag != 4 else None),
-                                                                            markersize = self.EvalueMarkerSize[2],
-                                                                            picker=True,
-                                                                            pickradius=2,
-                                                                            #markevery=every,
-                                                                            linestyle="-",drawstyle="steps-post",linewidth = self.Evaluelinethickness[2],alpha = min(self.backgroundalpha + 0.1, 1.0), label=self.Betypesf(2,True))
-                            if len(self.E4backgroundtimex)>0 and len(self.E4backgroundtimex)==len(self.E4backgroundvalues):
-                                if (self.timeindexB[6] > 0 and aw.qmc.extendevents and self.timeB[self.timeindexB[6]] > self.timeB[self.backgroundEvents[E4b_last]]):   #if drop exists and last event was earlier
-                                    # repeat last value at time of DROP
-                                    self.E4backgroundtimex.append(self.timeB[self.timeindexB[6]]) #time of drop
-                                    pos = max(0,int(round((self.backgroundEvalues[E4b_last]-1)*10)))
-                                    if self.clampEvents:
-                                        self.E4backgroundvalues.append(pos)
-                                    else:
-                                        self.E4backgroundvalues.append((pos*event_pos_factor)+event_pos_offset)
-                                self.l_backgroundeventtype4dots, = self.ax.plot(self.E4backgroundtimex, self.E4backgroundvalues, color=self.EvalueColor[3],
-                                                                            marker=(self.EvalueMarker[3] if self.eventsGraphflag != 4 else None),
-                                                                            markersize = self.EvalueMarkerSize[3],
-                                                                            picker=True,
-                                                                            pickradius=2,
-                                                                            #markevery=every,
-                                                                            linestyle="-",drawstyle="steps-post",linewidth = self.Evaluelinethickness[3],alpha = min(self.backgroundalpha + 0.1, 1.0), label=self.Betypesf(3,True))
-
-                        if len(self.backgroundEvents) > 0:
-                            if self.eventsGraphflag == 4:
-                                # we prepare copies of the background Evalues
-                                Bevalues = [self.E1backgroundvalues[:],self.E2backgroundvalues[:],self.E3backgroundvalues[:],self.E4backgroundvalues[:]]
-                            for i in range(len(self.backgroundEvents)):
-                                event_idx = self.backgroundEvents[i]
-                                if not self.backgroundShowFullflag and (event_idx < bcharge_idx or event_idx > bdrop_idx):
-                                    continue
-                                if self.backgroundEtypes[i] == 4 or self.eventsGraphflag in [0,3,4]:
-                                    if self.backgroundEtypes[i] < 4 and (not aw.qmc.renderEventsDescr or len(self.backgroundEStrings[i].strip()) == 0):
-                                        Betype = self.Betypesf(self.backgroundEtypes[i])
-                                        firstletter = str(Betype[0])
-                                        secondletter = self.eventsvaluesShort(self.backgroundEvalues[i])
-                                        if aw.eventslidertemp[self.backgroundEtypes[i]]:
-                                            thirdletter = self.mode # postfix
-                                        else:
-                                            thirdletter = aw.eventsliderunits[self.backgroundEtypes[i]] # postfix
-                                    else:
-                                        firstletter = self.backgroundEStrings[i].strip()[:aw.qmc.eventslabelschars]
-                                        if firstletter == "":
-                                            firstletter = "E"
-                                        secondletter = ""
-                                        thirdletter = ""
-                                    if self.mode == "F":
-                                        height = 50
-                                    else:
-                                        height = 20
-
-                                    if self.eventsGraphflag == 4 and self.backgroundEtypes[i] < 4 and aw.qmc.showEtypes[self.backgroundEtypes[i]]:
-                                        Btemp = Bevalues[self.backgroundEtypes[i]][0]
-                                        Bevalues[self.backgroundEtypes[i]] = Bevalues[self.backgroundEtypes[i]][1:]
-                                    else:
-                                        Btemp = None
-
-                                    if Btemp != None and aw.qmc.showEtypes[self.backgroundEtypes[i]]:
-                                        if self.backgroundEtypes[i] == 0:
-                                            boxstyle = 'roundtooth,pad=0.4'
-                                            boxcolor = self.EvalueColor[0]
-                                            textcolor = self.EvalueTextColor[0]
-                                        elif self.backgroundEtypes[i] == 1:
-                                            boxstyle = 'round,pad=0.3,rounding_size=0.8'
-                                            boxcolor = self.EvalueColor[1]
-                                            textcolor = self.EvalueTextColor[1]
-                                        elif self.backgroundEtypes[i] == 2:
-                                            boxstyle = 'sawtooth,pad=0.3,tooth_size=0.2'
-                                            boxcolor = self.EvalueColor[2]
-                                            textcolor = self.EvalueTextColor[2]
-                                        elif self.backgroundEtypes[i] == 3:
-                                            boxstyle = 'round4,pad=0.3,rounding_size=0.15'
-                                            boxcolor = self.EvalueColor[3]
-                                            textcolor = self.EvalueTextColor[3]
-                                        elif self.backgroundEtypes[i] == 4:
-                                            boxstyle = 'square,pad=0.1'
-                                            boxcolor = self.palette["specialeventbox"]
-                                            textcolor = self.palette["specialeventtext"]
-                                        if self.eventsGraphflag in [0,3] or self.backgroundEtypes[i] > 3:
-                                            anno = self.ax.annotate("f{firstletter}{secondletter}", xy=(self.timeB[int(self.backgroundEvents[i])], Btemp),
-                                                         xytext=(self.timeB[int(self.backgroundEvents[i])],Btemp+height),
-                                                         alpha=min(aw.qmc.backgroundalpha + 0.1, 1.0),
-                                                         color=aw.qmc.palette["bgeventtext"],
-                                                         va="center", ha="center",
-                                                         arrowprops=dict(arrowstyle='-',color=boxcolor,alpha=aw.qmc.backgroundalpha), # ,relpos=(0,0)
-                                                         bbox=dict(boxstyle=boxstyle, fc=boxcolor, ec='none', alpha=aw.qmc.backgroundalpha),
-                                                         fontproperties=fontprop_small,
-                                                         path_effects=[PathEffects.withStroke(linewidth=0.5,foreground=self.palette["background"])],
-                                                         )
-                                            try:
-                                                anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
-                                            except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
-                                                pass
-                                        elif self.eventsGraphflag == 4:
-                                            if thirdletter != "":
-                                                firstletter = ""
-                                            anno = self.ax.annotate(f"{firstletter}{secondletter}{thirdletter}", xy=(self.timeB[int(self.backgroundEvents[i])], Btemp),
-                                                         xytext=(self.timeB[int(self.backgroundEvents[i])],Btemp),
-                                                         alpha=min(aw.qmc.backgroundalpha + 0.3, 1.0),
-                                                         color=aw.qmc.palette["bgeventtext"],
-                                                         va="center", ha="center",
-                                                         bbox=dict(boxstyle=boxstyle, fc=boxcolor, ec='none',
-                                                            alpha=min(aw.qmc.backgroundalpha, 1.0)),
-                                                         fontproperties=fontprop_small,
-                                                         path_effects=[PathEffects.withStroke(linewidth=0.5,foreground=self.palette["background"])],
-                                                         )
-                                            try:
-                                                anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
-                                            except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
-                                                pass
-                    #check backgroundDetails flag
-                    if self.backgroundDetails:
-                        d = aw.qmc.ylimit - aw.qmc.ylimit_min
-                        d = d - d/5
-                        #if there is a profile loaded with CHARGE, then save time to get the relative time
-                        if self.timeindex[0] != -1:   #verify it exists before loading it, otherwise the list could go out of index
-                            startB = self.timex[self.timeindex[0]]
-                        else:
-                            if self.timeindexB[0] > 0:
-                                startB = self.timeB[self.timeindexB[0]]
-                            else:
-                                startB = 0
-                        try:
-                            # background annotations are not draggable
-                            aw.qmc.l_background_annotations.extend(self.place_annotations(
-                                -1, # TP_index
-                                d,
-                                self.timeB,
-                                self.timeindexB,
-                                self.temp2B,
-                                self.stemp2B,
-                                startB,
-                                self.timeindex, # timeindex2
-                                TP_time_loaded=self.TP_time_B_loaded, 
-                                draggable=False))
-                        except Exception: # pylint: disable=broad-except
-                            pass
-
-                    #show the analysis results if they exist
-#                    if len(self.analysisresultsstr) > 0:
-#                        aw.analysisShowResults(redraw=False)
-
-                    #END of Background
-
-                if aw.qmc.patheffects:
-                    rcParams['path.effects'] = [PathEffects.withStroke(linewidth=aw.qmc.patheffects, foreground=self.palette["background"])]
-
-                self.handles = []
-                self.labels = []
-                self.legend_lines = []
-
-                self.smoothETBT(smooth,recomputeAllDeltas,sampling,decay_smoothing_p)
-
-## Output Idle Noise StdDev of BT RoR
-#                        try:
-#                            start = aw.qmc.timeindex[0]
-#                            end = aw.qmc.timeindex[6]
-#                            if start == -1:
-#                                start = 0
-#                            start = start + 30 # avoiding the empty begin of heavy smoothed data
-#                            if end == 0:
-#                                end = min(len(self.delta2) -1,100)
-#                            print("ET RoR mean:",numpy.mean([x for x in self.delta1[start:end] if x is not None]))
-#                            print("ET RoR std:",numpy.std([x for x in self.delta1[start:end] if x is not None]))
-#                            print("BT RoR mean:",numpy.mean([x for x in self.delta2[start:end] if x is not None]))
-#                            print("BT RoR std:",numpy.std([x for x in self.delta2[start:end] if x is not None]))
-#                            print("BT mean:",numpy.mean([x for x in self.temp2[start:end] if x is not None]))
-#                            print("BT std:",numpy.std([x for x in self.temp2[start:end] if x is not None]))
-#                            max_BT = numpy.max([x for x in self.temp2[start:end] if x is not None])
-#                            min_BT = numpy.max([x for x in self.temp2[start:end] if x is not None])
-#                            mean_BT = numpy.mean([x for x in self.temp2[start:end] if x is not None])
-#                            print("BT max delta:", max(mean_BT - min_BT,max_BT - mean_BT))
-#                        except Exception as e: # pylint: disable=broad-except
-#                            _log.exception(e)
-                
-                # CHARGE-DROP curve index limits
-                charge_idx = 0
-                if self.timeindex[0] > -1:
-                    charge_idx = self.timeindex[0]
-                drop_idx = len(self.timex)-1
-                if self.timeindex[6] > 0:
-                    drop_idx = self.timeindex[6]
-
-                if self.eventsshowflag:
-                    Nevents = len(self.specialevents)
-                    #three modes of drawing events.
-                    # the first mode just places annotations. They are text annotations.
-                    # The second mode aligns the events types to a bar height so that they can be visually identified by type. They are text annotations
-                    # the third mode plots the events by value. They are not annotations but actual lines.
-
-                    if self.eventsGraphflag == 1 and Nevents:
-
-                        char1 = self.etypes[0][0]
-                        char2 = self.etypes[1][0]
-                        char3 = self.etypes[2][0]
-                        char4 = self.etypes[3][0]
-
-                        if self.mode == "F":
-                            row = {char1:self.phases[0]-20,char2:self.phases[0]-40,char3:self.phases[0]-60,char4:self.phases[0]-80}
-                        else:
-                            row = {char1:self.phases[0]-10,char2:self.phases[0]-20,char3:self.phases[0]-30,char4:self.phases[0]-40}
-
-                        #draw lines of color between events of the same type to help identify areas of events.
-                        #count (as length of the list) and collect their times for each different type. Each type will have a different plot heigh
-                        netypes=[[],[],[],[]]
-                        for i in range(Nevents):
-                            try:
-                                tx = self.timex[self.specialevents[i]]
-                                if self.foregroundShowFullflag or ((self.timeindex[0] > -1 and tx >= self.timex[self.timeindex[0]]) and (self.timeindex[6] > 0 and tx <= self.timex[self.timeindex[6]])):
-                                    if self.specialeventstype[i] == 0 and aw.qmc.showEtypes[0]:
-                                        netypes[0].append(tx)
-                                    elif self.specialeventstype[i] == 1 and aw.qmc.showEtypes[1]:
-                                        netypes[1].append(tx)
-                                    elif self.specialeventstype[i] == 2 and aw.qmc.showEtypes[2]:
-                                        netypes[2].append(tx)
-                                    elif self.specialeventstype[i] == 3 and aw.qmc.showEtypes[3]:
-                                        netypes[3].append(tx)
-                            except Exception as e:  # pylint: disable=broad-except
-                                _log.debug(e)
-
-                        letters = "".join((char1,char2,char3,char4))   #"NPDF" first letter for each type (None, Power, Damper, Fan)
-                        rotating_colors = [self.palette["rect2"],self.palette["rect3"]] #rotating rotating_colors
-                        for p in range(len(letters)):
-                            if len(netypes[p]) > 1:
-                                for i in range(len(netypes[p])-1):
-                                    #draw differentiating color bars between events and place then in a different height acording with type
-                                    rect = patches.Rectangle((netypes[p][i], row[letters[p]]), width = (netypes[p][i+1]-netypes[p][i]), height = step, color = rotating_colors[i%2],alpha=0.5)
-                                    self.ax.add_patch(rect)
-
-                        # annotate event
-                        for i in range(Nevents):
-                            if self.specialeventstype[i] > 3:
-                                # a special event of type "--"
-                                pass
-                            elif aw.qmc.showEtypes[self.specialeventstype[i]]:
-                                event_idx = int(self.specialevents[i])
-                                try:
-                                    if not self.flagstart and not self.foregroundShowFullflag and (event_idx < charge_idx or event_idx > drop_idx):
+                                        anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
+                                    except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
+                                        pass
+                                    self.l_background_annotations.append(anno)
+                            #background events by value
+                            if self.eventsGraphflag in [2,3,4]: # 2: step, 3: step+, 4: combo
+                                self.E1backgroundtimex,self.E2backgroundtimex,self.E3backgroundtimex,self.E4backgroundtimex = [],[],[],[]
+                                self.E1backgroundvalues,self.E2backgroundvalues,self.E3backgroundvalues,self.E4backgroundvalues = [],[],[],[]
+                                E1b_last = E2b_last = E3b_last = E4b_last = 0  #not really necessary but guarantees that Exb_last is defined
+                                event_pos_offset = self.eventpositionbars[0]
+                                event_pos_factor = self.eventpositionbars[1] - self.eventpositionbars[0]
+                                #properties for the event annotation
+                                eventannotationprop = aw.mpl_fontproperties.copy()
+                                hoffset = 3  #relative to the event dot
+                                voffset = 3  #relative to the event dot
+                                eventannotationprop.set_size("x-small")
+                                self.overlapList = []
+                                for i in range(len(self.backgroundEvents)):
+                                    event_idx = self.backgroundEvents[i]
+                                    if not self.backgroundShowFullflag and (event_idx < bcharge_idx or event_idx > bdrop_idx):
                                         continue
-                                
-                                    firstletter = self.etypes[self.specialeventstype[i]][0]
-                                    secondletter = self.eventsvaluesShort(self.specialeventsvalue[i])
-    
-                                    #some times ET is not drawn (ET = 0) when using device NONE
-                                    if aw.qmc.ETcurve or aw.qmc.BTcurve:
-                                        # plot events on BT when showeventsonbt is true
-                                        if aw.qmc.showeventsonbt and aw.qmc.BTcurve:
-                                            col = self.palette["bt"]
-                                            if aw.qmc.flagon:
-                                                temps = self.temp2
-                                            else:
-                                                temps = self.stemp2
-                                        elif (aw.qmc.ETcurve and self.temp1[event_idx] >= self.temp2[event_idx]) or (not aw.qmc.BTcurve):
-                                            col = self.palette["et"]
-                                            if aw.qmc.flagon:
-                                                temps = self.temp1
-                                            else:
-                                                temps = self.stemp1
+                                    pos = max(0,int(round((self.backgroundEvalues[i]-1)*10)))
+                                    if self.backgroundEtypes[i] == 0 and aw.qmc.showEtypes[0]:
+                                        self.E1backgroundtimex.append(self.timeB[self.backgroundEvents[i]])
+                                        if self.clampEvents:
+                                            self.E1backgroundvalues.append(pos)
                                         else:
-                                            col = self.palette["bt"]
-                                            if aw.qmc.flagon:
-                                                temps = self.temp2
-                                            else:
-                                                temps = self.stemp2
-    #                                    fcolor=self.EvalueColor[self.specialeventstype[i]]
-                                        if platf == 'Windows':
-                                            vert_offset = 5.0
-                                        else:
-                                            vert_offset = 2.5
-                                        anno = self.ax.annotate(f"{firstletter}{secondletter}",
-                                                         xy=(self.timex[event_idx],
-                                                         temps[event_idx]),
-                                                         xytext=(self.timex[event_idx],row[firstletter] + vert_offset),
-                                                         alpha=1.,
-                                                         va="center", ha="left",
-                                                         bbox=dict(boxstyle='square,pad=0.1', fc=self.palette["specialeventbox"], ec='none'),
-                                                         path_effects=[PathEffects.withStroke(linewidth=0.5,foreground=self.palette["background"])],
-                                                         color=self.palette["specialeventtext"],
-                                                         arrowprops=dict(arrowstyle='-',color=col,alpha=0.4,relpos=(0,0)),
-                                                         fontsize="xx-small",
-                                                         fontproperties=fontprop_small)
+                                            self.E1backgroundvalues.append((pos*event_pos_factor)+event_pos_offset)
+                                        E1b_last = i
                                         try:
-                                            anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
-                                        except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
-                                            pass
-                                except Exception as e: # pylint: disable=broad-except
-                                    _log.exception(e)
-
-                    elif self.eventsGraphflag in [2,3,4]: # in this mode we have to generate the plots even if Nevents=0 to avoid redraw issues resulting from an incorrect number of plot count
-                        self.E1timex,self.E2timex,self.E3timex,self.E4timex = [],[],[],[]
-                        self.E1values,self.E2values,self.E3values,self.E4values = [],[],[],[]
-                        E1_nonempty = E2_nonempty = E3_nonempty = E4_nonempty = False
-                        E1_last = E2_last = E3_last = E4_last = 0  #not really necessary but guarantees that Ex_last is defined
-                        E1_CHARGE = E2_CHARGE = E3_CHARGE = E4_CHARGE = None # remember event value @CHARGE to add if not self.foregroundShowFullflag
-                        event_pos_offset = self.eventpositionbars[0]
-                        event_pos_factor = self.eventpositionbars[1] - self.eventpositionbars[0]
-                        #properties for the event annotations
-                        eventannotationprop = aw.mpl_fontproperties.copy()
-                        hoffset = 3  #relative to the event dot
-                        voffset = 1  #relative to the event dot
-                        self.overlapList = []
-                        eventannotationprop.set_size("x-small")
-                        for i in range(Nevents):
-                            pos = max(0,int(round((self.specialeventsvalue[i]-1)*10)))
-                            try:
-                                tx = self.timex[self.specialevents[i]]
-                                if self.specialeventstype[i] == 0 and aw.qmc.showEtypes[0]:
-                                    if not self.foregroundShowFullflag and ((self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]) or (self.timeindex[6] > 0 and tx > self.timex[self.timeindex[6]])):
-                                        if (self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]):
-                                            E1_CHARGE = pos # remember event value at CHARGE
-                                        # don't draw event lines before CHARGE if foregroundShowFullflag is not set
-                                        continue
-                                    self.E1timex.append(tx)
-                                    if self.clampEvents: # in clamp mode we render also event values higher than 100:
-                                        self.E1values.append(pos)
-                                    else:
-                                        self.E1values.append((pos*event_pos_factor)+event_pos_offset)
-                                    E1_nonempty = True
-                                    E1_last = i
-                                    try:
-                                        if not sampling and not self.flagstart and self.eventsGraphflag!=4 and self.specialeventannovisibilities[0]:
-                                            E1_annotation = self.parseSpecialeventannotation(self.specialeventannotations[0], i)
-                                            temp = self.E1values[-1]
-                                            anno = self.ax.annotate(E1_annotation, xy=(hoffset + self.timex[int(self.specialevents[i])], voffset + temp),
-                                                        alpha=.9,
-                                                        color=self.palette["text"],
-                                                        va="bottom", ha="left",
-                                                        fontproperties=eventannotationprop,
-                                                        path_effects=[PathEffects.withStroke(linewidth=self.patheffects,foreground=self.palette["background"])],
-                                                        )
-                                            self.l_eventtype1annos.append(anno)
-                                            try:
-                                                anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
-                                            except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
-                                                pass
-                                            try:
-                                                overlap = self.checkOverlap(anno) #, i, E1_annotation)
-                                                if overlap:
-                                                    anno.remove()
-                                            except Exception: # pylint: disable=broad-except
-                                                pass
-                                    except Exception as ex: # pylint: disable=broad-except
-                                        _log.exception(ex)
-                                        _, _, exc_tb = sys.exc_info()
-                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
-                                elif self.specialeventstype[i] == 1 and aw.qmc.showEtypes[1]:
-                                    tx = self.timex[self.specialevents[i]]
-                                    if not self.foregroundShowFullflag and ((self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]) or (self.timeindex[6] > 0 and tx > self.timex[self.timeindex[6]])):
-                                        if (self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]):
-                                            E2_CHARGE = pos # remember event value at CHARGE
-                                        # don't draw event lines before CHARGE if foregroundShowFullflag is not set
-                                        continue
-                                    self.E2timex.append(tx)
-                                    if self.clampEvents: # in clamp mode we render also event values higher than 100:
-                                        self.E2values.append(pos)
-                                    else:
-                                        self.E2values.append((pos*event_pos_factor)+event_pos_offset)
-                                    E2_nonempty = True
-                                    E2_last = i
-                                    try:
-                                        if not sampling and not self.flagstart and self.eventsGraphflag!=4 and self.specialeventannovisibilities[1]:
-                                            E2_annotation = self.parseSpecialeventannotation(self.specialeventannotations[1], i)
-                                            temp = self.E2values[-1]
-                                            anno = self.ax.annotate(E2_annotation, xy=(hoffset + self.timex[int(self.specialevents[i])], voffset + temp),
-                                                        alpha=.9,
-                                                        color=self.palette["text"],
-                                                        va="bottom", ha="left",
-                                                        fontproperties=eventannotationprop,
-                                                        path_effects=[PathEffects.withStroke(linewidth=self.patheffects,foreground=self.palette["background"])],
-                                                        )
-                                            self.l_eventtype2annos.append(anno)
-                                            try:
-                                                anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
-                                            except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
-                                                pass
-                                            try:
-                                                overlap = self.checkOverlap(anno) #, i, E2_annotation)
-                                                if overlap:
-                                                    anno.remove()
-                                            except Exception: # pylint: disable=broad-except
-                                                pass
-    
-                                    except Exception as ex: # pylint: disable=broad-except
-                                        _log.exception(ex)
-                                        _, _, exc_tb = sys.exc_info()
-                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
-                                elif self.specialeventstype[i] == 2 and aw.qmc.showEtypes[2]:
-                                    tx = self.timex[self.specialevents[i]]
-                                    if not self.foregroundShowFullflag and ((self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]) or (self.timeindex[6] > 0 and tx > self.timex[self.timeindex[6]])):
-                                        if (self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]):
-                                            E3_CHARGE = pos # remember event value at CHARGE
-                                        # don't draw event lines before CHARGE if foregroundShowFullflag is not set
-                                        continue
-                                    self.E3timex.append(tx)
-                                    if self.clampEvents: # in clamp mode we render also event values higher than 100:
-                                        self.E3values.append(pos)
-                                    else:
-                                        self.E3values.append((pos*event_pos_factor)+event_pos_offset)
-                                    E3_nonempty = True
-                                    E3_last = i
-                                    try:
-                                        if not sampling and not self.flagstart and self.eventsGraphflag!=4 and self.specialeventannovisibilities[2]:
-                                            E3_annotation = self.parseSpecialeventannotation(self.specialeventannotations[2], i)
-                                            temp = self.E3values[-1]
-                                            anno = self.ax.annotate(E3_annotation, xy=(hoffset + self.timex[int(self.specialevents[i])], voffset + temp),
-                                                        alpha=.9,
-                                                        color=self.palette["text"],
-                                                        va="bottom", ha="left",
-                                                        fontproperties=eventannotationprop,
-                                                        path_effects=[PathEffects.withStroke(linewidth=self.patheffects,foreground=self.palette["background"])],
-                                                        )
-                                            self.l_eventtype3annos.append(anno)
-                                            try:
-                                                anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
-                                            except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
-                                                pass
-                                            try:
-                                                overlap = self.checkOverlap(anno) #, i, E3_annotation)
-                                                if overlap:
-                                                    anno.remove()
-                                            except Exception: # pylint: disable=broad-except
-                                                pass
-                                    except Exception as ex: # pylint: disable=broad-except
-                                        _log.exception(ex)
-                                        _, _, exc_tb = sys.exc_info()
-                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
-                                elif self.specialeventstype[i] == 3 and aw.qmc.showEtypes[3]:
-                                    tx = self.timex[self.specialevents[i]]
-                                    if not self.foregroundShowFullflag and ((self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]) or (self.timeindex[6] > 0 and tx > self.timex[self.timeindex[6]])):
-                                        if (self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]):
-                                            E4_CHARGE = pos # remember event value at CHARGE
-                                        # don't draw event lines before CHARGE if foregroundShowFullflag is not set
-                                        continue
-                                    self.E4timex.append(tx)
-                                    if self.clampEvents: # in clamp mode we render also event values higher than 100:
-                                        self.E4values.append(pos)
-                                    else:
-                                        self.E4values.append((pos*event_pos_factor)+event_pos_offset)
-                                    E4_nonempty = True
-                                    E4_last = i
-                                    try:
-                                        if not sampling and not self.flagstart and self.eventsGraphflag!=4 and self.specialeventannovisibilities[3]:
-                                            E4_annotation = self.parseSpecialeventannotation(self.specialeventannotations[3], i)
-                                            temp = self.E4values[-1]
-                                            anno = self.ax.annotate(E4_annotation, xy=(hoffset + self.timex[int(self.specialevents[i])], voffset + temp),
-                                                        alpha=.9,
-                                                        color=self.palette["text"],
-                                                        va="bottom", ha="left",
-                                                        fontproperties=eventannotationprop,
-                                                        path_effects=[PathEffects.withStroke(linewidth=self.patheffects,foreground=self.palette["background"])],
-                                                        )
-                                            self.l_eventtype4annos.append(anno)
-                                            try:
-                                                anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
-                                            except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
-                                                pass
-                                            try:
-                                                overlap = self.checkOverlap(anno) #, i, E4_annotation)
-                                                if overlap:
-                                                    anno.remove()
-                                            except Exception: # pylint: disable=broad-except
-                                                pass
-                                    except Exception as ex: # pylint: disable=broad-except
-                                        _log.exception(ex)
-                                        _, _, exc_tb = sys.exc_info()
-                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
-                            except Exception as e: # pylint: disable=broad-except
-                                _log.exception(e)
-
-                        if len(self.E1timex) > 0 and len(self.E1values) == len(self.E1timex):
-                            pos = max(0,int(round((self.specialeventsvalue[E1_last]-1)*10)))
-                            if not self.clampEvents: # in clamp mode we render also event values higher than 100:
-                                pos = (pos*event_pos_factor)+event_pos_offset
-                            if self.foregroundShowFullflag and (self.timeindex[7] > 0 and aw.qmc.extendevents and self.timex[self.timeindex[7]] > self.timex[self.specialevents[E1_last]]):   #if cool exists and last event was earlier
-                                self.E1timex.append(self.timex[self.timeindex[7]]) #time of cool
-                                self.E1values.append(pos) #repeat last event value
-                            elif (self.timeindex[6] > 0 and aw.qmc.extendevents and self.timex[self.timeindex[6]] > self.timex[self.specialevents[E1_last]]):   #if drop exists and last event was earlier
-                                self.E1timex.append(self.timex[self.timeindex[6]]) #time of drop
-                                self.E1values.append(pos) #repeat last event value
-                            E1x = self.E1timex
-                            E1y = self.E1values
-                            if E1_CHARGE is not None and len(E1y)>1 and E1y[0] != E1_CHARGE:
-                                E1x = [self.timex[self.timeindex[0]]] + E1x
-                                E1y = [E1_CHARGE] + E1y
-                            ds = "steps-post"
-                        else:
-                            E1x = [None]
-                            E1y = [None]
-                            ds = "steps-post"
-                        try:
-                            if self.l_eventtype1dots is not None:
-                                self.l_eventtype1dots.remove()
-                        except Exception: # pylint: disable=broad-except
-                            pass
-                        self.l_eventtype1dots, = self.ax.plot(E1x, E1y, color=self.EvalueColor[0],
-                                                            marker = (self.EvalueMarker[0] if self.eventsGraphflag != 4 else None),
-                                                            markersize = self.EvalueMarkerSize[0],
-#                                                            picker=2, # deprecated in MPL 3.3.x
-                                                            picker=True,
-                                                            pickradius=2,#markevery=every,
-                                                            linestyle="-",drawstyle=ds,linewidth = self.Evaluelinethickness[0],alpha = self.Evaluealpha[0],label=self.etypesf(0))
-                        if len(self.E2timex) > 0 and len(self.E2values) == len(self.E2timex):
-                            pos = max(0,int(round((self.specialeventsvalue[E2_last]-1)*10)))
-                            if not self.clampEvents: # in clamp mode we render also event values higher than 100:
-                                pos = (pos*event_pos_factor)+event_pos_offset
-                            if self.foregroundShowFullflag and (self.timeindex[7] > 0 and aw.qmc.extendevents and self.timex[self.timeindex[7]] > self.timex[self.specialevents[E2_last]]):   #if cool exists and last event was earlier
-                                self.E2timex.append(self.timex[self.timeindex[7]]) #time of cool
-                                self.E2values.append(pos) #repeat last event value
-                            elif (self.timeindex[6] > 0 and aw.qmc.extendevents and self.timex[self.timeindex[6]] > self.timex[self.specialevents[E2_last]]):   #if drop exists and last event was earlier
-                                self.E2timex.append(self.timex[self.timeindex[6]]) #time of drop
-                                self.E2values.append(pos) #repeat last event value
-                            E2x = self.E2timex
-                            E2y = self.E2values
-                            if E2_CHARGE is not None and len(E2y)>1 and E2y[0] != E2_CHARGE:
-                                E2x = [self.timex[self.timeindex[0]]] + E2x
-                                E2y = [E2_CHARGE] + E2y
-                            ds = "steps-post"
-                        else:
-                            E2x = [None]
-                            E2y = [None]
-                            ds = "steps-post"
-                        try:
-                            if self.l_eventtype2dots is not None:
-                                self.l_eventtype2dots.remove()
-                        except Exception: # pylint: disable=broad-except
-                            pass
-                        self.l_eventtype2dots, = self.ax.plot(E2x, E2y, color=self.EvalueColor[1],
-                                                            marker = (self.EvalueMarker[1] if self.eventsGraphflag != 4 else None),
-                                                            markersize = self.EvalueMarkerSize[1],
-                                                            picker=True,
-                                                            pickradius=2,#markevery=every,
-                                                            linestyle="-",drawstyle=ds,linewidth = self.Evaluelinethickness[1],alpha = self.Evaluealpha[1],label=self.etypesf(1))
-                        if len(self.E3timex) > 0 and len(self.E3values) == len(self.E3timex):
-                            pos = max(0,int(round((self.specialeventsvalue[E3_last]-1)*10)))
-                            if not self.clampEvents: # in clamp mode we render also event values higher than 100:
-                                pos = (pos*event_pos_factor)+event_pos_offset
-                            if self.foregroundShowFullflag and (self.timeindex[7] > 0 and aw.qmc.extendevents and self.timex[self.timeindex[7]] > self.timex[self.specialevents[E3_last]]):   #if cool exists and last event was earlier
-                                self.E3timex.append(self.timex[self.timeindex[7]]) #time of cool
-                                self.E3values.append(pos) #repeat last event value
-                            elif (self.timeindex[6] > 0 and aw.qmc.extendevents and self.timex[self.timeindex[6]] > self.timex[self.specialevents[E3_last]]):   #if drop exists and last event was earlier
-                                self.E3timex.append(self.timex[self.timeindex[6]]) #time of drop
-                                self.E3values.append(pos) #repeat last event value
-                            E3x = self.E3timex
-                            E3y = self.E3values
-                            if E3_CHARGE is not None and len(E3y)>1 and E3y[0] != E3_CHARGE:
-                                E3x = [self.timex[self.timeindex[0]]] + E3x
-                                E3y = [E3_CHARGE] + E3y
-                            ds = "steps-post"
-                        else:
-                            E3x = [None]
-                            E3y = [None]
-                            ds = "steps-post"
-                        try:
-                            if self.l_eventtype3dots is not None:
-                                self.l_eventtype3dots.remove()
-                        except Exception: # pylint: disable=broad-except
-                            pass
-                        self.l_eventtype3dots, = self.ax.plot(E3x, E3y, color=self.EvalueColor[2],
-                                                            marker = (self.EvalueMarker[2] if self.eventsGraphflag != 4 else None),
-                                                            markersize = self.EvalueMarkerSize[2],
-                                                            picker=True,
-                                                            pickradius=2,#markevery=every,
-                                                            linestyle="-",drawstyle=ds,linewidth = self.Evaluelinethickness[2],alpha = self.Evaluealpha[2],label=self.etypesf(2))
-                        if len(self.E4timex) > 0 and len(self.E4values) == len(self.E4timex):
-                            pos = max(0,int(round((self.specialeventsvalue[E4_last]-1)*10)))
-                            if not self.clampEvents: # in clamp mode we render also event values higher than 100:
-                                pos = (pos*event_pos_factor)+event_pos_offset
-                            if self.foregroundShowFullflag and (self.timeindex[7] > 0 and 
-                                    aw.qmc.extendevents and self.timex[self.timeindex[7]] > self.timex[self.specialevents[E4_last]]):   #if cool exists and last event was earlier
-                                self.E4timex.append(self.timex[self.timeindex[7]]) #time of cool
-                                self.E4values.append(pos) #repeat last event value
-                            elif (self.timeindex[6] > 0 and aw.qmc.extendevents and self.timex[self.timeindex[6]] > self.timex[self.specialevents[E4_last]]):   #if drop exists and last event was earlier
-                                self.E4timex.append(self.timex[self.timeindex[6]]) #time of drop
-                                self.E4values.append(pos) #repeat last event value
-                            E4x = self.E4timex
-                            E4y = self.E4values
-                            if E4_CHARGE is not None and len(E4y)>1 and E4y[0] != E4_CHARGE:
-                                E4x = [self.timex[self.timeindex[0]]] + E4x
-                                E4y = [E4_CHARGE] + E4y
-                            ds = "steps-post"
-                        else:
-                            E4x = [None]
-                            E4y = [None]
-                            ds = "steps-post"
-                        try:
-                            if self.l_eventtype4dots is not None:
-                                self.l_eventtype4dots.remove()
-                        except Exception: # pylint: disable=broad-except
-                            pass
-                        self.l_eventtype4dots, = self.ax.plot(E4x, E4y, color=self.EvalueColor[3],
-                                                            marker = (self.EvalueMarker[3] if self.eventsGraphflag != 4 else None),
-                                                            markersize = self.EvalueMarkerSize[3],
-                                                            picker=True,
-                                                            pickradius=2,#markevery=every,
-                                                            linestyle="-",drawstyle=ds,linewidth = self.Evaluelinethickness[3],alpha = self.Evaluealpha[3],label=self.etypesf(3))
-                    if Nevents:
-                        if self.eventsGraphflag == 4:
-                            # we prepare copies of the Evalues
-                            evalues = [self.E1values[:],self.E2values[:],self.E3values[:],self.E4values[:]]
-                        for i in range(Nevents):
-                            event_idx = int(self.specialevents[i])
-                            try:
-                                if self.specialeventstype[i] == 4 or self.eventsGraphflag in [0,3,4]:
-                                    if self.specialeventstype[i] < 4 and (not aw.qmc.renderEventsDescr or len(self.specialeventsStrings[i].strip()) == 0):
-                                        etype = self.etypesf(self.specialeventstype[i])
-                                        firstletter = str(etype[0])
-                                        secondletter = self.eventsvaluesShort(self.specialeventsvalue[i])
-                                        if aw.eventslidertemp[self.specialeventstype[i]]:
-                                            thirdletter = self.mode # postfix
+                                            if (len(self.timex)==0 or self.flagon) and self.eventsGraphflag!=4 and self.backgroundDetails and self.specialeventannovisibilities[0]:
+                                                E1b_annotation = self.parseSpecialeventannotation(self.specialeventannotations[0], i, applyto="background")
+                                                temp = self.E1backgroundvalues[-1]
+                                                anno = self.ax.annotate(E1b_annotation, xy=(hoffset + self.timeB[int(self.backgroundEvents[i])], voffset + temp),
+                                                            alpha=min(self.backgroundalpha + 0.1, 1.0),
+                                                            color=self.palette["text"],
+                                                            va="bottom", ha="left",
+                                                            fontsize="x-small",
+                                                            path_effects=[PathEffects.withStroke(linewidth=self.patheffects,foreground=self.palette["background"])],
+                                                            )
+                                                try:
+                                                    anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
+                                                except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
+                                                    pass
+                                                try:
+                                                    anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
+                                                except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
+                                                    pass
+                                                try:
+                                                    overlap = self.checkOverlap(anno)# , i, E1b_annotation)
+                                                    if overlap:
+                                                        anno.remove()
+                                                except Exception: # pylint: disable=broad-except
+                                                    pass
+                                        except Exception as ex: # pylint: disable=broad-except
+                                            _log.exception(ex)
+                                            _, _, exc_tb = sys.exc_info()
+                                            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                                    elif self.backgroundEtypes[i] == 1 and aw.qmc.showEtypes[1]:
+                                        self.E2backgroundtimex.append(self.timeB[self.backgroundEvents[i]])
+                                        if self.clampEvents:
+                                            self.E2backgroundvalues.append(pos)
                                         else:
-                                            thirdletter = aw.eventsliderunits[self.specialeventstype[i]] # postfix
-                                    else:
-                                        firstletter = self.specialeventsStrings[i].strip()[:aw.qmc.eventslabelschars]
-                                        if firstletter == "":
-                                            firstletter = "E"
-                                        secondletter = ""
-                                        thirdletter = ""
-                                    if self.mode == "F":
-                                        height = 50
-                                    else:
-                                        height = 20
-    
-                                    #some times ET is not drawn (ET = 0) when using device NONE
-                                    # plot events on BT when showeventsonbt is true
-                                    if not aw.qmc.showeventsonbt and self.temp1[event_idx] > self.temp2[event_idx] and aw.qmc.ETcurve:
-                                        if aw.qmc.flagon:
-                                            temp = self.temp1[event_idx]
+                                            self.E2backgroundvalues.append((pos*event_pos_factor)+event_pos_offset)
+                                        E2b_last = i
+                                        try:
+                                            if (len(self.timex)==0 or self.flagon) and self.eventsGraphflag!=4 and self.backgroundDetails and self.specialeventannovisibilities[1]:
+                                                E2b_annotation = self.parseSpecialeventannotation(self.specialeventannotations[1], i, applyto="background")
+                                                temp = self.E2backgroundvalues[-1]
+                                                anno = self.ax.annotate(E2b_annotation, xy=(hoffset + self.timeB[int(self.backgroundEvents[i])], voffset + temp),
+                                                            alpha=min(self.backgroundalpha + 0.1, 1.0),
+                                                            color=self.palette["text"],
+                                                            va="bottom", ha="left",
+                                                            fontproperties=eventannotationprop,
+                                                            path_effects=[PathEffects.withStroke(linewidth=self.patheffects,foreground=self.palette["background"])],
+                                                            )
+                                                try:
+                                                    anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
+                                                except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
+                                                    pass
+                                                try:
+                                                    anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
+                                                except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
+                                                    pass
+                                                try:
+                                                    overlap = self.checkOverlap(anno) #, i, E2b_annotation)
+                                                    if overlap:
+                                                        anno.remove()
+                                                except Exception: # pylint: disable=broad-except
+                                                    pass
+                                        except Exception as ex: # pylint: disable=broad-except
+                                            _log.exception(ex)
+                                            _, _, exc_tb = sys.exc_info()
+                                            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                                    elif self.backgroundEtypes[i] == 2 and aw.qmc.showEtypes[2]:
+                                        self.E3backgroundtimex.append(self.timeB[self.backgroundEvents[i]])
+                                        if self.clampEvents:
+                                            self.E3backgroundvalues.append(pos)
                                         else:
-                                            temp = self.stemp1[event_idx]
-                                    elif aw.qmc.BTcurve:
-                                        if aw.qmc.flagon:
-                                            temp = self.temp2[event_idx]
+                                            self.E3backgroundvalues.append((pos*event_pos_factor)+event_pos_offset)
+                                        E3b_last = i
+                                        try:
+                                            if (len(self.timex)==0 or self.flagon) and self.eventsGraphflag!=4 and self.backgroundDetails and self.specialeventannovisibilities[2]:
+                                                E3b_annotation = self.parseSpecialeventannotation(self.specialeventannotations[2], i, applyto="background")
+                                                temp = self.E3backgroundvalues[-1]
+                                                anno = self.ax.annotate(E3b_annotation, xy=(hoffset + self.timeB[int(self.backgroundEvents[i])], voffset + temp),
+                                                            alpha=min(self.backgroundalpha + 0.1, 1.0),
+                                                            color=self.palette["text"],
+                                                            va="bottom", ha="left",
+                                                            fontproperties=eventannotationprop,
+                                                            path_effects=[PathEffects.withStroke(linewidth=self.patheffects,foreground=self.palette["background"])],
+                                                            )
+                                                try:
+                                                    anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
+                                                except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
+                                                    pass
+                                                try:
+                                                    anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
+                                                except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
+                                                    pass
+                                                try:
+                                                    overlap = self.checkOverlap(anno) #, i, E3b_annotation)
+                                                    if overlap:
+                                                        anno.remove()
+                                                except Exception: # pylint: disable=broad-except
+                                                    pass
+                                        except Exception as ex: # pylint: disable=broad-except
+                                            _log.exception(ex)
+                                            _, _, exc_tb = sys.exc_info()
+                                            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                                    elif self.backgroundEtypes[i] == 3 and aw.qmc.showEtypes[3]:
+                                        self.E4backgroundtimex.append(self.timeB[self.backgroundEvents[i]])
+                                        if self.clampEvents:
+                                            self.E4backgroundvalues.append(pos)
                                         else:
-                                            temp = self.stemp2[event_idx]
-                                    else:
-                                        temp = None
-    
-                                    # plot events on BT when showeventsonbt is true
-                                    if aw.qmc.showeventsonbt and temp != None and aw.qmc.BTcurve:
-                                        if aw.qmc.flagon:
-                                            temp = self.temp2[event_idx]
+                                            self.E4backgroundvalues.append((pos*event_pos_factor)+event_pos_offset)
+                                        E4b_last = i
+                                        try:
+                                            if (len(self.timex)==0 or self.flagon) and self.eventsGraphflag!=4 and self.backgroundDetails and self.specialeventannovisibilities[3]:
+                                                E4b_annotation = self.parseSpecialeventannotation(self.specialeventannotations[3], i, applyto="background")
+                                                temp = self.E4backgroundvalues[-1]
+                                                anno = self.ax.annotate(E4b_annotation, xy=(hoffset + self.timeB[int(self.backgroundEvents[i])], voffset + temp),
+                                                            alpha=min(self.backgroundalpha + 0.1, 1.0),
+                                                            color=self.palette["text"],
+                                                            va="bottom", ha="left",
+                                                            fontproperties=eventannotationprop,
+                                                            path_effects=[PathEffects.withStroke(linewidth=self.patheffects,foreground=self.palette["background"])],
+                                                            )
+                                                try:
+                                                    anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
+                                                except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
+                                                    pass
+                                                try:
+                                                    anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
+                                                except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
+                                                    pass
+                                                try:
+                                                    overlap = self.checkOverlap(anno) #, i, E4b_annotation)
+                                                    if overlap:
+                                                        anno.remove()
+                                                except Exception: # pylint: disable=broad-except
+                                                    pass
+                                        except Exception as ex: # pylint: disable=broad-except
+                                            _log.exception(ex)
+                                            _, _, exc_tb = sys.exc_info()
+                                            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+    #                            every = None
+                                if len(self.E1backgroundtimex)>0 and len(self.E1backgroundtimex)==len(self.E1backgroundvalues):
+                                    if (self.timeindexB[6] > 0 and aw.qmc.extendevents and self.timeB[self.timeindexB[6]] > self.timeB[self.backgroundEvents[E1b_last]]):   #if drop exists and last event was earlier
+                                        # repeat last value at time of DROP
+                                        self.E1backgroundtimex.append(self.timeB[self.timeindexB[6]]) #time of drop
+                                        pos = max(0,int(round((self.backgroundEvalues[E1b_last]-1)*10)))
+                                        if self.clampEvents:
+                                            self.E1backgroundvalues.append(pos)
                                         else:
-                                            temp = self.stemp2[event_idx]
+                                            self.E1backgroundvalues.append((pos*event_pos_factor)+event_pos_offset)
+                                    self.l_backgroundeventtype1dots, = self.ax.plot(self.E1backgroundtimex, self.E1backgroundvalues, color=self.EvalueColor[0],
+                                                                                marker=(self.EvalueMarker[0] if self.eventsGraphflag != 4 else None),
+                                                                                markersize = self.EvalueMarkerSize[0],
+                                                                                picker=True,
+                                                                                pickradius=2,
+                                                                                #markevery=every,
+                                                                                linestyle="-",drawstyle="steps-post",linewidth = self.Evaluelinethickness[0],alpha = min(self.backgroundalpha + 0.1, 1.0), label=self.Betypesf(0,True))
+                                if len(self.E2backgroundtimex)>0 and len(self.E2backgroundtimex)==len(self.E2backgroundvalues):
+                                    if (self.timeindexB[6] > 0 and aw.qmc.extendevents and self.timeB[self.timeindexB[6]] > self.timeB[self.backgroundEvents[E2b_last]]):   #if drop exists and last event was earlier
+                                        # repeat last value at time of DROP
+                                        self.E2backgroundtimex.append(self.timeB[self.timeindexB[6]]) #time of drop
+                                        pos = max(0,int(round((self.backgroundEvalues[E2b_last]-1)*10)))
+                                        if self.clampEvents:
+                                            self.E2backgroundvalues.append(pos)
+                                        else:
+                                            self.E2backgroundvalues.append((pos*event_pos_factor)+event_pos_offset)
+                                    self.l_backgroundeventtype2dots, = self.ax.plot(self.E2backgroundtimex, self.E2backgroundvalues, color=self.EvalueColor[1],
+                                                                                marker=(self.EvalueMarker[1] if self.eventsGraphflag != 4 else None),
+                                                                                markersize = self.EvalueMarkerSize[1],
+                                                                                picker=True,
+                                                                                pickradius=2,
+                                                                                #markevery=every,
+                                                                                linestyle="-",drawstyle="steps-post",linewidth = self.Evaluelinethickness[1],alpha = min(self.backgroundalpha + 0.1, 1.0), label=self.Betypesf(1,True))
+                                if len(self.E3backgroundtimex)>0 and len(self.E3backgroundtimex)==len(self.E3backgroundvalues):
+                                    if (self.timeindexB[6] > 0 and aw.qmc.extendevents and self.timeB[self.timeindexB[6]] > self.timeB[self.backgroundEvents[E3b_last]]):   #if drop exists and last event was earlier
+                                        # repeat last value at time of DROP
+                                        self.E3backgroundtimex.append(self.timeB[self.timeindexB[6]]) #time of drop
+                                        pos = max(0,int(round((self.backgroundEvalues[E3b_last]-1)*10)))
+                                        if self.clampEvents:
+                                            self.E3backgroundvalues.append(pos)
+                                        else:
+                                            self.E3backgroundvalues.append((pos*event_pos_factor)+event_pos_offset)
+                                    self.l_backgroundeventtype3dots, = self.ax.plot(self.E3backgroundtimex, self.E3backgroundvalues, color=self.EvalueColor[2],
+                                                                                marker=(self.EvalueMarker[2] if self.eventsGraphflag != 4 else None),
+                                                                                markersize = self.EvalueMarkerSize[2],
+                                                                                picker=True,
+                                                                                pickradius=2,
+                                                                                #markevery=every,
+                                                                                linestyle="-",drawstyle="steps-post",linewidth = self.Evaluelinethickness[2],alpha = min(self.backgroundalpha + 0.1, 1.0), label=self.Betypesf(2,True))
+                                if len(self.E4backgroundtimex)>0 and len(self.E4backgroundtimex)==len(self.E4backgroundvalues):
+                                    if (self.timeindexB[6] > 0 and aw.qmc.extendevents and self.timeB[self.timeindexB[6]] > self.timeB[self.backgroundEvents[E4b_last]]):   #if drop exists and last event was earlier
+                                        # repeat last value at time of DROP
+                                        self.E4backgroundtimex.append(self.timeB[self.timeindexB[6]]) #time of drop
+                                        pos = max(0,int(round((self.backgroundEvalues[E4b_last]-1)*10)))
+                                        if self.clampEvents:
+                                            self.E4backgroundvalues.append(pos)
+                                        else:
+                                            self.E4backgroundvalues.append((pos*event_pos_factor)+event_pos_offset)
+                                    self.l_backgroundeventtype4dots, = self.ax.plot(self.E4backgroundtimex, self.E4backgroundvalues, color=self.EvalueColor[3],
+                                                                                marker=(self.EvalueMarker[3] if self.eventsGraphflag != 4 else None),
+                                                                                markersize = self.EvalueMarkerSize[3],
+                                                                                picker=True,
+                                                                                pickradius=2,
+                                                                                #markevery=every,
+                                                                                linestyle="-",drawstyle="steps-post",linewidth = self.Evaluelinethickness[3],alpha = min(self.backgroundalpha + 0.1, 1.0), label=self.Betypesf(3,True))
     
-                                    if not self.flagstart and not self.foregroundShowFullflag and (event_idx < charge_idx or event_idx > drop_idx):
+                            if len(self.backgroundEvents) > 0:
+                                if self.eventsGraphflag == 4:
+                                    # we prepare copies of the background Evalues
+                                    Bevalues = [self.E1backgroundvalues[:],self.E2backgroundvalues[:],self.E3backgroundvalues[:],self.E4backgroundvalues[:]]
+                                for i in range(len(self.backgroundEvents)):
+                                    event_idx = self.backgroundEvents[i]
+                                    if not self.backgroundShowFullflag and (event_idx < bcharge_idx or event_idx > bdrop_idx):
                                         continue
-    
-                                    if self.eventsGraphflag == 4 and self.specialeventstype[i] < 4 and aw.qmc.showEtypes[self.specialeventstype[i]]:
-                                        temp = evalues[self.specialeventstype[i]][0]
-                                        evalues[self.specialeventstype[i]] = evalues[self.specialeventstype[i]][1:]
-                                    
-                                    if temp != None and aw.qmc.showEtypes[self.specialeventstype[i]]:
-                                        if self.specialeventstype[i] == 0:
-                                            boxstyle = 'roundtooth,pad=0.4'
-                                            boxcolor = self.EvalueColor[0]
-                                            textcolor = self.EvalueTextColor[0]
-                                        elif self.specialeventstype[i] == 1:
-                                            boxstyle = 'round,pad=0.3,rounding_size=0.8'
-                                            boxcolor = self.EvalueColor[1]
-                                            textcolor = self.EvalueTextColor[1]
-                                        elif self.specialeventstype[i] == 2:
-                                            boxstyle = 'sawtooth,pad=0.3,tooth_size=0.2'
-                                            boxcolor = self.EvalueColor[2]
-                                            textcolor = self.EvalueTextColor[2]
-                                        elif self.specialeventstype[i] == 3:
-                                            boxstyle = 'round4,pad=0.3,rounding_size=0.15'
-                                            boxcolor = self.EvalueColor[3]
-                                            textcolor = self.EvalueTextColor[3]
-                                        elif self.specialeventstype[i] == 4:
-                                            boxstyle = 'square,pad=0.1'
-                                            boxcolor = self.palette["specialeventbox"]
-                                            textcolor = self.palette["specialeventtext"]
-                                        if self.eventsGraphflag in [0,3] or self.specialeventstype[i] > 3:
-                                            if i in self.l_event_flags_pos_dict:
-                                                xytext = self.l_event_flags_pos_dict[i]
-                                            elif i in self.l_event_flags_dict:
-                                                xytext = self.l_event_flags_dict[i].xyann
+                                    if self.backgroundEtypes[i] == 4 or self.eventsGraphflag in [0,3,4]:
+                                        if self.backgroundEtypes[i] < 4 and (not aw.qmc.renderEventsDescr or len(self.backgroundEStrings[i].strip()) == 0):
+                                            Betype = self.Betypesf(self.backgroundEtypes[i])
+                                            firstletter = str(Betype[0])
+                                            secondletter = self.eventsvaluesShort(self.backgroundEvalues[i])
+                                            if aw.eventslidertemp[self.backgroundEtypes[i]]:
+                                                thirdletter = self.mode # postfix
                                             else:
-                                                xytext = (self.timex[event_idx],temp+height)
-                                            anno = self.ax.annotate(f"{firstletter}{secondletter}", xy=(self.timex[event_idx], temp),
-                                                         xytext=xytext,
-                                                         alpha=0.9,
-                                                         color=textcolor,
-                                                         va="center", ha="center",
-                                                         arrowprops=dict(arrowstyle='-',color=boxcolor,alpha=0.4), # ,relpos=(0,0)
-                                                         bbox=dict(boxstyle=boxstyle, fc=boxcolor, ec='none'),
-                                                         fontproperties=fontprop_small,
-                                                         path_effects=[PathEffects.withStroke(linewidth=0.5,foreground=self.palette["background"])],
-                                                         )
-                                            try:
-                                                anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
-                                                anno.draggable(use_blit=True)
-                                                anno.set_picker(aw.draggable_text_box_picker)
-                                            except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
-                                                pass
-                                            # register draggable flag annotation to be re-created after re-positioning on redraw
-                                            self.l_event_flags_dict[i] = anno
-                                            if not aw.qmc.showeventsonbt and aw.qmc.ETcurve:
-                                                self.l_eteventannos.append(anno)
-                                            else:
-                                                self.l_bteventannos.append(anno)
-                                        elif self.eventsGraphflag == 4:
-                                            if thirdletter != "":
-                                                firstletter = ""
-                                            anno = self.ax.annotate(f"{firstletter}{secondletter}{thirdletter}", xy=(self.timex[event_idx], temp),
-                                                         xytext=(self.timex[event_idx],temp),
-                                                         alpha=0.9,
-                                                         color=textcolor,
-                                                         va="center", ha="center",
-                                                         bbox=dict(boxstyle=boxstyle, fc=boxcolor, ec='none'),
-                                                         fontproperties=fontprop_small,
-                                                         path_effects=[PathEffects.withStroke(linewidth=0.5,foreground=self.palette["background"])],
-                                                         )
-                                            if self.specialeventstype[i] == 0:
-                                                self.l_eventtype1annos.append(anno)
-                                            elif self.specialeventstype[i] == 1:
-                                                self.l_eventtype2annos.append(anno)
-                                            elif self.specialeventstype[i] == 2:
-                                                self.l_eventtype3annos.append(anno)
-                                            elif self.specialeventstype[i] == 3:
-                                                self.l_eventtype4annos.append(anno)
-                                            try:
-                                                anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
-                                            except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
-                                                pass
-                            except Exception as e:
-                                _log.exception(e) # pylint: disable=broad-except
-
-                #plot delta ET (self.delta1) and delta BT (self.delta2)
-                if self.DeltaETflag or self.DeltaBTflag:
-                    ##### DeltaET,DeltaBT curves
-                    if self.delta_ax:
-                        if len(self.timex) == len(self.delta1) and len(self.timex) == len(self.delta2):
-                            trans = self.delta_ax.transData #=self.delta_ax.transScale + (self.delta_ax.transLimits + self.delta_ax.transAxes)
-                            if aw.qmc.swapdeltalcds:
-                                self.drawDeltaET(trans,charge_idx,drop_idx)
-                                self.drawDeltaBT(trans,charge_idx,drop_idx)
+                                                thirdletter = aw.eventsliderunits[self.backgroundEtypes[i]] # postfix
+                                        else:
+                                            firstletter = self.backgroundEStrings[i].strip()[:aw.qmc.eventslabelschars]
+                                            if firstletter == "":
+                                                firstletter = "E"
+                                            secondletter = ""
+                                            thirdletter = ""
+                                        if self.mode == "F":
+                                            height = 50
+                                        else:
+                                            height = 20
+    
+                                        if self.eventsGraphflag == 4 and self.backgroundEtypes[i] < 4 and aw.qmc.showEtypes[self.backgroundEtypes[i]] and len(Bevalues[self.backgroundEtypes[i]])>0:
+                                            Btemp = Bevalues[self.backgroundEtypes[i]][0]
+                                            Bevalues[self.backgroundEtypes[i]] = Bevalues[self.backgroundEtypes[i]][1:]
+                                        else:
+                                            Btemp = None
+    
+                                        if Btemp != None and aw.qmc.showEtypes[self.backgroundEtypes[i]]:
+                                            if self.backgroundEtypes[i] == 0:
+                                                boxstyle = 'roundtooth,pad=0.4'
+                                                boxcolor = self.EvalueColor[0]
+                                                textcolor = self.EvalueTextColor[0]
+                                            elif self.backgroundEtypes[i] == 1:
+                                                boxstyle = 'round,pad=0.3,rounding_size=0.8'
+                                                boxcolor = self.EvalueColor[1]
+                                                textcolor = self.EvalueTextColor[1]
+                                            elif self.backgroundEtypes[i] == 2:
+                                                boxstyle = 'sawtooth,pad=0.3,tooth_size=0.2'
+                                                boxcolor = self.EvalueColor[2]
+                                                textcolor = self.EvalueTextColor[2]
+                                            elif self.backgroundEtypes[i] == 3:
+                                                boxstyle = 'round4,pad=0.3,rounding_size=0.15'
+                                                boxcolor = self.EvalueColor[3]
+                                                textcolor = self.EvalueTextColor[3]
+                                            elif self.backgroundEtypes[i] == 4:
+                                                boxstyle = 'square,pad=0.1'
+                                                boxcolor = self.palette["specialeventbox"]
+                                                textcolor = self.palette["specialeventtext"]
+                                            if self.eventsGraphflag in [0,3] or self.backgroundEtypes[i] > 3:
+                                                anno = self.ax.annotate("f{firstletter}{secondletter}", xy=(self.timeB[int(self.backgroundEvents[i])], Btemp),
+                                                             xytext=(self.timeB[int(self.backgroundEvents[i])],Btemp+height),
+                                                             alpha=min(aw.qmc.backgroundalpha + 0.1, 1.0),
+                                                             color=aw.qmc.palette["bgeventtext"],
+                                                             va="center", ha="center",
+                                                             arrowprops=dict(arrowstyle='-',color=boxcolor,alpha=aw.qmc.backgroundalpha), # ,relpos=(0,0)
+                                                             bbox=dict(boxstyle=boxstyle, fc=boxcolor, ec='none', alpha=aw.qmc.backgroundalpha),
+                                                             fontproperties=fontprop_small,
+                                                             path_effects=[PathEffects.withStroke(linewidth=0.5,foreground=self.palette["background"])],
+                                                             )
+                                                try:
+                                                    anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
+                                                except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
+                                                    pass
+                                            elif self.eventsGraphflag == 4:
+                                                if thirdletter != "":
+                                                    firstletter = ""
+                                                anno = self.ax.annotate(f"{firstletter}{secondletter}{thirdletter}", xy=(self.timeB[int(self.backgroundEvents[i])], Btemp),
+                                                             xytext=(self.timeB[int(self.backgroundEvents[i])],Btemp),
+                                                             alpha=min(aw.qmc.backgroundalpha + 0.3, 1.0),
+                                                             color=aw.qmc.palette["bgeventtext"],
+                                                             va="center", ha="center",
+                                                             bbox=dict(boxstyle=boxstyle, fc=boxcolor, ec='none',
+                                                                alpha=min(aw.qmc.backgroundalpha, 1.0)),
+                                                             fontproperties=fontprop_small,
+                                                             path_effects=[PathEffects.withStroke(linewidth=0.5,foreground=self.palette["background"])],
+                                                             )
+                                                try:
+                                                    anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
+                                                except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
+                                                    pass
+                        #check backgroundDetails flag
+                        if self.backgroundDetails:
+                            d = aw.qmc.ylimit - aw.qmc.ylimit_min
+                            d = d - d/5
+                            #if there is a profile loaded with CHARGE, then save time to get the relative time
+                            if self.timeindex[0] != -1:   #verify it exists before loading it, otherwise the list could go out of index
+                                startB = self.timex[self.timeindex[0]]
                             else:
-                                self.drawDeltaBT(trans,charge_idx,drop_idx)
-                                self.drawDeltaET(trans,charge_idx,drop_idx)
-                if recomputeAllDeltas and self.delta_ax is not None and two_ax_mode:
-                    aw.autoAdjustAxis(timex=False)
-                    self.delta_ax.set_ylim(self.zlimit_min,self.zlimit)
-                    if self.zgrid > 0:
-                        self.delta_ax.yaxis.set_major_locator(ticker.MultipleLocator(self.zgrid))
-                        self.delta_ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
-                    
-                ##### Extra devices-curves
-                for l in self.extratemp1lines + self.extratemp2lines:
-                    try:
-                        if l is not None:
-                            l.remove()
-                    except Exception: # pylint: disable=broad-except
-                        pass
-                self.extratemp1lines,self.extratemp2lines = [],[]
-                for i in range(min(
-                        len(self.extratimex),
-                        len(self.extratemp1),
-                        len(self.extradevicecolor1),
-                        len(self.extraname1),
-                        len(self.extratemp2),
-                        len(self.extradevicecolor2),
-                        len(self.extraname2))):
-                    if self.extratimex[i] is not None and self.extratimex[i] and len(self.extratimex[i])>1:
-                        timexi_lin = numpy.linspace(self.extratimex[i][0],self.extratimex[i][-1],len(self.extratimex[i]))
-                    else:
-                        timexi_lin = None
-                    try:
-                        if aw.extraCurveVisibility1[i]:
-                            if (not aw.qmc.flagon or aw.qmc.smooth_curves_on_recording) and (smooth or len(self.extrastemp1[i]) != len(self.extratimex[i])):
-                                self.extrastemp1[i] = self.smooth_list(self.extratimex[i],fill_gaps(self.extratemp1[i]),window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=timexi_lin)
-                            else: # we don't smooth, but remove the dropouts
-                                self.extrastemp1[i] = fill_gaps(self.extratemp1[i])
-                            if aw.extraDelta1[i]:
-                                trans = self.delta_ax.transData
-                            else:
-                                trans = self.ax.transData
-                            if not self.flagstart and not self.foregroundShowFullflag and len(self.extrastemp1[i]) > 0:
-                                visible_extratemp1 = [None]*charge_idx + self.extrastemp1[i][charge_idx:drop_idx+1] + [None]*(len(self.extratimex[i])-drop_idx-1)
-                            else:
-                                visible_extratemp1 = self.extrastemp1[i]
-                            # don't draw -1:
-                            visible_extratemp1 = [r if r !=-1 else None for r in visible_extratemp1]
-                            # first draw the fill if any, but not during recording!
-                            if not aw.qmc.flagstart and aw.extraFill1[i] > 0:
-                                self.ax.fill_between(self.extratimex[i], 0, visible_extratemp1,transform=trans,color=self.extradevicecolor1[i],alpha=aw.extraFill1[i]/100.,sketch_params=None)
-                            self.extratemp1lines.append(self.ax.plot(self.extratimex[i],visible_extratemp1,transform=trans,color=self.extradevicecolor1[i],
-                                sketch_params=None,path_effects=[PathEffects.withStroke(linewidth=self.extralinewidths1[i]+aw.qmc.patheffects,foreground=self.palette["background"])],
-                                markersize=self.extramarkersizes1[i],marker=self.extramarkers1[i],linewidth=self.extralinewidths1[i],linestyle=self.extralinestyles1[i],
-                                drawstyle=self.extradrawstyles1[i],label=extraname1_subst[i])[0])
-                    except Exception as ex: # pylint: disable=broad-except
-                        _log.exception(ex)
-                        _, _, exc_tb = sys.exc_info()
-                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
-                    try:
-                        if aw.extraCurveVisibility2[i]:
-                            if (not aw.qmc.flagon or aw.qmc.smooth_curves_on_recording) and (smooth or len(self.extrastemp2[i]) != len(self.extratimex[i])):
-                                self.extrastemp2[i] = self.smooth_list(self.extratimex[i],fill_gaps(self.extratemp2[i]),window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=timexi_lin)
-                            else:
-                                self.extrastemp2[i] = fill_gaps(self.extratemp2[i])
-                            if aw.extraDelta2[i]:
-                                trans = self.delta_ax.transData
-                            else:
-                                trans = self.ax.transData
-                            if not self.flagstart and not self.foregroundShowFullflag and len(self.extrastemp2[i]) > 0:
-                                visible_extratemp2 = [None]*charge_idx + self.extrastemp2[i][charge_idx:drop_idx+1] + [None]*(len(self.extratimex[i])-drop_idx-1)
-                            else:
-                                visible_extratemp2 = self.extrastemp2[i]
-                            # don't draw -1:
-                            visible_extratemp2 = [r if r !=-1 else None for r in visible_extratemp2]
-                            # first draw the fill if any
-                            if not aw.qmc.flagstart and aw.extraFill2[i] > 0:
-                                self.ax.fill_between(self.extratimex[i], 0, visible_extratemp2,transform=trans,color=self.extradevicecolor2[i],alpha=aw.extraFill2[i]/100.,sketch_params=None)
-                            self.extratemp2lines.append(self.ax.plot(self.extratimex[i],visible_extratemp2,transform=trans,color=self.extradevicecolor2[i],
-                                sketch_params=None,path_effects=[PathEffects.withStroke(linewidth=self.extralinewidths2[i]+aw.qmc.patheffects,foreground=self.palette["background"])],
-                                markersize=self.extramarkersizes2[i],marker=self.extramarkers2[i],linewidth=self.extralinewidths2[i],linestyle=self.extralinestyles2[i],drawstyle=self.extradrawstyles2[i],label= extraname2_subst[i])[0])
-                    except Exception as ex: # pylint: disable=broad-except
-                        _log.exception(ex)
-                        _, _, exc_tb = sys.exc_info()
-                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
-                ##### ET,BT curves
-                
-                if not self.flagstart and not self.foregroundShowFullflag:
-                    visible_et = [None]*charge_idx + self.stemp1[charge_idx:drop_idx+1] + [None]*(len(self.timex)-drop_idx-1)
-                    visible_bt = [None]*charge_idx + self.stemp2[charge_idx:drop_idx+1] + [None]*(len(self.timex)-drop_idx-1)
-                else:
-                    visible_et = self.stemp1
-                    visible_bt = self.stemp2
-                
-                if aw.qmc.swaplcds:
-                    self.drawET(visible_et)
-                    self.drawBT(visible_bt)
-                else:
-                    self.drawBT(visible_bt)
-                    self.drawET(visible_et)
-
-                if aw.qmc.ETcurve:
-                    self.handles.append(self.l_temp1)
-                    self.labels.append(aw.arabicReshape(aw.ETname))
-                if aw.qmc.BTcurve:
-                    self.handles.append(self.l_temp2)
-                    self.labels.append(aw.arabicReshape(aw.BTname))
-
-                if self.DeltaETflag:
-                    self.handles.append(self.l_delta1)
-                    self.labels.append(aw.arabicReshape(f"{deltaLabelMathPrefix}{aw.ETname}"))
-                if self.DeltaBTflag:
-                    self.handles.append(self.l_delta2)
-                    self.labels.append(aw.arabicReshape(f"{deltaLabelMathPrefix}{aw.BTname}"))
-
-                nrdevices = len(self.extradevices)
-
-                if nrdevices and not self.designerflag:
-                    xtmpl1idx = 0
-                    xtmpl2idx = 0
-                    for i in range(nrdevices):
-                        if aw.extraCurveVisibility1[i]:
-                            idx1 = xtmpl1idx
-                            xtmpl1idx = xtmpl1idx + 1
-                            l1 = extraname1_subst[i]
-                            if not l1.startswith("_"):
-                                self.handles.append(self.extratemp1lines[idx1])
-                                try:
-                                    self.labels.append(aw.arabicReshape(l1.format(self.etypes[0],self.etypes[1],self.etypes[2],self.etypes[3])))
-                                except Exception: # pylint: disable=broad-except
-                                    # a key error can occure triggered by the format if curley braces are used without reference
-                                    self.labels.append(aw.arabicReshape(l1))
-                        if aw.extraCurveVisibility2[i]:
-                            idx2 = xtmpl2idx
-                            xtmpl2idx = xtmpl2idx + 1
-                            l2 = extraname2_subst[i]
-                            if not l2.startswith("_"):
-                                self.handles.append(self.extratemp2lines[idx2])
-                                try:
-                                    self.labels.append(aw.arabicReshape(l2.format(self.etypes[0],self.etypes[1],self.etypes[2],self.etypes[3])))
-                                except Exception: # pylint: disable=broad-except
-                                    # a key error can occure triggered by the format if curley braces are used without reference
-                                    self.labels.append(aw.arabicReshape(l2))
-
-                if self.eventsshowflag and self.eventsGraphflag in [2,3,4] and Nevents:
-                    if E1_nonempty and aw.qmc.showEtypes[0]:
-                        self.handles.append(self.l_eventtype1dots)
-                        self.labels.append(aw.arabicReshape(self.etypesf(0)))
-                    if E2_nonempty and aw.qmc.showEtypes[1]:
-                        self.handles.append(self.l_eventtype2dots)
-                        self.labels.append(aw.arabicReshape(self.etypesf(1)))
-                    if E3_nonempty and aw.qmc.showEtypes[2]:
-                        self.handles.append(self.l_eventtype3dots)
-                        self.labels.append(aw.arabicReshape(self.etypesf(2)))
-                    if E4_nonempty and aw.qmc.showEtypes[3]:
-                        self.handles.append(self.l_eventtype4dots)
-                        self.labels.append(aw.arabicReshape(self.etypesf(3)))
-
-                if not self.designerflag:
-                    if aw.qmc.BTcurve:
-                        if self.flagstart: # no smoothed lines in this case, pass normal BT
-                            aw.qmc.l_annotations = self.place_annotations(
-                                aw.qmc.TPalarmtimeindex,
-                                aw.qmc.ylimit - aw.qmc.ylimit_min,
-                                self.timex,self.timeindex,
-                                self.temp2,self.temp2)
-                        else:
-                            TP_index = aw.findTP()
-                            if aw.qmc.annotationsflag:
-                                aw.qmc.l_annotations = self.place_annotations(
-                                    TP_index,aw.qmc.ylimit - aw.qmc.ylimit_min,
-                                    self.timex,
-                                    self.timeindex,
-                                    self.temp2,
-                                    self.stemp2)
-                            if self.timeindex[6]:
-                                self.writestatistics(TP_index)
-                        #add the time and temp annotations to the bt list
-                        for x in aw.qmc.l_annotations:
-                            self.l_bteventannos.append(x)
-                    elif self.timeindex[6]:
-                        TP_index = aw.findTP()
-                        self.writestatistics(TP_index)
-
-                if not sampling and not aw.qmc.flagon and self.timeindex[6] and aw.qmc.statssummary:
-                    self.statsSummary()
-                else:
-                    self.stats_summary_rect = None
-
-                if not sampling and not aw.qmc.flagon and self.timeindex[6] and aw.qmc.AUCshowFlag:
-                    self.drawAUC()
-                #update label rotating_colors
-                for label in self.ax.xaxis.get_ticklabels():
-                    label.set_color(self.palette["xlabel"])
-                for label in self.ax.yaxis.get_ticklabels():
-                    label.set_color(self.palette["ylabel"])
-                if two_ax_mode and self.delta_ax:
-                    for label in self.delta_ax.yaxis.get_ticklabels():
-                        label.set_color(self.palette["ylabel"])
-
-                #write legend
-                if self.legendloc and not sampling and not aw.qmc.flagon and len(self.timex) > 2:
-                    rcParams['path.effects'] = []
-                    prop = aw.mpl_fontproperties.copy()
-                    prop.set_size("x-small")
-                    if len(self.handles) > 7:
-                        ncol = int(math.ceil(len(self.handles)/4.))
-                    elif len(self.handles) > 3:
-                        ncol = int(math.ceil(len(self.handles)/2.))
-                    else:
-                        ncol = int(math.ceil(len(self.handles)))
-                    if aw.qmc.graphfont == 1:
-                        self.labels = [self.__to_ascii(l) for l in self.labels]
-                    if self.legend is None:
-                        if self.legendloc_pos is None:
-                            loc = self.legendloc # a position selected in the axis dialog
-                        else:
-                            loc = self.legendloc_pos # a user define legend position set by drag-and-drop
-                    else:
-                        loc = self.legend._loc # pylint: disable=protected-access
-                    try:
-                        leg = self.ax.legend(self.handles,self.labels,loc=loc,ncol=ncol,fancybox=True,prop=prop,shadow=False,frameon=True)
-                    except Exception:
-                        pass
-                    try:
-                        leg.set_in_layout(False) # remove legend from tight_layout calculation
-                    except Exception: # pylint: disable=broad-except # set_in_layout not available in mpl<3.x
-                        pass
-                    self.legend = leg
-                    self.legend_lines = leg.get_lines()
-                    for h in leg.legendHandles:
-                        h.set_picker(False) # we disable the click to hide on the handles feature
-                        #h.set_picker(aw.draggable_text_box_picker) # as setting this picker results in non-termination
-                    for l in leg.texts:
-                        #l.set_picker(5)
-                        l.set_picker(aw.draggable_text_box_picker)
-                    try:
-                        leg.set_draggable(state=True,use_blit=True)  #,update='bbox')
-                        leg.set_picker(aw.draggable_text_box_picker)
-                    except Exception: # pylint: disable=broad-except # not available in mpl<3.x
-                        leg.draggable(state=True) # for mpl 2.x
-                    frame = leg.get_frame()
-                    frame.set_facecolor(self.palette["legendbg"])
-                    frame.set_alpha(self.alpha["legendbg"])
-                    frame.set_edgecolor(self.palette["legendborder"])
-                    frame.set_linewidth(0.5)
-                    for line,text in zip(leg.get_lines(), leg.get_texts()):
-                        text.set_color(line.get_color())
+                                if self.timeindexB[0] > 0:
+                                    startB = self.timeB[self.timeindexB[0]]
+                                else:
+                                    startB = 0
+                            try:
+                                # background annotations are not draggable
+                                aw.qmc.l_background_annotations.extend(self.place_annotations(
+                                    -1, # TP_index
+                                    d,
+                                    self.timeB,
+                                    self.timeindexB,
+                                    self.temp2B,
+                                    self.stemp2B,
+                                    startB,
+                                    self.timeindex, # timeindex2
+                                    TP_time_loaded=self.TP_time_B_loaded, 
+                                    draggable=True))
+                            except Exception: # pylint: disable=broad-except
+                                pass
+    
+                        #show the analysis results if they exist
+    #                    if len(self.analysisresultsstr) > 0:
+    #                        aw.analysisShowResults(redraw=False)
+    
+                        #END of Background
+    
                     if aw.qmc.patheffects:
                         rcParams['path.effects'] = [PathEffects.withStroke(linewidth=aw.qmc.patheffects, foreground=self.palette["background"])]
-                else:
-                    self.legend = None
-
-                # we create here the project line plots to have the accurate time axis after CHARGE
-                dashes_setup = [0.4,0.8,0.1,0.8] # simulating matplotlib 1.5 default on 2.0
-
-                #watermark image
-                self.placelogoimage()
+    
+                    self.handles = []
+                    self.labels = []
+                    self.legend_lines = []
+    
+                    self.smoothETBT(smooth,recomputeAllDeltas,sampling,decay_smoothing_p)
+    
+    ## Output Idle Noise StdDev of BT RoR
+    #                        try:
+    #                            start = aw.qmc.timeindex[0]
+    #                            end = aw.qmc.timeindex[6]
+    #                            if start == -1:
+    #                                start = 0
+    #                            start = start + 30 # avoiding the empty begin of heavy smoothed data
+    #                            if end == 0:
+    #                                end = min(len(self.delta2) -1,100)
+    #                            print("ET RoR mean:",numpy.mean([x for x in self.delta1[start:end] if x is not None]))
+    #                            print("ET RoR std:",numpy.std([x for x in self.delta1[start:end] if x is not None]))
+    #                            print("BT RoR mean:",numpy.mean([x for x in self.delta2[start:end] if x is not None]))
+    #                            print("BT RoR std:",numpy.std([x for x in self.delta2[start:end] if x is not None]))
+    #                            print("BT mean:",numpy.mean([x for x in self.temp2[start:end] if x is not None]))
+    #                            print("BT std:",numpy.std([x for x in self.temp2[start:end] if x is not None]))
+    #                            max_BT = numpy.max([x for x in self.temp2[start:end] if x is not None])
+    #                            min_BT = numpy.max([x for x in self.temp2[start:end] if x is not None])
+    #                            mean_BT = numpy.mean([x for x in self.temp2[start:end] if x is not None])
+    #                            print("BT max delta:", max(mean_BT - min_BT,max_BT - mean_BT))
+    #                        except Exception as e: # pylint: disable=broad-except
+    #                            _log.exception(e)
+                    
+                    # CHARGE-DROP curve index limits
+                    charge_idx = 0
+                    if self.timeindex[0] > -1:
+                        charge_idx = self.timeindex[0]
+                    drop_idx = len(self.timex)-1
+                    if self.timeindex[6] > 0:
+                        drop_idx = self.timeindex[6]
+    
+                    if self.eventsshowflag:
+                        Nevents = len(self.specialevents)
+                        #three modes of drawing events.
+                        # the first mode just places annotations. They are text annotations.
+                        # The second mode aligns the events types to a bar height so that they can be visually identified by type. They are text annotations
+                        # the third mode plots the events by value. They are not annotations but actual lines.
+    
+                        if self.eventsGraphflag == 1 and Nevents:
+    
+                            char1 = self.etypes[0][0]
+                            char2 = self.etypes[1][0]
+                            char3 = self.etypes[2][0]
+                            char4 = self.etypes[3][0]
+    
+                            if self.mode == "F":
+                                row = {char1:self.phases[0]-20,char2:self.phases[0]-40,char3:self.phases[0]-60,char4:self.phases[0]-80}
+                            else:
+                                row = {char1:self.phases[0]-10,char2:self.phases[0]-20,char3:self.phases[0]-30,char4:self.phases[0]-40}
+    
+                            #draw lines of color between events of the same type to help identify areas of events.
+                            #count (as length of the list) and collect their times for each different type. Each type will have a different plot heigh
+                            netypes=[[],[],[],[]]
+                            for i in range(Nevents):
+                                try:
+                                    tx = self.timex[self.specialevents[i]]
+                                    if self.foregroundShowFullflag or ((self.timeindex[0] > -1 and tx >= self.timex[self.timeindex[0]]) and (self.timeindex[6] > 0 and tx <= self.timex[self.timeindex[6]])):
+                                        if self.specialeventstype[i] == 0 and aw.qmc.showEtypes[0]:
+                                            netypes[0].append(tx)
+                                        elif self.specialeventstype[i] == 1 and aw.qmc.showEtypes[1]:
+                                            netypes[1].append(tx)
+                                        elif self.specialeventstype[i] == 2 and aw.qmc.showEtypes[2]:
+                                            netypes[2].append(tx)
+                                        elif self.specialeventstype[i] == 3 and aw.qmc.showEtypes[3]:
+                                            netypes[3].append(tx)
+                                except Exception as e:  # pylint: disable=broad-except
+                                    _log.debug(e)
+    
+                            letters = "".join((char1,char2,char3,char4))   #"NPDF" first letter for each type (None, Power, Damper, Fan)
+                            rotating_colors = [self.palette["rect2"],self.palette["rect3"]] #rotating rotating_colors
+                            for p in range(len(letters)):
+                                if len(netypes[p]) > 1:
+                                    for i in range(len(netypes[p])-1):
+                                        #draw differentiating color bars between events and place then in a different height acording with type
+                                        rect = patches.Rectangle((netypes[p][i], row[letters[p]]), width = (netypes[p][i+1]-netypes[p][i]), height = step, color = rotating_colors[i%2],alpha=0.5)
+                                        self.ax.add_patch(rect)
+    
+                            # annotate event
+                            for i in range(Nevents):
+                                if self.specialeventstype[i] > 3:
+                                    # a special event of type "--"
+                                    pass
+                                elif aw.qmc.showEtypes[self.specialeventstype[i]]:
+                                    event_idx = int(self.specialevents[i])
+                                    try:
+                                        if not self.flagstart and not self.foregroundShowFullflag and (event_idx < charge_idx or event_idx > drop_idx):
+                                            continue
+                                    
+                                        firstletter = self.etypes[self.specialeventstype[i]][0]
+                                        secondletter = self.eventsvaluesShort(self.specialeventsvalue[i])
+        
+                                        #some times ET is not drawn (ET = 0) when using device NONE
+                                        if aw.qmc.ETcurve or aw.qmc.BTcurve:
+                                            # plot events on BT when showeventsonbt is true
+                                            if aw.qmc.showeventsonbt and aw.qmc.BTcurve:
+                                                col = self.palette["bt"]
+                                                if aw.qmc.flagon:
+                                                    temps = self.temp2
+                                                else:
+                                                    temps = self.stemp2
+                                            elif (aw.qmc.ETcurve and self.temp1[event_idx] >= self.temp2[event_idx]) or (not aw.qmc.BTcurve):
+                                                col = self.palette["et"]
+                                                if aw.qmc.flagon:
+                                                    temps = self.temp1
+                                                else:
+                                                    temps = self.stemp1
+                                            else:
+                                                col = self.palette["bt"]
+                                                if aw.qmc.flagon:
+                                                    temps = self.temp2
+                                                else:
+                                                    temps = self.stemp2
+        #                                    fcolor=self.EvalueColor[self.specialeventstype[i]]
+                                            if platf == 'Windows':
+                                                vert_offset = 5.0
+                                            else:
+                                                vert_offset = 2.5
+                                            anno = self.ax.annotate(f"{firstletter}{secondletter}",
+                                                             xy=(self.timex[event_idx],
+                                                             temps[event_idx]),
+                                                             xytext=(self.timex[event_idx],row[firstletter] + vert_offset),
+                                                             alpha=1.,
+                                                             va="center", ha="left",
+                                                             bbox=dict(boxstyle='square,pad=0.1', fc=self.palette["specialeventbox"], ec='none'),
+                                                             path_effects=[PathEffects.withStroke(linewidth=0.5,foreground=self.palette["background"])],
+                                                             color=self.palette["specialeventtext"],
+                                                             arrowprops=dict(arrowstyle='-',color=col,alpha=0.4,relpos=(0,0)),
+                                                             fontsize="xx-small",
+                                                             fontproperties=fontprop_small)
+                                            try:
+                                                anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
+                                            except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
+                                                pass
+                                    except Exception as e: # pylint: disable=broad-except
+                                        _log.exception(e)
+    
+                        elif self.eventsGraphflag in [2,3,4]: # in this mode we have to generate the plots even if Nevents=0 to avoid redraw issues resulting from an incorrect number of plot count
+                            self.E1timex,self.E2timex,self.E3timex,self.E4timex = [],[],[],[]
+                            self.E1values,self.E2values,self.E3values,self.E4values = [],[],[],[]
+                            E1_nonempty = E2_nonempty = E3_nonempty = E4_nonempty = False
+                            E1_last = E2_last = E3_last = E4_last = 0  #not really necessary but guarantees that Ex_last is defined
+                            E1_CHARGE = E2_CHARGE = E3_CHARGE = E4_CHARGE = None # remember event value @CHARGE to add if not self.foregroundShowFullflag
+                            event_pos_offset = self.eventpositionbars[0]
+                            event_pos_factor = self.eventpositionbars[1] - self.eventpositionbars[0]
+                            #properties for the event annotations
+                            eventannotationprop = aw.mpl_fontproperties.copy()
+                            hoffset = 3  #relative to the event dot
+                            voffset = 1  #relative to the event dot
+                            self.overlapList = []
+                            eventannotationprop.set_size("x-small")
+                            for i in range(Nevents):
+                                pos = max(0,int(round((self.specialeventsvalue[i]-1)*10)))
+                                try:
+                                    tx = self.timex[self.specialevents[i]]
+                                    if self.specialeventstype[i] == 0 and aw.qmc.showEtypes[0]:
+                                        if not self.foregroundShowFullflag and ((self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]) or (self.timeindex[6] > 0 and tx > self.timex[self.timeindex[6]])):
+                                            if (self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]):
+                                                E1_CHARGE = pos # remember event value at CHARGE
+                                            # don't draw event lines before CHARGE if foregroundShowFullflag is not set
+                                            continue
+                                        self.E1timex.append(tx)
+                                        if self.clampEvents: # in clamp mode we render also event values higher than 100:
+                                            self.E1values.append(pos)
+                                        else:
+                                            self.E1values.append((pos*event_pos_factor)+event_pos_offset)
+                                        E1_nonempty = True
+                                        E1_last = i
+                                        try:
+                                            if not sampling and not self.flagstart and self.eventsGraphflag!=4 and self.specialeventannovisibilities[0]:
+                                                E1_annotation = self.parseSpecialeventannotation(self.specialeventannotations[0], i)
+                                                temp = self.E1values[-1]
+                                                anno = self.ax.annotate(E1_annotation, xy=(hoffset + self.timex[int(self.specialevents[i])], voffset + temp),
+                                                            alpha=.9,
+                                                            color=self.palette["text"],
+                                                            va="bottom", ha="left",
+                                                            fontproperties=eventannotationprop,
+                                                            path_effects=[PathEffects.withStroke(linewidth=self.patheffects,foreground=self.palette["background"])],
+                                                            )
+                                                self.l_eventtype1annos.append(anno)
+                                                try:
+                                                    anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
+                                                except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
+                                                    pass
+                                                try:
+                                                    overlap = self.checkOverlap(anno) #, i, E1_annotation)
+                                                    if overlap:
+                                                        anno.remove()
+                                                except Exception: # pylint: disable=broad-except
+                                                    pass
+                                        except Exception as ex: # pylint: disable=broad-except
+                                            _log.exception(ex)
+                                            _, _, exc_tb = sys.exc_info()
+                                            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                                    elif self.specialeventstype[i] == 1 and aw.qmc.showEtypes[1]:
+                                        tx = self.timex[self.specialevents[i]]
+                                        if not self.foregroundShowFullflag and ((self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]) or (self.timeindex[6] > 0 and tx > self.timex[self.timeindex[6]])):
+                                            if (self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]):
+                                                E2_CHARGE = pos # remember event value at CHARGE
+                                            # don't draw event lines before CHARGE if foregroundShowFullflag is not set
+                                            continue
+                                        self.E2timex.append(tx)
+                                        if self.clampEvents: # in clamp mode we render also event values higher than 100:
+                                            self.E2values.append(pos)
+                                        else:
+                                            self.E2values.append((pos*event_pos_factor)+event_pos_offset)
+                                        E2_nonempty = True
+                                        E2_last = i
+                                        try:
+                                            if not sampling and not self.flagstart and self.eventsGraphflag!=4 and self.specialeventannovisibilities[1]:
+                                                E2_annotation = self.parseSpecialeventannotation(self.specialeventannotations[1], i)
+                                                temp = self.E2values[-1]
+                                                anno = self.ax.annotate(E2_annotation, xy=(hoffset + self.timex[int(self.specialevents[i])], voffset + temp),
+                                                            alpha=.9,
+                                                            color=self.palette["text"],
+                                                            va="bottom", ha="left",
+                                                            fontproperties=eventannotationprop,
+                                                            path_effects=[PathEffects.withStroke(linewidth=self.patheffects,foreground=self.palette["background"])],
+                                                            )
+                                                self.l_eventtype2annos.append(anno)
+                                                try:
+                                                    anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
+                                                except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
+                                                    pass
+                                                try:
+                                                    overlap = self.checkOverlap(anno) #, i, E2_annotation)
+                                                    if overlap:
+                                                        anno.remove()
+                                                except Exception: # pylint: disable=broad-except
+                                                    pass
+        
+                                        except Exception as ex: # pylint: disable=broad-except
+                                            _log.exception(ex)
+                                            _, _, exc_tb = sys.exc_info()
+                                            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                                    elif self.specialeventstype[i] == 2 and aw.qmc.showEtypes[2]:
+                                        tx = self.timex[self.specialevents[i]]
+                                        if not self.foregroundShowFullflag and ((self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]) or (self.timeindex[6] > 0 and tx > self.timex[self.timeindex[6]])):
+                                            if (self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]):
+                                                E3_CHARGE = pos # remember event value at CHARGE
+                                            # don't draw event lines before CHARGE if foregroundShowFullflag is not set
+                                            continue
+                                        self.E3timex.append(tx)
+                                        if self.clampEvents: # in clamp mode we render also event values higher than 100:
+                                            self.E3values.append(pos)
+                                        else:
+                                            self.E3values.append((pos*event_pos_factor)+event_pos_offset)
+                                        E3_nonempty = True
+                                        E3_last = i
+                                        try:
+                                            if not sampling and not self.flagstart and self.eventsGraphflag!=4 and self.specialeventannovisibilities[2]:
+                                                E3_annotation = self.parseSpecialeventannotation(self.specialeventannotations[2], i)
+                                                temp = self.E3values[-1]
+                                                anno = self.ax.annotate(E3_annotation, xy=(hoffset + self.timex[int(self.specialevents[i])], voffset + temp),
+                                                            alpha=.9,
+                                                            color=self.palette["text"],
+                                                            va="bottom", ha="left",
+                                                            fontproperties=eventannotationprop,
+                                                            path_effects=[PathEffects.withStroke(linewidth=self.patheffects,foreground=self.palette["background"])],
+                                                            )
+                                                self.l_eventtype3annos.append(anno)
+                                                try:
+                                                    anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
+                                                except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
+                                                    pass
+                                                try:
+                                                    overlap = self.checkOverlap(anno) #, i, E3_annotation)
+                                                    if overlap:
+                                                        anno.remove()
+                                                except Exception: # pylint: disable=broad-except
+                                                    pass
+                                        except Exception as ex: # pylint: disable=broad-except
+                                            _log.exception(ex)
+                                            _, _, exc_tb = sys.exc_info()
+                                            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                                    elif self.specialeventstype[i] == 3 and aw.qmc.showEtypes[3]:
+                                        tx = self.timex[self.specialevents[i]]
+                                        if not self.foregroundShowFullflag and ((self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]) or (self.timeindex[6] > 0 and tx > self.timex[self.timeindex[6]])):
+                                            if (self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]):
+                                                E4_CHARGE = pos # remember event value at CHARGE
+                                            # don't draw event lines before CHARGE if foregroundShowFullflag is not set
+                                            continue
+                                        self.E4timex.append(tx)
+                                        if self.clampEvents: # in clamp mode we render also event values higher than 100:
+                                            self.E4values.append(pos)
+                                        else:
+                                            self.E4values.append((pos*event_pos_factor)+event_pos_offset)
+                                        E4_nonempty = True
+                                        E4_last = i
+                                        try:
+                                            if not sampling and not self.flagstart and self.eventsGraphflag!=4 and self.specialeventannovisibilities[3]:
+                                                E4_annotation = self.parseSpecialeventannotation(self.specialeventannotations[3], i)
+                                                temp = self.E4values[-1]
+                                                anno = self.ax.annotate(E4_annotation, xy=(hoffset + self.timex[int(self.specialevents[i])], voffset + temp),
+                                                            alpha=.9,
+                                                            color=self.palette["text"],
+                                                            va="bottom", ha="left",
+                                                            fontproperties=eventannotationprop,
+                                                            path_effects=[PathEffects.withStroke(linewidth=self.patheffects,foreground=self.palette["background"])],
+                                                            )
+                                                self.l_eventtype4annos.append(anno)
+                                                try:
+                                                    anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
+                                                except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
+                                                    pass
+                                                try:
+                                                    overlap = self.checkOverlap(anno) #, i, E4_annotation)
+                                                    if overlap:
+                                                        anno.remove()
+                                                except Exception: # pylint: disable=broad-except
+                                                    pass
+                                        except Exception as ex: # pylint: disable=broad-except
+                                            _log.exception(ex)
+                                            _, _, exc_tb = sys.exc_info()
+                                            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                                except Exception as e: # pylint: disable=broad-except
+                                    _log.exception(e)
+    
+                            if len(self.E1timex) > 0 and len(self.E1values) == len(self.E1timex):
+                                pos = max(0,int(round((self.specialeventsvalue[E1_last]-1)*10)))
+                                if not self.clampEvents: # in clamp mode we render also event values higher than 100:
+                                    pos = (pos*event_pos_factor)+event_pos_offset
+                                if self.foregroundShowFullflag and (self.timeindex[7] > 0 and aw.qmc.extendevents and self.timex[self.timeindex[7]] > self.timex[self.specialevents[E1_last]]):   #if cool exists and last event was earlier
+                                    self.E1timex.append(self.timex[self.timeindex[7]]) #time of cool
+                                    self.E1values.append(pos) #repeat last event value
+                                elif (self.timeindex[6] > 0 and aw.qmc.extendevents and self.timex[self.timeindex[6]] > self.timex[self.specialevents[E1_last]]):   #if drop exists and last event was earlier
+                                    self.E1timex.append(self.timex[self.timeindex[6]]) #time of drop
+                                    self.E1values.append(pos) #repeat last event value
+                                E1x = self.E1timex
+                                E1y = self.E1values
+                                if E1_CHARGE is not None and len(E1y)>1 and E1y[0] != E1_CHARGE:
+                                    E1x = [self.timex[self.timeindex[0]]] + E1x
+                                    E1y = [E1_CHARGE] + E1y
+                                ds = "steps-post"
+                            else:
+                                E1x = [None]
+                                E1y = [None]
+                                ds = "steps-post"
+                            try:
+                                if self.l_eventtype1dots is not None:
+                                    self.l_eventtype1dots.remove()
+                            except Exception: # pylint: disable=broad-except
+                                pass
+                            self.l_eventtype1dots, = self.ax.plot(E1x, E1y, color=self.EvalueColor[0],
+                                                                marker = (self.EvalueMarker[0] if self.eventsGraphflag != 4 else None),
+                                                                markersize = self.EvalueMarkerSize[0],
+    #                                                            picker=2, # deprecated in MPL 3.3.x
+                                                                picker=True,
+                                                                pickradius=2,#markevery=every,
+                                                                linestyle="-",drawstyle=ds,linewidth = self.Evaluelinethickness[0],alpha = self.Evaluealpha[0],label=self.etypesf(0))
+                            if len(self.E2timex) > 0 and len(self.E2values) == len(self.E2timex):
+                                pos = max(0,int(round((self.specialeventsvalue[E2_last]-1)*10)))
+                                if not self.clampEvents: # in clamp mode we render also event values higher than 100:
+                                    pos = (pos*event_pos_factor)+event_pos_offset
+                                if self.foregroundShowFullflag and (self.timeindex[7] > 0 and aw.qmc.extendevents and self.timex[self.timeindex[7]] > self.timex[self.specialevents[E2_last]]):   #if cool exists and last event was earlier
+                                    self.E2timex.append(self.timex[self.timeindex[7]]) #time of cool
+                                    self.E2values.append(pos) #repeat last event value
+                                elif (self.timeindex[6] > 0 and aw.qmc.extendevents and self.timex[self.timeindex[6]] > self.timex[self.specialevents[E2_last]]):   #if drop exists and last event was earlier
+                                    self.E2timex.append(self.timex[self.timeindex[6]]) #time of drop
+                                    self.E2values.append(pos) #repeat last event value
+                                E2x = self.E2timex
+                                E2y = self.E2values
+                                if E2_CHARGE is not None and len(E2y)>1 and E2y[0] != E2_CHARGE:
+                                    E2x = [self.timex[self.timeindex[0]]] + E2x
+                                    E2y = [E2_CHARGE] + E2y
+                                ds = "steps-post"
+                            else:
+                                E2x = [None]
+                                E2y = [None]
+                                ds = "steps-post"
+                            try:
+                                if self.l_eventtype2dots is not None:
+                                    self.l_eventtype2dots.remove()
+                            except Exception: # pylint: disable=broad-except
+                                pass
+                            self.l_eventtype2dots, = self.ax.plot(E2x, E2y, color=self.EvalueColor[1],
+                                                                marker = (self.EvalueMarker[1] if self.eventsGraphflag != 4 else None),
+                                                                markersize = self.EvalueMarkerSize[1],
+                                                                picker=True,
+                                                                pickradius=2,#markevery=every,
+                                                                linestyle="-",drawstyle=ds,linewidth = self.Evaluelinethickness[1],alpha = self.Evaluealpha[1],label=self.etypesf(1))
+                            if len(self.E3timex) > 0 and len(self.E3values) == len(self.E3timex):
+                                pos = max(0,int(round((self.specialeventsvalue[E3_last]-1)*10)))
+                                if not self.clampEvents: # in clamp mode we render also event values higher than 100:
+                                    pos = (pos*event_pos_factor)+event_pos_offset
+                                if self.foregroundShowFullflag and (self.timeindex[7] > 0 and aw.qmc.extendevents and self.timex[self.timeindex[7]] > self.timex[self.specialevents[E3_last]]):   #if cool exists and last event was earlier
+                                    self.E3timex.append(self.timex[self.timeindex[7]]) #time of cool
+                                    self.E3values.append(pos) #repeat last event value
+                                elif (self.timeindex[6] > 0 and aw.qmc.extendevents and self.timex[self.timeindex[6]] > self.timex[self.specialevents[E3_last]]):   #if drop exists and last event was earlier
+                                    self.E3timex.append(self.timex[self.timeindex[6]]) #time of drop
+                                    self.E3values.append(pos) #repeat last event value
+                                E3x = self.E3timex
+                                E3y = self.E3values
+                                if E3_CHARGE is not None and len(E3y)>1 and E3y[0] != E3_CHARGE:
+                                    E3x = [self.timex[self.timeindex[0]]] + E3x
+                                    E3y = [E3_CHARGE] + E3y
+                                ds = "steps-post"
+                            else:
+                                E3x = [None]
+                                E3y = [None]
+                                ds = "steps-post"
+                            try:
+                                if self.l_eventtype3dots is not None:
+                                    self.l_eventtype3dots.remove()
+                            except Exception: # pylint: disable=broad-except
+                                pass
+                            self.l_eventtype3dots, = self.ax.plot(E3x, E3y, color=self.EvalueColor[2],
+                                                                marker = (self.EvalueMarker[2] if self.eventsGraphflag != 4 else None),
+                                                                markersize = self.EvalueMarkerSize[2],
+                                                                picker=True,
+                                                                pickradius=2,#markevery=every,
+                                                                linestyle="-",drawstyle=ds,linewidth = self.Evaluelinethickness[2],alpha = self.Evaluealpha[2],label=self.etypesf(2))
+                            if len(self.E4timex) > 0 and len(self.E4values) == len(self.E4timex):
+                                pos = max(0,int(round((self.specialeventsvalue[E4_last]-1)*10)))
+                                if not self.clampEvents: # in clamp mode we render also event values higher than 100:
+                                    pos = (pos*event_pos_factor)+event_pos_offset
+                                if self.foregroundShowFullflag and (self.timeindex[7] > 0 and 
+                                        aw.qmc.extendevents and self.timex[self.timeindex[7]] > self.timex[self.specialevents[E4_last]]):   #if cool exists and last event was earlier
+                                    self.E4timex.append(self.timex[self.timeindex[7]]) #time of cool
+                                    self.E4values.append(pos) #repeat last event value
+                                elif (self.timeindex[6] > 0 and aw.qmc.extendevents and self.timex[self.timeindex[6]] > self.timex[self.specialevents[E4_last]]):   #if drop exists and last event was earlier
+                                    self.E4timex.append(self.timex[self.timeindex[6]]) #time of drop
+                                    self.E4values.append(pos) #repeat last event value
+                                E4x = self.E4timex
+                                E4y = self.E4values
+                                if E4_CHARGE is not None and len(E4y)>1 and E4y[0] != E4_CHARGE:
+                                    E4x = [self.timex[self.timeindex[0]]] + E4x
+                                    E4y = [E4_CHARGE] + E4y
+                                ds = "steps-post"
+                            else:
+                                E4x = [None]
+                                E4y = [None]
+                                ds = "steps-post"
+                            try:
+                                if self.l_eventtype4dots is not None:
+                                    self.l_eventtype4dots.remove()
+                            except Exception: # pylint: disable=broad-except
+                                pass
+                            self.l_eventtype4dots, = self.ax.plot(E4x, E4y, color=self.EvalueColor[3],
+                                                                marker = (self.EvalueMarker[3] if self.eventsGraphflag != 4 else None),
+                                                                markersize = self.EvalueMarkerSize[3],
+                                                                picker=True,
+                                                                pickradius=2,#markevery=every,
+                                                                linestyle="-",drawstyle=ds,linewidth = self.Evaluelinethickness[3],alpha = self.Evaluealpha[3],label=self.etypesf(3))
+                        if Nevents:
+                            if self.eventsGraphflag == 4:
+                                # we prepare copies of the Evalues
+                                evalues = [self.E1values[:],self.E2values[:],self.E3values[:],self.E4values[:]]
+                            for i in range(Nevents):
+                                event_idx = int(self.specialevents[i])
+                                try:
+                                    if self.specialeventstype[i] == 4 or self.eventsGraphflag in [0,3,4]:
+                                        if self.specialeventstype[i] < 4 and (not aw.qmc.renderEventsDescr or len(self.specialeventsStrings[i].strip()) == 0):
+                                            etype = self.etypesf(self.specialeventstype[i])
+                                            firstletter = str(etype[0])
+                                            secondletter = self.eventsvaluesShort(self.specialeventsvalue[i])
+                                            if aw.eventslidertemp[self.specialeventstype[i]]:
+                                                thirdletter = self.mode # postfix
+                                            else:
+                                                thirdletter = aw.eventsliderunits[self.specialeventstype[i]] # postfix
+                                        else:
+                                            firstletter = self.specialeventsStrings[i].strip()[:aw.qmc.eventslabelschars]
+                                            if firstletter == "":
+                                                firstletter = "E"
+                                            secondletter = ""
+                                            thirdletter = ""
+                                        if self.mode == "F":
+                                            height = 50
+                                        else:
+                                            height = 20
+        
+                                        #some times ET is not drawn (ET = 0) when using device NONE
+                                        # plot events on BT when showeventsonbt is true
+                                        if not aw.qmc.showeventsonbt and self.temp1[event_idx] > self.temp2[event_idx] and aw.qmc.ETcurve:
+                                            if aw.qmc.flagon:
+                                                temp = self.temp1[event_idx]
+                                            else:
+                                                temp = self.stemp1[event_idx]
+                                        elif aw.qmc.BTcurve:
+                                            if aw.qmc.flagon:
+                                                temp = self.temp2[event_idx]
+                                            else:
+                                                temp = self.stemp2[event_idx]
+                                        else:
+                                            temp = None
+        
+                                        # plot events on BT when showeventsonbt is true
+                                        if aw.qmc.showeventsonbt and temp != None and aw.qmc.BTcurve:
+                                            if aw.qmc.flagon:
+                                                temp = self.temp2[event_idx]
+                                            else:
+                                                temp = self.stemp2[event_idx]
+        
+                                        if not self.flagstart and not self.foregroundShowFullflag and (event_idx < charge_idx or event_idx > drop_idx):
+                                            continue
+        
+                                        # combo events
+                                        if self.eventsGraphflag == 4 and self.specialeventstype[i] < 4 and aw.qmc.showEtypes[self.specialeventstype[i]] and len(evalues[self.specialeventstype[i]])>0:
+                                            temp = evalues[self.specialeventstype[i]][0]
+                                            evalues[self.specialeventstype[i]] = evalues[self.specialeventstype[i]][1:]
+                                        
+                                        if temp != None and aw.qmc.showEtypes[self.specialeventstype[i]]:
+                                            if self.specialeventstype[i] == 0:
+                                                boxstyle = 'roundtooth,pad=0.4'
+                                                boxcolor = self.EvalueColor[0]
+                                                textcolor = self.EvalueTextColor[0]
+                                            elif self.specialeventstype[i] == 1:
+                                                boxstyle = 'round,pad=0.3,rounding_size=0.8'
+                                                boxcolor = self.EvalueColor[1]
+                                                textcolor = self.EvalueTextColor[1]
+                                            elif self.specialeventstype[i] == 2:
+                                                boxstyle = 'sawtooth,pad=0.3,tooth_size=0.2'
+                                                boxcolor = self.EvalueColor[2]
+                                                textcolor = self.EvalueTextColor[2]
+                                            elif self.specialeventstype[i] == 3:
+                                                boxstyle = 'round4,pad=0.3,rounding_size=0.15'
+                                                boxcolor = self.EvalueColor[3]
+                                                textcolor = self.EvalueTextColor[3]
+                                            elif self.specialeventstype[i] == 4:
+                                                boxstyle = 'square,pad=0.1'
+                                                boxcolor = self.palette["specialeventbox"]
+                                                textcolor = self.palette["specialeventtext"]
+                                            if self.eventsGraphflag in [0,3] or self.specialeventstype[i] > 3:
+                                                if i in self.l_event_flags_pos_dict:
+                                                    xytext = self.l_event_flags_pos_dict[i]
+                                                elif i in self.l_event_flags_dict:
+                                                    xytext = self.l_event_flags_dict[i].xyann
+                                                else:
+                                                    xytext = (self.timex[event_idx],temp+height)
+                                                anno = self.ax.annotate(f"{firstletter}{secondletter}", xy=(self.timex[event_idx], temp),
+                                                             xytext=xytext,
+                                                             alpha=0.9,
+                                                             color=textcolor,
+                                                             va="center", ha="center",
+                                                             arrowprops=dict(arrowstyle='-',color=boxcolor,alpha=0.4), # ,relpos=(0,0)
+                                                             bbox=dict(boxstyle=boxstyle, fc=boxcolor, ec='none'),
+                                                             fontproperties=fontprop_small,
+                                                             path_effects=[PathEffects.withStroke(linewidth=0.5,foreground=self.palette["background"])],
+                                                             )
+                                                try:
+                                                    anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
+                                                    anno.draggable(use_blit=True)
+                                                    anno.set_picker(aw.draggable_text_box_picker)
+                                                except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
+                                                    pass
+                                                # register draggable flag annotation to be re-created after re-positioning on redraw
+                                                self.l_event_flags_dict[i] = anno
+                                                if not aw.qmc.showeventsonbt and aw.qmc.ETcurve:
+                                                    self.l_eteventannos.append(anno)
+                                                else:
+                                                    self.l_bteventannos.append(anno)
+                                            elif self.eventsGraphflag == 4:
+                                                if thirdletter != "":
+                                                    firstletter = ""
+                                                anno = self.ax.annotate(f"{firstletter}{secondletter}{thirdletter}", xy=(self.timex[event_idx], temp),
+                                                             xytext=(self.timex[event_idx],temp),
+                                                             alpha=0.9,
+                                                             color=textcolor,
+                                                             va="center", ha="center",
+                                                             bbox=dict(boxstyle=boxstyle, fc=boxcolor, ec='none'),
+                                                             fontproperties=fontprop_small,
+                                                             path_effects=[PathEffects.withStroke(linewidth=0.5,foreground=self.palette["background"])],
+                                                             )
+                                                if self.specialeventstype[i] == 0:
+                                                    self.l_eventtype1annos.append(anno)
+                                                elif self.specialeventstype[i] == 1:
+                                                    self.l_eventtype2annos.append(anno)
+                                                elif self.specialeventstype[i] == 2:
+                                                    self.l_eventtype3annos.append(anno)
+                                                elif self.specialeventstype[i] == 3:
+                                                    self.l_eventtype4annos.append(anno)
+                                                try:
+                                                    anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
+                                                except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
+                                                    pass
+                                except Exception as e:
+                                    _log.exception(e) # pylint: disable=broad-except
+    
+                    #plot delta ET (self.delta1) and delta BT (self.delta2)
+                    if self.DeltaETflag or self.DeltaBTflag:
+                        ##### DeltaET,DeltaBT curves
+                        if self.delta_ax:
+                            trans = self.delta_ax.transData #=self.delta_ax.transScale + (self.delta_ax.transLimits + self.delta_ax.transAxes)
+                            # if not recording or if during recording CHARGE was set already
+                            if ((not self.flagon or self.timeindex[0] > 1) and 
+                                    len(self.timex) == len(self.delta1) and len(self.timex) == len(self.delta2) and len(self.timex)>charge_idx+2):
+                                # to avoid drawing of RoR artifacts directly after CHARGE we skip the first two samples after CHARGE before starting to draw
+                                if aw.qmc.swapdeltalcds:
+                                    self.drawDeltaET(trans,charge_idx+2,drop_idx)
+                                    self.drawDeltaBT(trans,charge_idx+2,drop_idx)
+                                else:
+                                    self.drawDeltaBT(trans,charge_idx+2,drop_idx)
+                                    self.drawDeltaET(trans,charge_idx+2,drop_idx)
+                            else:
+                                # instead of drawing we still have to establish the self.ax artists to keep the linecount correct!
+                                self.drawDeltaET(trans,0,0)
+                                self.drawDeltaBT(trans,0,0)
+                                
+                    if recomputeAllDeltas and self.delta_ax is not None and two_ax_mode:
+                        aw.autoAdjustAxis(timex=False)
+                        self.delta_ax.set_ylim(self.zlimit_min,self.zlimit)
+                        if self.zgrid > 0:
+                            self.delta_ax.yaxis.set_major_locator(ticker.MultipleLocator(self.zgrid))
+                            self.delta_ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
+                        
+                    ##### Extra devices-curves
+                    for l in self.extratemp1lines + self.extratemp2lines:
+                        try:
+                            if l is not None:
+                                l.remove()
+                        except Exception: # pylint: disable=broad-except
+                            pass
+                    self.extratemp1lines,self.extratemp2lines = [],[]
+                    for i in range(min(
+                            len(self.extratimex),
+                            len(self.extratemp1),
+                            len(self.extradevicecolor1),
+                            len(self.extraname1),
+                            len(self.extratemp2),
+                            len(self.extradevicecolor2),
+                            len(self.extraname2))):
+                        if self.extratimex[i] is not None and self.extratimex[i] and len(self.extratimex[i])>1:
+                            timexi_lin = numpy.linspace(self.extratimex[i][0],self.extratimex[i][-1],len(self.extratimex[i]))
+                        else:
+                            timexi_lin = None
+                        try:
+                            if aw.extraCurveVisibility1[i]:
+                                if not aw.qmc.flagon and (smooth or len(self.extrastemp1[i]) != len(self.extratimex[i])):
+                                    self.extrastemp1[i] = self.smooth_list(self.extratimex[i],fill_gaps(self.extratemp1[i]),window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=timexi_lin)
+                                else: # we don't smooth, but remove the dropouts
+                                    self.extrastemp1[i] = fill_gaps(self.extratemp1[i])
+                                if aw.extraDelta1[i]:
+                                    trans = self.delta_ax.transData
+                                else:
+                                    trans = self.ax.transData
+                                if not self.flagstart and not self.foregroundShowFullflag and len(self.extrastemp1[i]) > 0:
+                                    visible_extratemp1 = numpy.concatenate((
+                                        numpy.full(charge_idx, numpy.nan, dtype=numpy.double),
+                                        self.extrastemp1[i][charge_idx:drop_idx+1],
+                                        numpy.full(len(self.extratimex[i])-drop_idx-1, numpy.nan, dtype=numpy.double)))
+                                    
+                                else:
+                                    visible_extratemp1 = numpy.array(self.extrastemp1[i], dtype=numpy.double)
+                                # first draw the fill if any, but not during recording!
+                                if not aw.qmc.flagstart and aw.extraFill1[i] > 0:
+                                    self.ax.fill_between(self.extratimex[i], 0, visible_extratemp1,transform=trans,color=self.extradevicecolor1[i],alpha=aw.extraFill1[i]/100.,sketch_params=None)
+                                self.extratemp1lines.append(self.ax.plot(self.extratimex[i],visible_extratemp1,transform=trans,color=self.extradevicecolor1[i],
+                                    sketch_params=None,path_effects=[PathEffects.withStroke(linewidth=self.extralinewidths1[i]+aw.qmc.patheffects,foreground=self.palette["background"])],
+                                    markersize=self.extramarkersizes1[i],marker=self.extramarkers1[i],linewidth=self.extralinewidths1[i],linestyle=self.extralinestyles1[i],
+                                    drawstyle=self.extradrawstyles1[i],label=extraname1_subst[i])[0])
+                        except Exception as ex: # pylint: disable=broad-except
+                            _log.exception(ex)
+                            _, _, exc_tb = sys.exc_info()
+                            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                        try:
+                            if aw.extraCurveVisibility2[i]:
+                                if not aw.qmc.flagon and (smooth or len(self.extrastemp2[i]) != len(self.extratimex[i])):
+                                    self.extrastemp2[i] = self.smooth_list(self.extratimex[i],fill_gaps(self.extratemp2[i]),window_len=self.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=timexi_lin)
+                                else:
+                                    self.extrastemp2[i] = fill_gaps(self.extratemp2[i])
+                                if aw.extraDelta2[i]:
+                                    trans = self.delta_ax.transData
+                                else:
+                                    trans = self.ax.transData
+                                if not self.flagstart and not self.foregroundShowFullflag and len(self.extrastemp2[i]) > 0:
+                                    visible_extratemp2 = numpy.concatenate((
+                                        numpy.full(charge_idx, numpy.nan, dtype=numpy.double),
+                                        self.extrastemp2[i][charge_idx:drop_idx+1],
+                                        numpy.full(len(self.extratimex[i])-drop_idx-1, numpy.nan, dtype=numpy.double)))
+                                else:
+                                    visible_extratemp2 = self.extrastemp2[i]
+                                    visible_extratemp2 = numpy.array(self.extrastemp2[i], dtype=numpy.double)
+                                # first draw the fill if any
+                                if not aw.qmc.flagstart and aw.extraFill2[i] > 0:
+                                    self.ax.fill_between(self.extratimex[i], 0, visible_extratemp2,transform=trans,color=self.extradevicecolor2[i],alpha=aw.extraFill2[i]/100.,sketch_params=None)
+                                self.extratemp2lines.append(self.ax.plot(self.extratimex[i],visible_extratemp2,transform=trans,color=self.extradevicecolor2[i],
+                                    sketch_params=None,path_effects=[PathEffects.withStroke(linewidth=self.extralinewidths2[i]+aw.qmc.patheffects,foreground=self.palette["background"])],
+                                    markersize=self.extramarkersizes2[i],marker=self.extramarkers2[i],linewidth=self.extralinewidths2[i],linestyle=self.extralinestyles2[i],drawstyle=self.extradrawstyles2[i],label= extraname2_subst[i])[0])
+                        except Exception as ex: # pylint: disable=broad-except
+                            _log.exception(ex)
+                            _, _, exc_tb = sys.exc_info()
+                            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                    ##### ET,BT curves
+                    
+                    if not self.flagstart and not self.foregroundShowFullflag:
+                        visible_et = numpy.concatenate((
+                                        numpy.full(charge_idx, numpy.nan, dtype=numpy.double),
+                                        self.stemp1[charge_idx:drop_idx+1],
+                                        numpy.full(len(self.timex)-drop_idx-1, numpy.nan, dtype=numpy.double)))
+                        visible_bt = numpy.concatenate((
+                                        numpy.full(charge_idx, numpy.nan, dtype=numpy.double),
+                                        self.stemp2[charge_idx:drop_idx+1],
+                                        numpy.full(len(self.timex)-drop_idx-1, numpy.nan, dtype=numpy.double)))
+                    else:
+                        visible_et = self.stemp1
+                        visible_bt = self.stemp2
+                    
+                    if aw.qmc.swaplcds:
+                        self.drawET(visible_et)
+                        self.drawBT(visible_bt)
+                    else:
+                        self.drawBT(visible_bt)
+                        self.drawET(visible_et)
+    
+                    if aw.qmc.ETcurve:
+                        self.handles.append(self.l_temp1)
+                        self.labels.append(aw.arabicReshape(aw.ETname))
+                    if aw.qmc.BTcurve:
+                        self.handles.append(self.l_temp2)
+                        self.labels.append(aw.arabicReshape(aw.BTname))
+    
+                    if self.DeltaETflag:
+                        self.handles.append(self.l_delta1)
+                        self.labels.append(aw.arabicReshape(f"{deltaLabelMathPrefix}{aw.ETname}"))
+                    if self.DeltaBTflag:
+                        self.handles.append(self.l_delta2)
+                        self.labels.append(aw.arabicReshape(f"{deltaLabelMathPrefix}{aw.BTname}"))
+    
+                    nrdevices = len(self.extradevices)
+    
+                    if nrdevices and not self.designerflag:
+                        xtmpl1idx = 0
+                        xtmpl2idx = 0
+                        for i in range(nrdevices):
+                            if aw.extraCurveVisibility1[i]:
+                                idx1 = xtmpl1idx
+                                xtmpl1idx = xtmpl1idx + 1
+                                l1 = extraname1_subst[i]
+                                if not l1.startswith("_"):
+                                    self.handles.append(self.extratemp1lines[idx1])
+                                    try:
+                                        self.labels.append(aw.arabicReshape(l1.format(self.etypes[0],self.etypes[1],self.etypes[2],self.etypes[3])))
+                                    except Exception: # pylint: disable=broad-except
+                                        # a key error can occure triggered by the format if curley braces are used without reference
+                                        self.labels.append(aw.arabicReshape(l1))
+                            if aw.extraCurveVisibility2[i]:
+                                idx2 = xtmpl2idx
+                                xtmpl2idx = xtmpl2idx + 1
+                                l2 = extraname2_subst[i]
+                                if not l2.startswith("_"):
+                                    self.handles.append(self.extratemp2lines[idx2])
+                                    try:
+                                        self.labels.append(aw.arabicReshape(l2.format(self.etypes[0],self.etypes[1],self.etypes[2],self.etypes[3])))
+                                    except Exception: # pylint: disable=broad-except
+                                        # a key error can occure triggered by the format if curley braces are used without reference
+                                        self.labels.append(aw.arabicReshape(l2))
+    
+                    if self.eventsshowflag and self.eventsGraphflag in [2,3,4] and Nevents:
+                        if E1_nonempty and aw.qmc.showEtypes[0]:
+                            self.handles.append(self.l_eventtype1dots)
+                            self.labels.append(aw.arabicReshape(self.etypesf(0)))
+                        if E2_nonempty and aw.qmc.showEtypes[1]:
+                            self.handles.append(self.l_eventtype2dots)
+                            self.labels.append(aw.arabicReshape(self.etypesf(1)))
+                        if E3_nonempty and aw.qmc.showEtypes[2]:
+                            self.handles.append(self.l_eventtype3dots)
+                            self.labels.append(aw.arabicReshape(self.etypesf(2)))
+                        if E4_nonempty and aw.qmc.showEtypes[3]:
+                            self.handles.append(self.l_eventtype4dots)
+                            self.labels.append(aw.arabicReshape(self.etypesf(3)))
+    
+                    if not self.designerflag:
+                        if aw.qmc.BTcurve:
+                            if self.flagstart: # no smoothed lines in this case, pass normal BT
+                                aw.qmc.l_annotations = self.place_annotations(
+                                    aw.qmc.TPalarmtimeindex,
+                                    aw.qmc.ylimit - aw.qmc.ylimit_min,
+                                    self.timex,self.timeindex,
+                                    self.temp2,self.temp2)
+                            else:
+                                TP_index = aw.findTP()
+                                if aw.qmc.annotationsflag:
+                                    aw.qmc.l_annotations = self.place_annotations(
+                                        TP_index,aw.qmc.ylimit - aw.qmc.ylimit_min,
+                                        self.timex,
+                                        self.timeindex,
+                                        self.temp2,
+                                        self.stemp2)
+                                if self.timeindex[6]:
+                                    self.writestatistics(TP_index)
+                            #add the time and temp annotations to the bt list
+                            for x in aw.qmc.l_annotations:
+                                self.l_bteventannos.append(x)
+                        elif self.timeindex[6]:
+                            TP_index = aw.findTP()
+                            self.writestatistics(TP_index)
+    
+                    if not sampling and not aw.qmc.flagon and self.timeindex[6] and aw.qmc.statssummary:
+                        self.statsSummary()
+                    else:
+                        self.stats_summary_rect = None
+    
+                    if not sampling and not aw.qmc.flagon and self.timeindex[6] and aw.qmc.AUCshowFlag:
+                        self.drawAUC()
+                    #update label rotating_colors
+                    for label in self.ax.xaxis.get_ticklabels():
+                        label.set_color(self.palette["xlabel"])
+                    for label in self.ax.yaxis.get_ticklabels():
+                        label.set_color(self.palette["ylabel"])
+                    if two_ax_mode and self.delta_ax:
+                        for label in self.delta_ax.yaxis.get_ticklabels():
+                            label.set_color(self.palette["ylabel"])
+    
+                    #write legend
+                    if self.legendloc and not sampling and not aw.qmc.flagon and len(self.timex) > 2:
+                        rcParams['path.effects'] = []
+                        prop = aw.mpl_fontproperties.copy()
+                        prop.set_size("x-small")
+                        if len(self.handles) > 7:
+                            ncol = int(math.ceil(len(self.handles)/4.))
+                        elif len(self.handles) > 3:
+                            ncol = int(math.ceil(len(self.handles)/2.))
+                        else:
+                            ncol = int(math.ceil(len(self.handles)))
+                        if aw.qmc.graphfont == 1:
+                            self.labels = [self.__to_ascii(l) for l in self.labels]
+                        if self.legend is None:
+                            if self.legendloc_pos is None:
+                                loc = self.legendloc # a position selected in the axis dialog
+                            else:
+                                loc = self.legendloc_pos # a user define legend position set by drag-and-drop
+                        else:
+                            loc = self.legend._loc # pylint: disable=protected-access
+                        try:
+                            leg = self.ax.legend(self.handles,self.labels,loc=loc,ncol=ncol,fancybox=True,prop=prop,shadow=False,frameon=True)
+                        except Exception:
+                            pass
+                        try:
+                            leg.set_in_layout(False) # remove legend from tight_layout calculation
+                        except Exception: # pylint: disable=broad-except # set_in_layout not available in mpl<3.x
+                            pass
+                        self.legend = leg
+                        self.legend_lines = leg.get_lines()
+                        for h in leg.legendHandles:
+                            h.set_picker(False) # we disable the click to hide on the handles feature
+                            #h.set_picker(aw.draggable_text_box_picker) # as setting this picker results in non-termination
+                        for l in leg.texts:
+                            #l.set_picker(5)
+                            l.set_picker(aw.draggable_text_box_picker)
+                        try:
+                            leg.set_draggable(state=True,use_blit=True)  #,update='bbox')
+                            leg.set_picker(aw.draggable_text_box_picker)
+                        except Exception: # pylint: disable=broad-except # not available in mpl<3.x
+                            leg.draggable(state=True) # for mpl 2.x
+                        frame = leg.get_frame()
+                        frame.set_facecolor(self.palette["legendbg"])
+                        frame.set_alpha(self.alpha["legendbg"])
+                        frame.set_edgecolor(self.palette["legendborder"])
+                        frame.set_linewidth(0.5)
+                        for line,text in zip(leg.get_lines(), leg.get_texts()):
+                            text.set_color(line.get_color())
+                        if aw.qmc.patheffects:
+                            rcParams['path.effects'] = [PathEffects.withStroke(linewidth=aw.qmc.patheffects, foreground=self.palette["background"])]
+                    else:
+                        self.legend = None
+    
+                    # we create here the project line plots to have the accurate time axis after CHARGE
+                    dashes_setup = [0.4,0.8,0.1,0.8] # simulating matplotlib 1.5 default on 2.0
+    
+                    #watermark image
+                    self.placelogoimage()
+                finally:
+                    if aw.qmc.updateBackgroundSemaphore.available() < 1:
+                        aw.qmc.updateBackgroundSemaphore.release(1)
 
                 ############  ready to plot ############
 #                with warnings.catch_warnings():
@@ -9336,16 +9746,32 @@ class tgraphcanvas(FigureCanvas):
                 #######################################
 
                 # add projection and AUC guide lines last as those are removed by updategraphics for optimized redrawing and not cached
-                if aw.qmc.projectFlag and aw.qmc.BTcurve:
-                    self.l_BTprojection, = self.ax.plot([], [],color = self.palette["bt"],
-                                                dashes=dashes_setup,
-                                                label=aw.arabicReshape(QApplication.translate("Label", "BTprojection")),
-                                                linestyle = '-.', linewidth= 8, alpha = .3,sketch_params=None,path_effects=[])
-                if aw.qmc.projectFlag and aw.qmc.ETcurve:
-                    self.l_ETprojection, = self.ax.plot([], [],color = self.palette["et"],
-                                                dashes=dashes_setup,
-                                                label=aw.arabicReshape(QApplication.translate("Label", "ETprojection")),
-                                                linestyle = '-.', linewidth= 8, alpha = .3,sketch_params=None,path_effects=[])
+                if aw.qmc.projectFlag:
+                    if aw.qmc.BTcurve:
+                        self.l_BTprojection, = self.ax.plot([], [],color = self.palette["bt"],
+                                                    dashes=dashes_setup,
+                                                    label=aw.arabicReshape(QApplication.translate("Label", "BTprojection")),
+                                                    linestyle = '-.', linewidth= 8, alpha = .3,sketch_params=None,path_effects=[])
+                    if aw.qmc.ETcurve:
+                        self.l_ETprojection, = self.ax.plot([], [],color = self.palette["et"],
+                                                    dashes=dashes_setup,
+                                                    label=aw.arabicReshape(QApplication.translate("Label", "ETprojection")),
+                                                    linestyle = '-.', linewidth= 8, alpha = .3,sketch_params=None,path_effects=[])
+    
+                    if aw.qmc.projectDeltaFlag and (aw.qmc.DeltaBTflag or aw.qmc.DeltaETflag):
+                        trans = self.delta_ax.transData
+                        if aw.qmc.DeltaBTflag:
+                            self.l_DeltaBTprojection, = self.ax.plot([], [],color = self.palette["deltabt"],
+                                                        dashes=dashes_setup,
+                                                        transform=trans,
+                                                        label=aw.arabicReshape(QApplication.translate("Label", "DeltaBTprojection")),
+                                                        linestyle = '-.', linewidth= 8, alpha = .3,sketch_params=None,path_effects=[])
+                        if aw.qmc.DeltaETflag:
+                            self.l_DeltaETprojection, = self.ax.plot([], [],color = self.palette["deltaet"],
+                                                        dashes=dashes_setup,
+                                                        transform=trans,
+                                                        label=aw.arabicReshape(QApplication.translate("Label", "DeltaETprojection")),
+                                                        linestyle = '-.', linewidth= 8, alpha = .3,sketch_params=None,path_effects=[])
 
                 if aw.qmc.AUCguideFlag:
                     self.l_AUCguide = self.ax.axvline(0,visible=False,color = self.palette["aucguide"],
@@ -9397,6 +9823,12 @@ class tgraphcanvas(FigureCanvas):
         overlap = False
         try:
             annocorners = self.annoboxCorners(anno)
+            anno_x = anno.get_unitless_position()[0]
+            ax_xlim = self.ax.get_xlim()
+            # if annotation is off canvas, the display coordinates are not reliable thus we exclude this one from the check
+            if anno_x < ax_xlim[0] or anno_x > ax_xlim[1]:
+                _log.debug("Event annotation off canvas: %s, ax_xlim=%s", anno,ax_xlim)
+                return False
             xl = annocorners[0]
             xr = annocorners[1]
             yl = annocorners[2]
@@ -9829,17 +10261,25 @@ class tgraphcanvas(FigureCanvas):
                     if "CO2_batch_per_green_kg" in cp and cp["CO2_batch_per_green_kg"]:
                         statstr_segments += [" (", str(aw.float2float(cp["CO2_batch_per_green_kg"],0)), "g/kg)"]
                 if cp["AUC"]:
-                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "AUC"), ': ', str(cp["AUC"]), 'C*min [', str(cp["AUCbase"]), aw.qmc.mode, "]"]
+                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "AUC"), ': ', str(cp["AUC"]), 'C*min [', str(cp["AUCbase"]), '\u00b0', aw.qmc.mode, "]"]
 
-                for notes in [aw.qmc.roastingnotes, aw.qmc.cuppingnotes]:
+                def render_notes(notes,statstr_segments):
                     if notes is not None and len(notes)>0:
-                        roasting_notes_lines = textwrap.wrap(notes, width=aw.qmc.statsmaxchrperline)
-                        if len(roasting_notes_lines)>0:
-                            statstr_segments += [skipline, roasting_notes_lines[0]]
-                            if len(roasting_notes_lines)>1:
-                                statstr_segments += [skipline, "  ", roasting_notes_lines[1]]
-                                if len(roasting_notes_lines)>2:
+                        notes_lines = textwrap.wrap(notes, width=aw.qmc.statsmaxchrperline)
+                        if len(notes_lines)>0:
+                            statstr_segments += [skipline, notes_lines[0]]
+                            if len(notes_lines)>1:
+                                statstr_segments += [skipline, "  ", notes_lines[1]]
+                                if len(notes_lines)>2:
                                     statstr_segments.append("..")
+                
+                render_notes(aw.qmc.roastingnotes,statstr_segments)
+                
+                cupping_score, cupping_all_default = aw.cuppingSum(self.flavors)
+                if not cupping_all_default:
+                    statstr_segments += ['\n', QApplication.translate("HTML Report Template", "Cupping:"), " ", str(aw.float2float(cupping_score))]
+                
+                render_notes(aw.qmc.cuppingnotes,statstr_segments)
 
                 # Trim the long lines
                 trimmedstatstr_segments = []
@@ -10247,9 +10687,9 @@ class tgraphcanvas(FigureCanvas):
                 self.EvalueColor = self.EvalueColor_default.copy()
                 self.EvalueTextColor = self.EvalueTextColor_default.copy()
                 aw.sendmessage(QApplication.translate("Message","Colors set to defaults"))
+                aw.closeEventSettings()
 
-
-        if color == 2:
+        elif color == 2:
             aw.sendmessage(QApplication.translate("Message","Colors set to grey"))
             for k in list(aw.qmc.palette.keys()):
                 c = aw.qmc.palette[k]
@@ -10270,8 +10710,9 @@ class tgraphcanvas(FigureCanvas):
             aw.qmc.backgroundxtcolor      = aw.convertToGreyscale(aw.qmc.backgroundxtcolor)
             aw.qmc.backgroundytcolor      = aw.convertToGreyscale(aw.qmc.backgroundytcolor)
             aw.setLCDsBW()
+            aw.closeEventSettings()
 
-        if color == 3:
+        elif color == 3:
             from artisanlib.colors import graphColorDlg
             dialog = graphColorDlg(aw,aw,aw.graphColorDlg_activeTab)
             if dialog.exec():
@@ -10822,6 +11263,7 @@ class tgraphcanvas(FigureCanvas):
             aw.update_extraeventbuttons_visibility()
             aw.updateExtraButtonsVisibility()
             aw.updateSlidersVisibility() # update visibility of sliders based on the users preference
+            aw.update_minieventline_visibility()
             aw.pidcontrol.activateONOFFeasySV(aw.pidcontrol.svButtons and aw.buttonONOFF.isVisible())
             aw.pidcontrol.activateSVSlider(aw.pidcontrol.svSlider and aw.buttonONOFF.isVisible())
             self.block_update = False # unblock the updating of the bitblit canvas
@@ -10873,7 +11315,11 @@ class tgraphcanvas(FigureCanvas):
             #enable RESET button:
             aw.buttonRESET.setStyleSheet(aw.pushbuttonstyles["RESET"])
             aw.buttonRESET.setEnabled(True)
-            aw.buttonRESET.setVisible(True)          
+            aw.buttonRESET.setVisible(True)
+            
+            # reset a stopped simulator
+            aw.sample_loop_running = True
+            aw.time_stopped = 0
             
             # enable "green flag" menu:
             try:
@@ -10900,11 +11346,22 @@ class tgraphcanvas(FigureCanvas):
             if not aw.HottopControlActive:
                 aw.hideExtraButtons(changeDefault=False)
             aw.updateSlidersVisibility() # update visibility of sliders based on the users preference
+            aw.update_minieventline_visibility()
             aw.updateExtraButtonsVisibility()
             aw.pidcontrol.activateONOFFeasySV(False)
             self.StopAsyncSamplingAction()
             aw.enableEditMenus()
+            
             aw.qmc.redraw(recomputeAllDeltas=True,smooth=True)
+            # HACK:
+            # with visible (draggable) legend a click (or several) on the canvas makes the extra lines dissappear
+            # this happens after real recordings or simlatro runs and also if signals onclick/onpick/ondraw are disconnected
+            # solutions are to run an updateBackground() or another redraw() about in 100s using a QTimer
+            # also a call  to self.fig.canvas.flush_events() or QApplication.processEvents() here resolves it. A libtime.sleep(1) does not solve the issue
+#            QTimer.singleShot(100,self.updateBackground) # solves the issue
+#            self.fig.canvas.flush_events() # solves the issue
+            QApplication.processEvents()  # solves the issue
+
             if len(self.timex) > 2:
                 # we autosave after full redraw after OFF to have the optional generated PDF containing all information
                 if aw.qmc.autosaveflag and aw.qmc.autosavepath:
@@ -10912,7 +11369,6 @@ class tgraphcanvas(FigureCanvas):
                         aw.automaticsave()
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
-            #appnope.nap()
             aw.eventactionx(aw.qmc.extrabuttonactions[1],aw.qmc.extrabuttonactionstrings[1])
             
             # update error dlg
@@ -10927,6 +11383,7 @@ class tgraphcanvas(FigureCanvas):
                                         
             if recording and self.flagKeepON:
                 self.OnMonitor()
+           
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
@@ -10993,7 +11450,7 @@ class tgraphcanvas(FigureCanvas):
                 self.ambient_pressure = aw.float2float(pressure,1)
                 self.ambient_pressure_sampled = self.ambient_pressure
                 aw.sendmessage(QApplication.translate("Message","Pressure: {}hPa").format(self.ambient_pressure))
-        except Exception as e:
+        except Exception as e:  # pylint: disable=broad-except
             _log.exception(e)
         finally:
             sys.stderr = _stderr
@@ -11008,116 +11465,120 @@ class tgraphcanvas(FigureCanvas):
         return aap * pow((1 - ((0.0065*hasl) / (atc + (0.0065*hasl) + 273.15))),-5.257)
 
     # close serial port, Phidgets and Yocto ports
-    @staticmethod
-    def disconnectProbesFromSerialDevice(ser):
-        # close main serial port
+    def disconnectProbesFromSerialDevice(self, ser):
         try:
-            ser.closeport()
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
-        # disconnect phidgets
-        if ser.PhidgetTemperatureSensor is not None:
+            self.samplingSemaphore.acquire(1)
+            # close main serial port
             try:
-                if ser.PhidgetTemperatureSensor[0].getAttached():
-                    serial = ser.PhidgetTemperatureSensor[0].getDeviceSerialNumber()
-                    port = ser.PhidgetTemperatureSensor[0].getHubPort()  # returns 0 for USB Phidgets!
-                    deviceType = ser.PhidgetTemperatureSensor[0].getDeviceID()
-                    ser.PhidgetTemperatureSensor[0].close()
-                    ser.phidget1048detached(serial,port,deviceType,0) # call detach handler to release from PhidgetManager
+                ser.closeport()
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
-            try:
-                if len(ser.PhidgetTemperatureSensor) > 1 and ser.PhidgetTemperatureSensor[1].getAttached():
-                    serial = ser.PhidgetTemperatureSensor[1].getDeviceSerialNumber()
-                    port = ser.PhidgetTemperatureSensor[1].getHubPort()  # returns 0 for USB Phidgets!
-                    deviceType = ser.PhidgetTemperatureSensor[1].getDeviceID()
-                    ser.PhidgetTemperatureSensor[1].close()
-                    ser.phidget1048detached(serial,port,deviceType,1) # call detach handler to release from PhidgetManager
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
-            ser.Phidget1048values = [[],[],[],[]]
-            ser.Phidget1048lastvalues = [-1]*4
-            ser.PhidgetTemperatureSensor = None
-        if ser.PhidgetIRSensor is not None:
-            try:
-                if ser.PhidgetIRSensor.getAttached():
-                    serial = ser.PhidgetIRSensor.getDeviceSerialNumber()
-                    port = ser.PhidgetIRSensor.getHubPort() # returns 0 for USB Phidgets!
-                    deviceType = ser.PhidgetIRSensor.getDeviceID()
-                    ser.PhidgetIRSensor.close()
-                    ser.phidget1045detached(serial,port,deviceType) # call detach handler to release from PhidgetManager
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
-            try:
-                if ser.PhidgetIRSensorIC is not None and ser.PhidgetIRSensorIC.getAttached():
-                    ser.PhidgetIRSensorIC.close()
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
-            ser.PhidgetIRSensor = None
-            ser.Phidget1045values = [] # async values of the one channel
-            ser.Phidget1045lastvalue = -1
-            ser.Phidget1045tempIRavg = None
-            ser.PhidgetIRSensorIC = None
-        if ser.PhidgetBridgeSensor is not None:
-            try:
-                if ser.PhidgetBridgeSensor[0].getAttached():
-                    serial = ser.PhidgetBridgeSensor[0].getDeviceSerialNumber()
-                    port = ser.PhidgetBridgeSensor[0].getHubPort()   # returns 0 for USB Phidgets!
-                    deviceType = ser.PhidgetBridgeSensor[0].getDeviceID()
-                    ser.PhidgetBridgeSensor[0].close()
-                    ser.phidget1046detached(serial,port,deviceType,0) # call detach handler to release from PhidgetManager
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
-            try:
-                if len(ser.PhidgetBridgeSensor) > 1 and ser.PhidgetBridgeSensor[1].getAttached():
-                    serial = ser.PhidgetBridgeSensor[1].getDeviceSerialNumber()
-                    port = ser.PhidgetBridgeSensor[1].getHubPort()   # returns 0 for USB Phidgets!
-                    deviceType = ser.PhidgetBridgeSensor[1].getDeviceID()
-                    ser.PhidgetBridgeSensor[1].close()
-                    ser.phidget1046detached(serial,port,deviceType,1) # call detach handler to release from PhidgetManager
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
-            ser.Phidget1046values = [[],[],[],[]]
-            ser.Phidget1046lastvalues = [-1]*4
-            ser.PhidgetBridgeSensor = None
-        if ser.PhidgetIO is not None:
-            try:
-                if ser.PhidgetIO[0].getAttached():
-                    serial = ser.PhidgetIO[0].getDeviceSerialNumber()
-                    port = ser.PhidgetIO[0].getHubPort()   # returns 0 for USB Phidgets!
-                    className = ser.PhidgetIO[0].getChannelClassName()
-                    deviceType = ser.PhidgetIO[0].getDeviceID()
-                    ser.PhidgetIO[0].close()
-                    ser.phidget1018detached(serial,port,className,deviceType,0)
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
-            try:
-                if len(ser.PhidgetIO) > 1 and ser.PhidgetIO[1].getAttached():
-                    serial = ser.PhidgetIO[1].getDeviceSerialNumber()
-                    port = ser.PhidgetIO[1].getHubPort()   # returns 0 for USB Phidgets!
-                    className = ser.PhidgetIO[1].getChannelClassName()
-                    deviceType = ser.PhidgetIO[1].getDeviceID()
-                    ser.PhidgetIO[1].close()
-                    ser.phidget1018detached(serial,port,className,deviceType,1)
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
-            ser.PhidgetIO = None
-            ser.PhidgetIOvalues = [[],[],[],[],[],[],[],[]]
-            ser.PhidgetIOlastvalues = [-1]*8
-        if ser.YOCTOsensor is not None:
-            try:
-                ser.YOCTOsensor = None
-                ser.YOCTOchan1 = None
-                ser.YOCTOchan2 = None
-                ser.YOCTOtempIRavg = None
-                if ser.YOCTOthread is not None:
-                    ser.YOCTOthread.join()
-                    ser.YOCTOthread = None
-                ser.YOCTOvalues = [[],[]]
-                ser.YOCTOlastvalues = [-1]*2
-                YAPI.FreeAPI()
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+            # disconnect phidgets
+            if ser.PhidgetTemperatureSensor is not None:
+                try:
+                    if ser.PhidgetTemperatureSensor[0].getAttached():
+                        serial = ser.PhidgetTemperatureSensor[0].getDeviceSerialNumber()
+                        port = ser.PhidgetTemperatureSensor[0].getHubPort()  # returns 0 for USB Phidgets!
+                        deviceType = ser.PhidgetTemperatureSensor[0].getDeviceID()
+                        ser.PhidgetTemperatureSensor[0].close()
+                        ser.phidget1048detached(serial,port,deviceType,0) # call detach handler to release from PhidgetManager
+                except Exception as e: # pylint: disable=broad-except
+                    _log.exception(e)
+                try:
+                    if len(ser.PhidgetTemperatureSensor) > 1 and ser.PhidgetTemperatureSensor[1].getAttached():
+                        serial = ser.PhidgetTemperatureSensor[1].getDeviceSerialNumber()
+                        port = ser.PhidgetTemperatureSensor[1].getHubPort()  # returns 0 for USB Phidgets!
+                        deviceType = ser.PhidgetTemperatureSensor[1].getDeviceID()
+                        ser.PhidgetTemperatureSensor[1].close()
+                        ser.phidget1048detached(serial,port,deviceType,1) # call detach handler to release from PhidgetManager
+                except Exception as e: # pylint: disable=broad-except
+                    _log.exception(e)
+                ser.Phidget1048values = [[],[],[],[]]
+                ser.Phidget1048lastvalues = [-1]*4
+                ser.PhidgetTemperatureSensor = None
+            if ser.PhidgetIRSensor is not None:
+                try:
+                    if ser.PhidgetIRSensor.getAttached():
+                        serial = ser.PhidgetIRSensor.getDeviceSerialNumber()
+                        port = ser.PhidgetIRSensor.getHubPort() # returns 0 for USB Phidgets!
+                        deviceType = ser.PhidgetIRSensor.getDeviceID()
+                        ser.PhidgetIRSensor.close()
+                        ser.phidget1045detached(serial,port,deviceType) # call detach handler to release from PhidgetManager
+                except Exception as e: # pylint: disable=broad-except
+                    _log.exception(e)
+                try:
+                    if ser.PhidgetIRSensorIC is not None and ser.PhidgetIRSensorIC.getAttached():
+                        ser.PhidgetIRSensorIC.close()
+                except Exception as e: # pylint: disable=broad-except
+                    _log.exception(e)
+                ser.PhidgetIRSensor = None
+                ser.Phidget1045values = [] # async values of the one channel
+                ser.Phidget1045lastvalue = -1
+                ser.Phidget1045tempIRavg = None
+                ser.PhidgetIRSensorIC = None
+            if ser.PhidgetBridgeSensor is not None:
+                try:
+                    if ser.PhidgetBridgeSensor[0].getAttached():
+                        serial = ser.PhidgetBridgeSensor[0].getDeviceSerialNumber()
+                        port = ser.PhidgetBridgeSensor[0].getHubPort()   # returns 0 for USB Phidgets!
+                        deviceType = ser.PhidgetBridgeSensor[0].getDeviceID()
+                        ser.PhidgetBridgeSensor[0].close()
+                        ser.phidget1046detached(serial,port,deviceType,0) # call detach handler to release from PhidgetManager
+                except Exception as e: # pylint: disable=broad-except
+                    _log.exception(e)
+                try:
+                    if len(ser.PhidgetBridgeSensor) > 1 and ser.PhidgetBridgeSensor[1].getAttached():
+                        serial = ser.PhidgetBridgeSensor[1].getDeviceSerialNumber()
+                        port = ser.PhidgetBridgeSensor[1].getHubPort()   # returns 0 for USB Phidgets!
+                        deviceType = ser.PhidgetBridgeSensor[1].getDeviceID()
+                        ser.PhidgetBridgeSensor[1].close()
+                        ser.phidget1046detached(serial,port,deviceType,1) # call detach handler to release from PhidgetManager
+                except Exception as e: # pylint: disable=broad-except
+                    _log.exception(e)
+                ser.Phidget1046values = [[],[],[],[]]
+                ser.Phidget1046lastvalues = [-1]*4
+                ser.PhidgetBridgeSensor = None
+            if ser.PhidgetIO is not None:
+                try:
+                    if ser.PhidgetIO[0].getAttached():
+                        serial = ser.PhidgetIO[0].getDeviceSerialNumber()
+                        port = ser.PhidgetIO[0].getHubPort()   # returns 0 for USB Phidgets!
+                        className = ser.PhidgetIO[0].getChannelClassName()
+                        deviceType = ser.PhidgetIO[0].getDeviceID()
+                        ser.PhidgetIO[0].close()
+                        ser.phidget1018detached(serial,port,className,deviceType,0)
+                except Exception as e: # pylint: disable=broad-except
+                    _log.exception(e)
+                try:
+                    if len(ser.PhidgetIO) > 1 and ser.PhidgetIO[1].getAttached():
+                        serial = ser.PhidgetIO[1].getDeviceSerialNumber()
+                        port = ser.PhidgetIO[1].getHubPort()   # returns 0 for USB Phidgets!
+                        className = ser.PhidgetIO[1].getChannelClassName()
+                        deviceType = ser.PhidgetIO[1].getDeviceID()
+                        ser.PhidgetIO[1].close()
+                        ser.phidget1018detached(serial,port,className,deviceType,1)
+                except Exception as e: # pylint: disable=broad-except
+                    _log.exception(e)
+                ser.PhidgetIO = None
+                ser.PhidgetIOvalues = [[],[],[],[],[],[],[],[]]
+                ser.PhidgetIOlastvalues = [-1]*8
+            if ser.YOCTOsensor is not None:
+                try:
+                    ser.YOCTOsensor = None
+                    ser.YOCTOchan1 = None
+                    ser.YOCTOchan2 = None
+                    ser.YOCTOtempIRavg = None
+                    if ser.YOCTOthread is not None:
+                        ser.YOCTOthread.join()
+                        ser.YOCTOthread = None
+                    ser.YOCTOvalues = [[],[]]
+                    ser.YOCTOlastvalues = [-1]*2
+                    YAPI.FreeAPI()
+                except Exception as e: # pylint: disable=broad-except
+                    _log.exception(e)
+        finally:
+            if self.samplingSemaphore.available() < 1:
+                self.samplingSemaphore.release(1)
 
     # close Phidget and and Yocto outputs
     @staticmethod
@@ -11152,25 +11613,25 @@ class tgraphcanvas(FigureCanvas):
             if aw.ser.TMP1000temp is not None and aw.ser.TMP1000temp.getAttached():
                 aw.ser.TMP1000temp.close()
                 _log.debug("Phidget TMP1000 temperature channel closed")
-        except Exception as e:
+        except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
         try:
             if aw.ser.PhidgetHUMtemp is not None and aw.ser.PhidgetHUMtemp.getAttached():
                 aw.ser.PhidgetHUMtemp.close()
                 _log.debug("Phidget HUM100x temperature channel closed")
-        except Exception as e:
+        except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
         try:
             if aw.ser.PhidgetHUMhum is not None and aw.ser.PhidgetHUMhum.getAttached():
                 aw.ser.PhidgetHUMhum.close()
                 _log.debug("Phidget HUM100x humidity channel closed")
-        except Exception as e:
+        except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
         try:
             if aw.ser.PhidgetPREpre is not None and aw.ser.PhidgetPREpre.getAttached():
                 aw.ser.PhidgetPREpre.close()
                 _log.debug("Phidget PRE1000 pressure channel closed")
-        except Exception as e:
+        except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             
 
@@ -11191,7 +11652,7 @@ class tgraphcanvas(FigureCanvas):
     def toggleMonitorTigger(self):
         self.ToggleMonitor()
     
-    #Turns ON/OFF flag self.flagon to read and print values. Called from push button_1.
+    #Turns ON/OFF flag self.flagon to read and print values. Called from push buttonONOFF.
     @pyqtSlot(bool)
     def ToggleMonitor(self,_=False):
         #turn ON
@@ -11216,13 +11677,14 @@ class tgraphcanvas(FigureCanvas):
         
     def OnRecorder(self):
         try:
+            
             # if on turn mouse crosslines off
-            if aw.qmc.crossmarker:
-                aw.qmc.togglecrosslines()
-            aw.qmc.set_xlabel("")
-            aw.qmc.ax.set_ylabel("")
-            if not aw.qmc.title_show_always:
-                aw.qmc.setProfileTitle("")
+            if self.crossmarker:
+                self.togglecrosslines()
+            self.set_xlabel("")
+            self.ax.set_ylabel("")
+            if not self.title_show_always:
+                self.setProfileTitle("")
             
             aw.cacheCurveVisibilities()
             
@@ -11289,6 +11751,7 @@ class tgraphcanvas(FigureCanvas):
                 aw.buttonCHARGE.startAnimation()
 
             aw.updateSlidersVisibility() # update visibility of sliders based on the users preference
+            aw.update_minieventline_visibility()
             aw.updateReadingsLCDsVisibility() # update visiblity of reading LCDs based on the user preference
             if aw.qmc.phasesLCDflag:
                 aw.phasesLCDs.show()
@@ -11316,9 +11779,14 @@ class tgraphcanvas(FigureCanvas):
 
     def OffRecorder(self, autosave=True):
         try:
-            # mark DROP if not yet set and DROP button is hidden
-            if self.timeindex[6] == 0 and not self.buttonvisibility[6]:
-                self.markDrop()
+            # mark DROP if not yet set, at least 7min roast time and and either autoDROP is active or DROP button is hidden
+            if self.timeindex[6] == 0 and (self.autoDropFlag or not self.buttonvisibility[6]):
+                if aw.qmc.timeindex[0] != -1:
+                    start = aw.qmc.timex[aw.qmc.timeindex[0]]
+                else:
+                    start = 0
+                if (len(self.timex)>0 and self.timex[-1] - start) > 7*60: # only after 7min into the roast
+                    self.markDrop()
             aw.enableSaveActions()
             aw.resetCurveVisibilities()
             self.flagstart = False
@@ -11371,7 +11839,7 @@ class tgraphcanvas(FigureCanvas):
         else:
             self.ToggleRecorder()
 
-    #Turns START/STOP flag self.flagon to read and plot. Called from push button_2.
+    #Turns START/STOP flag self.flagon to read and plot. Called from push buttonSTARTSTOP.
     @pyqtSlot(bool)
     def ToggleRecorder(self,_=False):
         #turn START
@@ -11388,7 +11856,7 @@ class tgraphcanvas(FigureCanvas):
                 settings = QSettings()
                 starts = 0
                 if settings.contains("starts"):
-                    starts = settings.value("starts")
+                    starts = toInt(settings.value("starts"))
                 settings.setValue("starts",starts+1)
                 settings.sync()
             except Exception as e: # pylint: disable=broad-except
@@ -11473,8 +11941,11 @@ class tgraphcanvas(FigureCanvas):
                         if self.chargeTimerPeriod > 0:
                             aw.setTimerColor("timer")
                         try:
-                            if not aw.qmc.locktimex:
-                                aw.qmc.startofx = aw.qmc.chargemintime + self.timex[self.timeindex[0]] # we set the min x-axis limit to the CHARGE Min time
+                            # adjust startofx to the new timeindex[0] as it depends on timeindex[0]
+                            if self.locktimex:
+                                self.startofx = self.locktimex_start + self.timex[self.timeindex[0]]
+                            else:
+                                self.startofx = self.chargemintime + self.timex[self.timeindex[0]] # we set the min x-axis limit to the CHARGE Min time
                         except Exception: # pylint: disable=broad-except
                             pass
                         
@@ -11694,7 +12165,7 @@ class tgraphcanvas(FigureCanvas):
     def markFCsTrigger(self):
         self.mark1Cstart()
         
-    #record 1C start markers of BT. called from push button_3 of application window
+    #record 1C start markers of BT. called from push buttonFCs of application window
     @pyqtSlot(bool)
     def mark1Cstart(self,_=False):
         if len(self.timex) > 1:
@@ -11807,7 +12278,7 @@ class tgraphcanvas(FigureCanvas):
     def markFCeTrigger(self):
         self.mark1Cend()
     
-    #record 1C end markers of BT. called from button_4 of application window
+    #record 1C end markers of BT. called from buttonFCe of application window
     @pyqtSlot(bool)
     def mark1Cend(self,_=False):
         if len(self.timex) > 1:
@@ -11912,7 +12383,7 @@ class tgraphcanvas(FigureCanvas):
     def markSCsTrigger(self):
         self.mark2Cstart()
 
-    #record 2C start markers of BT. Called from button_5 of application window
+    #record 2C start markers of BT. Called from buttonSCs of application window
     @pyqtSlot(bool)
     def mark2Cstart(self,_=False):
         if len(self.timex) > 1:
@@ -12027,7 +12498,7 @@ class tgraphcanvas(FigureCanvas):
     def markSCeTrigger(self):
         self.mark2Cend()
 
-    #record 2C end markers of BT. Called from button_6  of application window
+    #record 2C end markers of BT. Called from buttonSCe of application window
     @pyqtSlot(bool)
     def mark2Cend(self,_=False):
         if len(self.timex) > 1:
@@ -12750,23 +13221,22 @@ class tgraphcanvas(FigureCanvas):
                         message = QApplication.translate("Message","Event # {0} recorded at BT = {1} Time = {2}").format(str(Nevents+1),temp,timed)
                         aw.sendmessage(message)
                         #write label in mini recorder if flag checked
-                        if aw.minieventsflag:
-                            aw.eventlabel.setText(QApplication.translate("Label", "Event #<b>{0} </b>").format(Nevents+1))
-                            aw.eNumberSpinBox.blockSignals(True)
-                            try:
-                                aw.eNumberSpinBox.setValue(Nevents+1)
-                            except Exception: # pylint: disable=broad-except
-                                pass
-                            finally:
-                                aw.eNumberSpinBox.blockSignals(False)
-                            if aw.qmc.timeindex[0] > -1:
-                                timez = stringfromseconds(aw.qmc.timex[aw.qmc.specialevents[Nevents]]-aw.qmc.timex[aw.qmc.timeindex[0]])
-                            else:
-                                timez = stringfromseconds(aw.qmc.timex[aw.qmc.specialevents[Nevents]])
-                            aw.etimeline.setText(timez)
-                            aw.etypeComboBox.setCurrentIndex(self.specialeventstype[Nevents])
-                            aw.valueEdit.setText(aw.qmc.eventsvalues(self.specialeventsvalue[Nevents]))
-                            aw.lineEvent.setText(self.specialeventsStrings[Nevents])
+                        aw.eventlabel.setText(QApplication.translate("Label", "Event #<b>{0} </b>").format(Nevents+1))
+                        aw.eNumberSpinBox.blockSignals(True)
+                        try:
+                            aw.eNumberSpinBox.setValue(Nevents+1)
+                        except Exception: # pylint: disable=broad-except
+                            pass
+                        finally:
+                            aw.eNumberSpinBox.blockSignals(False)
+                        if aw.qmc.timeindex[0] > -1:
+                            timez = stringfromseconds(aw.qmc.timex[aw.qmc.specialevents[Nevents]]-aw.qmc.timex[aw.qmc.timeindex[0]])
+                        else:
+                            timez = stringfromseconds(aw.qmc.timex[aw.qmc.specialevents[Nevents]])
+                        aw.etimeline.setText(timez)
+                        aw.etypeComboBox.setCurrentIndex(self.specialeventstype[Nevents])
+                        aw.valueEdit.setText(aw.qmc.eventsvalues(self.specialeventsvalue[Nevents]))
+                        aw.lineEvent.setText(self.specialeventsStrings[Nevents])
             else:
                 aw.sendmessage(QApplication.translate("Message","Timer is OFF"))
         except Exception as e: # pylint: disable=broad-except
@@ -12804,11 +13274,10 @@ class tgraphcanvas(FigureCanvas):
                     message = QApplication.translate("Message","Computer Event # {0} recorded at BT = {1} Time = {2}").format(str(Nevents+1),temp,timed)
                     aw.sendmessage(message)
                     #write label in mini recorder if flag checked
-                    if aw.minieventsflag:
-                        aw.eNumberSpinBox.setValue(Nevents+1)
-                        aw.etypeComboBox.setCurrentIndex(self.specialeventstype[Nevents-1])
-                        aw.valueEdit.setText(aw.qmc.eventsvalues(self.specialeventsvalue[Nevents-1]))
-                        aw.lineEvent.setText(self.specialeventsStrings[Nevents])
+                    aw.eNumberSpinBox.setValue(Nevents+1)
+                    aw.etypeComboBox.setCurrentIndex(self.specialeventstype[Nevents-1])
+                    aw.valueEdit.setText(aw.qmc.eventsvalues(self.specialeventsvalue[Nevents-1]))
+                    aw.lineEvent.setText(self.specialeventsStrings[Nevents])
                 #if Event show flag
                 if self.eventsshowflag:
                     index = self.specialevents[-1]
@@ -13271,8 +13740,8 @@ class tgraphcanvas(FigureCanvas):
                 w = aw.qmc.weight[0]
             bean_weight = aw.convertWeight(w,aw.qmc.weight_units.index(aw.qmc.weight[2]),1) # to kg
                         
-            #reference: https://www.eia.gov/environment/emissions/co2_vol_mass.php (dated 9/16/2021, accessed 11/15/2021) 
-            #           https://www.eia.gov/tools/faqs/faq.php?id=74&t=11 (referencing data from 2020, accessed 11/15/2021)
+            #reference: https://www.eia.gov/environment/emissions/co2_vol_mass.php (dated Nov-18-2021, accessed Jan-02-2022) 
+            #           https://www.eia.gov/tools/faqs/faq.php?id=74&t=11 (referencing data from 2020, accessed Jan-02-2022)
             # entries must match those in self.sourcenames
             CO2kg_per_BTU = {0:6.288e-05, 1:5.291e-05, 2:2.964e-04}  # "LPG", "NG", "Elec"
 
@@ -13628,6 +14097,8 @@ class tgraphcanvas(FigureCanvas):
                     for j in range(len(self.extratimexB[i])):
                         self.stemp1BX[i][j] += step
                         self.stemp2BX[i][j] += step
+                self.backgroundprofile_moved_y += step
+                self.moveBackgroundAnnoPositionsY(step)
 
             elif direction == "left":
                 for i in range(lt):
@@ -13635,6 +14106,8 @@ class tgraphcanvas(FigureCanvas):
                 for i in range(len(self.extratimexB)):
                     for j in range(len(self.extratimexB[i])):
                         self.extratimexB[i][j] -= step
+                self.backgroundprofile_moved_x -= step
+                self.moveBackgroundAnnoPositionsX(-step)
 
             elif direction == "right":
                 for i in range(lt):
@@ -13642,6 +14115,8 @@ class tgraphcanvas(FigureCanvas):
                 for i in range(len(self.extratimexB)):
                     for j in range(len(self.extratimexB[i])):
                         self.extratimexB[i][j] += step
+                self.backgroundprofile_moved_x += step
+                self.moveBackgroundAnnoPositionsX(step)
 
             elif direction == "down":
                 for i in range(lt):
@@ -13654,6 +14129,8 @@ class tgraphcanvas(FigureCanvas):
                     for j in range(len(self.extratimexB[i])):
                         self.stemp1BX[i][j] -= step
                         self.stemp2BX[i][j] -= step
+                self.backgroundprofile_moved_y -= step
+                self.moveBackgroundAnnoPositionsY(-step)
         else:
             aw.sendmessage(QApplication.translate("Message","Unable to move background"))
             return
@@ -13968,7 +14445,7 @@ class tgraphcanvas(FigureCanvas):
     # calculates the (interpolated) temperature from the given time/temp arrays at timepoint "seconds"
     @staticmethod
     def timetemparray2temp(timearray, temparray, seconds):
-        if timearray and temparray and len(timearray) and len(temparray) and len(timearray) == len(temparray):
+        if timearray is not None and temparray is not None and len(timearray) and len(temparray) and len(timearray) == len(temparray):
             if seconds > timearray[-1] or seconds < timearray[0]:
                 # requested timepoint out of bonds
                 return -1
@@ -13989,7 +14466,7 @@ class tgraphcanvas(FigureCanvas):
     # if smoothed=True, the smoothed data is taken if available
     # if relative=True, the given time in seconds is interpreted relative to CHARGE, otherwise absolute from the first mesasurement
     def BTat(self,seconds,smoothed=True,relative=False):
-        if smoothed and self.stemp2 and self.stemp2 != []:
+        if smoothed and self.stemp2 is not None and len(self.stemp2) != 0:
             temp = self.stemp2
         else:
             temp = self.temp2
@@ -14000,7 +14477,7 @@ class tgraphcanvas(FigureCanvas):
         return self.timetemparray2temp(self.timex,temp,seconds + offset)
 
     def ETat(self,seconds,smoothed=True,relative=False):
-        if smoothed and self.stemp1 and self.stemp1 != []:
+        if smoothed and self.stemp1 is not None and len(self.stemp1) != 0:
             temp = self.stemp1
         else:
             temp = self.temp1
@@ -15117,7 +15594,7 @@ class tgraphcanvas(FigureCanvas):
                 self.fig.delaxes(self.ax2)
             except Exception: # pylint: disable=broad-except
                 pass
-        self.redraw(recomputeAllDeltas=False)
+        self.redraw(recomputeAllDeltas=False,forceRenewAxis=True)
 
     def connectWheel(self):
         self.wheelflag = True
@@ -15509,6 +15986,44 @@ def my_fedit(data, title="", comment="", icon=None, parent=None, apply=None):
 
 #####
 
+# monkey patching MPL 3.5.1 _formlayout.py:ColorButton to work on Qt6 (not relevant on Qt5)
+# (see https://github.com/matplotlib/matplotlib/issues/22471)
+# to be removed on upgrading to 3.5.2 which fixes this
+class MPLColorButtonPatched(QPushButton):
+    """
+    Color choosing push button
+    """
+    colorChanged = pyqtSignal(QColor)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFixedSize(20, 20)
+        self.setIconSize(QSize(12, 12))
+        self.clicked.connect(self.choose_color)
+        self._color = QColor()
+
+    def choose_color(self):
+        color = QColorDialog.getColor(
+            self._color, self.parentWidget(), "",
+            QColorDialog.ColorDialogOption.ShowAlphaChannel)
+        if color.isValid():
+            self.set_color(color)
+
+    def get_color(self):
+        return self._color
+
+    @pyqtSlot(QColor)
+    def set_color(self, color):
+        if color != self._color:
+            self._color = color
+            self.colorChanged.emit(self._color)
+            pixmap = QPixmap(self.iconSize())
+            pixmap.fill(color)
+            self.setIcon(QIcon(pixmap))
+
+    color = pyqtProperty(QColor, get_color, set_color)
+    
+
 class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
     def __init__(self, plotCanvas, parent,white_icons=False):
         # toolitem entries of the form (text, tooltip_text, image_file, callback)
@@ -15535,7 +16050,10 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
 
         # lets make the font of the coordinates QLabel a little larger
         f = self.locLabel.font()
-        f.setPointSize(f.pointSize()+4)
+        if platf == "Linux":
+            f.setPointSize(f.pointSize()+2)
+        else:
+            f.setPointSize(f.pointSize()+4)
 #        f.setStyleHint(QFont.StyleHint.TypeWriter) # not monospaced!
         f.setStyleHint(QFont.StyleHint.Monospace)
         f.setFamily('monospace')
@@ -15595,11 +16113,15 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
             # not yet monkey patched
             formlayout.fedit_org = formlayout.fedit
             formlayout.fedit = my_fedit
-            
+        # monkey patch _formlayout to work around a MPL3.5.1 issue on Qt6
+        # (see https://github.com/matplotlib/matplotlib/issues/22471)
+        if mpl_version in [[3,5,0], [3,5,1]]:
+            formlayout.ColorButton = MPLColorButtonPatched
+
     def enable_edit_curve_parameters(self):
         if self.edit_curve_parameters_action is not None:
             self.edit_curve_parameters_action.setEnabled(True)
-    
+
     def disable_edit_curve_parameters(self):
         if self.edit_curve_parameters_action is not None:
             self.edit_curve_parameters_action.setEnabled(False)
@@ -15790,7 +16312,7 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
                     else:
                         self.set_message(f"{xs: >5}\n{channel} {'' if ys is None else ys: >{min_temp_digits}}\u00B0{aw.qmc.mode}{'/min' if aw.qmc.fmt_data_RoR else ''}")
             # update running LCDs
-            if not aw.qmc.flagon:
+            if not aw.qmc.flagon and not bool(aw.comparator):
                 if aw.qmc.running_LCDs == 1: # show foreground profile readings at cursor position in LCDs
                     if timeindex is None:
                         timeindex = aw.qmc.time2index(self._last_event.xdata, nearest=False)
@@ -15841,8 +16363,8 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
     @staticmethod
     def plus():
         modifiers = QApplication.keyboardModifiers()
-        if modifiers == (Qt.KeyboardModifier.AltModifier | Qt.KeyboardModifier.ControlModifier):
-            # ALT+CTR-CLICK (OPTION+COMMAND on macOS) toggles
+        if modifiers in [(Qt.KeyboardModifier.AltModifier | Qt.KeyboardModifier.ControlModifier), (Qt.KeyboardModifier.AltModifier | Qt.KeyboardModifier.ShiftModifier)]:
+            # ALT+CTR-CLICK (OPTION+COMMAND on macOS) toggles  or alternatively ALT-SHIFT-CLICK
             # toggle debug logging
             # first get all module loggers
             debug_level = debugLogLevelToggle()
@@ -16029,7 +16551,7 @@ class SampleThread(QThread):
                     temp2_readings.append(t2)
                     timex_readings.append(tx)
                     
-                    # the software PID needs to be updated here in sampling thread to ensure constant timing for the deriv computation
+                    # the software PID needs to be updated here to ensure constant timing for the deriv computation
                     if (aw.qmc.Controlbuttonflag and
                         not aw.pidcontrol.externalPIDControl()): # any device and + Artisan Software PID lib
                         # and aw.pidcontrol.pidActive # we feed the PID algorithm also while it is not actively controlling
@@ -16095,17 +16617,18 @@ class SampleThread(QThread):
                     if next_time is None:
                         next_time = libtime.perf_counter() + interval
                     else:
-#                        libtime.sleep(max(0, next_time - libtime.time())) # sleep is not very accurate
+                        #libtime.sleep(max(0, next_time - libtime.time())) # sleep is not very accurate
                         self.accurate_delay(max(0, next_time - libtime.perf_counter())) # more accurate, but keeps the CPU busy
-
-#                    _log.info(datetime.datetime.now()) # use this to check for drifts
-
+    
+                    #_log.info(datetime.datetime.now()) # use this to check for drifts
+    
                     #collect information
-                    try:
-                        aw.qmc.flagsampling = True # we signal that we are sampling
-                        self.sample()
-                    finally:
-                        aw.qmc.flagsampling = False # we signal that we are done with sampling
+                    if aw.sample_loop_running and aw.qmc.flagon:
+                        try:
+                            aw.qmc.flagsampling = True # we signal that we are sampling
+                            self.sample()
+                        finally:
+                            aw.qmc.flagsampling = False # we signal that we are done with sampling
                 else:
                     aw.qmc.flagsampling = False # we signal that we are done with sampling
                     try:
@@ -16178,6 +16701,8 @@ class MyQDoubleValidator(QDoubleValidator): # pylint: disable=too-few-public-met
 aw = None # assigned to the single instance of ApplicationWindow on creation
 artisanviewerFirstStart = False
 
+# NOTE: to have pylint to verify proper __slot__ definitions one has to remove the super class QMainWindow here temporarily
+#   as this does not has __slot__ definitions and thus __dict__ is contained which suppresses the warnings
 class ApplicationWindow(QMainWindow):
 
     singleShotPhidgetsPulseOFF = pyqtSignal(int,int,str) # signal to be called from the eventaction thread to realise Phidgets pulse via QTimer in the main thread
@@ -16201,16 +16726,16 @@ class ApplicationWindow(QMainWindow):
     updateSubscriptionSignal = pyqtSignal(str)
     updateLimitsSignal = pyqtSignal(float, float, str, int, list) # rlimit:float, rused:float, pu:str, notifications:int
     
-    __slots__ = [ 'locale_str', 'app', 'superusermode', 'plus_account', 'plus_remember_credentials', 'plus_email', 'plus_language', 'plus_subscription',
+    __slots__ = [ 'locale_str', 'app', 'superusermode', 'sample_loop_running', 'time_stopped', 'plus_account', 'plus_remember_credentials', 'plus_email', 'plus_language', 'plus_subscription',
         'plus_paidUntil', 'plus_rlimit', 'plus_used', 'plus_readonly', 'appearance', 'mpl_fontproperties', 'full_screen_mode_active', 'processingKeyEvent', 'quickEventShortCut',
         'eventaction_running_threads', 'qtbase_additional_locales', 'qtbase_locales', 'curFile', 'MaxRecentFiles', 'recentFileActs', 'recentSettingActs',
-        'recentThemeActs', 'applicationDirectory', 'helpdialog', 'redrawTimer', 'lastLoadedProfile', 'lastLoadedBackground',
+        'recentThemeActs', 'applicationDirectory', 'helpdialog', 'redrawTimer', 'lastLoadedProfile', 'lastLoadedBackground', 'LargeScaleLCDsFlag', 'largeScaleLCDs_dialog',
         'analysisresultsanno', 'segmentresultsanno', 'largeLCDs_dialog', 'LargeLCDsFlag', 'largeDeltaLCDs_dialog', 'LargeDeltaLCDsFlag', 'largePIDLCDs_dialog',
         'LargePIDLCDsFlag', 'largeExtraLCDs_dialog', 'LargeExtraLCDsFlag', 'largePhasesLCDs_dialog', 'LargePhasesLCDsFlag', 'WebLCDs', 'WebLCDsPort',
         'WebLCDsAlerts', 'EventsDlg_activeTab', 'graphColorDlg_activeTab', 'PID_DlgControl_activeTab', 'CurveDlg_activeTab', 'editGraphDlg_activeTab',
         'backgroundDlg_activeTab', 'DeviceAssignmentDlg_activeTab', 'AlarmDlg_activeTab', 'resetqsettings', 'settingspath', 'wheelpath', 'profilepath',
         'userprofilepath', 'printer', 'main_widget', 'defaultdpi', 'dpi', 'qmc', 'HottopControlActive', 'AsyncSamplingAction', 'wheeldialog',
-        'simulator', 'simulatorpath', 'comparator', 'stack', 'eventsbuttonflag', 'minieventsflag', 'seriallogflag',
+        'simulator', 'simulatorpath', 'comparator', 'stack', 'eventsbuttonflag', 'minieventsflags', 'seriallogflag',
         'seriallog', 'ser', 'modbus', 'extraMODBUStemps', 'extraMODBUStx', 's7', 'ws', 'scale', 'color', 'extraser', 'extracomport', 'extrabaudrate',
         'extrabytesize', 'extraparity', 'extrastopbits', 'extratimeout', 'fujipid', 'dtapid', 'pidcontrol', 'soundflag', 'recentRoasts', 'maxRecentRoasts',
         'lcdpaletteB', 'lcdpaletteF', 'extraeventsbuttonsflags', 'extraeventslabels', 'extraeventbuttoncolor', 'extraeventsactionstrings',
@@ -16230,13 +16755,14 @@ class ApplicationWindow(QMainWindow):
         'batchAction', 'temperatureConfMenu', 'FahrenheitAction', 'CelsiusAction', 'languageMenu', 'analyzeMenu', 'fitIdealautoAction',
         'analyzeMenu', 'fitIdealx2Action', 'fitIdealx3Action', 'fitIdealx0Action', 'fitBkgndAction', 'clearresultsAction', 'roastCompareAction',
         'designerAction', 'simulatorAction', 'wheeleditorAction', 'transformAction', 'temperatureMenu', 'ConvertToFahrenheitAction', 
-        'ConvertToCelsiusAction', 'controlsAction', 'readingsAction', 'buttonsAction', 'slidersAction', 'lcdsAction', 'deltalcdsAction',
-        'pidlcdsAction', 'extralcdsAction', 'phaseslcdsAction', 'fullscreenAction', 'loadSettingsAction', 'openRecentSettingMenu',
+        'ConvertToCelsiusAction', 'controlsAction', 'readingsAction', 'eventsEditorAction', 'buttonsAction', 'slidersAction', 'lcdsAction', 'deltalcdsAction',
+        'pidlcdsAction', 'scalelcdsAction', 'extralcdsAction', 'phaseslcdsAction', 'fullscreenAction', 'loadSettingsAction', 'openRecentSettingMenu',
         'saveAsSettingsAction', 'resetAction', 'messagelabel', 'button_font_size_pt', 'button_font_size', 'button_font_size_small', 'button_font_size_small_selected',
         'button_font_size_tiny', 'button_font_size_micro', 'main_button_min_width', 'standard_button_min_width', 'small_button_min_width', 'tiny_button_min_width',
         'pushbuttonstyles_simulator', 'pushbuttonstyles', 'standard_button_tiny_height', 'standard_button_small_height', 'standard_button_height',
-        'button_1', 'button_2', 'button_3', 'button_4', 'button_5', 'button_6', 'button_7', 'button_8', 'button_9', 'button_10', 'button_11', 'button_12',
-        'button_13',  'button_14', 'button_15', 'button_16', 'button_17', 'button_19', 'button_20', 'lcd1', 'lcd2', 'lcd3', 'lcd4', 'lcd5', 
+        'buttonONOFF', 'buttonSTARTSTOP', 'buttonFCs', 'buttonFCe', 'buttonSCs', 'buttonSCe', 'buttonRESET', 'buttonCHARGE', 'buttonDROP',
+        'buttonCONTROL', 'buttonEVENT', 'buttonSVp5', 'buttonSVp10', 'buttonSVp20', 'buttonSVm20', 'buttonSVm10', 'buttonSVm5', 'buttonDRY',
+        'buttonCOOL', 'lcd1', 'lcd2', 'lcd3', 'lcd4', 'lcd5', 
         'lcd6', 'lcd7', 'label2', 'label3', 'label4', 'label5', 'label6', 'label7', 'nLCDs', 'extraLCD1', 'extraLCD2', 'extraLCDlabel1', 'extraLCDlabel2',
         'extraLCDframe1', 'extraLCDframe2', 'extraLCDvisibility1', 'extraLCDvisibility2', 'extraCurveVisibility1', 'extraCurveVisibility2',
         'extraDelta1', 'extraDelta2', 'extraFill1', 'extraFill2', 'channel_tare_values', 'messagehist', 'eventlabel', 'eNumberSpinBox', 
@@ -16249,15 +16775,25 @@ class ApplicationWindow(QMainWindow):
         'DRYlabel', 'DRYlcd', 'DRYlcdFrame', 'DRY2FCslabel', 'DRY2FCsframe', 'FCslabel', 'FCslcd', 'FCslcdFrame', 'AUClabel', 'AUClcd', 'AUClcdFrame',
         'AUCLCD', 'phasesLCDs', 'extrabuttonsLayout', 'extrabuttondialogs', 'slider1', 'slider2', 'slider3', 'slider4', 'sliderLCD1', 'sliderLCD2', 'sliderLCD3',
         'sliderLCD4', 'sliderGrpBox1', 'sliderGrpBox2', 'sliderGrpBox3', 'sliderGrpBox4', 'sliderSV', 'sliderLCDSV', 'sliderGrpBoxSV', 'leftlayout',
-        'sliderFrame', 'lcdFrame', 'midlayout', 'editgraphdialog', 'html_loader' ]
+        'sliderFrame', 'lcdFrame', 'midlayout', 'editgraphdialog', 'html_loader', 'QtWebEngineSupport',
+        'buttonpalette', 'extraeventbuttontextcolor', 'extraeventsactions', 'extraeventsdescriptions', 'extraeventstypes', 'extraeventsvalues',
+        'extraeventsvisibility', 'fileSaveAction', 'fileSaveAsAction', 'keyboardButtonStyles', 'language_menu_actions', 'loadThemeAction', 'main_button_min_width_str',
+        'minieventleft', 'minieventright', 'nLCDS', 'notificationManager', 'notificationsflag', 'ntb', 'pdf_page_layout', 'pdf_rendering', 'productionPDFAction',
+        'rankingPDFAction', 'roastReportMenu', 'roastReportPDFAction', 'saveAsThemeAction', 'sliderGrpBox1x', 'sliderGrpBox2x', 'sliderGrpBox3x', 'sliderGrpBox4x',
+        'small_button_min_width_str', 'standard_button_min_width_px', 'tiny_button_min_width_str' ]
         
         
 
-    def __init__(self, parent = None, *, locale):
+    def __init__(self, parent = None, *, locale, WebEngineSupport):
     
         self.locale_str = locale
         self.app = app
         self.superusermode = False
+        
+        self.sample_loop_running = True
+        self.time_stopped = 0
+        
+        self.QtWebEngineSupport = WebEngineSupport
 
 #PLUS
         self.plus_account = None # if set to a login string, Artisan plus features are enabled
@@ -16295,7 +16831,7 @@ class ApplicationWindow(QMainWindow):
         # renamed via setText to link them to artisan translations (which hopefully provides those translations)
 
         self.qtbase_additional_locales = ["da","el","fa","gd","lv","nl","pt_BR","pt","sk","sv","zh_CN"] # additionally added to /translations
-        self.qtbase_locales = ["ar","de","en","es","fi","fr","he","hu","it","ja","ko","pl","ru","tr","zh_TW"] # from Qt distribution
+        self.qtbase_locales = ["ar","de","en","es","fi","fr","he","hu","it","ja","ko","pl","uk","tr","zh_TW"] # from Qt distribution
 
         #############################  Define variables that need to exist before calling settingsload()
         self.curFile = None
@@ -16330,6 +16866,8 @@ class ApplicationWindow(QMainWindow):
         self.LargeDeltaLCDsFlag = False
         self.largePIDLCDs_dialog = None
         self.LargePIDLCDsFlag = False
+        self.largeScaleLCDs_dialog = None
+        self.LargeScaleLCDsFlag = False
         self.largeExtraLCDs_dialog = None
         self.LargeExtraLCDsFlag = False
         self.largePhasesLCDs_dialog = None
@@ -16419,7 +16957,7 @@ class ApplicationWindow(QMainWindow):
         self.qmc.setContentsMargins(0,0,0,0)
         #events config
         self.eventsbuttonflag = 0
-        self.minieventsflag = 0   #minieditor flag
+        self.minieventsflags = [0,0,0] # minieditor visibility per state OFF, ON, START
 
         #records serial comm (Help menu)
         self.seriallogflag = False
@@ -16656,9 +17194,9 @@ class ApplicationWindow(QMainWindow):
         importK204Action.triggered.connect(self.importK204)
         self.importMenu.addAction(importK204Action)
 
-        importRubaseAction = QAction("Rubase CSV...", self)
-        importRubaseAction.triggered.connect(self.importRubase)
-        self.importMenu.addAction(importRubaseAction)
+        importRubasseAction = QAction("Rubasse CSV...", self)
+        importRubasseAction.triggered.connect(self.importRubasse)
+        self.importMenu.addAction(importRubasseAction)
 
         importPetronciniAction = QAction("Petroncini CSV...", self)
         importPetronciniAction.triggered.connect(self.importPetroncini)
@@ -16787,6 +17325,8 @@ class ApplicationWindow(QMainWindow):
         fileConvertReportPDFAction = QAction(QApplication.translate("Menu", "Roast Report PDF..."), self)
         fileConvertReportPDFAction.triggered.connect(self.fileConvertReportPDF)
         self.convMenu.addAction(fileConvertReportPDFAction)
+        if not self.QtWebEngineSupport:
+            fileConvertReportPDFAction.setEnabled(False)
 
         self.fileMenu.addSeparator()
 
@@ -16852,6 +17392,8 @@ class ApplicationWindow(QMainWindow):
         self.roastReportPDFAction = QAction(QApplication.translate("Menu", "PDF..."), self)
         self.roastReportPDFAction.triggered.connect(self.pdfReport)
         self.roastReportMenu.addAction(self.roastReportPDFAction)
+        if not self.QtWebEngineSupport:
+            self.roastReportPDFAction.setEnabled(False)
 
         self.htmlAction = QAction(QApplication.translate("Menu", "Web..."), self)
         self.htmlAction.triggered.connect(self.htmlReport)
@@ -16864,6 +17406,8 @@ class ApplicationWindow(QMainWindow):
         self.productionPDFAction = QAction(QApplication.translate("Menu", "PDF..."), self)
         self.productionPDFAction.triggered.connect(self.productionPDFReport)
         self.productionMenu.addAction(self.productionPDFAction)
+        if not self.QtWebEngineSupport:
+            self.productionPDFAction.setEnabled(False)
         
         self.productionWebAction = QAction(QApplication.translate("Menu", "Web..."), self)
         self.productionWebAction.triggered.connect(self.productionHTMLReport)
@@ -16882,6 +17426,8 @@ class ApplicationWindow(QMainWindow):
         self.rankingPDFAction = QAction(QApplication.translate("Menu", "PDF..."), self)
         self.rankingPDFAction.triggered.connect(self.rankingPDFReport)
         self.rankingMenu.addAction(self.rankingPDFAction)
+        if not self.QtWebEngineSupport:
+            self.rankingPDFAction.setEnabled(False)
         
         self.rankingWebAction = QAction(QApplication.translate("Menu", "Web..."), self)
         self.rankingWebAction.triggered.connect(self.rankingHTMLReport)
@@ -17047,6 +17593,7 @@ class ApplicationWindow(QMainWindow):
         # language_menu_actions holds a dict associating iso2 locale strings to language menu actions
         self.language_menu_actions = {}
         
+        # use s.encode("ascii", 'backslashreplace').decode("utf-8") and remove the duplicate \\
         for iso, name in [
                 ("ar", "\u0627\u0644\u0639\u0631\u0628\u064a\u0629"),
                 ("da", "Dansk"),
@@ -17054,6 +17601,7 @@ class ApplicationWindow(QMainWindow):
                 ("en", "English"),
                 ("es", "Espa\u00f1ol"),
                 ("fa", "\u0641\u0627\u0631\u0633\u06cc"),
+                ("fi", "Suomalainen"),
                 ("fr", "Fran\u00e7ais"),
                 ("gd", "G\u00e0idhlig na h-Alba"),
                 ("el", "\u03b5\u03bb\u03bb\u03b7\u03bd\u03b9\u03ba\u03ac"),
@@ -17069,10 +17617,10 @@ class ApplicationWindow(QMainWindow):
                 ("pl", "Polski"),
                 ("pt", "Portugu\xeas"),
                 ("pt_BR", "Portugu\u00EAs do Brasil"),
-                ("ru", "\u0420\u0443\u0441\u0441\u043a\u0438\u0439"),
+#                ("ru", "\u0420\u0443\u0441\u0441\u043a\u0438\u0439"),
                 ("sk", "Slov\u00e1k"),
                 ("sv", "Svenska"),
-                ("fi", "Suomalainen"),
+                ("uk", "\u0443\u043a\u0440\u0430\u0457\u043d\u0435\u0446\u044c"), #"\u0443\u043a\u0440\u0430\u0457\u043d\u0441\u044c\u043a\u0438\u0439"),
                 ("th", "Thai"),
                 ("tr", "T\xfcrk\u00e7e"),
                 ("vi", "Ti\u1EBFng Vi\u1EC7t"),
@@ -17176,6 +17724,12 @@ class ApplicationWindow(QMainWindow):
         self.readingsAction.setChecked(False)
         self.viewMenu.addAction(self.readingsAction)
 
+        self.eventsEditorAction = QAction(QApplication.translate("Menu", "Events Editor"), self)
+        self.eventsEditorAction.triggered.connect(self.toggle_minieventline)
+        self.eventsEditorAction.setCheckable(True)
+        self.eventsEditorAction.setChecked(False)
+        self.viewMenu.addAction(self.eventsEditorAction)
+
         self.buttonsAction = QAction(QApplication.translate("Menu", "Buttons"), self)
         self.buttonsAction.triggered.connect(self.toggleExtraButtons)
         self.buttonsAction.setCheckable(True)
@@ -17220,6 +17774,12 @@ class ApplicationWindow(QMainWindow):
         self.phaseslcdsAction.setCheckable(True)
         self.phaseslcdsAction.setChecked(False)
         self.viewMenu.addAction(self.phaseslcdsAction)
+
+        self.scalelcdsAction = QAction(QApplication.translate("Menu", "Scale LCDs"), self)
+        self.scalelcdsAction.triggered.connect(self.largeScaleLCDs)
+        self.scalelcdsAction.setCheckable(True)
+        self.scalelcdsAction.setChecked(False)
+        self.viewMenu.addAction(self.scalelcdsAction)
 
         self.viewMenu.addSeparator()
 
@@ -17319,7 +17879,10 @@ class ApplicationWindow(QMainWindow):
 
         self.messagelabel.setIndent(6)
         # set a few broad style parameters
-        self.button_font_size_pt = 13
+        if platf == "Linux":
+            self.button_font_size_pt = 11
+        else:
+            self.button_font_size_pt = 13
         
         #TODO: delete # pylint: disable=fixme
         if platf == 'Windows':
@@ -17579,7 +18142,7 @@ class ApplicationWindow(QMainWindow):
                     font-size: """ + self.button_font_size + """;
                     font-weight: bold;
                     color: white;
-                    background-color: #54b5ff;
+                    background-color: #7FC8FF;
                 }
                 QPushButton:!enabled {
                     color: darkgrey;
@@ -17649,8 +18212,8 @@ class ApplicationWindow(QMainWindow):
         self.buttonONOFF.setToolTip(QApplication.translate("Tooltip", "Start monitoring"))
         self.buttonONOFF.setStyleSheet(self.pushbuttonstyles["OFF"])
         self.buttonONOFF.setGraphicsEffect(self.makeShadow())
-        self.buttonONOFF.pressed.connect(self.mainButtonPressed)
-        self.buttonONOFF.released.connect(self.mainButtonReleased)
+#        self.buttonONOFF.pressed.connect(self.mainButtonPressed)
+#        self.buttonONOFF.released.connect(self.mainButtonReleased)
         self.buttonONOFF.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.buttonONOFF.setMinimumHeight(self.standard_button_height)
         self.buttonONOFF.clicked.connect(self.qmc.ToggleMonitor)
@@ -17663,8 +18226,8 @@ class ApplicationWindow(QMainWindow):
         self.buttonSTARTSTOP.setToolTip(QApplication.translate("Tooltip", "Start recording"))
         self.buttonSTARTSTOP.setStyleSheet(self.pushbuttonstyles["STOP"])
         self.buttonSTARTSTOP.setGraphicsEffect(self.makeShadow())
-        self.buttonSTARTSTOP.pressed.connect(self.mainButtonPressed)
-        self.buttonSTARTSTOP.released.connect(self.mainButtonReleased)
+#        self.buttonSTARTSTOP.pressed.connect(self.mainButtonPressed)
+#        self.buttonSTARTSTOP.released.connect(self.mainButtonReleased)
         self.buttonSTARTSTOP.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         self.buttonSTARTSTOP.setMinimumHeight(self.standard_button_height)
@@ -17694,8 +18257,8 @@ class ApplicationWindow(QMainWindow):
         self.buttonRESET.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.buttonRESET.setStyleSheet(self.pushbuttonstyles["RESET"])
         self.buttonRESET.setGraphicsEffect(self.makeShadow())
-        self.buttonRESET.pressed.connect(self.mainButtonPressed)
-        self.buttonRESET.released.connect(self.mainButtonReleased)
+#        self.buttonRESET.pressed.connect(self.mainButtonPressed)
+#        self.buttonRESET.released.connect(self.mainButtonReleased)
         self.buttonRESET.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.buttonRESET.setMinimumHeight(self.standard_button_height)
         self.buttonRESET.setToolTip(QApplication.translate("Tooltip", "Reset"))
@@ -17716,8 +18279,8 @@ class ApplicationWindow(QMainWindow):
         self.buttonCONTROL.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.buttonCONTROL.setStyleSheet(self.pushbuttonstyles["PID"])
         self.buttonCONTROL.setGraphicsEffect(self.makeShadow())
-        self.buttonCONTROL.pressed.connect(self.mainButtonPressed)
-        self.buttonCONTROL.released.connect(self.mainButtonReleased)
+#        self.buttonCONTROL.pressed.connect(self.mainButtonPressed)
+#        self.buttonCONTROL.released.connect(self.mainButtonReleased)
         self.buttonCONTROL.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.buttonCONTROL.setMinimumHeight(self.standard_button_height)
         self.buttonCONTROL.clicked.connect(self.PIDcontrol)
@@ -17805,7 +18368,6 @@ class ApplicationWindow(QMainWindow):
 
         # NavigationToolbar VMToolbar
         self.ntb = VMToolbar(self.qmc, self.main_widget)
-
         #self.ntb.setMinimumHeight(50)
 
         #create LCD displays
@@ -17916,6 +18478,7 @@ class ApplicationWindow(QMainWindow):
             self.extraLCDframe1[i].setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
             self.extraLCDframe1[i].customContextMenuRequested.connect(self.setTare_slot)
             self.extraLCDframe1[i].left_clicked.connect(self.toggleExtraCurve1)
+            self.extraLCDframe1[i].setVisible(False)
             self.extraLCDframe2[i].setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
             self.extraLCDframe2[i].customContextMenuRequested.connect(self.setTare_slot)
             self.extraLCDframe2[i].left_clicked.connect(self.toggleExtraCurve2)
@@ -17947,15 +18510,22 @@ class ApplicationWindow(QMainWindow):
         self.buttonSVm5.setVisible(False)
 
         #### EVENT MINI EDITOR: View&Edits events without opening roast properties Dlg.
-        self.eventlabel = QLabel(QApplication.translate("Label","Event #<b>0 </b>"))
+        self.eventlabel = QLabel(f'{QApplication.translate("Form Caption", "Event")} #<b>0 </b>')
+        
         self.eventlabel.setIndent(5)
+        
         self.eNumberSpinBox = QSpinBox()
-
         self.eNumberSpinBox.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.eNumberSpinBox.setToolTip(QApplication.translate("Tooltip", "Number of events found"))
         self.eNumberSpinBox.setRange(0,99)
         self.eNumberSpinBox.valueChanged.connect(self.changeEventNumber)
         self.eNumberSpinBox.setMaximumWidth(40)
+        
+        self.minieventleft = QPushButton("<")
+        self.minieventleft.clicked.connect(self.decrEventNumber)
+        self.minieventright = QPushButton(">")
+        self.minieventright.clicked.connect(self.incrEventNumber)
+        
         self.lineEvent = QLineEdit()
         self.lineEvent.setMinimumWidth(200)
 
@@ -18166,6 +18736,9 @@ class ApplicationWindow(QMainWindow):
         EventsLayout.addSpacing(4)
         EventsLayout.addWidget(self.eNumberSpinBox)
         EventsLayout.addSpacing(4)
+        EventsLayout.addWidget(self.minieventleft)
+        EventsLayout.addWidget(self.minieventright)
+        EventsLayout.addSpacing(4)
         EventsLayout.addWidget(self.buttonminiEvent)
         self.EventsGroupLayout = QGroupBox()
         self.EventsGroupLayout.setLayout(EventsLayout)
@@ -18324,7 +18897,6 @@ class ApplicationWindow(QMainWindow):
         self.phasesLCDs.setToolTip(QApplication.translate("Tooltip","Phase LCDs: right-click to cycle through TIME, PERCENTAGE and TEMP MODE"))
 
         #level 1
-#        self.level1layout.addWidget(self.ntb)
         self.level1layout.addStretch()
         self.level1layout.addWidget(self.phasesLCDs)
         self.level1layout.addWidget(self.AUCLCD)
@@ -18639,6 +19211,13 @@ class ApplicationWindow(QMainWindow):
     def setTimerColor(self, timer_color:str):
         self.lcd1.setStyleSheet("QLCDNumber { border-radius: 4; color: %s; background-color: %s;}"%(self.lcdpaletteF[timer_color],self.lcdpaletteB[timer_color]))
         self.qmc.setTimerLargeLCDcolorSignal.emit(self.lcdpaletteF[timer_color], self.lcdpaletteB[timer_color])
+        # HACK: PID/CONTROL button changes shape/shadow on setTimerColor() as triggered by RESET
+        # there reason remains unclear
+        # the following prevents this
+        try:
+            self.buttonCONTROL.setStyleSheet(self.buttonCONTROL.styleSheet())
+        except Exception:  # pylint: disable=broad-except
+            pass
         
     def mousePressEvent(self, event):
         super().mousePressEvent(event)
@@ -18721,8 +19300,8 @@ class ApplicationWindow(QMainWindow):
         else:
             self.qmc.BTcurve = not self.qmc.BTcurve
         self.qmc.redraw(recomputeAllDeltas=False)
-    @pyqtSlot()
-    
+        
+    @pyqtSlot()    
     def toggleDeltaETCurve(self):
         if self.qmc.swapdeltalcds:
             self.qmc.DeltaBTflag = not self.qmc.DeltaBTflag
@@ -18852,13 +19431,17 @@ class ApplicationWindow(QMainWindow):
             else:
                 # file Clean   
                 dirtySign = ""
-            if self.curFile:
+            if bool(self.simulator) and self.simulatorpath:
+                # simulator running
+                speed = int(self.qmc.timeclock.getBase()/1000)
+                self.setWindowTitle("@{}x {} ** {}".format(speed,self.strippedName(self.simulatorpath),appTitle))
+            elif self.curFile:
                 # profile loaded
-                self.setWindowTitle("{}{} - {}".format(dirtySign,self.strippedName(self.curFile),appTitle))
+                self.setWindowTitle("{}{} – {}".format(dirtySign,self.strippedName(self.curFile),appTitle))
             else:
                 # no profile loaded
                 if __release_sponsor_name__:
-                    self.setWindowTitle("{}{} - {} ({})".format(dirtySign,appTitle,__release_sponsor_name__,QApplication.translate("About","Release Sponsor")))
+                    self.setWindowTitle("{}{} – {} ({})".format(dirtySign,appTitle,__release_sponsor_name__,QApplication.translate("About","Release Sponsor")))
                 else:
                     self.setWindowTitle("{}{}".format(dirtySign,appTitle))
         except Exception as e: # pylint: disable=broad-except
@@ -18879,9 +19462,9 @@ class ApplicationWindow(QMainWindow):
             lastdonationpopup = None
             settings = QSettings()
             if settings.contains("starts"):
-                starts = settings.value("starts")
+                starts = toInt(settings.value("starts"))
             if settings.contains("lastdonationpopup"):
-                lastdonationpopup = settings.value("lastdonationpopup")
+                lastdonationpopup = toInt(settings.value("lastdonationpopup"))
             now = int(libtime.time())
             if not(settings.status() == QSettings.Status.NoError and 
                     lastdonationpopup is not None and 
@@ -18943,6 +19526,9 @@ class ApplicationWindow(QMainWindow):
         urls = event.mimeData().urls()
         if urls and len(urls)>0:
             app.open_url(urls[0])
+            if bool(aw.comparator):
+                for url in urls[0:]:
+                    app.open_url(url)
 
     def showHelpDialog(self,parent,dialog,title,content):
         try: # sip not supported on older PyQt versions (RPi!)
@@ -19054,13 +19640,13 @@ class ApplicationWindow(QMainWindow):
         validator.setLocale(QLocale.c())
         return validator
     
-    @pyqtSlot()
-    def mainButtonPressed(self):
-        self.sender().setGraphicsEffect(self.makeShadow(strong=True))
-        
-    @pyqtSlot()
-    def mainButtonReleased(self):
-        self.sender().setGraphicsEffect(self.makeShadow())
+#    @pyqtSlot()
+#    def mainButtonPressed(self):
+#        self.sender().setGraphicsEffect(self.makeShadow(strong=True))
+#        
+#    @pyqtSlot()
+#    def mainButtonReleased(self):
+#        self.sender().setGraphicsEffect(self.makeShadow())
 
     # for use in widgets that expects a double via a aw.createCLocalDoubleValidator that accepts both,
     # one dot and several commas. If there is no dot, the last comma is interpreted as decimal separator and the others removed
@@ -19097,15 +19683,15 @@ class ApplicationWindow(QMainWindow):
     def setTare_slot(self,_):
         sender = self.sender()
         try:
-            idx = self.extraLCD1.index(sender)
+            idx = self.extraLCDframe1.index(sender)
             self.setTare(2+idx*2)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except Exception: # pylint: disable=broad-except
+            pass
         try:
-            idx = self.extraLCD2.index(sender)
+            idx = self.extraLCDframe2.index(sender)
             self.setTare(2+idx*2 + 1)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except Exception: # pylint: disable=broad-except
+            pass
 
     # set the tare values per channel (0: ET, 1:BT, 2:E1c0, 3:E1c1, 4:E1c0, 5:E1c1,...)
     def setTare(self,n):
@@ -19698,7 +20284,7 @@ class ApplicationWindow(QMainWindow):
                         QApplication.translate("Message", "Network name or IP address"),text=self.ws.host) #"127.0.0.1"
                     if res:
                         self.ws.host = host
-                elif self.qmc.device in [0,9,19,53,101,115] or (self.qmc.device == 29 and self.modbus.type in [0,1,2]): # Fuji, Center301, TC4, Hottop, Behmor or MODBUS serial
+                elif self.qmc.device in [0,9,19,53,101,115,126] or (self.qmc.device == 29 and self.modbus.type in [0,1,2]): # Fuji, Center301, TC4, Hottop, Behmor or MODBUS serial, HB/ARC
                     import serial.tools.list_ports
                     comports = [(cp if isinstance(cp, (list, tuple)) else [cp.device, cp.product, None]) for cp in serial.tools.list_ports.comports()]
                     if platf == 'Darwin':
@@ -20285,11 +20871,19 @@ class ApplicationWindow(QMainWindow):
         self.FCslabel.setStyleSheet(label_style)
         self.AUClabel.setStyleSheet(label_style)
 
+    # timex: if True, adjust time axis
+    # deltas: if True adjust delta axis
+    # background: if True, adjust such that background from CHARGE to DROP is fully in view 
+    #      (automatic set if time axis adjust is active, timex=True, during sampling and recording)
+    #      if background is False, the RESET min/max times are respected even if a background profile is loaded
     @staticmethod
     def autoAdjustAxis(background=False,timex=True,deltas=True):
         try:
             if aw.qmc.autotimex and timex:
                 # auto timex adjust
+                if aw.qmc.flagon and aw.qmc.background:
+                    # if we are recording and background profile is loaded and shown
+                    background = True
                 if background:
                     t_min,t_max = aw.calcAutoAxisBackground()
                 else:
@@ -20359,12 +20953,12 @@ class ApplicationWindow(QMainWindow):
         if self.full_screen_mode_active or self.isFullScreen():
             self.full_screen_mode_active = False
             self.showNormal()
-            if platf != 'Darwin':
+            if not (platf == 'Darwin' and self.qmc.locale_str == "en"):
                 aw.fullscreenAction.setChecked(False)
         else:
             self.full_screen_mode_active = True
             self.showFullScreen()
-            if platf != 'Darwin':
+            if not (platf == 'Darwin' and self.qmc.locale_str == "en"):
                 aw.fullscreenAction.setChecked(True)
 
     # returns time axis min and max
@@ -20450,32 +21044,36 @@ class ApplicationWindow(QMainWindow):
         return res_last
 
     # order event table by time
-    @staticmethod
-    def orderEvents(lock=True):
+    def orderEvents(self, lock=True):
         try:
             #### lock shared resources #####
             if lock:
-                aw.qmc.profileDataSemaphore.acquire(1)
+                self.qmc.profileDataSemaphore.acquire(1)
             nevents = len(aw.qmc.specialevents)
             packed_events = []
             # pack
             for i in range(nevents):
                 packed_events.append(
-                    (aw.qmc.specialevents[i],
-                     aw.qmc.specialeventstype[i],
-                     aw.qmc.specialeventsStrings[i],
-                     aw.qmc.specialeventsvalue[i]))
+                    (self.qmc.specialevents[i],
+                     self.qmc.specialeventstype[i],
+                     self.qmc.specialeventsStrings[i],
+                     self.qmc.specialeventsvalue[i]))
             # sort
             packed_events.sort(key=lambda tup: tup[0])
             # unpack
             for i in range(nevents):
-                aw.qmc.specialevents[i] = packed_events[i][0]
-                aw.qmc.specialeventstype[i] = packed_events[i][1]
-                aw.qmc.specialeventsStrings[i] = packed_events[i][2]
-                aw.qmc.specialeventsvalue[i] = packed_events[i][3]
+                self.qmc.specialevents[i] = packed_events[i][0]
+                self.qmc.specialeventstype[i] = packed_events[i][1]
+                self.qmc.specialeventsStrings[i] = packed_events[i][2]
+                self.qmc.specialeventsvalue[i] = packed_events[i][3]
+            # we have to clear the event flag positions as those are now out of order
+            self.qmc.l_event_flags_dict = {}
+            self.qmc.l_event_flags_pos_dict = {}
+            # update minievent editor
+            self.changeEventNumber(0)
         finally:
-            if lock and aw.qmc.profileDataSemaphore.available() < 1:
-                aw.qmc.profileDataSemaphore.release(1)
+            if lock and self.qmc.profileDataSemaphore.available() < 1:
+                self.qmc.profileDataSemaphore.release(1)
 
 
     # if only_active then only the event types with quantifiers activated are grouped
@@ -20593,14 +21191,57 @@ class ApplicationWindow(QMainWindow):
                         [0.001,         2.6417205e-4,   1.05668821e-3,  2.11337641e-3,  4.2267528e-3,   1.                   ]     # cm^3
                     ]
         return v*convtable[i][o]
+    
+    
             
     @pyqtSlot()
     def superusermodeLeftClicked(self):
-        self.superusermode = not self.superusermode
-        if self.superusermode:
-            aw.sendmessage(QApplication.translate("Message","super on"))
+        if self.simulator is not None and self.qmc.flagstart:
+            try:
+                self.qmc.samplingSemaphore.acquire(1)
+                self.sample_loop_running = not self.sample_loop_running
+                if self.sample_loop_running:
+                    period_stopped = (self.qmc.timeclock.elapsed() / self.qmc.timeclock.getBase()) - aw.time_stopped
+                    self.qmc.timeclock.addClock(period_stopped)
+                    
+                    # restart the stopped simulator
+                    modifiers = QApplication.keyboardModifiers()
+                    control_modifier = modifiers == Qt.KeyboardModifier.ControlModifier # command/apple key on macOS, Control key on Windows
+                    alt_modifier = modifiers == Qt.KeyboardModifier.AltModifier # OPTION on macOS, ALT on Windows
+                    shift_modifier = modifiers == Qt.KeyboardModifier.ShiftModifier # SHIFT
+                    if control_modifier or alt_modifier or shift_modifier:
+                        # if a modifier we change the speed instead of leaving the simulator (shift: 1x, alt: 2x, control: 4x):
+                        speed = 1
+                        if alt_modifier:
+                            speed = 2
+                        elif control_modifier:
+                            speed = 4
+                        old_base = self.qmc.timeclock.getBase()
+                        old_speed = old_base/1000
+                        if old_speed != speed:
+                            old_elapsed = self.qmc.timeclock.elapsed()
+                            # switch to new speed:
+                            new_base = 1000*speed
+                            self.qmc.timeclock.setBase(new_base)
+                            # time-base changed, we have to adjust our clock
+                            new_elapsed = self.qmc.timeclock.elapsed()
+                            offset = (new_elapsed - old_elapsed)/new_base
+                            self.qmc.timeclock.addClock(offset)
+                            self.updateWindowTitle()
+                        self.sendmessage(QApplication.translate("Message","Simulator started @{}x").format(speed))
+                    self.qmc.updateDeltaSamples() # to get the delta_spans right
+                else:
+                    # remember the time on stopping the simulator
+                    aw.time_stopped = self.qmc.timeclock.elapsed() / self.qmc.timeclock.getBase()
+            finally:
+                if self.qmc.samplingSemaphore.available() < 1:
+                    self.qmc.samplingSemaphore.release(1)
         else:
-            aw.sendmessage(QApplication.translate("Message","super off"))
+            self.superusermode = not self.superusermode
+            if self.superusermode:
+                aw.sendmessage(QApplication.translate("Message","super on"))
+            else:
+                aw.sendmessage(QApplication.translate("Message","super off"))
 
     @pyqtSlot("QPoint")
     def PhaseslcdClicked(self,_): # pylint: disable=no-self-use # used as slot
@@ -21039,13 +21680,13 @@ class ApplicationWindow(QMainWindow):
 #                _log.debug(f"curveSimilarity: {self.qmc.background_profile_sampling_interval=}")  #pylint: disable=logging-fstring-interpolation
 
                 # create arrays using smoothed data if available
-                if aw.qmc.stemp1 and len(aw.qmc.stemp1) == len(aw.qmc.temp1):
+                if aw.qmc.stemp1 is not None and len(aw.qmc.stemp1) == len(aw.qmc.temp1):
                     # take smoothed data if available
                     np_et = numpy.array(aw.qmc.stemp1)
                 else:
                     np_et = numpy.array(aw.qmc.temp1)
                     _log.debug("curveSimilarity: using non-smoothed ET")
-                if aw.qmc.stemp2 and len(aw.qmc.stemp2) == len(aw.qmc.temp2):
+                if aw.qmc.stemp2 is not None and len(aw.qmc.stemp2) == len(aw.qmc.temp2):
                     # take smoothed data if available
                     np_bt = numpy.array(aw.qmc.stemp2)
                 else:
@@ -21097,16 +21738,6 @@ class ApplicationWindow(QMainWindow):
                 det = numpy.sqrt(numpy.mean(numpy.square(np_et - interp_np_etb)))
                 dbt = numpy.sqrt(numpy.mean(numpy.square(np_bt - interp_np_btb)))
 
-#                #TODO remove this check  #pylint: disable=fixme
-#                if debugLogLevelActive():
-#                    old_det,old_dbt = aw.OLDcurveSimilarity()
-#                    if abs(old_det - det) > .1 or abs(old_dbt - dbt) > .1:
-#                        aw.sendmessage("curveSimilarity: det, dbt results DO NOT MATCH with old method!!")
-#                        _log.debug("curveSimilarity: OLDcurvesimilarity results %.2f/%.2f %s", old_det,old_dbt,aw.qmc.mode)
-#                        _log.debug("curveSimilarity: curvesimilarity results    %.2f/%.2f %s", det,dbt,aw.qmc.mode)
-#                    else:
-#                        _log.debug("curveSimilarity: det, dbt results MATCH with old method!!")
-
                 return det,dbt
 
             # no DROP event registered
@@ -21115,56 +21746,6 @@ class ApplicationWindow(QMainWindow):
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
             aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " curveSimilatrity(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
-            return None, None
-
-    #TODO remove this function, left only for cross checking new funciton  #pylint: disable=fixme
-    # computes the similarity between BT and backgroundBT as well as ET and backgroundET
-    # iterates over all BT/ET values backward from DROP to the specified BT temperature
-    # returns None in case no similarity can be computed
-    @staticmethod
-    def OLDcurveSimilarity(): 
-        BTlimit = aw.qmc.phases[1]
-        try:
-            # if background profile is loaded and both profiles have a DROP even set
-            if aw.qmc.backgroundprofile is not None and aw.qmc.timeindex[6] and aw.qmc.timeindexB[6]:
-                # calculate time delta between background and foreground DROP event
-                dropTimeDelta = aw.qmc.timex[aw.qmc.timeindex[6]] - aw.qmc.timeB[aw.qmc.timeindexB[6]]
-                totalQuadraticDeltaET = 0
-                totalQuadraticDeltaBT = 0
-                count = 0
-                for i in range(aw.qmc.timeindex[6],0,-1):
-                    # iterate backward from DROP to BTlimit
-                    if aw.qmc.stemp1 and len(aw.qmc.stemp1) > i:
-                        # take smoothed data if available
-                        et = aw.qmc.stemp1[i]
-                    else:
-                        et = aw.qmc.temp1[i]
-                    if aw.qmc.stemp2 and len(aw.qmc.stemp2) > i:
-                        # take smoothed data if available
-                        bt = aw.qmc.stemp2[i]
-                    else:
-                        bt = aw.qmc.temp2[i]
-                    if BTlimit and bt > BTlimit:
-                        # still above the limit
-                        # retrieve corresponding values from the background (is always smoothed)
-                        # first compute closest index at that time point in the background data
-                        #j = aw.qmc.backgroundtime2index((aw.qmc.timex[i] - dropTimeDelta))
-                        #etb = aw.qmc.temp1B[j]
-                        #btb = aw.qmc.temp2B[j]
-                        etb = aw.qmc.backgroundETat(aw.qmc.timex[i] - dropTimeDelta)
-                        btb = aw.qmc.backgroundBTat(aw.qmc.timex[i] - dropTimeDelta)
-                        det = (et - etb)
-                        totalQuadraticDeltaET += det * det
-                        dbt = (bt - btb)
-                        totalQuadraticDeltaBT += dbt * dbt
-                        count += 1
-                    else:
-                        break
-                return math.sqrt(totalQuadraticDeltaET/float(count)), math.sqrt(totalQuadraticDeltaBT/float(count))
-            # no DROP event registered
-            return None, None
-        except Exception: # pylint: disable=broad-except
-#            traceback.print_exc(file=sys.stdout)
             return None, None
 
     def setLCDsDigitCount(self,n):
@@ -21260,6 +21841,7 @@ class ApplicationWindow(QMainWindow):
         # try to select the right font for matplotlib according to the given locale and plattform
         if self.qmc.graphfont == 0:
             try:
+                rcParams['axes.unicode_minus'] = True
                 rcParams['font.size'] = 12.0
                 if platf == "Darwin":
                     mpl.rcParams['font.family'] = "Arial Unicode MS"
@@ -21297,30 +21879,36 @@ class ApplicationWindow(QMainWindow):
             # font WenQuanYi selected
             rcParams['font.size'] = 12.0
             rcParams['font.family'] = ['WenQuanYi Zen Hei']
+            rcParams['axes.unicode_minus'] = False
 #            aw.set_mpl_fontproperties(self.getResourcePath() + "wqy-zenhei.ttc") # .ttc fonts are not supported yet by the PDF backend
             aw.set_mpl_fontproperties(getResourcePath() + "WenQuanYiZenHei-01.ttf")
         elif self.qmc.graphfont == 4: # Source Han Sans (CN, TW, HK, KR, JP)
             # font Source Han Sans selected, Simplified Chinese
+            rcParams['axes.unicode_minus'] = True
             rcParams['font.size'] = 12.0
             rcParams['font.family'] = ['Source Han Sans CN']
             aw.set_mpl_fontproperties(getResourcePath() + "SourceHanSansCN-Regular.otf")
         elif self.qmc.graphfont == 5: # Source Han Sans (CN, TW, HK, KR, JP)
             # font Source Han Sans selected, Traditional Chinese, Taiwan
+            rcParams['axes.unicode_minus'] = True
             rcParams['font.size'] = 12.0
             rcParams['font.family'] = ['Source Han Sans TW']
             aw.set_mpl_fontproperties(getResourcePath() + "SourceHanSansTW-Regular.otf")
         elif self.qmc.graphfont == 6: # Source Han Sans (CN, TW, HK, KR, JP)
             # font Source Han Sans selected, Traditional Chinese, Hong Kong
+            rcParams['axes.unicode_minus'] = True
             rcParams['font.size'] = 12.0
             rcParams['font.family'] = ['Source Han Sans HK']
             aw.set_mpl_fontproperties(getResourcePath() + "SourceHanSansHK-Regular.otf")
         elif self.qmc.graphfont == 7: # Source Han Sans (CN, TW, HK, KR, JP)
             # font Source Han Sans selected, Korean
+            rcParams['axes.unicode_minus'] = True
             rcParams['font.size'] = 12.0
             rcParams['font.family'] = ['Source Han Sans KR']
             aw.set_mpl_fontproperties(getResourcePath() + "SourceHanSansKR-Regular.otf")
         elif self.qmc.graphfont == 8: # Source Han Sans (CN, TW, HK, KR, JP)
             # font Source Han Sans selected, Japanese
+            rcParams['axes.unicode_minus'] = True
             rcParams['font.size'] = 12.0
             rcParams['font.family'] = ['Source Han Sans JP']
             aw.set_mpl_fontproperties(getResourcePath() + "SourceHanSansJP-Regular.otf")
@@ -21328,9 +21916,11 @@ class ApplicationWindow(QMainWindow):
             # font Dijkstra selected
             rcParams['font.size'] = 10.0
             rcParams['font.family'] = ['Dijkstra']
+            rcParams['axes.unicode_minus'] = False
             aw.set_mpl_fontproperties(getResourcePath() + "dijkstra.ttf")
         elif self.qmc.graphfont == 1 or platf == "Linux": # no Comic on Linux!
             # font Humor selected
+            rcParams['axes.unicode_minus'] = False
             rcParams['font.size'] = 16.0
             if platf == 'Linux':
                 rcParams['font.family'] = ['Humor Sans']
@@ -21339,6 +21929,7 @@ class ApplicationWindow(QMainWindow):
             aw.set_mpl_fontproperties(getResourcePath() + "Humor-Sans.ttf")
         elif self.qmc.graphfont == 2 and not platf == "Linux":
             # font Comic selected
+            rcParams['axes.unicode_minus'] = True
             rcParams['font.size'] = 12.0
             rcParams['font.family'] = ['Comic Sans MS','Humor Sans']
             self.mpl_fontproperties = mpl.font_manager.FontProperties()
@@ -21478,6 +22069,11 @@ class ApplicationWindow(QMainWindow):
                 else: # before drop
                     totaltime = tx - chrg
 
+                if self.qmc.backgroundprofile is not None and self.qmc.timeindexB[1] and not aw.qmc.autoDRYflag: # with AutoDRY, we always use the set DRY phase temperature as target
+                    drytarget = self.qmc.temp2B[self.qmc.timeindexB[1]] # Background DRY BT temperature
+                else:
+                    drytarget = self.qmc.phases[1] # Drying max phases definition
+                                
                 if aw.qmc.phasesLCDmode_all[2] and self.qmc.timeindex[1] and self.qmc.timeindex[2]: # DRY and FCs
                     # show all finish phase values: time/percent/temp
                     # FIN phase temp on LCD1
@@ -21616,10 +22212,6 @@ class ApplicationWindow(QMainWindow):
                             DRYlabel = "&raquo;" + QApplication.translate("Label", "DRY")
                         if self.qmc.timeindex[0] > -1 and self.qmc.TPalarmtimeindex and len(self.qmc.delta2) > 0 and self.qmc.delta2[-1] and self.qmc.delta2[-1] > 0:
                             # display expected time to reach DRY as defined in the background profile or the phases dialog
-                            if self.qmc.backgroundprofile is not None and self.qmc.timeindexB[1] and not aw.qmc.autoDRYflag: # with AutoDRY, we always use the set DRY phase temperature as target
-                                drytarget = self.qmc.temp2B[self.qmc.timeindexB[1]] # Background DRY BT temperature
-                            else:
-                                drytarget = self.qmc.phases[1] # Drying max phases definition
                             if drytarget > self.qmc.temp2[-1]:
                                 dryexpectedtime = (drytarget - self.qmc.temp2[-1])/(self.qmc.delta2[-1]/60.)
                                 if aw.qmc.phasesLCDmode == 2:
@@ -21696,7 +22288,7 @@ class ApplicationWindow(QMainWindow):
                             DRY2FCsframeTooltip = QApplication.translate("Label","TEMP MODE")
                             TP2DRYframeTooltip = QApplication.translate("Label","TEMP MODE")
                             FCslabel = "&darr;" + QApplication.translate("Label", "FCs")
-                        if self.qmc.timeindex[0] > -1 and self.qmc.timeindex[1] and len(self.qmc.delta2) > 0 and self.qmc.delta2[-1] and self.qmc.delta2[-1] > 0:
+                        if self.qmc.timeindex[0] > -1 and (self.qmc.timeindex[1] or (drytarget <= self.qmc.temp2[-1])) and len(self.qmc.delta2) > 0 and self.qmc.delta2[-1] and self.qmc.delta2[-1] > 0:
                             ## after DRY:
                             # display expected time to reach FCs as defined in the background profile or the phases dialog
                             if self.qmc.backgroundprofile is not None and self.qmc.timeindexB[2]:
@@ -22106,8 +22698,8 @@ class ApplicationWindow(QMainWindow):
                 _, _, exc_tb = sys.exc_info()
                 aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " fireslideraction() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
-    def calcSliderSendValue(self,n):
-        slider_value = self.eventslidervalues[n]
+    # from a given value and the event type number, calc the event value respecting the event types slider offset, factor and bernulli settings
+    def calcEventValue(self, n, slider_value):
         if self.eventsliderBernoulli[n]:
             # if ticked we add the Bernoulli's gas law factor to the computed value
             # (see https://www.home-barista.com/home-roasting/coffee-roasting-best-practices-scott-rao-t65601-70.html#p724654)
@@ -22115,8 +22707,10 @@ class ApplicationWindow(QMainWindow):
             slider_delta = self.eventslidermax[n] - self.eventslidermin[n]
             slider_value = slider_delta * pow((slider_value - self.eventslidermin[n])/slider_delta,2) + self.eventslidermin[n]
         # f(x) = k*x + o
-        value = (self.eventsliderfactors[n] * slider_value) + self.eventslideroffsets[n]
-        return value
+        return (self.eventsliderfactors[n] * slider_value) + self.eventslideroffsets[n]
+    
+    def calcSliderSendValue(self,n):
+        return self.calcEventValue(n, self.eventslidervalues[n])
         
     def recordsliderevent(self,n):
         if aw.eventquantifierSV[n]:
@@ -22583,6 +23177,9 @@ class ApplicationWindow(QMainWindow):
                                             aw.setExtraEventButtonStyle(last, style="normal")
                                 except Exception as e: # pylint: disable=broad-except
                                     _log.exception(e)
+                            else:
+                                # command not recognized
+                                _log.info("MODBUS Command <%s> not recognized", cs)
                 elif action == 5: # DTA Command
                     try:
                         DTAvalue=cmd_str.split(':')[1]
@@ -22620,7 +23217,7 @@ class ApplicationWindow(QMainWindow):
                             if cs_a[0] == "set":
                                 if cs_len>2:
                                     channel=toInt(cs_a[1])
-                                    value=toBool(cs_a[2]) # pylint: disable=eval-used
+                                    value=toBool(cs_a[2])
                                 if cs_len == 3:
                                     if not aw.ser.phidgetBinaryOUTset(channel, value):
                                         aw.sendmessage(QApplication.translate("Message", "Failed to set(%s, %s)" % (cs_a[1], cs_a[2])))
@@ -22743,6 +23340,7 @@ class ApplicationWindow(QMainWindow):
                                 aw.ser.yoctoRELpulse(int(cs_a[1]),int(cs_a[2]),int(cs_a[3]),cs_a[4])
                             else:
                                 #print("no match for command [%s], continue" % (cs_a[0]))
+                                _log.info("IO Command <%s> not recognized", cs_a[0])
                                 aw.sendmessage(QApplication.translate("Message","No match for command [%s], continuing" % (cs_a[0])))
 
                 elif action == 7: # slider call-program action
@@ -22813,6 +23411,9 @@ class ApplicationWindow(QMainWindow):
                                         libtime.sleep(cmds)
                                 except Exception as e: # pylint: disable=broad-except
                                     _log.exception(e)
+                            else:
+                                # command not recognized
+                                _log.info("HOTTOP Command <%s> not recognized", cs)
                 elif action == 11: # p-i-d, expects 3 float numbers separated by semicolon
                     if cmd_str:
                         cmds = list(filter(None, cmd_str.split(";"))) # "<p>;<i>;<d>"
@@ -23000,6 +23601,9 @@ class ApplicationWindow(QMainWindow):
                                             aw.ser.yoctoPWMmove(int(cs_split[0]),toFloat(eval(cs_split[1])),int(cs_split[2])) # pylint: disable=eval-used
                                     except Exception as e: # pylint: disable=broad-except
                                         _log.exception(e)
+                                else:
+                                    # command not recognized
+                                    _log.info("PMW Command <%s> not recognized", cs)
                             except Exception as e: # pylint: disable=broad-except
                                 _log.exception(e)
                 elif action == 14: # VOUT Command to drive Phidget/Yocto Output Modules
@@ -23055,6 +23659,9 @@ class ApplicationWindow(QMainWindow):
                                         libtime.sleep(cmds)
                                 except Exception as e: # pylint: disable=broad-except
                                     _log.exception(e)
+                            else:
+                                # command not recognized
+                                _log.info("VOUT Command <%s> not recognized", cs)
                 elif action == 15: # S7 Command
                     # getDBbool(<dbnumber>,<start>,<index>)
                     # getDBint(<dbnumber>,<start>)
@@ -23138,6 +23745,9 @@ class ApplicationWindow(QMainWindow):
                                         libtime.sleep(cmds)
                                 except Exception as e: # pylint: disable=broad-except
                                     _log.exception(e)
+                            else:
+                                # command not recognized
+                                _log.info("S7 Command <%s> not recognized", cs)
                 elif action == 16: # Aillio Heater
                     self.ser.R1.set_heater(int(cmd)/10)
                 elif action == 17 and self.ser.R1 is not None: # Aillio Fan
@@ -23338,7 +23948,7 @@ class ApplicationWindow(QMainWindow):
                                 except Exception as e: # pylint: disable=broad-except
                                     _log.exception(e)
                             # notifications(<bool>) enable/disable notifications
-                            if cs.startswith("notifications(") and cs.endswith(")"):
+                            elif cs.startswith("notifications(") and cs.endswith(")"):
                                 try:
                                     if aw.notificationManager:
                                         value = cs[len("notifications("):-1]
@@ -23621,6 +24231,9 @@ class ApplicationWindow(QMainWindow):
                                         self.qmc.showBackgroundEventsSignal.emit(state)
                                 except Exception as e: # pylint: disable=broad-except
                                     _log.exception(e)
+                            else:
+                                # command not recognized
+                                _log.info("Artisan Command <%s> not recognized", cs)
                 elif action == 21: # RC Command
                     # PHIDGETS   sn : has the form <hub_serial>[:<hub_port>], an optional serial number of the hub, optionally specifying the port number the module is connected to
                     ##  pulse(ch,min,max[,sn]) : sets the min/max pulse width in microseconds
@@ -23816,6 +24429,9 @@ class ApplicationWindow(QMainWindow):
                                         aw.ser.yoctoSERVOrange(c,r)
                                 except Exception as e: # pylint: disable=broad-except
                                     _log.exception(e)
+                            else:
+                                # command not recognized
+                                _log.info("RC Command <%s> not recognized", cs)
                 elif action == 22: # WebSocket Command
                     # send(<json>)
                     # sleep(xx.yy)  with xx.yy sleep time in seconds
@@ -23861,6 +24477,9 @@ class ApplicationWindow(QMainWindow):
                                             aw.setExtraEventButtonStyle(last, style="normal")
                                 except Exception as e: # pylint: disable=broad-except
                                     _log.exception(e)
+                            else:
+                                # command not recognized
+                                _log.info("WebSocket Command <%s> not recognized", cs)
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
 
@@ -23990,29 +24609,32 @@ class ApplicationWindow(QMainWindow):
             self.slider4.setValue(v)
 
     def extraEventButtonStyle(self,tee,style="normal"):
-        left_rounded_style = "border-top-left-radius:4px;border-bottom-left-radius:4px;"
-        right_rounded_style = "border-top-right-radius:4px; border-bottom-right-radius:4px;"
+        left_rounded_style = "border-radius:0px;border-top-left-radius:4px;border-bottom-left-radius:4px;"
+        right_rounded_style = "border-radius:0px;border-top-right-radius:4px;border-bottom-right-radius:4px;"
         fully_rounded_style = "border-radius:4px;"
         square_style = "border-radius:0px;"
         if aw.buttonsize == 0:
             # tiny
-            buttonstyle = """min-width:""" + self.tiny_button_min_width_str + """;margin:0px;padding:0px;border-style:solid;border-color:darkgrey;border-width:0px;font-size:""" + self.button_font_size_micro + """; font-weight: bold;"""
+            button_min_width = self.tiny_button_min_width_str
+            button_font_size = self.button_font_size_micro
         elif aw.buttonsize == 2:
             # large
-            buttonstyle = """min-width:""" + str(self.standard_button_min_width_px) + """px;margin:0px;padding:0px;border-style:solid;border-color:darkgrey;border-width:0px;font-size:""" + self.button_font_size_small + """; font-weight: bold;"""
+            button_min_width = str(self.standard_button_min_width_px)
+            button_font_size = self.button_font_size_small
         else:
             # small (default)
-            buttonstyle = """min-width:""" + self.small_button_min_width_str + """;margin:0px;padding:0px;border-style:solid;border-color:darkgrey;border-width:0px;font-size:""" + self.button_font_size_tiny + """; font-weight: bold;"""
+            button_min_width = self.small_button_min_width_str
+            button_font_size = self.button_font_size_tiny
         ##
         if len(self.extraeventbuttonround) > tee:
             if self.extraeventbuttonround[tee] == 1: # left-side rounded
-                buttonstyle += left_rounded_style
+                rounding = left_rounded_style
             elif self.extraeventbuttonround[tee] == 2: # right-side rounded
-                buttonstyle += right_rounded_style
+                rounding = right_rounded_style
             elif self.extraeventbuttonround[tee] == 3: # both-sides rounded
-                buttonstyle += fully_rounded_style
+                rounding = fully_rounded_style
             else:
-                buttonstyle += square_style
+                rounding = square_style
         #
         if style=="normal":
             color = self.extraeventbuttontextcolor[tee]
@@ -24021,12 +24643,12 @@ class ApplicationWindow(QMainWindow):
             # set color of this button to "pressed"
             color = self.extraeventbuttoncolor[tee]
             backgroundcolor = self.extraeventbuttontextcolor[tee]
-        core_style = """color:%s;background:%s}"""
+        buttonstyle = f"min-width:{button_min_width};margin:0px;padding:0px;border-style:solid;border-color:darkgrey;border-width:0px;font-size:{button_font_size};font-weight:bold;{rounding}color:{color};"
         #
-        plain_style = "QPushButton {" + buttonstyle + core_style%(color,createGradient(backgroundcolor))
-        pressed_style = "QPushButton:hover:pressed {" + buttonstyle + core_style%(color,createGradient(QColor(backgroundcolor).lighter(80).name()))
-        hover_style = "QPushButton:hover:!pressed {" + buttonstyle + core_style%(color,createGradient(QColor(backgroundcolor).lighter(110).name()))
-        return plain_style + hover_style + pressed_style
+        plain_style = f"QPushButton {{{buttonstyle}background:{createGradient(backgroundcolor)}}}"
+        pressed_style = f"QPushButton:hover:pressed {{background:{createGradient(QColor(backgroundcolor).lighter(80).name())}}}"
+        hover_style = f"QPushButton:hover:!pressed {{background:{createGradient(QColor(backgroundcolor).lighter(110).name())}}}"
+        return f"{plain_style}{hover_style}{pressed_style}"
 
     def setExtraEventButtonStyle(self, tee, style="normal"):
         button_style = self.extraEventButtonStyle(tee, style)
@@ -24091,7 +24713,7 @@ class ApplicationWindow(QMainWindow):
                 new_value = min(aw.eventslidermax[etype],max(aw.eventslidermin[etype],new_value))
 
                 # the new_value is combined with the event factor and offset as specified in the slider definition
-                actionvalue = (self.eventsliderfactors[etype] * new_value) + self.eventslideroffsets[etype]
+                actionvalue = self.calcEventValue(etype, new_value)
                 if self.extraeventsactions[ee] != 14: # only for VOUT Commands we keep the floats
                     actionvalue = int(round(actionvalue))
                 if self.extraeventsactions[ee] in [8,9,16,17,18]: # for Hottop Heater/Fan/CoolingFan action we take the event value instead of the event string as cmd action
@@ -24195,8 +24817,7 @@ class ApplicationWindow(QMainWindow):
                 self.messagehist.append(f"{timez}{message}")
             self.messagelabel.setText(message)
             if repaint: # if repaint is executed in the main thread we receive "QWidget::repaint: Recursive repaint detected"
-                with suppress_stdout_stderr():
-                    self.messagelabel.repaint()
+                self.messagelabel.repaint()
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
         finally:
@@ -24265,19 +24886,20 @@ class ApplicationWindow(QMainWindow):
 
     # update the visibility of the sliders based on the users preference for the current state
     def updateSlidersVisibility(self):
-        # update visibility (based on the app state)
-        if aw.qmc.flagstart:
-            visible = aw.eventslidersflags[2]
-        elif aw.qmc.flagon:
-            visible = aw.eventslidersflags[1]
-        else:
-            visible = aw.eventslidersflags[0]
-        if visible:
-            self.showSliders(False)
-        else:
-            self.hideSliders(False)
         if app.artisanviewerMode:
             self.hideSliders(True)
+        else:
+            # update visibility (based on the app state)
+            if aw.qmc.flagstart:
+                visible = aw.eventslidersflags[2]
+            elif aw.qmc.flagon:
+                visible = aw.eventslidersflags[1]
+            else:
+                visible = aw.eventslidersflags[0]
+            if visible:
+                self.showSliders(False)
+            else:
+                self.hideSliders(False)
 
     def hideSliders(self,changeDefault=True):
         focused_widget = QApplication.focusWidget()
@@ -24495,6 +25117,18 @@ class ApplicationWindow(QMainWindow):
             self.setLCDsDigitCount(5)
         else:
             self.setLCDsDigitCount(3)
+    
+    def disableLoadImportConvertMenus(self):
+        self.fileLoadAction.setEnabled(False) # open
+        self.openRecentMenu.setEnabled(False) # open recent
+        self.importMenu.setEnabled(False) # import
+        self.convMenu.setEnabled(False) # convert
+        
+    def enableLoadImportConvertMenus(self):
+        self.fileLoadAction.setEnabled(True) # open
+        self.openRecentMenu.setEnabled(True) # open recent
+        self.importMenu.setEnabled(True) # import
+        self.convMenu.setEnabled(True) # convert
 
     def enableEditMenus(self):
         self.newRoastMenu.setEnabled(True)
@@ -24507,7 +25141,6 @@ class ApplicationWindow(QMainWindow):
         self.exportMenu.setEnabled(True)
         self.convMenu.setEnabled(True)
         self.saveGraphMenu.setEnabled(True)
-        self.importMenu.setEnabled(True) # roast
         self.htmlAction.setEnabled(True)
         self.roastReportPDFAction.setEnabled(True)
         self.reportMenu.setEnabled(True)
@@ -24546,6 +25179,12 @@ class ApplicationWindow(QMainWindow):
         self.WindowconfigAction.setEnabled(True)
         self.colorsAction.setEnabled(True)
         self.themeMenu.setEnabled(True)
+        self.controlsAction.setEnabled(True)
+        self.readingsAction.setEnabled(True)
+        self.eventsEditorAction.setEnabled(True)
+        self.buttonsAction.setEnabled(True)
+        self.slidersAction.setEnabled(True)
+        
         if self.qmc.statssummary:
             self.savestatisticsAction.setEnabled(True)
         self.displayonlymenus()
@@ -24623,6 +25262,13 @@ class ApplicationWindow(QMainWindow):
         self.transformAction.setEnabled(False)
         self.temperatureMenu.setEnabled(False)
         # VIEW menu
+        if wheel:
+            self.controlsAction.setEnabled(False)
+        if wheel or designer:
+            self.readingsAction.setEnabled(False)
+            self.eventsEditorAction.setEnabled(False)
+            self.buttonsAction.setEnabled(False)
+            self.slidersAction.setEnabled(False)
         # HELP menu
         self.loadSettingsAction.setEnabled(False)
         self.openRecentSettingMenu.setEnabled(False)
@@ -24648,16 +25294,59 @@ class ApplicationWindow(QMainWindow):
             self.buttonsAction.setEnabled(False)
             self.slidersAction.setChecked(False)
             self.slidersAction.setEnabled(False)
+            self.eventsEditorAction.setChecked(False)
+            self.eventsEditorAction.setEnabled(False)
             self.lcdsAction.setEnabled(False)
             self.simulatorAction.setEnabled(False)
         else:
             return
 
     def update_minieventline_visibility(self):
-        if self.minieventsflag:
-            self.EventsGroupLayout.setVisible(True)
+        # update visibility (based on the app state)
+        if aw.qmc.flagstart:
+            visible = aw.minieventsflags[2]
+        elif aw.qmc.flagon:
+            visible = aw.minieventsflags[1]
         else:
-            self.EventsGroupLayout.setVisible(False)
+            visible = aw.minieventsflags[0]
+        if visible:
+            self.show_minieventline(False)
+        else:
+            self.hide_minieventline(False)                     
+
+    @pyqtSlot()
+    @pyqtSlot(bool)    
+    def toggle_minieventline(self,_=False):
+        if self.EventsGroupLayout.isVisible():
+            self.hide_minieventline()
+        else:
+            self.show_minieventline()
+
+    def hide_minieventline(self, changeDefault=True):
+        self.releaseminieditor()
+        focused_widget = QApplication.focusWidget()
+        if focused_widget and focused_widget != aw.centralWidget():
+            focused_widget.clearFocus()
+        self.EventsGroupLayout.setVisible(False)
+        self.eventsEditorAction.setChecked(False)
+        if changeDefault:
+            if aw.qmc.flagstart:
+                aw.minieventsflags[2] = 0
+            elif aw.qmc.flagon:
+                aw.minieventsflags[1] = 0
+            else:
+                aw.minieventsflags[0] = 0
+            
+    def show_minieventline(self, changeDefault=True):
+        self.EventsGroupLayout.setVisible(True)
+        self.eventsEditorAction.setChecked(True)
+        if changeDefault:
+            if aw.qmc.flagstart:
+                aw.minieventsflags[2] = 1
+            elif aw.qmc.flagon:
+                aw.minieventsflags[1] = 1
+            else:
+                aw.minieventsflags[0] = 1
     
     def toggleForegroundShowfullFlag(self):
         self.qmc.foregroundShowFullflag = not self.qmc.foregroundShowFullflag
@@ -24666,6 +25355,22 @@ class ApplicationWindow(QMainWindow):
     def toggleBackroundShowfullFlag(self):
         self.qmc.backgroundShowFullflag = not self.qmc.backgroundShowFullflag
         self.qmc.redraw(recomputeAllDeltas=False)
+    
+    def togglePlabackEvents(self):
+        self.qmc.backgroundPlaybackEvents = not self.qmc.backgroundPlaybackEvents
+        if self.qmc.backgroundPlaybackEvents:
+            self.sendmessage(QApplication.translate("ComboBox","Playback ON"))
+        else:
+            self.sendmessage(QApplication.translate("ComboBox","Playback OFF"))
+        if self.qmc.l_subtitle is not None:
+            if self.qmc.backgroundprofile and self.qmc.backgroundPlaybackEvents:
+                self.qmc.l_subtitle.set_color(self.qmc.palette["title_focus"])
+            else:
+                self.qmc.l_subtitle.set_color(self.qmc.palette["title"])
+            self.qmc.ax.draw_artist(self.qmc.l_subtitle)
+            self.qmc.ax.figure.canvas.blit()
+            self.qmc.ax.figure.canvas.flush_events()
+            self.qmc.ax_background = None
 
     #keyboard presses. There must not be widgets (pushbuttons, comboboxes, etc) in focus in order to work
     def keyPressEvent(self,event):
@@ -24687,11 +25392,12 @@ class ApplicationWindow(QMainWindow):
 
                 numberkeys = [48,49,50,51,52,53,54,55,56,57] # keycodes for number keys 0,1,...,9
 
-                if k == 70: # F SELECTS FULL SCREEN MODE
-                    aw.toggleFullscreen()
-                elif aw.buttonpalette_shortcuts and control_modifier and k in numberkeys: # palette switch via SHIFT-NUM-Keys
+                if k == 70:                         #F SELECTS FULL SCREEN MODE
+                    self.toggleFullscreen()
+                elif self.buttonpalette_shortcuts and control_modifier and k in numberkeys: # palette switch via SHIFT-NUM-Keys
                     self.setbuttonsfrom(numberkeys.index(k))
-
+                elif k == 74:                       #J (toggle Playback Events)
+                    self.togglePlabackEvents()
                 elif k == 73:                       #I (toggle foreground showfull flag)
                     self.toggleForegroundShowfullFlag()
                 elif k == 79:                       #O (toggle background showfull flag)
@@ -24794,15 +25500,7 @@ class ApplicationWindow(QMainWindow):
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
                     if self.full_screen_mode_active or self.isFullScreen() or macfullscreen:
-                        self.full_screen_mode_active = False
-                        if platf != 'Darwin':
-                            aw.fullscreenAction.setChecked(False)
-                        self.showNormal()
-                        try:
-                            if macfullscreen and platf == 'Darwin':
-                                app.allWindows()[0].setVisibility(QWindow.Visibility.Windowed)
-                        except Exception as e: # pylint: disable=broad-except
-                            _log.exception(e)
+                        self.toggleFullscreen()
                     else:
                         #if designer ON
                         if self.qmc.designerflag:
@@ -24819,8 +25517,7 @@ class ApplicationWindow(QMainWindow):
                             self.qmc.exitviewmode()
                             aw.enableEditMenus()
                             aw.showControls()
-                        if self.minieventsflag:
-                            self.releaseminieditor()
+                        self.releaseminieditor()
                 elif k == 16777234:               #MOVES CURRENT BUTTON LEFT
                     if self.keyboardmoveflag:
                         self.moveKbutton("left")
@@ -24891,19 +25588,16 @@ class ApplicationWindow(QMainWindow):
                         else:
                             aw.ntb.update_message()
                 elif k == 67:                     #letter C (controls)
-                    self.toggleControls()
+                    if not self.qmc.wheelflag:
+                        self.toggleControls()
                 elif k == 88:                     #letter X (readings)
-                    if not app.artisanviewerMode:
+                    if not app.artisanviewerMode and not self.qmc.designerflag and not self.qmc.wheelflag:
                         self.toggleReadings()
                 elif k == 89:                     #letter Y (minieditor)
-                    if self.qmc.flagstart:
-                        if self.minieventsflag:
-                            self.minieventsflag = 0
-                        else: 
-                            self.minieventsflag = 1
-                        self.update_minieventline_visibility()
+                    if not self.qmc.designerflag and not self.qmc.wheelflag:
+                        self.toggle_minieventline()
                 elif k == 83:                     #letter S (sliders)
-                    if not app.artisanviewerMode:
+                    if not app.artisanviewerMode and not self.qmc.designerflag and not self.qmc.wheelflag:
                         self.toggleSliders()
                 elif k == 84 and not self.qmc.flagon:  #letter T (mouse cross)
                     self.qmc.togglecrosslines()
@@ -24928,7 +25622,7 @@ class ApplicationWindow(QMainWindow):
                         self.quickEventShortCut = (4,"")
                         aw.sendmessage("SV")
                 elif k == 66:  #letter b hides/shows extra rows of event buttons
-                    if not app.artisanviewerMode:
+                    if not app.artisanviewerMode and not self.qmc.designerflag and not self.qmc.wheelflag:
                         self.toggleextraeventrows()
                 elif k == 77:  #letter m hides/shows standard buttons row
                     if aw.qmc.flagstart:
@@ -24982,18 +25676,17 @@ class ApplicationWindow(QMainWindow):
                 self.processingKeyEvent = False
 
     def releaseminieditor(self):
-        if self.minieventsflag:
-            self.lineEvent.releaseKeyboard()
-            self.valueEdit.releaseKeyboard()
-            self.etimeline.releaseKeyboard()
-            self.etypeComboBox.releaseKeyboard()
-            self.eNumberSpinBox.releaseKeyboard()
-            self.lineEvent.clearFocus()
-            self.valueEdit.clearFocus()
-            self.etimeline.clearFocus()
-            self.etypeComboBox.clearFocus()
-            self.eNumberSpinBox.clearFocus()
-            self.buttonminiEvent.clearFocus()
+        self.lineEvent.releaseKeyboard()
+        self.valueEdit.releaseKeyboard()
+        self.etimeline.releaseKeyboard()
+        self.etypeComboBox.releaseKeyboard()
+        self.eNumberSpinBox.releaseKeyboard()
+        self.lineEvent.clearFocus()
+        self.valueEdit.clearFocus()
+        self.etimeline.clearFocus()
+        self.etypeComboBox.clearFocus()
+        self.eNumberSpinBox.clearFocus()
+        self.buttonminiEvent.clearFocus()
 
     # this function respects the button visibility via aw.qmc.buttonvisibility and if button.isDisabled()
     # button = 0:CHARGE, 1:DRY_END, 2:FC_START, 3:FC_END, 4:SC_START, 5:SC_END, 6:DROP, 7:COOL_END; 8:EVENT (EVENT is always enabled!)
@@ -25415,7 +26108,7 @@ class ApplicationWindow(QMainWindow):
                             other_filename_path = other_filename_path[0:-5]
                         if self.qmc.autosaveimageformat == "PDF":
                             self.saveVectorGraph(extension=".pdf",fname=other_filename_path)
-                        elif self.qmc.autosaveimageformat == "PDF Report":
+                        elif self.qmc.autosaveimageformat == "PDF Report" and self.QtWebEngineSupport:
                             self.roastReport(pdf_filename=other_filename_path + ".pdf")
                         elif self.qmc.autosaveimageformat == "SVG":
                             self.saveVectorGraph(extension=".svg",fname=other_filename_path)
@@ -25457,6 +26150,14 @@ class ApplicationWindow(QMainWindow):
                 QApplication.translate("Form Caption","Keyboard Shortcuts Help"),
                 keyboardshortcuts_help.content())
 
+    @pyqtSlot(bool)
+    def decrEventNumber(self, _):
+        self.eNumberSpinBox.stepBy(-1)
+        
+    @pyqtSlot(bool)
+    def incrEventNumber(self, _):
+        self.eNumberSpinBox.stepBy(1)
+
     #moves events in minieditor
     @pyqtSlot(int)
     def changeEventNumber(self,_=0):
@@ -25467,7 +26168,8 @@ class ApplicationWindow(QMainWindow):
         currentevent = self.eNumberSpinBox.value()
         self.eNumberSpinBox.setDisabled(True)
         try:
-            self.eventlabel.setText(QApplication.translate("Label", "Event #<b>{0} </b>").format(currentevent))
+            self.eventlabel.setText(f'{QApplication.translate("Form Caption", "Event")} #<b>{currentevent} </b>')
+            
             if currentevent == 0:
                 self.lineEvent.setText("")
                 self.valueEdit.setText("")
@@ -25535,6 +26237,7 @@ class ApplicationWindow(QMainWindow):
 
             if not aw.qmc.flagstart:
                 self.qmc.fig.canvas.draw()
+                self.qmc.fileDirtySignal.emit()
 
             string = ""
             if len(self.qmc.specialeventsStrings[lenevents-1]) > 5:
@@ -25767,7 +26470,7 @@ class ApplicationWindow(QMainWindow):
                     org_obj_extra_devs = []
                 if res:
                     # we avoid the reset within setProfile as we just did a reset and do not want to confuse the ExtraDeviceSettingsBackup
-                    res = self.setProfile(filename,obj,quiet=quiet,reset=False) 
+                    res = self.setProfile(filename,obj,quiet=quiet,reset=False)
             else:
                 self.sendmessage(QApplication.translate("Message","Invalid artisan format"))
                 res = False
@@ -26093,6 +26796,12 @@ class ApplicationWindow(QMainWindow):
                 t1x = profile["extratemp1"]
                 t2x = profile["extratemp2"]
                 
+                # reset the movebackground cache:
+                self.qmc.backgroundprofile_moved_x = 0
+                self.qmc.backgroundprofile_moved_y = 0
+                # delete background annotation positions
+                self.qmc.deleteAnnoPositions(foreground=False, background=True)
+                
                 #remove the analysis results annotation if it exists
                 aw.qmc.analysisresultsstr = ""
 
@@ -26146,7 +26855,8 @@ class ApplicationWindow(QMainWindow):
                 idx4 = aw.qmc.ytcurveidx - 1
                 n3 = idx3 // 2
                 n4 = idx4 // 2
-                for i in range(min(len(t1x),len(t2x))):
+                
+                for i in range(min(len(t1x),len(t2x),len(timex))):
 # we smooth also that 3rd and 4th background courve only on redraw with the actual smoothing parameters
                     if (aw.qmc.xtcurveidx > 0 and n3 == i) or (aw.qmc.ytcurveidx > 0 and n4 == i): # this is the 3rd or 4th background curve to be drawn, we smooth it
                         tx=timex[i]
@@ -27487,8 +28197,6 @@ class ApplicationWindow(QMainWindow):
         self.qmc.on_ctemp2 = []
         self.qmc.on_tstemp1 = []
         self.qmc.on_tstemp2 = []
-        self.qmc.on_stemp1 = []
-        self.qmc.on_stemp2 = []
         self.qmc.on_unfiltereddelta1 = []
         self.qmc.on_unfiltereddelta2 = []
         self.qmc.on_delta1 = []
@@ -27554,34 +28262,38 @@ class ApplicationWindow(QMainWindow):
         settings.setValue("extratimeout",self.extratimeout)
     
     def createExtraDeviceSettingsBackup(self):
-        try:
-            filename = self.getExtraDeviceSettingsPath()
-            if not os.path.isfile(filename):
-                # we only backup the extra device settings if there is not an older available
-                settings = QSettings(filename, QSettings.Format.IniFormat)
-                
-                settings.beginGroup("ExtraDev")
-                self.setExtraDeviceSettings(settings)
-                settings.endGroup()
-                
-                settings.beginGroup("CurveStyles")
-                self.setExtraDeviceCurveStyles(settings)
-                settings.endGroup()
-                
-                #save extra serial comm ports settings
-                settings.beginGroup("ExtraComm")
-                self.setExtraDeviceCommSettings(settings)
-                settings.endGroup()
-                
-                #save custom event names
-                settings.beginGroup("events")
-                settings.setValue("etypes",self.qmc.etypes)
-                settings.endGroup()
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        _log.debug("createExtraDeviceSettingsBackup()")
+        if not(bool(self.simulator)):
+            try:
+                filename = self.getExtraDeviceSettingsPath()
+                if not os.path.isfile(filename):
+                    # we only backup the extra device settings if there is not an older available
+                    settings = QSettings(filename, QSettings.Format.IniFormat)
+                    
+                    settings.beginGroup("ExtraDev")
+                    self.setExtraDeviceSettings(settings)
+                    settings.endGroup()
+                    
+                    settings.beginGroup("CurveStyles")
+                    self.setExtraDeviceCurveStyles(settings)
+                    settings.endGroup()
+                    
+                    #save extra serial comm ports settings
+                    settings.beginGroup("ExtraComm")
+                    self.setExtraDeviceCommSettings(settings)
+                    settings.endGroup()
+                    
+                    #save custom event names
+                    settings.beginGroup("events")
+                    settings.setValue("etypes",self.qmc.etypes)
+                    settings.endGroup()
+            except Exception as e: # pylint: disable=broad-except
+                _log.exception(e)
     
-    def clearExtraDeviceSettingsBackup(self):
-        filename = self.getExtraDeviceSettingsPath()
+    def clearExtraDeviceSettingsBackup(self, filename=None):
+        _log.debug("clearExtraDeviceSettingsBackup()")
+        if filename is None:
+            filename = self.getExtraDeviceSettingsPath()
         try:
             os.unlink(filename)
         except Exception:
@@ -27647,35 +28359,38 @@ class ApplicationWindow(QMainWindow):
     
     # this should only be called from reset()
     def restoreExtraDeviceSettingsBackup(self):
-        try:
-            filename = self.getExtraDeviceSettingsPath()
-            if os.path.isfile(filename):
-                settings = QSettings(filename, QSettings.Format.IniFormat)
-                settings.beginGroup("ExtraDev")
-                self.getExtraDeviceSettings(settings)
-                settings.endGroup()
-                
-                settings.beginGroup("CurveStyles")
-                self.getExtraDeviceCurveStyles(settings)
-                settings.endGroup()
-                
-                # ensure that extra list length are of the size of the extradevices:
-                self.ensureCorrectExtraDeviceListLenght()
-                self.updateExtradeviceSettings()
-                
-                settings.beginGroup("ExtraComm")
-                self.getExtraDeviceCommSettings(settings)
-                settings.endGroup()
-                
-                settings.beginGroup("events")
-                self.qmc.etypes = toStringList(settings.value("etypes",self.qmc.etypes))
-                settings.endGroup()
-                # now remove the settings file
-                os.unlink(filename)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        _log.debug("restoreExtraDeviceSettingsBackup()")
+        if not(bool(self.simulator)):
+            try:
+                filename = self.getExtraDeviceSettingsPath()
+                if os.path.isfile(filename):
+                    settings = QSettings(filename, QSettings.Format.IniFormat)
+                    settings.beginGroup("ExtraDev")
+                    self.getExtraDeviceSettings(settings)
+                    settings.endGroup()
+                    
+                    settings.beginGroup("CurveStyles")
+                    self.getExtraDeviceCurveStyles(settings)
+                    settings.endGroup()
+                    
+                    # ensure that extra list length are of the size of the extradevices:
+                    self.ensureCorrectExtraDeviceListLenght()
+                    self.updateExtradeviceSettings()
+                    
+                    settings.beginGroup("ExtraComm")
+                    self.getExtraDeviceCommSettings(settings)
+                    settings.endGroup()
+                    
+                    settings.beginGroup("events")
+                    self.qmc.etypes = toStringList(settings.value("etypes",self.qmc.etypes))
+                    settings.endGroup()
+                    # now remove the settings file
+                    self.clearExtraDeviceSettingsBackup(filename)
+            except Exception as e: # pylint: disable=broad-except
+                _log.exception(e)
 
-    #called by fileLoad()
+    #called by fileLoad() and various import functions
+    # we assume that before a reset action was issues and among others timeindex got initalized to its defaults
     def setProfile(self,filename,profile,quiet=False,reset=True):
         try:
             updateRender = False
@@ -27705,7 +28420,11 @@ class ApplicationWindow(QMainWindow):
 # we don't ask the user to adjust or not the extra device setup. Instead, now we backup the current settings via createExtraDeviceSettingsBackup() always and reset back to the original state
 # on reset, thus we default to StandardButton.Yes instead of asking in the dialog:
 
-                        reply = QMessageBox.StandardButton.Yes
+                        if bool(aw.simulator):
+                            # loading files with different extra device settings will not alter those and not mess up an potentially already existing settings backup
+                            reply = QMessageBox.StandardButton.No
+                        else:
+                            reply = QMessageBox.StandardButton.Yes
                         
 #                        string = QApplication.translate("Message","To fully load this profile the extra device configuration needs to be modified.\n\nOverwrite your extra device definitions using the values from the profile?\n\nIt is advisable to save your current settings beforehand via menu Help >> Save Settings.")
 #                        if quiet:
@@ -27774,12 +28493,12 @@ class ApplicationWindow(QMainWindow):
                 # c) set extra temp curves and prepare empty extra smoothed temp curves
                 if "extratimex" in profile:
                     self.qmc.extratimex = profile["extratimex"] + [[]]*(len(self.qmc.extradevices) - len(profile["extratimex"]))
-                if "extratemp1" in profile and len(self.qmc.extratimex) > 0:
+                if "extratemp1" in profile:
                     self.qmc.extratemp1 = profile["extratemp1"] + [[]]*(len(self.qmc.extradevices) - len(profile["extratimex"]))
                     self.qmc.extrastemp1 = [[]]*len(self.qmc.extratemp1)
                     self.qmc.extractemp1 = [[]]*len(self.qmc.extratemp1)
                     self.qmc.extractimex1 = [[]]*len(self.qmc.extratemp1)
-                if "extratemp2" in profile and len(self.qmc.extratimex) > 0:
+                if "extratemp2" in profile:
                     self.qmc.extratemp2 = profile["extratemp2"] + [[]]*(len(self.qmc.extradevices) - len(profile["extratimex"]))
                     self.qmc.extrastemp2 = [[]]*len(self.qmc.extratemp2)
                     self.qmc.extractemp2 = [[]]*len(self.qmc.extratemp2)
@@ -28146,15 +28865,15 @@ class ApplicationWindow(QMainWindow):
                 self.qmc.temp1 = [fromFtoC(t) for t in self.qmc.temp1]
                 self.qmc.temp2 = [fromFtoC(t) for t in self.qmc.temp2]
                 for e in range(len(self.qmc.extratimex)):
-                    if aw.extraDelta1[e]:
+                    if self.extraDelta1[e]:
                         self.qmc.extratemp1[e] = [RoRfromFtoC(t) for t in self.qmc.extratemp1[e]]
                     else:
-                        if not (len(aw.qmc.extraNoneTempHint1) > e and aw.qmc.extraNoneTempHint1[e]):
+                        if not (len(self.qmc.extraNoneTempHint1) > e and self.qmc.extraNoneTempHint1[e]):
                             self.qmc.extratemp1[e] = [fromFtoC(t) for t in self.qmc.extratemp1[e]]
-                    if aw.extraDelta2[e]:
+                    if self.extraDelta2[e]:
                         self.qmc.extratemp2[e] = [RoRfromFtoC(t) for t in self.qmc.extratemp2[e]]
                     else:
-                        if not (len(aw.qmc.extraNoneTempHint2) > e and aw.qmc.extraNoneTempHint2[e]):
+                        if not (len(self.qmc.extraNoneTempHint2) > e and self.qmc.extraNoneTempHint2[e]):
                             self.qmc.extratemp2[e] = [fromFtoC(t) for t in self.qmc.extratemp2[e]]
                 try:
                     aw.calcVirtualdevices(update=True)
@@ -28171,15 +28890,15 @@ class ApplicationWindow(QMainWindow):
                 self.qmc.temp1 = [fromCtoF(t) for t in self.qmc.temp1]
                 self.qmc.temp2 = [fromCtoF(t) for t in self.qmc.temp2]
                 for e in range(len(self.qmc.extratimex)):
-                    if aw.extraDelta1[e]:
+                    if self.extraDelta1[e]:
                         self.qmc.extratemp1[e] = [RoRfromCtoF(t) for t in self.qmc.extratemp1[e]]
                     else:
-                        if not (len(aw.qmc.extraNoneTempHint1) > e and aw.qmc.extraNoneTempHint1[e]):
+                        if not (len(self.qmc.extraNoneTempHint1) > e and self.qmc.extraNoneTempHint1[e]):
                             self.qmc.extratemp1[e] = [fromCtoF(t) for t in self.qmc.extratemp1[e]]
-                    if aw.extraDelta2[e]:
+                    if self.extraDelta2[e]:
                         self.qmc.extratemp2[e] = [RoRfromCtoF(t) for t in self.qmc.extratemp2[e]]
                     else:
-                        if not (len(aw.qmc.extraNoneTempHint2) > e and aw.qmc.extraNoneTempHint2[e]):
+                        if not (len(self.qmc.extraNoneTempHint2) > e and self.qmc.extraNoneTempHint2[e]):
                             self.qmc.extratemp2[e] = [fromCtoF(t) for t in self.qmc.extratemp2[e]]
                 try:
                     aw.calcVirtualdevices(update=True)
@@ -28275,6 +28994,10 @@ class ApplicationWindow(QMainWindow):
                         self.qmc.startofx = self.qmc.timex[aw.qmc.timeindex[0]] + self.qmc.locktimex_start
                     else:
                         self.qmc.startofx = self.qmc.locktimex_start
+                elif not self.qmc.loadaxisfromprofile and self.qmc.timeindex[0] != -1:
+                    # we still need to adjust startx as it depends on timeindex[0] to keep x-axis min limit as is
+                    # we assume here that the previous reset did initalize timeindex[0] and adjusted startx correctly
+                    self.qmc.startofx += self.qmc.timex[self.qmc.timeindex[0]]
             elif len(profile) > 0 and ("startend" in profile or "dryend" in profile or "cracks" in profile):
                 ###########      OLD PROFILE FORMAT
                 if "startend" in profile:
@@ -28884,9 +29607,9 @@ class ApplicationWindow(QMainWindow):
             profile["extradevices"] = self.qmc.extradevices
             profile["extraname1"] = [encodeLocal(n) for n in self.qmc.extraname1]
             profile["extraname2"] = [encodeLocal(n) for n in self.qmc.extraname2]
-            profile["extratimex"] = [[self.float2float(t,8) for t in x] for x in self.qmc.extratimex]
-            profile["extratemp1"] = [[self.float2float(t,6) for t in x] for x in self.qmc.extratemp1]
-            profile["extratemp2"] = [[self.float2float(t,6) for t in x] for x in self.qmc.extratemp2]
+            profile["extratimex"] = [[self.float2float(t,10) for t in x] for x in self.qmc.extratimex]
+            profile["extratemp1"] = [[self.float2float(t,8) for t in x] for x in self.qmc.extratemp1]
+            profile["extratemp2"] = [[self.float2float(t,8) for t in x] for x in self.qmc.extratemp2]
             profile["extramathexpression1"] = [encodeLocal(x) for x in self.qmc.extramathexpression1]
             profile["extramathexpression2"] = [encodeLocal(x) for x in self.qmc.extramathexpression2]
             profile["extradevicecolor1"] = [encodeLocal(x) for x in self.qmc.extradevicecolor1]
@@ -28942,7 +29665,7 @@ class ApplicationWindow(QMainWindow):
             try:
                 ds = list(self.qmc.extradevices)
                 ds.insert(0,self.qmc.device)
-                profile["devices"] = [self.qmc.devices[d-1] for d in ds]
+                profile["devices"] = [("PID" if d==0 else self.qmc.devices[d-1]) for d in ds]
             except Exception: # pylint: disable=broad-except
                 pass
             profile["elevation"] = self.qmc.elevation
@@ -29393,11 +30116,14 @@ class ApplicationWindow(QMainWindow):
             filename = self.ArtisanOpenFileDialog(msg=msg,ext=ext)
             if filename:
                 if reset:
-                    aw.qmc.reset(True,False)
-                loader(filename)
-                self.sendmessage(QApplication.translate("Message","Readings imported"))
-            else:
-                self.sendmessage(QApplication.translate("Message","Cancelled"))
+                    res = aw.qmc.reset(True,False)
+                else:
+                    res = True
+                if res:
+                    loader(filename)
+                    self.sendmessage(QApplication.translate("Message","Readings imported"))
+                    return
+            self.sendmessage(QApplication.translate("Message","Cancelled"))
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
@@ -29484,14 +30210,18 @@ class ApplicationWindow(QMainWindow):
                     if "canvas" in aw.qmc.palette:
                         aw.updateCanvasColors(checkColors=False)
                     # remove window geometry settings
-                    for s in ["RoastGeometry","FlavorProperties","CalculatorGeometry","EventsGeometry", "CompareGeometry",
+                    for s in ["BlendGeometry","RoastGeometry","FlavorProperties","CalculatorGeometry","EventsGeometry", "CompareGeometry",
                         "BackgroundGeometry","LCDGeometry","DeltaLCDGeometry","ExtraLCDGeometry","PhasesLCDGeometry","AlarmsGeometry","DeviceAssignmentGeometry","PortsGeometry",
                         "TransformatorPosition", "CurvesPosition", "StatisticsPosition", "AxisPosition","PhasesPosition", "BatchPosition",
-                        "SamplingPosition", "autosaveGeometry", "PIDPosition", "DesignerPosition"]:
+                        "SamplingPosition", "autosaveGeometry", "PIDPosition", "DesignerPosition","PIDLCDGeometry","ScaleLCDGeometry"]:
                         settings.remove(s)
                     #
                     aw.setFonts()
                     self.qmc.redraw()
+                    try:
+                        self.updateNewMenuRecentRoasts()
+                    except Exception: # pylint: disable=broad-except
+                        pass
                     _log.info("Factory reset")
                     return True  #don't load any more settings. They could be bad (corrupted). Stop here.
 
@@ -29694,8 +30424,8 @@ class ApplicationWindow(QMainWindow):
             settings.beginGroup("events")
             if settings.contains("eventsbuttonflag"):
                 self.eventsbuttonflag = toInt(settings.value("eventsbuttonflag",int(self.eventsbuttonflag)))
-            if settings.contains("minieventsflag"):
-                self.minieventsflag = toInt(settings.value("minieventsflag",int(self.minieventsflag)))
+            if settings.contains("minieventsflags"):
+                self.minieventsflags = [toInt(x) for x in toList(settings.value("minieventsflags",self.minieventsflags))]
             if settings.contains("eventsGraphflag"):
                 self.qmc.eventsGraphflag = toInt(settings.value("eventsGraphflag",int(self.qmc.eventsGraphflag)))
             if settings.contains("etypes"):
@@ -29779,6 +30509,12 @@ class ApplicationWindow(QMainWindow):
                 self.qmc.segmentsamplesthreshold = toInt(settings.value("segmentsamplesthreshold",int(self.qmc.segmentsamplesthreshold)))
             if settings.contains("segmentdeltathreshold"):
                 self.qmc.segmentdeltathreshold = aw.float2float(toFloat(settings.value("segmentdeltathreshold",self.qmc.segmentdeltathreshold)),4)
+            if settings.contains("projectFlag"):
+                self.qmc.projectFlag = bool(toBool(settings.value("projectFlag",int(self.qmc.projectFlag))))
+            if settings.contains("projectDeltaFlag"):
+                self.qmc.projectDeltaFlag = bool(toBool(settings.value("projectDeltaFlag",int(self.qmc.projectDeltaFlag))) )               
+            if settings.contains("projectionmode"):
+                self.qmc.projectionmode = toInt(settings.value("projectionmode",int(self.qmc.projectionmode)))
             if settings.contains("AUCbegin"):
                 self.qmc.AUCbegin = toInt(settings.value("AUCbegin",int(self.qmc.AUCbegin)))
                 self.qmc.AUCbase = toInt(settings.value("AUCbase",int(self.qmc.AUCbase)))
@@ -30609,6 +31345,22 @@ class ApplicationWindow(QMainWindow):
                 self.qmc.beansize_max = toInt(settings.value("beansize_max",self.qmc.beansize_max))
             if filename is None and settings.contains("plus_default_store"):
                 self.qmc.plus_default_store = toString(settings.value("plus_default_store",self.qmc.plus_default_store))
+            if filename is None and settings.contains("plus_custom_blend_name"):
+                # we don't import plus custom blend data from external settings file as the custom blend is considered temporary
+                plus_custom_blend_name = toString(settings.value("plus_custom_blend_name",""))
+                plus_custom_blend_coffees = [toString(x) for x in toList(settings.value("plus_custom_blend_coffees"))]
+                plus_custom_blend_ratios = [toFloat(x) for x in toList(settings.value("plus_custom_blend_ratios"))]
+                if plus_custom_blend_name != "" and len(plus_custom_blend_coffees)>1 and len(plus_custom_blend_ratios) == len(plus_custom_blend_coffees):
+                    try:
+                        plus_custom_blend_components = [plus.blend.Component(c,r) for (c,r) in zip(plus_custom_blend_coffees, plus_custom_blend_ratios)]
+                        self.qmc.plus_custom_blend = plus.blend.Blend(
+                            plus_custom_blend_name,
+                            plus_custom_blend_components)
+                    except Exception as e: # pylint: disable=broad-except
+                        _log.exception(e)
+                        self.qmc.plus_custom_blend = None
+                else:
+                    self.qmc.plus_custom_blend = None
             settings.endGroup()
 
             self.userprofilepath = toString(settings.value("profilepath",self.userprofilepath))
@@ -30860,6 +31612,8 @@ class ApplicationWindow(QMainWindow):
                 self.qmc.compareDeltaBT = bool(toBool(settings.value("compareDeltaBT",self.qmc.compareDeltaBT)))
             if settings.contains("compareMainEvents"):
                 self.qmc.compareMainEvents = bool(toBool(settings.value("compareMainEvents",self.qmc.compareMainEvents)))
+            if settings.contains("compareMainEvents"):
+                self.qmc.compareBBP = bool(toBool(settings.value("compareBBP",self.qmc.compareBBP)))
             if settings.contains("autosaveflag"):
                 self.qmc.autosaveflag = toInt(settings.value("autosaveflag",self.qmc.autosaveflag))
             if settings.contains("autosaveaddtorecentfilesflag"):
@@ -30889,6 +31643,10 @@ class ApplicationWindow(QMainWindow):
                 self.LargePIDLCDsFlag = toBool(settings.value("LargePIDLCDs",self.LargePIDLCDsFlag))
             if self.LargePIDLCDsFlag:
                 self.largePIDLCDs()
+            if settings.contains("LargeScaleLCDs"):
+                self.LargeScaleLCDsFlag = toBool(settings.value("LargeScaleLCDs",self.LargeScaleLCDsFlag))
+            if self.LargeScaleLCDsFlag:
+                self.largeScaleLCDs()
             if settings.contains("LargeExtraLCDs"):
                 self.LargeExtraLCDsFlag = toBool(settings.value("LargeExtraLCDs",self.LargeExtraLCDsFlag))
             if self.LargeExtraLCDsFlag:
@@ -30971,9 +31729,12 @@ class ApplicationWindow(QMainWindow):
                         self.recentRoasts = rr
                     else:
                         self.recentRoasts = []
-                    self.updateNewMenuRecentRoasts()
                 except Exception: # pylint: disable=broad-except
                     pass
+            try:
+                self.updateNewMenuRecentRoasts()
+            except Exception: # pylint: disable=broad-except
+                pass
 
 #            #update axis limits
 #            if not self.qmc.locktimex:
@@ -31048,11 +31809,12 @@ class ApplicationWindow(QMainWindow):
             self.qmc.clearLCDs()
 
             self.updateSlidersVisibility() # update visibility of sliders based on the users preference
+            self.update_minieventline_visibility()
             self.updateReadingsLCDsVisibility() # update visibility of reading LCD based on the users preference
 
             if filename is None and self.full_screen_mode_active:
                 self.showFullScreen()
-                if platf != 'Darwin':
+                if not (platf == 'Darwin' and self.qmc.locale_str == "en"):
                     aw.fullscreenAction.setChecked(True)
 
             if filename is None and self.plus_account is not None:
@@ -31525,6 +32287,10 @@ class ApplicationWindow(QMainWindow):
             settings.setValue("curvefitoffset",aw.qmc.curvefitoffset)
             settings.setValue("segmentsamplesthreshold",aw.qmc.segmentsamplesthreshold)
             settings.setValue("segmentdeltathreshold",aw.qmc.segmentdeltathreshold)
+            #projection
+            settings.setValue("projectFlag",self.qmc.projectFlag)
+            settings.setValue("projectDeltaFlag",self.qmc.projectDeltaFlag)
+            settings.setValue("projectionmode",self.qmc.projectionmode)
             #save AUC
             settings.setValue("AUCbegin",self.qmc.AUCbegin)
             settings.setValue("AUCbase",self.qmc.AUCbase)
@@ -31539,7 +32305,7 @@ class ApplicationWindow(QMainWindow):
             #save Events settings
             settings.beginGroup("events")
             settings.setValue("eventsbuttonflag",self.eventsbuttonflag)
-            settings.setValue("minieventsflag",self.minieventsflag)
+            settings.setValue("minieventsflags",self.minieventsflags)
             settings.setValue("eventsGraphflag",self.qmc.eventsGraphflag)
             # we only store etype names if they have been modified by the user to allow automatic translations otherwise
             if ((self.qmc.etypes[0] != QApplication.translate("ComboBox", "Air")) or
@@ -31971,7 +32737,7 @@ class ApplicationWindow(QMainWindow):
             settings.setValue("electricEnergyMix_setup",self.qmc.electricEnergyMix_setup)
             settings.setValue("energyresultunit_setup",self.qmc.energyresultunit_setup)
 #            settings.setValue("energytablecolumnwidths",self.qmc.energytablecolumnwidths)
-            settings.endGroup()        
+            settings.endGroup()
             
             settings.beginGroup("RoastProperties")
             settings.setValue("machinesetup",self.qmc.machinesetup)
@@ -31980,7 +32746,12 @@ class ApplicationWindow(QMainWindow):
             settings.setValue("beansize_min",self.qmc.beansize_min)
             settings.setValue("beansize_max",self.qmc.beansize_max)
             if filename is None:
+                # we don't export plus default store and custom blend data to external settings file as the custom blend is considered temporary
                 settings.setValue("plus_default_store",self.qmc.plus_default_store)
+                if self.qmc.plus_custom_blend is not None:
+                    settings.setValue("plus_custom_blend_name", self.qmc.plus_custom_blend.name)
+                    settings.setValue("plus_custom_blend_coffees", [c.coffee for c in self.qmc.plus_custom_blend.components])
+                    settings.setValue("plus_custom_blend_ratios",  [c.ratio for c in self.qmc.plus_custom_blend.components])
             settings.endGroup()
             settings.beginGroup("XT")
             settings.setValue("color",self.qmc.backgroundxtcolor)
@@ -32118,6 +32889,7 @@ class ApplicationWindow(QMainWindow):
             settings.setValue("compareDeltaET",self.qmc.compareDeltaET)
             settings.setValue("compareDeltaBT",self.qmc.compareDeltaBT)
             settings.setValue("compareMainEvents",self.qmc.compareMainEvents)
+            settings.setValue("compareBBP",self.qmc.compareBBP)
             settings.setValue("autosaveflag",self.qmc.autosaveflag)
             settings.setValue("autosaveaddtorecentfilesflag",self.qmc.autosaveaddtorecentfilesflag)
             settings.setValue("autosavepdf",self.qmc.autosaveimage)
@@ -32131,6 +32903,7 @@ class ApplicationWindow(QMainWindow):
             settings.setValue("LargeLCDs",self.LargeLCDsFlag)
             settings.setValue("LargeDeltaLCDs",self.LargeDeltaLCDsFlag)
             settings.setValue("LargePIDLCDs",self.LargePIDLCDsFlag)
+            settings.setValue("LargeScaleLCDs",self.LargeScaleLCDsFlag)
             settings.setValue("LargeExtraLCDs",self.LargeExtraLCDsFlag)
             settings.setValue("LargePhasesLCDs",self.LargePhasesLCDsFlag)
             #custom event buttons
@@ -32316,7 +33089,7 @@ class ApplicationWindow(QMainWindow):
 
     def stopActivities(self):
         if self.full_screen_mode_active:
-            if platf != 'Darwin':
+            if not (platf == 'Darwin' and self.qmc.locale_str == "en"):
                 self.fullscreenAction.setChecked(False)
             self.showNormal()
         if aw.qmc.device == 53:
@@ -32339,6 +33112,10 @@ class ApplicationWindow(QMainWindow):
             tmp_LargeLCDs = self.LargePIDLCDsFlag # we keep the state to properly store it in the settings
             self.largePIDLCDs_dialog.close()
             self.LargePIDLCDsFlag = tmp_LargeLCDs
+        if self.LargeScaleLCDsFlag and self.largeScaleLCDs_dialog:
+            tmp_LargeLCDs = self.LargeScaleLCDsFlag # we keep the state to properly store it in the settings
+            self.largeScaleLCDs_dialog.close()
+            self.LargeScaleLCDsFlag = tmp_LargeLCDs
         if self.LargeExtraLCDsFlag and self.largeExtraLCDs_dialog:
             tmp_LargeLCDs = self.LargeExtraLCDsFlag # we keep the state to properly store it in the settings
             self.largeExtraLCDs_dialog.close()
@@ -32373,16 +33150,20 @@ class ApplicationWindow(QMainWindow):
     def closeApp(self):
         aw.quitAction.setEnabled(False)
         try:
+            unsaved_changes = bool(self.qmc.safesaveflag == True)
             if self.qmc.checkSaved(): # if not canceled
                 flagKeepON = aw.qmc.flagKeepON
-                aw.qmc.flagKeepON = False # temporarily turn keepOn off
+                self.qmc.flagKeepON = False # temporarily turn keepOn off
                 self.stopActivities()
-                aw.qmc.flagKeepON = flagKeepON
+                self.qmc.flagKeepON = flagKeepON
+                if unsaved_changes:
+                    # in case we have unsaved changes and the user decided to discard those, we first reset to have the correct settings (like axis limits) saved
+                    self.qmc.reset(redraw=False,soundOn=False,sampling=False,keepProperties=False,fireResetAction=False)
                 self.closeEventSettings()
                 gc.collect()
                 QApplication.exit()
                 return True
-            aw.quitAction.setEnabled(True)
+            self.quitAction.setEnabled(True)
             return False
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
@@ -33049,7 +33830,7 @@ class ApplicationWindow(QMainWindow):
             res["color"] = profile["ground_color"]
         # cup
         if "flavors" in profile:
-            res["cupping"] = self.cuppingSum(profile["flavors"])
+            res["cupping"],_ = self.cuppingSum(profile["flavors"])
         return res
 
 
@@ -33460,590 +34241,596 @@ class ApplicationWindow(QMainWindow):
         self.rankingReport()
     
     def rankingReport(self, pdf=False):
-        import string as libstring
-        # get profile filenames
-        files = self.reportFiles()
-        if files and len(files) > 0:
-            cont = aw.qmc.reset(soundOn=False)
-            if cont:
-                profiles = [self.deserialize(f) for f in files]
-                # let's sort by isodate
-                profiles = sorted(profiles,
-                    key=lambda p: (QDateTime(QDate.fromString(p["roastisodate"], Qt.DateFormat.ISODate),QTime.fromString(p["roasttime"])).toMSecsSinceEpoch()
-                         if "roastisodate" in p and "roasttime" in p else 0))
-                with open(getResourcePath() + 'ranking-template.htm', 'r', encoding='utf-8') as myfile:
-                    HTML_REPORT_TEMPLATE=myfile.read()
-                entries = ""
-                charges = 0
-                charges_count = 0
-                charges_temp = 0
-                charges_temp_count = 0
-                FCs_time = 0
-                FCs_time_count = 0
-                FCs_temp = 0
-                FCs_temp_count = 0
-                DROP_time = 0
-                DROP_time_count = 0
-                DROP_temp = 0
-                DROP_temp_count = 0
-                DRY_percent = 0
-                DRY_percent_count = 0
-                MAI_percent = 0
-                MAI_percent_count = 0
-                DEV_percent = 0
-                DEV_percent_count = 0
-                AUC = 0
-                AUC_count = 0
-                loss = 0
-                loss_count = 0
-                colors_list = 0
-                colors_count = 0
-                cuppings = 0
-                cuppings_count = 0
-                energies = 0
-                energies_count = 0
-                co2s = 0
-                co2s_count = 0
-                co2kgs = 0
-                co2kgs_count = 0
-                handles = []
-                labels = []
-                timex_list = []
-                stemp_list = []
-                cl_list = []
-                max_profiles = 20
-                color=iter(cm.tab20(numpy.linspace(0,1,max_profiles)))  # @UndefinedVariable # pylint: disable=maybe-no-member
-                # collect data
-                c = 1
-                foreground_profile_path = aw.curFile  # @UndefinedVariable
-                min_start_time = max_end_time = 0
-                first_profile = True
-                first_profile_event_time = 0
-                max_drop_time = 0
-                label_chr_nr = 0
-                
-                delta_max = 1 # computed the delta max over all delta curves if visible
-
-                for p in profiles:
-                    pd = self.profileProductionData(p)
-                    c += 1
-                    try:
-                        cl = next(color) # here to keep colors_list in sync with the pct graph colors_list
-                    except Exception: # pylint: disable=broad-except
-                        color=iter(cm.tab20(numpy.linspace(0,1,max_profiles)))  # @UndefinedVariable # pylint: disable=maybe-no-member
-                        cl = next(color)
-                    try:
-                        rd = self.profileRankingData(p)
-                    except Exception as e: # pylint: disable=broad-except
-                        _log.exception(e)
-                        _, _, exc_tb = sys.exc_info()
-                        aw.qmc.adderror((QApplication.translate("Error Message","Exception (probably due to an empty profile):") + " rankingReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
-                        continue
-                    i = aw.convertWeight(pd["weight"][0],aw.qmc.weight_units.index(pd["weight"][2]),aw.qmc.weight_units.index(aw.qmc.weight[2]))
-                    #o = aw.convertWeight(pd["weight"][1],aw.qmc.weight_units.index(pd["weight"][2]),aw.qmc.weight_units.index(aw.qmc.weight[2]))
-                    if i > 0:
-                        charges += i
-                        charges_count += 1
-                    if "charge_temp" in rd:
-                        charges_temp += convertTemp(rd["charge_temp"],rd["temp_unit"],aw.qmc.mode)
-                        charges_temp_count += 1
-                    if "FCs_time" in rd:
-                        FCs_time += rd["FCs_time"]
-                        FCs_time_count += 1
-                    if "FCs_temp" in rd:
-                        FCs_temp += convertTemp(rd["FCs_temp"],rd["temp_unit"],aw.qmc.mode)
-                        FCs_temp_count += 1
-                    if "DROP_time" in rd:
-                        if rd["DROP_time"] > max_drop_time:
-                            max_drop_time = rd["DROP_time"]
-                        DROP_time += rd["DROP_time"]
-                        DROP_time_count += 1
-                    if "DROP_temp" in rd:
-                        DROP_temp += convertTemp(rd["DROP_temp"],rd["temp_unit"],aw.qmc.mode)
-                        DROP_temp_count += 1
-                    if "DRY_percent" in rd:
-                        DRY_percent += rd["DRY_percent"]
-                        DRY_percent_count += 1
-                    if "MAI_percent" in rd:
-                        MAI_percent += rd["MAI_percent"]
-                        MAI_percent_count += 1
-                    if "DEV_percent" in rd:
-                        DEV_percent += rd["DEV_percent"]
-                        DEV_percent_count += 1
-                    # -- recompute AUC with actual settings
-                    try:
-                        AUCidx = max(0,aw.AUCstartidx(p["timeindex"],p["computed"]["TP_idx"]))
-                        if aw.qmc.AUCbaseFlag:
-                            # we take the base temperature from the BT at st
-                            rtbt = p["temp2"][AUCidx]
-                        else:
-                            rtbt = aw.qmc.AUCbase
-                        rtbt = convertTemp(rtbt,aw.qmc.mode,"C")
-                        ed = min(len(p["timex"]),p["timeindex"][6])
-                        BT_AUC = 0
-                        for i in range(AUCidx,ed):
-                            BT_AUC += self.calcAUC(rtbt,p["timex"],p["temp2"],i)
-                        BT_AUC = int(round(BT_AUC/60.))
-                        rd["AUC"] = BT_AUC
-                    except Exception as e: # pylint: disable=broad-except
-                        _log.exception(e)
-                    # --
-                    if "AUC" in rd:
-                        AUC += rd["AUC"]
-                        AUC_count += 1
-
-                    if pd["weight"][0] > 0 and pd["weight"][1] > 0:
-                        l = aw.weight_loss(pd["weight"][0],pd["weight"][1])
-                        if 0 < l < 100:
-                            loss += l
-                            loss_count += 1
-                    if "color" in rd and rd["color"] > 0:
-                        colors_list += rd["color"]
-                        colors_count += 1
-                    if rd["cupping"] > 0:
-                        cuppings += rd["cupping"]
-                        cuppings_count += 1
-                    if "energy" in rd and rd["energy"] > 0:
-                        energies += rd["energy"]
-                        energies_count += 1
-                    if "co2" in rd and rd["co2"] > 0:
-                        co2s += rd["co2"]
-                        co2s_count += 1
-                    if "co2kg" in rd and rd["co2kg"] > 0:
-                        co2kgs += rd["co2kg"]
-                        co2kgs_count += 1
-                    if len(profiles) > max_profiles:
-                        entries += self.rankingData2htmlentry(pd,rd, cl) + "\n"
-                    else:
-                        # add BT curve to graph
-                        try:
-
-                            if pd["batchnr"] > 0:
-                                label = pd["batchprefix"] + str(pd["batchnr"])
-                            elif label_chr_nr < 26:
-                                label = str(libstring.ascii_uppercase[label_chr_nr])
-                                pd["batchnr"] = ""
-                                pd["batchprefix"] = label
-                                label_chr_nr = label_chr_nr + 1
-                            # surpress default description
-#                            if pd["title"] == QApplication.translate("Scope Title", "Roaster Scope"):
-#                                pd["title"] = ""
-
-                            entries += self.rankingData2htmlentry(pd,rd, cl) + "\n"
-
-                            temp = [convertTemp(t,rd["temp_unit"],self.qmc.mode) for t in rd["temp"]]
-                            timex = rd["timex"]
-                            stemp = self.qmc.smooth_list(timex,fill_gaps(temp),window_len=self.qmc.curvefilter,decay_smoothing=not aw.qmc.optimalSmoothing)
-                            charge = max(0,rd["charge_idx"]) # start of visible data
-                            drop = rd["drop_idx"] # end of visible data
-                            stemp = numpy.concatenate(([None]*charge,stemp[charge:drop],[None]*(len(timex)-drop)))
-                            timeindex = [max(0,v) if i>0 else max(-1,v) for i,v in enumerate(p["timeindex"])]
-                            if len(timex) > rd["charge_idx"]:
-                                if first_profile:
-                                # align with CHARGE
-                                    delta = timex[rd["charge_idx"]]
-                                    # store relative time of align event of first profile
-                                    # CHARGE, DRY, FCs, FCe, SCs, SCe, DROP
-                                    first_profile_event_time = delta # CHARGE
-                                    for j in range(6,0,-1):
-                                        if aw.qmc.alignEvent in [j] and timeindex[j]:
-                                            first_profile_event_time = timex[timeindex[j]] - timex[rd["charge_idx"]]
-                                            break
-                                else:
-                                    delta = timex[rd["charge_idx"]]
-                                    for j in range(6,0,-1):
-                                        if aw.qmc.alignEvent in [j] and timeindex[j]:
-                                            delta = delta + (timex[timeindex[j]] - timex[rd["charge_idx"]] - first_profile_event_time)
-                                            break
-                            else:
-                                delta = 0
-                            timex = [t-delta for t in timex]
-                            if len(timex) > charge:
-                                min_start_time = min(min_start_time,timex[charge])
-                            if len(timex) > drop:
-                                max_end_time = max(max_end_time,timex[drop])
-                            # cut-out only CHARGE to DROP
-
-                            labels.append(label)
-                            timex_list.append(timex)
-                            stemp_list.append(stemp)
-                            cl_list.append(cl)
-
-                            if self.qmc.DeltaBTflag and self.qmc.delta_ax:
-                                tx = numpy.array(timex)
-                                cf = aw.qmc.curvefilter*2 # we smooth twice as heavy for PID/RoR calcuation as for normal curve smoothing
-                                t1 = self.qmc.smooth_list(timex,fill_gaps(temp),window_len=cf,decay_smoothing=not aw.qmc.optimalSmoothing)
-                                if len(t1)>10 and len(tx) > 10:
-                                    # we start RoR computation 10 readings after CHARGE to avoid this initial peak
-                                    RoR_start = min(rd["charge_idx"]+10,len(tx)-1)
-                                    _,delta = self.qmc.recomputeDeltas(tx,RoR_start,drop,None,t1,optimalSmoothing=aw.qmc.optimalSmoothing)
-                                    delta_max = max(delta_max,self.calcAutoDelta([],delta,timeindex,False,True))
-                                    if self.qmc.BTlinewidth > 1 and self.qmc.BTlinewidth == self.qmc.BTdeltalinewidth:
-                                        dlinewidth = self.qmc.BTlinewidth-1 # we render the delta lines a bit thinner
-                                        dlinestyle = self.qmc.BTdeltalinestyle
-                                    else:
-                                        dlinewidth = self.qmc.BTdeltalinewidth
-                                        dlinestyle = self.qmc.BTdeltalinestyle
-                                    trans = self.qmc.delta_ax.transData
-                                    self.qmc.ax.plot(tx, delta,transform=trans,markersize=self.qmc.BTdeltamarkersize,marker=self.qmc.BTdeltamarker,
-                                        sketch_params=None,path_effects=[],
-                                        linewidth=dlinewidth,linestyle=dlinestyle,drawstyle=self.qmc.BTdeltadrawstyle,color=cl,alpha=0.7)
-
-                            first_profile = False
-
-                        except Exception as e: # pylint: disable=broad-except
-                            _log.exception(e)
-                            _, _, exc_tb = sys.exc_info()
-                            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " rankingReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
-
-                # draw BT curves on top of all others
-                for i in range(len(timex_list)):
-                    label = labels[i]
-                    timex = timex_list[i]
-                    stemp = stemp_list[i]
-                    cl = cl_list[i]
-                    l_temp, = self.qmc.ax.plot(timex,stemp,markersize=self.qmc.BTmarkersize,marker=self.qmc.BTmarker,
-#                        sketch_params=None,path_effects=[PathEffects.withStroke(linewidth=self.qmc.BTlinewidth+aw.qmc.patheffects,foreground=path_effects_color)],
-                        sketch_params=None,path_effects=[],
-                        linewidth=self.qmc.BTlinewidth,linestyle=self.qmc.BTlinestyle,drawstyle=self.qmc.BTdrawstyle,color=cl,label=label)
-                    handles.append(l_temp)
-
-                tmpdir = str(QDir.tempPath() + "/")
-                graph_image = ""
-                graph_image_pct = ''
-
-                prop = aw.mpl_fontproperties.copy()
-                prop.set_size("x-small")
-
-                if len(profiles) > max_profiles:
-                    QMessageBox.information(aw,QApplication.translate("Message", "Ranking Report"),
-                                              QApplication.translate("Message", "Ranking graphs are only generated up to {0} profiles").format(str(max_profiles)))
-                else:
-                    try:
-
-                        # remove annotations, lines and other artists from background profile
-                        try:
-                            for l in aw.qmc.l_annotations + aw.qmc.l_background_annotations:
-                                if l:
-                                    try:
-                                        l.remove()
-                                    except Exception: # pylint: disable=broad-except
-                                        pass
-                            for l in [
-                                    aw.qmc.l_back1,
-                                    aw.qmc.l_back2,
-                                    aw.qmc.l_back3,
-                                    aw.qmc.l_back4,
-                                    aw.qmc.l_delta1B,
-                                    aw.qmc.l_delta2B
-                                    ]:
-                                if l:
-                                    try:
-                                        aw.qmc.ax.lines.remove(l)
-                                    except Exception: # pylint: disable=broad-except
-                                        pass
-                            for a in [
-                                    aw.qmc.l_eventtype1dots,
-                                    aw.qmc.l_eventtype2dots,
-                                    aw.qmc.l_eventtype3dots,
-                                    aw.qmc.l_eventtype4dots,
-                                    aw.qmc.l_backgroundeventtype1dots,
-                                    aw.qmc.l_backgroundeventtype2dots,
-                                    aw.qmc.l_backgroundeventtype3dots,
-                                    aw.qmc.l_backgroundeventtype4dots]:
-                                if a:
-                                    try:
-                                        aw.qmc.ax.lines.remove(a)
-                                    except Exception: # pylint: disable=broad-except
-                                        pass
-
-                            # we also have to remove those extra event annotations if in combo mode
-                            if aw.qmc.eventsGraphflag == 4:
-                                for child in aw.qmc.ax.get_children():
-                                    if isinstance(child, mpl.text.Annotation):
-                                        try:
-                                            aw.qmc.ax.texts.remove(child)
-                                        except Exception: # pylint: disable=broad-except
-                                            pass
-                        except Exception as e: # pylint: disable=broad-except
-                            _log.exception(e)
-                        # we only adjust the upper limit of the delta axis automatically
-                        if self.qmc.autodeltaxBT:
-                            self.qmc.delta_ax.set_ylim(self.qmc.zlimit_min,delta_max)                        
-                        # adjust zgrid
-                        if aw.qmc.zgrid != 0:
-                            d = delta_max - self.qmc.zlimit_min
-                            steps = int(round(d/5))
-                            if steps > 50: 
-                                steps = int(round(steps/10))*10
-                            elif steps > 10:
-                                steps = int(round(steps/5))*5
-                            auto_grid = max(2,steps)
-                            aw.qmc.zgrid = auto_grid
-                            self.qmc.delta_ax.yaxis.set_major_locator(ticker.MultipleLocator(aw.qmc.zgrid))
-                            self.qmc.delta_ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
-                        # adjust time limits
-                        aw.qmc.ax.set_xlim(min_start_time-15,max_end_time+15) # we adjust the min, max time scale to ensure all data is visible
-                        graph_image = "roastlog-graph"
-                        self.qmc.setProfileTitle("")
-                        self.qmc.fig.suptitle("")
-                        rcParams['path.effects'] = []
-                        if len(handles) > 7:
-                            ncol = int(math.ceil(len(handles)/4.))
-                        elif len(handles) > 3:
-                            ncol = int(math.ceil(len(handles)/2.))
-                        else:
-                            ncol = int(math.ceil(len(handles)))
-                        self.qmc.ax.legend(handles,labels,loc=self.qmc.legendloc,ncol=ncol,fancybox=True,prop=prop,shadow=False)
-
-                        # Remove and update the logo image
-                        try:
-                            aw.qmc.ai.remove()
-                        except Exception: # pylint: disable=broad-except
-                            pass
-                        try:
-                            self.qmc.placelogoimage()
-                        except Exception as e: # pylint: disable=broad-except
-                            _log.exception(e)
-
-                        # generate graph
-                        self.qmc.fig.set_tight_layout(False)
-                        self.qmc.fig.canvas.draw()
-                        # save graph
-                        graph_image = str(QDir.cleanPath(QDir(tmpdir).absoluteFilePath(graph_image + ".svg")))
-                        try:
-                            os.remove(graph_image)
-                        except OSError:
-                            pass
-                        self.qmc.fig.set_tight_layout(self.qmc.tight_layout_params)
-                        self.qmc.fig.savefig(graph_image,transparent=True)
-
-                        #add some random number to force HTML reloading
-                        graph_image = path2url(graph_image)
-                        graph_image = graph_image + "?dummy=" + str(int(libtime.time()))
-                        graph_image = "<img alt='roast graph' style=\"width:100%;\" src='" + graph_image + "'>"
-
-                    except Exception as e: # pylint: disable=broad-except
-                        _log.exception(e)
-                        _, _, exc_tb = sys.exc_info()
-                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " rankingReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
-
-                try:
-                    # Create a roast phase visualization graph
-                    #import matplotlib.pyplot as plt
-
-                    fig_height = 3.2       # in inches when there are 10 profiles, will be scaled for number of profiles
-                    fig_width = 10         # in inches
-
-                    # values that define the bars and spacing
-                    barspacer =  2     # vertical space between bars
-                    barheight =  18    # height of each bar
-                    textoffset = 6     # shifts text annotations upward to toward middle of the bar
-                    m = 10             # width of batch number field and drop time field
-                    g = 2              # gap
-                    n = m + g          # start of horiz stacked bar
-                    ind = 7            # width of color legend indicator
-
-                    # setup the font
-                    if sys.platform.startswith("darwin") and darkdetect.isDark() and appFrozen():
-                        headerfontcolor = '#B2B2B2'
-                    else:
-                        headerfontcolor = '#707070'
-                    fontcolor = '#303030'
-                    lightfontcolor = 'grey'
-                    prop.set_family(mpl.rcParams['font.family'])
-
-                    # generate graph  ( not written to support MPL < v2.0 )
-                    #fig = plt.figure(figsize=(fig_width, (fig_height * len(profiles)/10 + 0.2)))
-                    fig = Figure(figsize=(fig_width, (fig_height * len(profiles)/10 + 0.2)))
-                    
-                    ax = fig.add_subplot(111, frameon=False)
-#                    plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-                    fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
-
-                    # no grid or tick marks
-                    ax.grid(False)
-                    ax.axes.get_xaxis().set_ticks([])
-                    ax.axes.get_yaxis().set_ticks([])
-
-                    # set graph xy limits
-                    ylim = (barheight + barspacer) * (1 + len(profiles))
-                    xlim = m+g+100+g+m +1
-                    ax.set_ylim(0, ylim)
-                    ax.set_xlim(0, xlim)
-
-                    graph_image_pct = "roastlog-graph-pct"
-
-                    i = len(profiles)   # bar counter
-
-                    # generate the legend at the top
-                    facecolors = ('#00b950', '#ffb347', '#9f7960')
-                    prop.set_size("medium")
-                    ax.broken_barh( [ (n, g),                         #Dry indicator
-                                      (n+g+ind, g),                   #MAI indicator
-                                      (n+g+ind+g+ind, g)              #DEV indicator
-                                    ],
-                                    (i*(barheight + barspacer), barheight*0.75), facecolors=facecolors
-                                  )
-                    ax.text(    m/2,             i*(barheight + barspacer) + textoffset/3, 'Nr', ha='center', color=headerfontcolor, fontproperties=prop)
-                    ax.text( 1+ n+g,             i*(barheight + barspacer) + textoffset/3, 'Dry', ha='left', color=headerfontcolor, fontproperties=prop)
-                    ax.text( 1+ n+g+ind+g,       i*(barheight + barspacer) + textoffset/3, 'Mai', ha='left', color=headerfontcolor, fontproperties=prop)
-                    ax.text( 1+ n+g+ind+g+ind+g, i*(barheight + barspacer) + textoffset/3, 'Dev', ha='left', color=headerfontcolor, fontproperties=prop)
-                    ax.text(    n+100 + 10/2,    i*(barheight + barspacer) + textoffset/3, 'Drop', ha='center', color=headerfontcolor, fontproperties=prop)
-
-                    # generate the bar graph
-                    prop.set_size("small")
-                    color=iter(cm.tab20(numpy.linspace(0,1,max_profiles)))    # @UndefinedVariable # pylint: disable=maybe-no-member
+        try:
+            import string as libstring
+            # get profile filenames
+            files = self.reportFiles()
+            if files and len(files) > 0:
+                cont = aw.qmc.reset(soundOn=False)
+                if cont:
+                    profiles = [self.deserialize(f) for f in files]
+                    # let's sort by isodate
+                    profiles = sorted(profiles,
+                        key=lambda p: (QDateTime(QDate.fromString(p["roastisodate"], Qt.DateFormat.ISODate),QTime.fromString(p["roasttime"])).toMSecsSinceEpoch()
+                             if "roastisodate" in p and "roasttime" in p else 0))
+                    with open(getResourcePath() + 'ranking-template.htm', 'r', encoding='utf-8') as myfile:
+                        HTML_REPORT_TEMPLATE=myfile.read()
+                    entries = ""
+                    charges = 0
+                    charges_count = 0
+                    charges_temp = 0
+                    charges_temp_count = 0
+                    FCs_time = 0
+                    FCs_time_count = 0
+                    FCs_temp = 0
+                    FCs_temp_count = 0
+                    DROP_time = 0
+                    DROP_time_count = 0
+                    DROP_temp = 0
+                    DROP_temp_count = 0
+                    DRY_percent = 0
+                    DRY_percent_count = 0
+                    MAI_percent = 0
+                    MAI_percent_count = 0
+                    DEV_percent = 0
+                    DEV_percent_count = 0
+                    AUC = 0
+                    AUC_count = 0
+                    loss = 0
+                    loss_count = 0
+                    colors_list = 0
+                    colors_count = 0
+                    cuppings = 0
+                    cuppings_count = 0
+                    energies = 0
+                    energies_count = 0
+                    co2s = 0
+                    co2s_count = 0
+                    co2kgs = 0
+                    co2kgs_count = 0
+                    handles = []
+                    labels = []
+                    timex_list = []
+                    stemp_list = []
+                    cl_list = []
+                    max_profiles = 20
+                    color=iter(cm.tab20(numpy.linspace(0,1,max_profiles)))  # @UndefinedVariable # pylint: disable=maybe-no-member
+                    # collect data
+                    c = 1
+                    foreground_profile_path = aw.curFile  # @UndefinedVariable
+                    min_start_time = max_end_time = 0
+                    first_profile = True
+                    first_profile_event_time = 0
+                    max_drop_time = 0
                     label_chr_nr = 0
+                    
+                    delta_max = 1 # computed the delta max over all delta curves if visible
+    
                     for p in profiles:
-                        i -= 1
+                        pd = self.profileProductionData(p)
+                        c += 1
                         try:
-                            cl = mcolors.to_hex(next(color)), '#00b950', '#ffb347', '#9f7960'
+                            cl = next(color) # here to keep colors_list in sync with the pct graph colors_list
                         except Exception: # pylint: disable=broad-except
-                            color=iter(cm.tab20(numpy.linspace(0,1,max_profiles)))    # @UndefinedVariable # pylint: disable=maybe-no-member
-                            cl = mcolors.to_hex(next(color)), '#00b950', '#ffb347', '#9f7960'
+                            color=iter(cm.tab20(numpy.linspace(0,1,max_profiles)))  # @UndefinedVariable # pylint: disable=maybe-no-member
+                            cl = next(color)
                         try:
                             rd = self.profileRankingData(p)
                         except Exception as e: # pylint: disable=broad-except
                             _log.exception(e)
                             _, _, exc_tb = sys.exc_info()
                             aw.qmc.adderror((QApplication.translate("Error Message","Exception (probably due to an empty profile):") + " rankingReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
-                            i += 1   #avoid a blank line
                             continue
-                        pd = self.profileProductionData(p)
-                        if pd["batchnr"] > 0:
-                            label = (pd["batchprefix"] + str(pd["batchnr"]))[:8]
-                        elif label_chr_nr < 26:
-                            label = str(libstring.ascii_uppercase[label_chr_nr])
-                            label_chr_nr = label_chr_nr + 1
+                        i = aw.convertWeight(pd["weight"][0],aw.qmc.weight_units.index(pd["weight"][2]),aw.qmc.weight_units.index(aw.qmc.weight[2]))
+                        #o = aw.convertWeight(pd["weight"][1],aw.qmc.weight_units.index(pd["weight"][2]),aw.qmc.weight_units.index(aw.qmc.weight[2]))
+                        if i > 0:
+                            charges += i
+                            charges_count += 1
+                        if "charge_temp" in rd:
+                            charges_temp += convertTemp(rd["charge_temp"],rd["temp_unit"],aw.qmc.mode)
+                            charges_temp_count += 1
+                        if "FCs_time" in rd:
+                            FCs_time += rd["FCs_time"]
+                            FCs_time_count += 1
+                        if "FCs_temp" in rd:
+                            FCs_temp += convertTemp(rd["FCs_temp"],rd["temp_unit"],aw.qmc.mode)
+                            FCs_temp_count += 1
+                        if "DROP_time" in rd:
+                            if rd["DROP_time"] > max_drop_time:
+                                max_drop_time = rd["DROP_time"]
+                            DROP_time += rd["DROP_time"]
+                            DROP_time_count += 1
+                        if "DROP_temp" in rd:
+                            DROP_temp += convertTemp(rd["DROP_temp"],rd["temp_unit"],aw.qmc.mode)
+                            DROP_temp_count += 1
+                        if "DRY_percent" in rd:
+                            DRY_percent += rd["DRY_percent"]
+                            DRY_percent_count += 1
+                        if "MAI_percent" in rd:
+                            MAI_percent += rd["MAI_percent"]
+                            MAI_percent_count += 1
+                        if "DEV_percent" in rd:
+                            DEV_percent += rd["DEV_percent"]
+                            DEV_percent_count += 1
+                        # -- recompute AUC with actual settings
+                        try:
+                            AUCidx = max(0,aw.AUCstartidx(p["timeindex"],p["computed"]["TP_idx"]))
+                            if aw.qmc.AUCbaseFlag:
+                                # we take the base temperature from the BT at st
+                                rtbt = p["temp2"][AUCidx]
+                            else:
+                                rtbt = aw.qmc.AUCbase
+                            rtbt = convertTemp(rtbt,aw.qmc.mode,"C")
+                            ed = min(len(p["timex"]),p["timeindex"][6])
+                            BT_AUC = 0
+                            for i in range(AUCidx,ed):
+                                BT_AUC += self.calcAUC(rtbt,p["timex"],p["temp2"],i)
+                            BT_AUC = int(round(BT_AUC/60.))
+                            rd["AUC"] = BT_AUC
+                        except Exception as e: # pylint: disable=broad-except
+                            _log.exception(e)
+                        # --
+                        if "AUC" in rd:
+                            AUC += rd["AUC"]
+                            AUC_count += 1
+    
+                        if pd["weight"][0] > 0 and pd["weight"][1] > 0:
+                            l = aw.weight_loss(pd["weight"][0],pd["weight"][1])
+                            if 0 < l < 100:
+                                loss += l
+                                loss_count += 1
+                        if "color" in rd and rd["color"] > 0:
+                            colors_list += rd["color"]
+                            colors_count += 1
+                        if rd["cupping"] > 0:
+                            cuppings += rd["cupping"]
+                            cuppings_count += 1
+                        if "energy" in rd and rd["energy"] > 0:
+                            energies += rd["energy"]
+                            energies_count += 1
+                        if "co2" in rd and rd["co2"] > 0:
+                            co2s += rd["co2"]
+                            co2s_count += 1
+                        if "co2kg" in rd and rd["co2kg"] > 0:
+                            co2kgs += rd["co2kg"]
+                            co2kgs_count += 1
+                        if len(profiles) > max_profiles:
+                            entries += self.rankingData2htmlentry(pd,rd, cl) + "\n"
                         else:
-                            label = ""
-                        if "DRY_percent" in rd and "MAI_percent" in rd and "DEV_percent" in rd:
-                            ax.broken_barh( [ (0, m),
-                                              (n, rd["DRY_percent"]),
-                                              (n+rd["DRY_percent"], rd["MAI_percent"]),
-                                              (n+rd["DRY_percent"] + rd["MAI_percent"], rd["DEV_percent"]),
-                                              (n+rd["DRY_percent"] + rd["MAI_percent"] + rd["DEV_percent"] + g, m*rd["DROP_time"]/max_drop_time)
-                                            ],
-                                            (i*(barheight + barspacer), barheight), facecolors=cl
-                                          )
-                            ax.text( m/2,                                                                   i*(barheight + barspacer) + textoffset, label, ha='center', color=fontcolor, fontproperties=prop)
-                            ax.text( n + rd["DRY_percent"]/2,                                               i*(barheight + barspacer) + textoffset, str(round(rd["DRY_percent"],1)) + '%  ' + stringfromseconds(rd["DRY_time"]), ha='center', color=fontcolor, fontproperties=prop)
-                            ax.text( n + rd["DRY_percent"] + rd["MAI_percent"]/2,                           i*(barheight + barspacer) + textoffset, str(round(rd["MAI_percent"],1)) + '%  ' + stringfromseconds(rd["MAI_time"]), ha='center', color=fontcolor, fontproperties=prop)
-                            ax.text( n + rd["DRY_percent"] + rd["MAI_percent"] + rd["DEV_percent"]/2,       i*(barheight + barspacer) + textoffset, str(round(rd["DEV_percent"],1)) + '%  ' + stringfromseconds(rd["DEV_time"]), ha='center', color=fontcolor, fontproperties=prop)
-                            ax.text( n + rd["DRY_percent"] + rd["MAI_percent"] + rd["DEV_percent"] + g + 1, i*(barheight + barspacer) + textoffset, stringfromseconds(rd["DROP_time"]), ha='left', color=fontcolor, fontproperties=prop)
-                        elif "DEV_percent" in rd:   # has FCs but no Dry event
-                            cl = cl[0],'white',cl[3]
-                            missingDryevent = QApplication.translate("Message", "Profile missing Dry event")
-                            ax.broken_barh( [ (0, m),
-                                              (n, 100 - rd["DEV_percent"]),
-                                              (n+ 100 - rd["DEV_percent"], rd["DEV_percent"]),
-                                              (n+ 100 + g, m*rd["DROP_time"]/max_drop_time)
-                                            ],
-                                            (i*(barheight + barspacer), barheight), facecolors=cl
-                                          )
-                            ax.text( m/2,                                                                   i*(barheight + barspacer) + textoffset, label, ha='center', color=fontcolor, fontproperties=prop)
-                            ax.text( n + (100 - rd["DEV_percent"])/2,                                       i*(barheight + barspacer) + textoffset, missingDryevent, ha='center', color=lightfontcolor, fontproperties=prop)
-                            ax.text( n + 100 - rd["DEV_percent"] + rd["DEV_percent"]/2,                     i*(barheight + barspacer) + textoffset, str(round(rd["DEV_percent"],1)) + '%  ' + stringfromseconds(rd["DEV_time"]), ha='center', color=fontcolor, fontproperties=prop)
-                            ax.text( n + 100 + g + 1, i*(barheight + barspacer) + textoffset, stringfromseconds(rd["DROP_time"]), ha='left', color=fontcolor, fontproperties=prop)
-                        else:    # no useful events
-                            drop_time= rd.get("DROP_time", 0)
-                            cl = cl[0],'white'
-                            missingPhaseevents = QApplication.translate("Message", "Profile missing phase events")
-                            ax.broken_barh( [ (0, m),
-                                              (n, 100),
-                                              (n+ 100 + g, m*(0 if max_drop_time == 0 else drop_time/max_drop_time))
-                                            ],
-                                            (i*(barheight + barspacer), barheight), facecolors=cl
-                                          )
-                            ax.text( m/2,                                                                   i*(barheight + barspacer) + textoffset, label, ha='center', color=fontcolor, fontproperties=prop)
-                            ax.text( n + 100/2,                                                             i*(barheight + barspacer) + textoffset, missingPhaseevents, ha='center', color=lightfontcolor, fontproperties=prop)
-                            ax.text( n + 100 + g + 1, i*(barheight + barspacer) + textoffset, stringfromseconds(drop_time), ha='left', color=fontcolor, fontproperties=prop)
-
-                    # save graph
-                    graph_image_pct = str(QDir.cleanPath(QDir(tmpdir).absoluteFilePath(graph_image_pct + ".svg")))
-                    try:
-                        os.remove(graph_image_pct)
-                    except OSError:
-                        pass
-                    fig.savefig(graph_image_pct,transparent=True)
-                    #add some random number to force HTML reloading
-                    graph_image_pct = path2url(graph_image_pct)
-                    graph_image_pct = graph_image_pct + "?dummy=" + str(int(libtime.time()))
-                    graph_image_pct = "<img alt='roast graph pct' style=\"width: 95%;\" src='" + graph_image_pct + "'>"
-
-#                    plt.close() # release memory
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
-                    _, _, exc_tb = sys.exc_info()
-                    aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " rankingReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
-
-                try:
-                    # redraw original graph
-                    if foreground_profile_path:
-                        aw.loadFile(foreground_profile_path)
-                    if aw.qmc.backgroundpath:
-                        aw.loadbackground(aw.qmc.backgroundpath)
-                    self.qmc.redraw(recomputeAllDeltas=False)
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
-
-                weight_fmt = ('{0:.2f}' if aw.qmc.weight[2] in ["Kg", "lb", "oz"] else '{0:.0f}')
-                html = libstring.Template(HTML_REPORT_TEMPLATE).safe_substitute(
-                    resources = str(getResourcePath()),
-                    title = QApplication.translate("HTML Report Template", "Roast Ranking"),
-                    time = QApplication.translate("HTML Report Template", "Date"),
-                    profile = QApplication.translate("Label", "Title"),
-                    weightin = QApplication.translate("HTML Report Template", "In"),
-                    weightloss = QApplication.translate("HTML Report Template", "Loss"),
-                    colorHeader = QApplication.translate("HTML Report Template", "Color"),
-                    weight_unit = aw.qmc.weight[2].lower(),
-                    temp_unit = aw.qmc.mode,
-                    entries = entries,
-                    charges_avg = (weight_fmt.format(charges / charges_count) if charges_count > 0 and charges > 0 else ""),
-                    charges_temp_avg = ('{0:.1f}'.format(charges_temp / charges_temp_count) if charges_temp > 0 and charges_temp_count > 0 else ""),
-                    FCs_time_avg = (self.eventtime2string(FCs_time / FCs_time_count) if FCs_time > 0 and FCs_time_count > 0 else ""),
-                    FCs_temp_avg = ('{0:.1f}'.format(FCs_temp / FCs_temp_count) if FCs_temp > 0 and FCs_temp_count > 0 else ""),
-                    DROP_time_avg = (self.eventtime2string(DROP_time / DROP_time_count) if DROP_time > 0 and DROP_time_count > 0 else ""),
-                    DROP_temp_avg = ('{0:.1f}'.format(DROP_temp / DROP_temp_count) if DROP_temp > 0 and DROP_temp_count > 0 else ""),
-                    DRY_percent_avg = ('{0:.1f}'.format(DRY_percent / DRY_percent_count) if DRY_percent > 0 and DRY_percent_count > 0 else ""),
-                    MAI_percent_avg = ('{0:.1f}'.format(MAI_percent / MAI_percent_count) if MAI_percent > 0 and MAI_percent_count > 0 else ""),
-                    DEV_percent_avg = ('{0:.1f}'.format(DEV_percent / DEV_percent_count) if DEV_percent > 0 and DEV_percent_count > 0 else ""),
-                    AUC_avg = ('{0:.1f}'.format(AUC / AUC_count) if AUC > 0 and AUC_count > 0 else ""),
-                    loss_avg = ('{0:.1f}'.format(loss / loss_count) if loss_count > 0 and loss > 0 else ""),
-                    colors_avg = ('{0:.1f}'.format(colors_list / colors_count) if colors_list > 0 and colors_count > 0 else ""),
-                    cup_avg = ('{0:.2f}'.format(cuppings / cuppings_count) if cuppings > 0 and cuppings_count > 0 else ""),
-                    energy_avg = ('{0:.2f}'.format(energies / energies_count) if energies > 0 and energies_count > 0 else ""),
-                    co2_avg = ('{0:.2f}'.format(co2s / co2s_count) if co2s > 0 and co2s_count > 0 else ""),
-                    co2kg_avg = ('{0:.2f}'.format(co2kgs / co2kgs_count) if co2kgs > 0 and co2kgs_count > 0 else ""),
-                    graph_image=graph_image,
-                    graph_image_pct=graph_image_pct
-                )
-                try:
-                    filename = str(QDir(tmpdir).filePath("RankingReport.html"))
-                    try:
-                        os.remove(filename)
-                    except OSError:
-                        pass
-                    import codecs # @Reimport
-                    with codecs.open(filename, 'w', encoding='utf-8') as f:
-                        for i in range(len(html)):
-                            f.write(html[i])
-                    if platf == 'Darwin':
-                        full_path = "file://" + filename # Safari refuses to load the javascript lib (sorttable) otherwise
+                            # add BT curve to graph
+                            try:
+    
+                                if pd["batchnr"] > 0:
+                                    label = pd["batchprefix"] + str(pd["batchnr"])
+                                elif label_chr_nr < 26:
+                                    label = str(libstring.ascii_uppercase[label_chr_nr])
+                                    pd["batchnr"] = ""
+                                    pd["batchprefix"] = label
+                                    label_chr_nr = label_chr_nr + 1
+                                # surpress default description
+    #                            if pd["title"] == QApplication.translate("Scope Title", "Roaster Scope"):
+    #                                pd["title"] = ""
+    
+                                entries += self.rankingData2htmlentry(pd,rd, cl) + "\n"
+    
+                                temp = [convertTemp(t,rd["temp_unit"],self.qmc.mode) for t in rd["temp"]]
+                                timex = rd["timex"]
+                                stemp = self.qmc.smooth_list(timex,fill_gaps(temp),window_len=self.qmc.curvefilter,decay_smoothing=not aw.qmc.optimalSmoothing)
+                                charge = max(0,rd["charge_idx"]) # start of visible data
+                                drop = rd["drop_idx"] # end of visible data
+                                stemp = numpy.concatenate((
+                                    numpy.full(charge, numpy.nan, dtype=numpy.double),
+                                    stemp[charge:drop],
+                                    numpy.full(len(timex)-drop, numpy.nan, dtype=numpy.double)))
+                                timeindex = [max(0,v) if i>0 else max(-1,v) for i,v in enumerate(p["timeindex"])]
+                                if len(timex) > rd["charge_idx"]:
+                                    if first_profile:
+                                    # align with CHARGE
+                                        delta = timex[rd["charge_idx"]]
+                                        # store relative time of align event of first profile
+                                        # CHARGE, DRY, FCs, FCe, SCs, SCe, DROP
+                                        first_profile_event_time = delta # CHARGE
+                                        for j in range(6,0,-1):
+                                            if aw.qmc.alignEvent in [j] and timeindex[j]:
+                                                first_profile_event_time = timex[timeindex[j]] - timex[rd["charge_idx"]]
+                                                break
+                                    else:
+                                        delta = timex[rd["charge_idx"]]
+                                        for j in range(6,0,-1):
+                                            if aw.qmc.alignEvent in [j] and timeindex[j]:
+                                                delta = delta + (timex[timeindex[j]] - timex[rd["charge_idx"]] - first_profile_event_time)
+                                                break
+                                else:
+                                    delta = 0
+                                timex = [t-delta for t in timex]
+                                if len(timex) > charge:
+                                    min_start_time = min(min_start_time,timex[charge])
+                                if len(timex) > drop:
+                                    max_end_time = max(max_end_time,timex[drop])
+                                # cut-out only CHARGE to DROP
+    
+                                labels.append(label)
+                                timex_list.append(timex)
+                                stemp_list.append(stemp)
+                                cl_list.append(cl)
+    
+                                if self.qmc.DeltaBTflag and self.qmc.delta_ax:
+                                    tx = numpy.array(timex)
+                                    cf = aw.qmc.curvefilter*2 # we smooth twice as heavy for PID/RoR calcuation as for normal curve smoothing
+                                    t1 = self.qmc.smooth_list(timex,fill_gaps(temp),window_len=cf,decay_smoothing=not aw.qmc.optimalSmoothing)
+                                    if len(t1)>10 and len(tx) > 10:
+                                        # we start RoR computation 10 readings after CHARGE to avoid this initial peak
+                                        RoR_start = min(rd["charge_idx"]+10,len(tx)-1)
+                                        _,delta = self.qmc.recomputeDeltas(tx,RoR_start,drop,None,t1,optimalSmoothing=aw.qmc.optimalSmoothing)
+                                        delta_max = max(delta_max,self.calcAutoDelta([],delta,timeindex,False,True))
+                                        if self.qmc.BTlinewidth > 1 and self.qmc.BTlinewidth == self.qmc.BTdeltalinewidth:
+                                            dlinewidth = self.qmc.BTlinewidth-1 # we render the delta lines a bit thinner
+                                            dlinestyle = self.qmc.BTdeltalinestyle
+                                        else:
+                                            dlinewidth = self.qmc.BTdeltalinewidth
+                                            dlinestyle = self.qmc.BTdeltalinestyle
+                                        trans = self.qmc.delta_ax.transData
+                                        self.qmc.ax.plot(tx, delta,transform=trans,markersize=self.qmc.BTdeltamarkersize,marker=self.qmc.BTdeltamarker,
+                                            sketch_params=None,path_effects=[],
+                                            linewidth=dlinewidth,linestyle=dlinestyle,drawstyle=self.qmc.BTdeltadrawstyle,color=cl,alpha=0.7)
+    
+                                first_profile = False
+    
+                            except Exception as e: # pylint: disable=broad-except
+                                _log.exception(e)
+                                _, _, exc_tb = sys.exc_info()
+                                aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " rankingReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+    
+                    # draw BT curves on top of all others
+                    for i in range(len(timex_list)):
+                        label = labels[i]
+                        timex = timex_list[i]
+                        stemp = stemp_list[i]
+                        cl = cl_list[i]
+                        l_temp, = self.qmc.ax.plot(timex,stemp,markersize=self.qmc.BTmarkersize,marker=self.qmc.BTmarker,
+    #                        sketch_params=None,path_effects=[PathEffects.withStroke(linewidth=self.qmc.BTlinewidth+aw.qmc.patheffects,foreground=path_effects_color)],
+                            sketch_params=None,path_effects=[],
+                            linewidth=self.qmc.BTlinewidth,linestyle=self.qmc.BTlinestyle,drawstyle=self.qmc.BTdrawstyle,color=cl,label=label)
+                        handles.append(l_temp)
+    
+                    tmpdir = str(QDir.tempPath() + "/")
+                    graph_image = ""
+                    graph_image_pct = ''
+    
+                    prop = aw.mpl_fontproperties.copy()
+                    prop.set_size("x-small")
+    
+                    if len(profiles) > max_profiles:
+                        QMessageBox.information(aw,QApplication.translate("Message", "Ranking Report"),
+                                                  QApplication.translate("Message", "Ranking graphs are only generated up to {0} profiles").format(str(max_profiles)))
                     else:
-                        full_path = "file:///" + filename # Explorer refuses to start otherwise
-                    
-                    if pdf:
-                        # select file
-                        filename = self.ArtisanSaveFileDialog(msg="Export PDF",ext="*.pdf")
-                        if filename:
-                            self.html2pdf(full_path, filename, landscape=True)
-                    else:
-                        QDesktopServices.openUrl(QUrl(full_path, QUrl.ParsingMode.TolerantMode))
-
-                except IOError as e:
-                    aw.qmc.adderror((QApplication.translate("Error Message", "IO Error:") + " rankingReport() {0}").format(str(e)))
+                        try:
+    
+                            # remove annotations, lines and other artists from background profile
+                            try:
+                                for l in aw.qmc.l_annotations + aw.qmc.l_background_annotations:
+                                    if l:
+                                        try:
+                                            l.remove()
+                                        except Exception: # pylint: disable=broad-except
+                                            pass
+                                for l in [
+                                        aw.qmc.l_back1,
+                                        aw.qmc.l_back2,
+                                        aw.qmc.l_back3,
+                                        aw.qmc.l_back4,
+                                        aw.qmc.l_delta1B,
+                                        aw.qmc.l_delta2B
+                                        ]:
+                                    if l:
+                                        try:
+                                            aw.qmc.ax.lines.remove(l)
+                                        except Exception: # pylint: disable=broad-except
+                                            pass
+                                for a in [
+                                        aw.qmc.l_eventtype1dots,
+                                        aw.qmc.l_eventtype2dots,
+                                        aw.qmc.l_eventtype3dots,
+                                        aw.qmc.l_eventtype4dots,
+                                        aw.qmc.l_backgroundeventtype1dots,
+                                        aw.qmc.l_backgroundeventtype2dots,
+                                        aw.qmc.l_backgroundeventtype3dots,
+                                        aw.qmc.l_backgroundeventtype4dots]:
+                                    if a:
+                                        try:
+                                            aw.qmc.ax.lines.remove(a)
+                                        except Exception: # pylint: disable=broad-except
+                                            pass
+    
+                                # we also have to remove those extra event annotations if in combo mode
+                                if aw.qmc.eventsGraphflag == 4:
+                                    for child in aw.qmc.ax.get_children():
+                                        if isinstance(child, mpl.text.Annotation):
+                                            try:
+                                                aw.qmc.ax.texts.remove(child)
+                                            except Exception: # pylint: disable=broad-except
+                                                pass
+                            except Exception as e: # pylint: disable=broad-except
+                                _log.exception(e)
+                            # we only adjust the upper limit of the delta axis automatically
+                            if self.qmc.autodeltaxBT:
+                                self.qmc.delta_ax.set_ylim(self.qmc.zlimit_min,delta_max)                        
+                            # adjust zgrid
+                            if aw.qmc.zgrid != 0:
+                                d = delta_max - self.qmc.zlimit_min
+                                steps = int(round(d/5))
+                                if steps > 50: 
+                                    steps = int(round(steps/10))*10
+                                elif steps > 10:
+                                    steps = int(round(steps/5))*5
+                                auto_grid = max(2,steps)
+                                aw.qmc.zgrid = auto_grid
+                                self.qmc.delta_ax.yaxis.set_major_locator(ticker.MultipleLocator(aw.qmc.zgrid))
+                                self.qmc.delta_ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
+                            # adjust time limits
+                            aw.qmc.ax.set_xlim(min_start_time-15,max_end_time+15) # we adjust the min, max time scale to ensure all data is visible
+                            graph_image = "roastlog-graph"
+                            self.qmc.setProfileTitle("")
+                            self.qmc.fig.suptitle("")
+                            rcParams['path.effects'] = []
+                            if len(handles) > 7:
+                                ncol = int(math.ceil(len(handles)/4.))
+                            elif len(handles) > 3:
+                                ncol = int(math.ceil(len(handles)/2.))
+                            else:
+                                ncol = int(math.ceil(len(handles)))
+                            self.qmc.ax.legend(handles,labels,loc=self.qmc.legendloc,ncol=ncol,fancybox=True,prop=prop,shadow=False)
+    
+                            # Remove and update the logo image
+                            try:
+                                aw.qmc.ai.remove()
+                            except Exception: # pylint: disable=broad-except
+                                pass
+                            try:
+                                self.qmc.placelogoimage()
+                            except Exception as e: # pylint: disable=broad-except
+                                _log.exception(e)
+    
+                            # generate graph
+                            self.qmc.fig.set_tight_layout(False)
+                            self.qmc.fig.canvas.draw()
+                            # save graph
+                            graph_image = str(QDir.cleanPath(QDir(tmpdir).absoluteFilePath(graph_image + ".svg")))
+                            try:
+                                os.remove(graph_image)
+                            except OSError:
+                                pass
+                            self.qmc.fig.set_tight_layout(self.qmc.tight_layout_params)
+                            self.qmc.fig.savefig(graph_image,transparent=True)
+    
+                            #add some random number to force HTML reloading
+                            graph_image = path2url(graph_image)
+                            graph_image = graph_image + "?dummy=" + str(int(libtime.time()))
+                            graph_image = "<img alt='roast graph' style=\"width:100%;\" src='" + graph_image + "'>"
+    
+                        except Exception as e: # pylint: disable=broad-except
+                            _log.exception(e)
+                            _, _, exc_tb = sys.exc_info()
+                            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " rankingReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+    
+                    try:
+                        # Create a roast phase visualization graph
+                        #import matplotlib.pyplot as plt
+    
+                        fig_height = 3.2       # in inches when there are 10 profiles, will be scaled for number of profiles
+                        fig_width = 10         # in inches
+    
+                        # values that define the bars and spacing
+                        barspacer =  2     # vertical space between bars
+                        barheight =  18    # height of each bar
+                        textoffset = 6     # shifts text annotations upward to toward middle of the bar
+                        m = 10             # width of batch number field and drop time field
+                        g = 2              # gap
+                        n = m + g          # start of horiz stacked bar
+                        ind = 7            # width of color legend indicator
+    
+                        # setup the font
+                        if sys.platform.startswith("darwin") and darkdetect.isDark() and appFrozen():
+                            headerfontcolor = '#B2B2B2'
+                        else:
+                            headerfontcolor = '#707070'
+                        fontcolor = '#303030'
+                        lightfontcolor = 'grey'
+                        prop.set_family(mpl.rcParams['font.family'])
+    
+                        # generate graph  ( not written to support MPL < v2.0 )
+                        #fig = plt.figure(figsize=(fig_width, (fig_height * len(profiles)/10 + 0.2)))
+                        fig = Figure(figsize=(fig_width, (fig_height * len(profiles)/10 + 0.2)))
+                        
+                        ax = fig.add_subplot(111, frameon=False)
+    #                    plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+                        fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
+    
+                        # no grid or tick marks
+                        ax.grid(False)
+                        ax.axes.get_xaxis().set_ticks([])
+                        ax.axes.get_yaxis().set_ticks([])
+    
+                        # set graph xy limits
+                        ylim = (barheight + barspacer) * (1 + len(profiles))
+                        xlim = m+g+100+g+m +1
+                        ax.set_ylim(0, ylim)
+                        ax.set_xlim(0, xlim)
+    
+                        graph_image_pct = "roastlog-graph-pct"
+    
+                        i = len(profiles)   # bar counter
+    
+                        # generate the legend at the top
+                        facecolors = ('#00b950', '#ffb347', '#9f7960')
+                        prop.set_size("medium")
+                        ax.broken_barh( [ (n, g),                         #Dry indicator
+                                          (n+g+ind, g),                   #MAI indicator
+                                          (n+g+ind+g+ind, g)              #DEV indicator
+                                        ],
+                                        (i*(barheight + barspacer), barheight*0.75), facecolors=facecolors
+                                      )
+                        ax.text(    m/2,             i*(barheight + barspacer) + textoffset/3, 'Nr', ha='center', color=headerfontcolor, fontproperties=prop)
+                        ax.text( 1+ n+g,             i*(barheight + barspacer) + textoffset/3, 'Dry', ha='left', color=headerfontcolor, fontproperties=prop)
+                        ax.text( 1+ n+g+ind+g,       i*(barheight + barspacer) + textoffset/3, 'Mai', ha='left', color=headerfontcolor, fontproperties=prop)
+                        ax.text( 1+ n+g+ind+g+ind+g, i*(barheight + barspacer) + textoffset/3, 'Dev', ha='left', color=headerfontcolor, fontproperties=prop)
+                        ax.text(    n+100 + 10/2,    i*(barheight + barspacer) + textoffset/3, 'Drop', ha='center', color=headerfontcolor, fontproperties=prop)
+    
+                        # generate the bar graph
+                        prop.set_size("small")
+                        color=iter(cm.tab20(numpy.linspace(0,1,max_profiles)))    # @UndefinedVariable # pylint: disable=maybe-no-member
+                        label_chr_nr = 0
+                        for p in profiles:
+                            i -= 1
+                            try:
+                                cl = mcolors.to_hex(next(color)), '#00b950', '#ffb347', '#9f7960'
+                            except Exception: # pylint: disable=broad-except
+                                color=iter(cm.tab20(numpy.linspace(0,1,max_profiles)))    # @UndefinedVariable # pylint: disable=maybe-no-member
+                                cl = mcolors.to_hex(next(color)), '#00b950', '#ffb347', '#9f7960'
+                            try:
+                                rd = self.profileRankingData(p)
+                            except Exception as e: # pylint: disable=broad-except
+                                _log.exception(e)
+                                _, _, exc_tb = sys.exc_info()
+                                aw.qmc.adderror((QApplication.translate("Error Message","Exception (probably due to an empty profile):") + " rankingReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                                i += 1   #avoid a blank line
+                                continue
+                            pd = self.profileProductionData(p)
+                            if pd["batchnr"] > 0:
+                                label = (pd["batchprefix"] + str(pd["batchnr"]))[:8]
+                            elif label_chr_nr < 26:
+                                label = str(libstring.ascii_uppercase[label_chr_nr])
+                                label_chr_nr = label_chr_nr + 1
+                            else:
+                                label = ""
+                            if "DRY_percent" in rd and "MAI_percent" in rd and "DEV_percent" in rd:
+                                ax.broken_barh( [ (0, m),
+                                                  (n, rd["DRY_percent"]),
+                                                  (n+rd["DRY_percent"], rd["MAI_percent"]),
+                                                  (n+rd["DRY_percent"] + rd["MAI_percent"], rd["DEV_percent"]),
+                                                  (n+rd["DRY_percent"] + rd["MAI_percent"] + rd["DEV_percent"] + g, m*rd["DROP_time"]/max_drop_time)
+                                                ],
+                                                (i*(barheight + barspacer), barheight), facecolors=cl
+                                              )
+                                ax.text( m/2,                                                                   i*(barheight + barspacer) + textoffset, label, ha='center', color=fontcolor, fontproperties=prop)
+                                ax.text( n + rd["DRY_percent"]/2,                                               i*(barheight + barspacer) + textoffset, str(round(rd["DRY_percent"],1)) + '%  ' + stringfromseconds(rd["DRY_time"]), ha='center', color=fontcolor, fontproperties=prop)
+                                ax.text( n + rd["DRY_percent"] + rd["MAI_percent"]/2,                           i*(barheight + barspacer) + textoffset, str(round(rd["MAI_percent"],1)) + '%  ' + stringfromseconds(rd["MAI_time"]), ha='center', color=fontcolor, fontproperties=prop)
+                                ax.text( n + rd["DRY_percent"] + rd["MAI_percent"] + rd["DEV_percent"]/2,       i*(barheight + barspacer) + textoffset, str(round(rd["DEV_percent"],1)) + '%  ' + stringfromseconds(rd["DEV_time"]), ha='center', color=fontcolor, fontproperties=prop)
+                                ax.text( n + rd["DRY_percent"] + rd["MAI_percent"] + rd["DEV_percent"] + g + 1, i*(barheight + barspacer) + textoffset, stringfromseconds(rd["DROP_time"]), ha='left', color=fontcolor, fontproperties=prop)
+                            elif "DEV_percent" in rd:   # has FCs but no Dry event
+                                cl = cl[0],'white',cl[3]
+                                missingDryevent = QApplication.translate("Message", "Profile missing Dry event")
+                                ax.broken_barh( [ (0, m),
+                                                  (n, 100 - rd["DEV_percent"]),
+                                                  (n+ 100 - rd["DEV_percent"], rd["DEV_percent"]),
+                                                  (n+ 100 + g, m*rd["DROP_time"]/max_drop_time)
+                                                ],
+                                                (i*(barheight + barspacer), barheight), facecolors=cl
+                                              )
+                                ax.text( m/2,                                                                   i*(barheight + barspacer) + textoffset, label, ha='center', color=fontcolor, fontproperties=prop)
+                                ax.text( n + (100 - rd["DEV_percent"])/2,                                       i*(barheight + barspacer) + textoffset, missingDryevent, ha='center', color=lightfontcolor, fontproperties=prop)
+                                ax.text( n + 100 - rd["DEV_percent"] + rd["DEV_percent"]/2,                     i*(barheight + barspacer) + textoffset, str(round(rd["DEV_percent"],1)) + '%  ' + stringfromseconds(rd["DEV_time"]), ha='center', color=fontcolor, fontproperties=prop)
+                                ax.text( n + 100 + g + 1, i*(barheight + barspacer) + textoffset, stringfromseconds(rd["DROP_time"]), ha='left', color=fontcolor, fontproperties=prop)
+                            else:    # no useful events
+                                drop_time= rd.get("DROP_time", 0)
+                                cl = cl[0],'white'
+                                missingPhaseevents = QApplication.translate("Message", "Profile missing phase events")
+                                ax.broken_barh( [ (0, m),
+                                                  (n, 100),
+                                                  (n+ 100 + g, m*(0 if max_drop_time == 0 else drop_time/max_drop_time))
+                                                ],
+                                                (i*(barheight + barspacer), barheight), facecolors=cl
+                                              )
+                                ax.text( m/2,                                                                   i*(barheight + barspacer) + textoffset, label, ha='center', color=fontcolor, fontproperties=prop)
+                                ax.text( n + 100/2,                                                             i*(barheight + barspacer) + textoffset, missingPhaseevents, ha='center', color=lightfontcolor, fontproperties=prop)
+                                ax.text( n + 100 + g + 1, i*(barheight + barspacer) + textoffset, stringfromseconds(drop_time), ha='left', color=fontcolor, fontproperties=prop)
+    
+                        # save graph
+                        graph_image_pct = str(QDir.cleanPath(QDir(tmpdir).absoluteFilePath(graph_image_pct + ".svg")))
+                        try:
+                            os.remove(graph_image_pct)
+                        except OSError:
+                            pass
+                        fig.savefig(graph_image_pct,transparent=True)
+                        #add some random number to force HTML reloading
+                        graph_image_pct = path2url(graph_image_pct)
+                        graph_image_pct = graph_image_pct + "?dummy=" + str(int(libtime.time()))
+                        graph_image_pct = "<img alt='roast graph pct' style=\"width: 95%;\" src='" + graph_image_pct + "'>"
+    
+    #                    plt.close() # release memory
+                    except Exception as e: # pylint: disable=broad-except
+                        _log.exception(e)
+                        _, _, exc_tb = sys.exc_info()
+                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " rankingReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+    
+                    try:
+                        # redraw original graph
+                        if foreground_profile_path:
+                            aw.loadFile(foreground_profile_path)
+                        if aw.qmc.backgroundpath:
+                            aw.loadbackground(aw.qmc.backgroundpath)
+                        self.qmc.redraw(recomputeAllDeltas=False)
+                    except Exception as e: # pylint: disable=broad-except
+                        _log.exception(e)
+    
+                    weight_fmt = ('{0:.2f}' if aw.qmc.weight[2] in ["Kg", "lb", "oz"] else '{0:.0f}')
+                    html = libstring.Template(HTML_REPORT_TEMPLATE).safe_substitute(
+                        resources = str(getResourcePath()),
+                        title = QApplication.translate("HTML Report Template", "Roast Ranking"),
+                        time = QApplication.translate("HTML Report Template", "Date"),
+                        profile = QApplication.translate("Label", "Title"),
+                        weightin = QApplication.translate("HTML Report Template", "In"),
+                        weightloss = QApplication.translate("HTML Report Template", "Loss"),
+                        colorHeader = QApplication.translate("HTML Report Template", "Color"),
+                        weight_unit = aw.qmc.weight[2].lower(),
+                        temp_unit = aw.qmc.mode,
+                        entries = entries,
+                        charges_avg = (weight_fmt.format(charges / charges_count) if charges_count > 0 and charges > 0 else ""),
+                        charges_temp_avg = ('{0:.1f}'.format(charges_temp / charges_temp_count) if charges_temp > 0 and charges_temp_count > 0 else ""),
+                        FCs_time_avg = (self.eventtime2string(FCs_time / FCs_time_count) if FCs_time > 0 and FCs_time_count > 0 else ""),
+                        FCs_temp_avg = ('{0:.1f}'.format(FCs_temp / FCs_temp_count) if FCs_temp > 0 and FCs_temp_count > 0 else ""),
+                        DROP_time_avg = (self.eventtime2string(DROP_time / DROP_time_count) if DROP_time > 0 and DROP_time_count > 0 else ""),
+                        DROP_temp_avg = ('{0:.1f}'.format(DROP_temp / DROP_temp_count) if DROP_temp > 0 and DROP_temp_count > 0 else ""),
+                        DRY_percent_avg = ('{0:.1f}'.format(DRY_percent / DRY_percent_count) if DRY_percent > 0 and DRY_percent_count > 0 else ""),
+                        MAI_percent_avg = ('{0:.1f}'.format(MAI_percent / MAI_percent_count) if MAI_percent > 0 and MAI_percent_count > 0 else ""),
+                        DEV_percent_avg = ('{0:.1f}'.format(DEV_percent / DEV_percent_count) if DEV_percent > 0 and DEV_percent_count > 0 else ""),
+                        AUC_avg = ('{0:.1f}'.format(AUC / AUC_count) if AUC > 0 and AUC_count > 0 else ""),
+                        loss_avg = ('{0:.1f}'.format(loss / loss_count) if loss_count > 0 and loss > 0 else ""),
+                        colors_avg = ('{0:.1f}'.format(colors_list / colors_count) if colors_list > 0 and colors_count > 0 else ""),
+                        cup_avg = ('{0:.2f}'.format(cuppings / cuppings_count) if cuppings > 0 and cuppings_count > 0 else ""),
+                        energy_avg = ('{0:.2f}'.format(energies / energies_count) if energies > 0 and energies_count > 0 else ""),
+                        co2_avg = ('{0:.2f}'.format(co2s / co2s_count) if co2s > 0 and co2s_count > 0 else ""),
+                        co2kg_avg = ('{0:.2f}'.format(co2kgs / co2kgs_count) if co2kgs > 0 and co2kgs_count > 0 else ""),
+                        graph_image=graph_image,
+                        graph_image_pct=graph_image_pct
+                    )
+                    try:
+                        filename = str(QDir(tmpdir).filePath("RankingReport.html"))
+                        try:
+                            os.remove(filename)
+                        except OSError:
+                            pass
+                        import codecs # @Reimport
+                        with codecs.open(filename, 'w', encoding='utf-8') as f:
+                            for i in range(len(html)):
+                                f.write(html[i])
+                        if platf == 'Darwin':
+                            full_path = "file://" + filename # Safari refuses to load the javascript lib (sorttable) otherwise
+                        else:
+                            full_path = "file:///" + filename # Explorer refuses to start otherwise
+                        
+                        if pdf:
+                            # select file
+                            filename = self.ArtisanSaveFileDialog(msg="Export PDF",ext="*.pdf")
+                            if filename:
+                                self.html2pdf(full_path, filename, landscape=True)
+                        else:
+                            QDesktopServices.openUrl(QUrl(full_path, QUrl.ParsingMode.TolerantMode))
+    
+                    except IOError as e:
+                        aw.qmc.adderror((QApplication.translate("Error Message", "IO Error:") + " rankingReport() {0}").format(str(e)))
+        except Exception as e:  # pylint: disable=broad-except
+            _log.exception(e)
 
     @pyqtSlot()
     @pyqtSlot(bool)
@@ -34595,6 +35382,9 @@ class ApplicationWindow(QMainWindow):
             if beans_html is not None and beans_html != "" and aw.qmc.plus_coffee is not None:
                 beans_html = '<a href="{0}" target="_blank">{1}</a>'.format(plus.util.coffeeLink(aw.qmc.plus_coffee),beans_html)
                 # note that blends are hard to link back as it requires to link component by component
+            cupping_score, cupping_all_default = self.cuppingSum(self.qmc.flavors)
+            cupping_notes = self.note2html(self.qmc.cuppingnotes).strip()
+            special_events = self.specialevents2html().strip()
             html = libstring.Template(HTML_REPORT_TEMPLATE).safe_substitute(
                 title=title_html,
                 titlecolor=QColor(aw.qmc.palette["title"]).name(),
@@ -34615,8 +35405,8 @@ class ApplicationWindow(QMainWindow):
                 operator=str(htmllib.escape(self.qmc.operator)),
                 organization_label=QApplication.translate("HTML Report Template", "Organization:"),
                 organization=str(htmllib.escape(self.qmc.organization)),
-                cup_label=QApplication.translate("HTML Report Template", "Cupping:"),
-                cup=str(aw.float2float(self.cuppingSum(self.qmc.flavors))),
+                cup_label=("" if cupping_all_default else QApplication.translate("HTML Report Template", "Cupping:")),
+                cup=("" if cupping_all_default else str(aw.float2float(cupping_score))),
                 color_label=QApplication.translate("HTML Report Template", "Color:"),
                 color=color,
                 energy_label=QApplication.translate("HTML Report Template", "Energy:"),
@@ -34675,10 +35465,12 @@ class ApplicationWindow(QMainWindow):
                 roast_attributes=self.roastattributes(),
                 graph_image=graph_image,
                 flavor_image=flavor_image,
+                show_cupping=("none" if cupping_all_default else "inline"),
                 specialevents_label=QApplication.translate("HTML Report Template", "Events"),
-                specialevents=self.specialevents2html(),
+                specialevents=special_events,
+                show_special_events=("none" if special_events == "" else "inline"),
                 cupping_notes_label=(QApplication.translate("HTML Report Template", "Cupping Notes") if self.qmc.cuppingnotes != "" else ""),
-                cupping_notes=self.note2html(self.qmc.cuppingnotes))
+                cupping_notes=cupping_notes)
             f = None
             try:
                 filename = str(QDir(tmpdir).filePath("Roastlog.html"))
@@ -34742,15 +35534,18 @@ class ApplicationWindow(QMainWindow):
             return "\n<center><pre>" + ', '.join(res) + "</pre></center>"
         return ""
 
-    @staticmethod
-    def cuppingSum(flavors):
+    # returns the overal cupping score and as second value a flag if True indicating that all individual ratings were set to their default value
+    def cuppingSum(self, flavors):
         score = 0.
+        all_default = True
         nflavors = len(flavors)
         for i in range(nflavors):
             score += flavors[i]
+            if flavors[i] != self.qmc.flavors_default_value:
+                all_default = False
         score /= (nflavors)
         score *= 10.
-        return score
+        return score, all_default
 
     @staticmethod
     def volume_weight2html(amount, out, unit, change):
@@ -34805,7 +35600,7 @@ class ApplicationWindow(QMainWindow):
     def specialevents2html(self):
         html = ""
         if self.qmc.specialevents and len(self.qmc.specialevents) > 0:
-            html += '<center>\n<table cellpadding="10" cellspacing="8">\n'
+            html += '\n<table cellpadding="10" cellspacing="8">\n'
             if self.qmc.timeindex[0] != -1:
                 start = self.qmc.timex[self.qmc.timeindex[0]]
             else:
@@ -34858,7 +35653,7 @@ class ApplicationWindow(QMainWindow):
                      stringfromseconds(self.qmc.timex[sevents[i][0]] - start) +
                      "</td><td align='right'>" + temps + "</td><td>" + 
                      "</td><td align='right'>" + deltas + "</td><td>" + seventsString[i] + ("</td></tr>\n" if seventsType[i] == 4 else ("</td><td>(" + str(self.qmc.etypesf(seventsType[i])) + " " + self.qmc.eventsvalues(seventsValue[i]) + ")</td></tr>\n")))
-            html += '</table>\n</center>'
+            html += '</table>\n'
         return html
 
     @staticmethod
@@ -34979,9 +35774,9 @@ class ApplicationWindow(QMainWindow):
         res = 0
         if len(self.qmc.timex)>5 and i < len(self.qmc.timex):
             if self.checkTop(offset,self.qmc.temp2[i-5],self.qmc.temp2[i-4],self.qmc.temp2[i-3],self.qmc.temp2[i-2],self.qmc.temp2[i-1],self.qmc.temp2[i]):
-                res = 3
+                res = 2
             elif len(self.qmc.timex)>10 and self.checkTop(offset,self.qmc.temp2[i-10],self.qmc.temp2[i-8],self.qmc.temp2[i-6],self.qmc.temp2[i-4],self.qmc.temp2[i-2],self.qmc.temp2[i]):
-                res = 6
+                res = 5
         return res
 
     # this can be used to find the CHARGE index as well as the DROP index by using
@@ -35311,6 +36106,11 @@ class ApplicationWindow(QMainWindow):
             otherlibs += ", " + phidgetlibversion
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
+        try:
+            from Phidget22 import __version__ as phidget_lib_version # @UnresolvedImport
+            otherlibs += f" ({phidget_lib_version})"
+        except Exception: # pylint: disable=broad-except
+            pass
         try:
             yocto_version = YAPI.GetAPIVersion()
             otherlibs += ", Yoctopuce " + yocto_version
@@ -35840,7 +36640,6 @@ class ApplicationWindow(QMainWindow):
         if filename:
             aw.settingspath = filename
             aw.closeEventSettings(filename)
-            aw.clearExtraDeviceSettingsBackup() # after explicit saved settings we do not want those to be modified on RESET by a saved extra device settings backup
             
             self.sendmessage(QApplication.translate("Message","Settings saved"))
             # update recentSettings menu
@@ -36040,6 +36839,18 @@ class ApplicationWindow(QMainWindow):
 
     @pyqtSlot()
     @pyqtSlot(bool)
+    def largeScaleLCDs(self,_=False):
+        if self.largeScaleLCDs_dialog is None:
+            self.largeScaleLCDs_dialog = LargeScaleLCDs(self,self)
+            self.largeScaleLCDs_dialog.setModal(False)
+            self.LargeScaleLCDsFlag = True
+            self.scalelcdsAction.setChecked(True)
+            self.largeScaleLCDs_dialog.show()
+        else:
+            self.largeScaleLCDs_dialog.close()
+
+    @pyqtSlot()
+    @pyqtSlot(bool)
     def largeExtraLCDs(self,_=False):
         if self.largeExtraLCDs_dialog is None:
             self.largeExtraLCDs_dialog = LargeExtraLCDs(self,self)
@@ -36079,11 +36890,16 @@ class ApplicationWindow(QMainWindow):
             self.qmc.exitviewmode()
             aw.enableEditMenus()
             aw.showControls()
+            aw.updateReadingsLCDsVisibility()
+            aw.updateSlidersVisibility()
+            aw.update_minieventline_visibility()
+            aw.updateExtraButtonsVisibility()
         else:
             aw.redrawOnResize = False
             aw.hideControls()
             aw.hideLCDs(False)
             aw.hideSliders(False)
+            aw.hide_minieventline(False)
             aw.hideExtraButtons()
             aw.disableEditMenus(wheel=True)
             aw.qmc.connectWheel()
@@ -36106,6 +36922,8 @@ class ApplicationWindow(QMainWindow):
     def deleteBackground(self):
         self.qmc.background = False
         self.qmc.backgroundprofile = None
+        self.qmc.backgroundprofile_moved_x = 0
+        self.qmc.backgroundprofile_moved_y = 0
         self.qmc.backgroundpath = ""
         self.qmc.backgroundUUID = None
         self.qmc.titleB = ""
@@ -36124,6 +36942,7 @@ class ApplicationWindow(QMainWindow):
         self.qmc.l_background_annotations = []
         self.qmc.analysisresultsstr = ""
         self.qmc.resetlinecountcaches()
+        self.qmc.deleteAnnoPositions(foreground=False, background=True)
 
     @pyqtSlot()
     @pyqtSlot(bool)
@@ -36221,10 +37040,18 @@ class ApplicationWindow(QMainWindow):
 
     def startdesigner(self):
         self.qmc.designer()
+        self.hideLCDs(False)
+        self.hideSliders(False)
+        self.hide_minieventline(False)
+        self.hideExtraButtons()
 
     def stopdesigner(self):
         aw.enableEditMenus()
         self.qmc.convert_designer()
+        self.updateReadingsLCDsVisibility()
+        self.updateSlidersVisibility()
+        self.update_minieventline_visibility()
+        self.updateExtraButtonsVisibility()
 
     @pyqtSlot()
     @pyqtSlot(bool)
@@ -36785,9 +37612,9 @@ class ApplicationWindow(QMainWindow):
 
     @pyqtSlot()
     @pyqtSlot(bool)
-    def importRubase(self,_=False):
-        from artisanlib.rubase import extractProfileRubaseCSV
-        self.importExternal(extractProfileRubaseCSV,QApplication.translate("Message","Import Rubase CSV"),"*.csv")
+    def importRubasse(self,_=False):
+        from artisanlib.rubasse import extractProfileRubasseCSV
+        self.importExternal(extractProfileRubasseCSV,QApplication.translate("Message","Import Rubasse CSV"),"*.csv")
 
     @pyqtSlot()
     @pyqtSlot(bool)
@@ -37411,7 +38238,7 @@ class ApplicationWindow(QMainWindow):
             if len(copy)>25:
                 self.buttonpalette_label = copy[25]
             else:
-                self.buttonpalette_label = self.aw.buttonpalette_default_label
+                self.buttonpalette_label = self.buttonpalette_default_label
             # quantifier actions
             if len(copy)>26 and len(copy[26]) == 4:
                 self.eventquantifieraction = copy[26][:]
@@ -37607,6 +38434,7 @@ class ApplicationWindow(QMainWindow):
     @pyqtSlot(bool)
     def clearResults(self,_=False):
         self.qmc.fig.canvas.mpl_disconnect(self.qmc.analyzer_connect_id)
+        aw.autoAdjustAxis()
         aw.qmc.redraw(recomputeAllDeltas=True)
 
     def analysisfitCurves(self, exp=-1):
@@ -37819,37 +38647,41 @@ class ApplicationWindow(QMainWindow):
     # and it is the one in the region with the highest z-order, otherwise False
     # a dict of properties is returned as second argument
     def draggable_text_box_picker(self,artist, evt):
-        if self.segmentresultsanno is not None and self.analysisresultsanno is not None:
-            # in case the analyzer boxes are displayed
-            seg_contained,seg_prop = self.segmentresultsanno.contains(evt)
-            ana_contained,ana_prop = self.analysisresultsanno.contains(evt)
-            segment_zorder = self.segmentresultsanno.get_zorder()
-            analysis_zorder = self.analysisresultsanno.get_zorder()
-            if artist == self.segmentresultsanno:
-                if  seg_contained and (not ana_contained or segment_zorder > analysis_zorder):
-                    # a click on the segmentresult box, but not on the analysisresult box, or the segment box is in front
-                    # ensure that the z-order of the segment box is higher than that of the analysis box as the bitblit brings the segment box to the front
-                    self.segmentresultsanno.set_zorder(max(segment_zorder,analysis_zorder))
-                    self.analysisresultsanno.set_zorder(min(segment_zorder,analysis_zorder))
-                    return True, seg_prop
-                # no click on the the segment box, or the anlysis box is clicked too and in front
+        try:
+            if self.segmentresultsanno is not None and self.analysisresultsanno is not None:
+                # in case the analyzer boxes are displayed
+                seg_contained,seg_prop = self.segmentresultsanno.contains(evt)
+                ana_contained,ana_prop = self.analysisresultsanno.contains(evt)
+                segment_zorder = self.segmentresultsanno.get_zorder()
+                analysis_zorder = self.analysisresultsanno.get_zorder()
+                if artist == self.segmentresultsanno:
+                    if  seg_contained and (not ana_contained or segment_zorder > analysis_zorder):
+                        # a click on the segmentresult box, but not on the analysisresult box, or the segment box is in front
+                        # ensure that the z-order of the segment box is higher than that of the analysis box as the bitblit brings the segment box to the front
+                        self.segmentresultsanno.set_zorder(max(segment_zorder,analysis_zorder))
+                        self.analysisresultsanno.set_zorder(min(segment_zorder,analysis_zorder))
+                        return True, seg_prop
+                    # no click on the the segment box, or the anlysis box is clicked too and in front
+                    return False, {}
+                if artist == self.analysisresultsanno:
+                    if ana_contained and (not seg_contained or segment_zorder < analysis_zorder):
+                        # a click on the analysisresult box, but not on the segmentresult box, or the analyzer box is in front
+                        # ensure that the z-order of the analyse box is higher than that of the segment box as the bitblit brings the segment box to the front
+                        self.segmentresultsanno.set_zorder(min(segment_zorder,analysis_zorder))
+                        self.analysisresultsanno.set_zorder(max(segment_zorder,analysis_zorder))
+                        return True, ana_prop
+                    # no click on the the analysis box, or the segment box is clicked too and in front
+                    return False, {}
+                if not seg_contained and not ana_contained:
+                    # neither of the two analyzer boxes was clicked, check the given artist is contained in the event region
+                    return artist.contains(evt)
+                # one of the two analyzer boxes was clicked, we ignore all other artists that might be contained in the events region
                 return False, {}
-            if artist == self.analysisresultsanno:
-                if ana_contained and (not seg_contained or segment_zorder < analysis_zorder):
-                    # a click on the analysisresult box, but not on the segmentresult box, or the analyzer box is in front
-                    # ensure that the z-order of the analyse box is higher than that of the segment box as the bitblit brings the segment box to the front
-                    self.segmentresultsanno.set_zorder(min(segment_zorder,analysis_zorder))
-                    self.analysisresultsanno.set_zorder(max(segment_zorder,analysis_zorder))
-                    return True, ana_prop
-                # no click on the the analysis box, or the segment box is clicked too and in front
-                return False, {}
-            if not seg_contained and not ana_contained:
-                # neither of the two analyzer boxes was clicked, check the given artist is contained in the event region
-                return artist.contains(evt)
-            # one of the two analyzer boxes was clicked, we ignore all other artists that might be contained in the events region
+            # if analyzer boxes are not available we call the standard picker
+            return artist.contains(evt)
+        except Exception as ex: # pylint: disable=broad-except
+            _log.exception(ex)
             return False, {}
-        # if analyzer boxes are not available we call the standard picker
-        return artist.contains(evt)
 
     def analysisShowResults(self,cfr,resultstr,curvefit_starttime=0, curvefit_endtime=0, analysis_starttime=0, analysis_endtime=0):
         self.qmc.redraw(recomputeAllDeltas = True)
@@ -38024,6 +38856,8 @@ class ApplicationWindow(QMainWindow):
                             aw.qmc.timeindexB[6] = max(0,aw.qmc.backgroundtime2index(t2))
                         aw.qmc.background = True
                         aw.qmc.backgroundprofile = True
+                        aw.qmc.backgroundprofile_moved_x = 0
+                        aw.qmc.backgroundprofile_moved_y = 0
                         if doDraw:
                             aw.qmc.redraw(recomputeAllDeltas=recomputeAllDeltas)
                             aw.sendmessage(QApplication.translate("Message","B1 = [%s] ; B2 = [%s]"%(EQU[0],EQU[1])))
@@ -38075,12 +38909,34 @@ class ApplicationWindow(QMainWindow):
     @pyqtSlot()
     @pyqtSlot(bool)
     def simulate(self,_=False):
+        modifiers = QApplication.keyboardModifiers()
+        control_modifier = modifiers == Qt.KeyboardModifier.ControlModifier # command/apple key on macOS, Control key on Windows
+        alt_modifier = modifiers == Qt.KeyboardModifier.AltModifier # OPTION on macOS, ALT on Windows
+        shift_modifier = modifiers == Qt.KeyboardModifier.ShiftModifier # SHIFT
         if bool(self.simulator):
-            self.simulator = None
-            self.qmc.timeclock.setBase(1000)
-            aw.buttonONOFF.setStyleSheet(aw.pushbuttonstyles["OFF"])
-            aw.buttonSTARTSTOP.setStyleSheet(aw.pushbuttonstyles["STOP"])
-            self.sendmessage(QApplication.translate("Message","Simulator stopped"))
+            if control_modifier or alt_modifier or shift_modifier:
+                # if a modifier we change the speed instead of leaving the simulator (shift: 1x, alt: 2x, control: 4x):
+                speed = 1
+                if alt_modifier:
+                    speed = 2
+                elif control_modifier:
+                    speed = 4
+                self.qmc.timeclock.setBase(1000*speed)
+                self.qmc.updateDeltaSamples() # to get the delta_spans right
+                self.sendmessage(QApplication.translate("Message","Simulator started @{}x").format(speed))
+                self.simulatorAction.setChecked(True)
+            else:
+                # we leave the simulator
+                self.simulator = None
+                self.qmc.timeclock.setBase(1000)
+                self.sample_loop_running = True # we enable the sampling loop again that might have been stopped during the simulation via a timerLCD click
+                aw.buttonONOFF.setStyleSheet(aw.pushbuttonstyles["OFF"])
+                aw.buttonSTARTSTOP.setStyleSheet(aw.pushbuttonstyles["STOP"])
+                self.qmc.updateDeltaSamples() # to get the delta_spans right
+                self.sendmessage(QApplication.translate("Message","Simulator stopped"))
+                self.updateWindowTitle()
+                self.enableLoadImportConvertMenus()
+                self.qmc.redraw(recomputeAllDeltas=False)
         else:
             try:
                 if aw.curFile is None:
@@ -38088,6 +38944,7 @@ class ApplicationWindow(QMainWindow):
                 else:
                     filename = aw.curFile
                 if filename:
+                    self.disableLoadImportConvertMenus()
                     f = QFile(filename)
                     if not f.open(QFile.OpenModeFlag.ReadOnly):
                         raise IOError(f.errorString())
@@ -38095,9 +38952,6 @@ class ApplicationWindow(QMainWindow):
                     firstChar = stream.read(1)
                     if firstChar == "{":
                         f.close()
-                        modifiers = QApplication.keyboardModifiers()
-                        control_modifier = modifiers == Qt.KeyboardModifier.ControlModifier # command/apple key on macOS, Control key on Windows
-                        alt_modifier = modifiers == Qt.KeyboardModifier.AltModifier # OPTION on macOS, ALT on Windows
                         #meta_modifier = modifiers == Qt.KeyboardModifier.MetaModifier # Control on macOS, Meta/Windows on Windows
                         speed = 1
                         if alt_modifier:
@@ -38105,11 +38959,13 @@ class ApplicationWindow(QMainWindow):
                         elif control_modifier:
                             speed = 4
                         self.qmc.timeclock.setBase(1000*speed)
-                        self.simulator = Simulator(self.deserialize(filename))
+                        self.simulator = Simulator(self.qmc.mode, self.deserialize(filename))
                         self.simulatorpath = filename
                         aw.buttonONOFF.setStyleSheet(aw.pushbuttonstyles_simulator["OFF"])
                         aw.buttonSTARTSTOP.setStyleSheet(aw.pushbuttonstyles_simulator["STOP"])
+                        self.qmc.updateDeltaSamples() # to get the delta_spans right
                         self.sendmessage(QApplication.translate("Message","Simulator started @{}x").format(speed))
+                        self.updateWindowTitle()
                     else:
                         self.sendmessage(QApplication.translate("Message","Invalid artisan format"))
             except Exception as e: # pylint: disable=broad-except
@@ -38170,7 +39026,8 @@ def excepthook(excType, excValue, tracebackobj):
     sections = [timeString, separator, errmsg]
     msg = '\n'.join(sections)
     detailedmsg = '\n'.join([tbinfo, separator, variables])
-    aw.qmc.adderror("Error: " + detailedmsg)
+    if aw is not None:
+        aw.qmc.adderror("Error: " + detailedmsg)
     try:
         with open(logFile, "w", encoding='utf-8') as f:
             f.write(msg)
@@ -38232,11 +39089,12 @@ def initialize_locale(my_app) -> str:
         "pt",
         "pt_BR",
         "pl",
-        "ru",
+#        "ru",
         "sk",
         "sv",
         "th",
         "tr",
+        "uk",
         "vi",
         "zh",
         "zh_CN",
@@ -38316,7 +39174,7 @@ def main():
 
     aw = None # this is to ensure that the variable aw is already defined during application initialization
 
-    aw = ApplicationWindow(locale=locale_str)
+    aw = ApplicationWindow(locale=locale_str, WebEngineSupport=QtWebEngineSupport)
     
     app.setActivationWindow(aw,activateOnMessage=False) # set the activation window for the QtSingleApplication
 
@@ -38330,6 +39188,7 @@ def main():
     else:
         QApplication.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
     aw.settingsLoad(redraw=False) # redraw is triggered later in the startup process again
+    aw.restoreExtraDeviceSettingsBackup() # load settings backup if it exists (like on RESET)
     
     # inform the user the debug logging is on
     if debugLogLevelActive():
@@ -38416,6 +39275,8 @@ def main():
                     _log.exception(e)
                     aw.qmc.background = False
                     aw.qmc.backgroundprofile = None
+                    aw.qmc.backgroundprofile_moved_x = 0
+                    aw.qmc.backgroundprofile_moved_y = 0
             if not aw.lastLoadedBackground and not aw.lastLoadedProfile:
                 # redraw once to get geometry right
                 aw.qmc.redraw(False,sampling=False,smooth=aw.qmc.optimalSmoothing)
@@ -38437,9 +39298,13 @@ def main():
     
     #the following line is to trap numpy warnings that occure in the Cup Profile dialog if all values are set to 0
     with numpy.errstate(invalid='ignore',divide='ignore',over='ignore',under='ignore'):
+        # the next line is needed to capture MPL warnings (emitted through logging) of the format 
+        # "UserWarning: Glyph 231 (\N{LATIN SMALL LETTER C WITH CEDILLA}) missing from current font."
+        logging.captureWarnings(True)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            app.exec()
+            with suppress_stdout_stderr():
+                app.exec()
         # alternative:
         # ret = app.exec()
         # app = None

@@ -20,7 +20,11 @@ import sys
 import time
 import platform
 import logging
-from typing import Final
+try:
+    from typing import Final
+except ImportError:
+    # for Python 3.7:
+    from typing_extensions import Final
 
 from artisanlib.util import toFloat, uchr
 from artisanlib.dialogs import ArtisanDialog, ArtisanResizeablDialog
@@ -450,7 +454,7 @@ class comportDlg(ArtisanResizeablDialog):
         baudratelabel = QLabel(QApplication.translate("Label", "Baud Rate"))
         self.baudrateComboBox = QComboBox()
         baudratelabel.setBuddy(self.baudrateComboBox)
-        self.bauds = ["1200", "2400","4800","9600","19200","38400","57600","115200"]
+        self.bauds = ["1200", "2400","4800","9600","19200","38400","57600","57800","115200"]
         self.baudrateComboBox.addItems(self.bauds)
         self.baudrateComboBox.setCurrentIndex(self.bauds.index(str(self.aw.ser.baudrate)))
         bytesizelabel = QLabel(QApplication.translate("Label", "Byte Size"))
@@ -492,7 +496,7 @@ class comportDlg(ArtisanResizeablDialog):
         modbus_baudratelabel = QLabel(QApplication.translate("Label", "Baud Rate"))
         self.modbus_baudrateComboBox = QComboBox()
         modbus_baudratelabel.setBuddy(self.modbus_baudrateComboBox)
-        self.modbus_bauds = ["1200","2400","4800","9600","19200","38400","57600","115200"]
+        self.modbus_bauds = ["1200","2400","4800","9600","19200","38400","57600","57800","115200"]
         self.modbus_baudrateComboBox.addItems(self.modbus_bauds)
         try:
             self.modbus_baudrateComboBox.setCurrentIndex(self.modbus_bauds.index(str(self.aw.modbus.baudrate)))

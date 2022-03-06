@@ -29,14 +29,12 @@ try:
         QComboBox, QHBoxLayout, QVBoxLayout, QCheckBox, QGridLayout, QGroupBox, QLineEdit, QLayout, # @UnusedImport @Reimport  @UnresolvedImport
         QSpinBox) # @UnusedImport @Reimport  @UnresolvedImport
     #pylint: disable = E, W, R, C
-    print("Axis: PyQt6")  #dave
 except Exception:
     from PyQt6.QtCore import Qt, pyqtSlot, QRegularExpression, QSettings # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtGui import QIntValidator, QRegularExpressionValidator # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtWidgets import (QApplication, QLabel, QPushButton, QDialogButtonBox, QFrame, # @UnusedImport @Reimport  @UnresolvedImport
         QComboBox, QHBoxLayout, QVBoxLayout, QCheckBox, QGridLayout, QGroupBox, QLineEdit, QLayout, # @UnusedImport @Reimport  @UnresolvedImport
         QSpinBox) # @UnusedImport @Reimport  @UnresolvedImport
-    print("Axis: PyQt6")  #dave
 
 class WindowsDlg(ArtisanDialog):
     def __init__(self, parent = None, aw = None):
@@ -411,7 +409,7 @@ class WindowsDlg(ArtisanDialog):
             self.disableXAxisControls()
         else:
             self.enableXAxisControls()
-    
+
     @pyqtSlot(int)
     def autoTimexFlagChanged(self,n):
         if n:
@@ -421,9 +419,10 @@ class WindowsDlg(ArtisanDialog):
 
     @pyqtSlot(bool)
     def autoAxis(self,_=False):
-        if self.aw.qmc.backgroundpath and len(self.aw.qmc.timex)<2:
+        if self.aw.qmc.backgroundpath and (self.aw.qmc.flagon or len(self.aw.qmc.timex)<2):
             # no foreground profile
             t_min,t_max = self.aw.calcAutoAxisBackground()
+            t_min = min(-60,t_min)
         else:
             t_min,t_max = self.aw.calcAutoAxis()
             if self.aw.qmc.backgroundpath:
@@ -613,7 +612,7 @@ class WindowsDlg(ArtisanDialog):
         self.aw.qmc.autotimex = self.autotimexFlag.isChecked()
         self.aw.qmc.autodeltaxET = self.autodeltaxETFlag.isChecked()
         self.aw.qmc.autodeltaxBT = self.autodeltaxBTFlag.isChecked()
-        self.aw.autoAdjustAxis()
+        self.aw.autoAdjustAxis(background=(bool(self.aw.qmc.backgroundpath) and len(self.aw.qmc.timex) < 4)) # align background if no foreground
         self.aw.qmc.redraw(recomputeAllDeltas=False)
         string = QApplication.translate("Message","xlimit = ({2},{3}) ylimit = ({0},{1}) zlimit = ({4},{5})").format(str(self.ylimitEdit_min.text()),str(self.ylimitEdit.text()),str(self.xlimitEdit_min.text()),str(self.xlimitEdit.text()),str(self.zlimitEdit_min.text()),str(self.zlimitEdit.text()))                                   
         self.aw.sendmessage(string)
@@ -624,7 +623,7 @@ class WindowsDlg(ArtisanDialog):
         #save window position (only; not size!)
         settings = QSettings()
         settings.setValue("AxisPosition",self.frameGeometry().topLeft())
-        self.aw.closeEventSettings()
+#        self.aw.closeEventSettings()
         super().close()
 
     @pyqtSlot(bool)
@@ -636,10 +635,12 @@ class WindowsDlg(ArtisanDialog):
         self.xlimitEdit_min.setText(stringfromseconds(self.aw.qmc.startofx_default))
         try:
             self.xaxislencombobox.setCurrentIndex(self.timeconversion.index(self.aw.qmc.xgrid_default))
+            self.aw.qmc.xgrid(self.aw.qmc.xgrid_default)
         except Exception: # pylint: disable=broad-except
             self.xaxislencombobox.setCurrentIndex(1)
         if self.aw.qmc.mode == "F":
             self.ygridSpinBox.setValue(self.aw.qmc.ygrid_F_default)
+            self.aw.qmc.ygrid = self.aw.qmc.ygrid_F_default
             self.ylimitEdit.setText(str(self.aw.qmc.ylimit_F_default))
             self.ylimitEdit_min.setText(str(self.aw.qmc.ylimit_min_F_default))
             self.zlimitEdit.setText(str(self.aw.qmc.zlimit_F_default))
@@ -647,8 +648,10 @@ class WindowsDlg(ArtisanDialog):
             self.zgridSpinBox.setValue(self.aw.qmc.zgrid_F_default)
         else:
             self.ygridSpinBox.setValue(self.aw.qmc.ygrid_C_default)
+            self.aw.qmc.ygrid = self.aw.qmc.ygrid_C_default
             self.ylimitEdit.setText(str(self.aw.qmc.ylimit_C_default))
             self.ylimitEdit_min.setText(str(self.aw.qmc.ylimit_min_C_default))
             self.zlimitEdit.setText(str(self.aw.qmc.zlimit_C_default))
             self.zlimitEdit_min.setText(str(self.aw.qmc.zlimit_min_C_default))
-            self.zgridSpinBox.setValue(self.aw.qmc.zgrid_C_default)            
+            self.zgridSpinBox.setValue(self.aw.qmc.zgrid_C_default)
+        self.aw.qmc.redraw(recomputeAllDeltas=False)
