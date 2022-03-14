@@ -67,15 +67,6 @@ create-version-file version-metadata.yml --outfile version_info-win.txt --versio
 ::
 :: run pyinstaller
 pyinstaller --noconfirm artisan-%ARTISAN_SPEC%.spec
-
-:: DEBUG YOCTO
-echo *****  YOCTO 2 *****
-echo Current directory
-cd
-dir dist\artisan\lib
-dir dist\yoctopuce\cdll
-
-
 ::
 :: Don't make assumptions as to where the 'makensis.exe' is - look in the obvious places
 if exist "C:\Program Files (x86)\NSIS\makensis.exe" set NSIS_EXE="C:\Program Files (x86)\NSIS\makensis.exe"

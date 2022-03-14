@@ -13,10 +13,10 @@ environment:
     appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
     appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: macos
-#    appveyor_build_worker_image: macos
-#  - job_name: linux
-#    appveyor_build_worker_image: Ubuntu2004
+  - job_name: macos
+    appveyor_build_worker_image: macos
+  - job_name: linux
+    appveyor_build_worker_image: Ubuntu2004
 #  - job_name: rpi
 #    appveyor_build_worker_image: Ubuntu1604
 
@@ -34,7 +34,7 @@ branches:
     - master
 
 stack:
-  python 3.9 # if nothing else is specified per platform, this indicates the Python version to be used
+  python 3.10 # if nothing else is specified per platform, this indicates the Python version to be used
 
 for:
 -
@@ -133,7 +133,7 @@ for:
 
   environment:
     ARTISAN_OS: osx
-    PYTHON: ~/venv3.9
+    PYTHON: ~/venv3.10
     language: generic
     HOMEBREW_NO_INSTALL_CLEANUP: 1
     HOMEBREW_NO_ANALYTICS: 1
@@ -175,7 +175,8 @@ for:
 
   environment:
     ARTISAN_OS: linux
-    PYTHON: $HOME/venv3.9.8
+    PYTHON: $HOME/venv3.10.2
+    #PYTHON: $HOME/venv3.9.10
     # NOTE: there is an issue with Python 3.10.0 and pyinstaller fixed in Python 3.10.1 (not yet available on appveyor)
     # see pyinstaller Issue #6301
 

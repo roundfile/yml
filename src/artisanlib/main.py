@@ -268,11 +268,11 @@ class Artisan(QtSingleApplication):
     @pyqtSlot("QWidget*","QWidget*")
     def appRaised(self,oldFocusWidget,newFocusWidget):
         try:
-            if not sip.isdeleted(aw): # sip not supported on older PyQt versions (eg. RPi)
+            if aw is not None and not sip.isdeleted(aw): # sip not supported on older PyQt versions (eg. RPi)
                 if oldFocusWidget is None and newFocusWidget is not None and aw is not None and aw.centralWidget() == newFocusWidget and self.sentToBackground is not None:
                     #focus gained
                     try:
-                        if aw is not None and aw.plus_account is not None and aw.qmc.roastUUID is not None and aw.curFile is not None and \
+                        if aw.plus_account is not None and aw.qmc.roastUUID is not None and aw.curFile is not None and \
                                 libtime.time() - self.sentToBackground > self.plus_sync_cache_expiration:
                             plus.sync.getUpdate(aw.qmc.roastUUID,aw.curFile)
                     except Exception as e: # pylint: disable=broad-except
@@ -2110,7 +2110,7 @@ class tgraphcanvas(FigureCanvas):
         self.maxRoRlimit: Final = 170
         # axis limits
         self.endofx = self.endofx_default     # endofx is the display time in seconds of the right x-axis limit (excluding any shift of CHARGE time)
-        self.startofx = self.startofx_default # startofx is the time in seconds of the left x-axis limit in data time (display time in seconds of the left x-axis limit plus the CHARGE time in seconds)
+        self.startofx = self.startofx_default # startofx is the time in seconds of the left x-axis limit in data time (display time in seconds of the left x-axis limit plus the CHARGE time in seconds); NOTE: as startofx depends CHARGE it has to be adjusted whenever CHARGE is adjusted
         self.resetmaxtime = 600  #time when pressing RESET: 10min*60
         self.chargemintime = self.startofx_default  #time when pressing CHARGE: -30sec
         self.fixmaxtime = False # if true, do not automatically extend the endofx by 3min if needed because the measurements get out of the x-axis
@@ -16057,6 +16057,8 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
 #        f.setStyleHint(QFont.StyleHint.TypeWriter) # not monospaced!
         f.setStyleHint(QFont.StyleHint.Monospace)
         f.setFamily('monospace')
+#        f.setWeight(QFont.Bold)
+#        f.setBold(True)
         self.locLabel.setFont(f)
 
 
@@ -17526,6 +17528,7 @@ class ApplicationWindow(QMainWindow):
 
         self.curvesAction = QAction(QApplication.translate("Menu", "Curves..."), self)
         self.curvesAction.triggered.connect(self.setCurves)
+        self.curvesAction.setShortcut("Ctrl+U")
         self.ConfMenu.addAction(self.curvesAction)
 
         self.ConfMenu.addSeparator()
