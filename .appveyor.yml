@@ -75,7 +75,7 @@ for:
 
   artifacts:
 #    - path: 'src\artisan-*.zip'
-    - path: 'src\artisan-*.exe'
+    - path: 'src\artisan*.exe'
 
 #  deploy_script:
 #    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
@@ -120,7 +120,7 @@ for:
 
   artifacts:
 #    - path: 'src\artisan-*.zip'
-    - path: 'src\artisan-*.exe'
+    - path: 'src\artisan*.exe'
 
 #  deploy_script:
 #    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
