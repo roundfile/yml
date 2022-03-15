@@ -6,7 +6,7 @@
 !ifdef LEGACY
   !echo "LEGACY is defined ${LEGACY}"
 !endif
-!if ${LEGACY}=='True'
+!if ${LEGACY}==True
   !define LEGACYNAME '-legacy'
   !echo "LEGACY was true"
 !else
