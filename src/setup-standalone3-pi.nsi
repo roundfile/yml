@@ -1,19 +1,22 @@
 ; Creates a standalone executable.  Edited to support pyinstlaller as of Artisan v2.4.6 release and allow more than one instance
 
+!verbose push
+!verbose 4
 !echo "Here we are now!"
-;!ifdef LEGACY
-;  !echo "LEGACY is defined"
-;!endif
-;!if ${LEGACY}=='True'
-;  !define LEGACYNAME '-legacy'
-;  !echo "LEGACY was true"
-;!else
-;  !define LEGACYNAME ''
-;  !echo "LEGACY was false"
-;!endif
-;!echo "LEGACYNAME = "
-;!echo "${LEGACYNAME}"
-!define LEGACYNAME '-legacy'
+!ifdef LEGACY
+  !echo "LEGACY is defined"
+!endif
+!if ${LEGACY}=='True'
+  !define LEGACYNAME '-legacy'
+  !echo "LEGACY was true"
+!else
+  !define LEGACYNAME ''
+  !echo "LEGACY was false"
+!endif
+!echo "LEGACYNAME = "
+!echo "${LEGACYNAME}"
+;!define LEGACYNAME '-legacy'
+!verbose pop
 
 !define pyinstallerOutputDir 'dist/artisan'
 !define exe                  'Artisan.exe'
