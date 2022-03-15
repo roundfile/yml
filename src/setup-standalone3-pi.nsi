@@ -6,15 +6,14 @@
 !ifdef LEGACY
   !echo "LEGACY is defined ${LEGACY}"
 !endif
-!if ${LEGACY}==True
+!if ${LEGACY}=='True'
   !define LEGACYNAME '-legacy'
   !echo "LEGACY was true"
 !else
   !define LEGACYNAME ''
   !echo "LEGACY was false"
 !endif
-!echo "LEGACYNAME = "
-!echo "${LEGACYNAME}"
+!echo "LEGACYNAME = ${LEGACYNAME}"
 ;!define LEGACYNAME '-legacy'
 !verbose pop
 
