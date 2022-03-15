@@ -1,14 +1,14 @@
 ; Creates a standalone executable.  Edited to support pyinstlaller as of Artisan v2.4.6 release and allow more than one instance
 
 !ifdef LEGACY
-!echo LEGACY is defined
+!echo "LEGACY is defined"
 !endif
 !if ${LEGACY}=='True'
 !define LEGACYNAME '-legacy'
-!echo LEGACY was true
+!echo "LEGACY was true"
 !else
 !define LEGACYNAME ''
-!echo LEGACY was false
+!echo "LEGACY was false"
 !endif
 !echo LEGACYNAME = 
 !echo ${LEGACYNAME}
