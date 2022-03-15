@@ -10,8 +10,8 @@
 !define LEGACYNAME ''
 !echo "LEGACY was false"
 !endif
-!echo LEGACYNAME = 
-!echo ${LEGACYNAME}
+!echo "LEGACYNAME = "
+!echo "${LEGACYNAME}"
 
 !define pyinstallerOutputDir 'dist/artisan'
 !define exe                  'Artisan.exe'
