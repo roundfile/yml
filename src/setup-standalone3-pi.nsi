@@ -1,12 +1,10 @@
 ; Creates a standalone executable.  Edited to support pyinstlaller as of Artisan v2.4.6 release and allow more than one instance
 
-!define /ifndef LEGACY "False"
-If ${LEGACY} == "False"
-  !define LEGACYNAME ''
-EndIf
-If ${LEGACY} == "True"
-  !define LEGACYNAME '-legacy'
-EndIf
+!define LEGACYNAME ''
+!ifdef LEGACY
+!undef LEGACYNAME
+!define LEGACYNAME '-legacy'
+!endif
 
 
 !define pyinstallerOutputDir 'dist/artisan'
@@ -28,7 +26,7 @@ EndIf
 
 Caption "${PRODUCT_NAME}"
 VIProductVersion ${PRODUCT_VERSION}
-VIAddVersionKey ProductName "${PRODUCT_NAME}${LEGACYNAME}"   ;new
+VIAddVersionKey ProductName "${PRODUCT_NAME}"
 VIAddVersionKey Comments "Artisan App"
 VIAddVersionKey CompanyName ""
 VIAddVersionKey LegalCopyright Artisan.org
