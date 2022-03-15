@@ -1,3 +1,4 @@
+# Windows Stand alone versions
 # Generic build number, later set to commit hash by init
 version: '{build}'
 
@@ -68,7 +69,7 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the install script
-    - cmd: build-win3-pi.bat LEGACY
+    - cmd: build-win3-standalone-pi.bat LEGACY
 
 #  test_script:
 #    - cmd: python -m unittest discover
@@ -113,7 +114,7 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the install script
-    - cmd: build-win3-pi.bat
+    - cmd: build-win3-standalone-pi.bat
 
 #  test_script:
 #    - cmd: python -m unittest discover

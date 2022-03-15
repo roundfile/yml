@@ -1,21 +1,5 @@
 ; Creates a standalone executable.  Edited to support pyinstlaller as of Artisan v2.4.6 release and allow more than one instance
 
-!verbose push
-!verbose 4
-!echo "Here we are now!"
-!ifdef LEGACY
-  !echo "LEGACY is defined ${LEGACY}"
-!endif
-!if ${LEGACY} == 'True'
-  !define LEGACYNAME '-legacy'
-  !echo "LEGACY was true"
-!else
-  !define LEGACYNAME ''
-  !echo "LEGACY was false"
-!endif
-!echo "LEGACYNAME = ${LEGACYNAME}"
-;!define LEGACYNAME '-legacy'
-!verbose pop
 
 !define pyinstallerOutputDir 'dist/artisan'
 !define exe                  'Artisan.exe'
@@ -25,8 +9,12 @@
 !include FileFunc.nsh
 !insertmacro GetParameters
 
-; HM NIS Edit Wizard helper defines
-!define PRODUCT_NAME "Artisan${LEGACYNAME}"
+;LEGACY is a command line option
+!if ${LEGACY} == 'True'
+  !define PRODUCT_NAME 'Artisan-legacy'
+!else
+  !define PRODUCT_NAME 'Artisan'
+!endif
 ;!define PRODUCT_VERSION "0.0.0.0"  ; supplied on the commandline from Dave-build-win3-pi.bat
 !define PRODUCT_PUBLISHER "The Artisan Team"
 !define PRODUCT_WEB_SITE "https://github.com/artisan-roaster-scope/artisan/blob/master/README.md"
