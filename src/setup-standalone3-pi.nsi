@@ -16,7 +16,7 @@
 !insertmacro GetParameters
 
 ; HM NIS Edit Wizard helper defines
-!define PRODUCT_NAME "Artisan"
+!define PRODUCT_NAME "Artisan${LEGACYNAME}"
 ;!define PRODUCT_VERSION "0.0.0.0"  ; supplied on the commandline from Dave-build-win3-pi.bat
 !define PRODUCT_PUBLISHER "The Artisan Team"
 !define PRODUCT_WEB_SITE "https://github.com/artisan-roaster-scope/artisan/blob/master/README.md"
@@ -41,7 +41,7 @@ VIAddVersionKey ProductVersion "${PRODUCT_VERSION}"
     SetCompress Off
 !endif
 Name ${exe}
-!delfile /nonfatal "${PRODUCT_NAME}_v${PRODUCT_VERSION}.exe"   ;added by dave
+;!delfile /nonfatal "${PRODUCT_NAME}_v${PRODUCT_VERSION}.exe"   ;added by dave
 OutFile "${PRODUCT_NAME}_v${PRODUCT_VERSION}.exe"              ;changed by dave,was OutFile ${exe}
 SilentInstall silent
 !ifdef icon
