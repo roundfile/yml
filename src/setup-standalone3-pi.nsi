@@ -4,7 +4,7 @@
 !verbose 4
 !echo "Here we are now!"
 !ifdef LEGACY
-  !echo "LEGACY is defined ${LEGECY}"
+  !echo "LEGACY is defined ${LEGACY}"
 !endif
 !if ${LEGACY}=='True'
   !define LEGACYNAME '-legacy'
