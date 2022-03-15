@@ -91,5 +91,3 @@ echo NSIS makensis.exe file date %NSIS_DATE%
 ::    del LICENSE.txt
 ::)
 
-echo dir
-dir 
