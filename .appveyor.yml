@@ -73,12 +73,13 @@ for:
 #  test_script:
 #    - cmd: python -m unittest discover
 
-#  artifacts:
+  artifacts:
 #    - path: 'src\artisan-*.zip'
+    - path: 'src\artisan-*.exe'
 
-  deploy_script:
-    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-    - cmd: bash upload.sh artisan-*.zip
+#  deploy_script:
+#    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
+#    - cmd: bash upload.sh artisan-*.zip
 
 
 -
@@ -117,12 +118,13 @@ for:
 #  test_script:
 #    - cmd: python -m unittest discover
 
-#  artifacts:
+  artifacts:
 #    - path: 'src\artisan-*.zip'
+    - path: 'src\artisan-*.exe'
 
-  deploy_script:
-    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-    - cmd: bash upload.sh artisan-*.zip
+#  deploy_script:
+#    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
+#    - cmd: bash upload.sh artisan-*.zip
 
 
 -
