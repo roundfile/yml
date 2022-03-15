@@ -1,6 +1,7 @@
 ; Creates a standalone executable.  Edited to support pyinstlaller as of Artisan v2.4.6 release and allow more than one instance
 
-!if $(LEGACY)=='True'
+!echo ${LEGACY}
+!if ${LEGACY}=='True'
 !define LEGACYNAME '-legacy'
 !else
 !define LEGACYNAME ''
