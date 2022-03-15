@@ -1,4 +1,13 @@
+#
 # Windows Stand alone versions
+#
+#   set appveyor project settings to use this custom yml file
+# 
+#   requires build-win3-standalone-pi.bat and setup-standalone3-pi.nsi
+#
+#   uploads .exe file to appveyor artifacts
+#
+
 # Generic build number, later set to commit hash by init
 version: '{build}'
 
