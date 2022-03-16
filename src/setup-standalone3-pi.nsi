@@ -58,6 +58,15 @@ SilentInstall silent
 ;!endif
 ;; - - - - Allow only one installer instance - - - - 
 
+!include WinVer.nsh
+Function .onInit
+  ${If} ${LEGACY} == "False"
+  ${AndIfNot} ${AtLeastWin10}
+    MessageBox mb_iconStop "Artisan requires Windows 10 or later to install and run." 
+    Abort
+  ${EndIf}
+FunctionEnd
+
 Section
     
     ; Get directory from which the exe was called
