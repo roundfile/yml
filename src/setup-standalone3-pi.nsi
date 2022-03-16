@@ -65,6 +65,20 @@ Function .onInit
     MessageBox mb_iconStop "Artisan requires Windows 10 or later to install and run." 
     Abort
   ${EndIf}
+
+;For standalone don't prevent legacy builds from running on Win 10 and beyond
+;  ${If} ${LEGACY} == "True"
+;  ${AndIf} ${AtLeastWin10}
+;    MessageBox mb_iconStop "Artisan Legacy builds require 64 bit Windows 7 or Windows 8 to install and run." 
+;    Abort
+;  ${EndIf}
+;    
+;  ${If} ${LEGACY} == "True"
+;  ${AndIfNot} ${AtLeastWin7}
+;    MessageBox mb_iconStop "Artisan Legacy builds require 64 bit Windows 7 or Windows 8 to install and run." 
+;    Abort
+;  ${EndIf}
+
 FunctionEnd
 
 Section
