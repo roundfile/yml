@@ -67,7 +67,11 @@ from Phidget22.Devices.FrequencyCounter import FrequencyCounter # @UnusedWildImp
 from Phidget22.Devices.DCMotor import DCMotor # @UnusedWildImport
 from Phidget22.PhidgetException import PhidgetException
 
-from yoctopuce.yocto_api import YAPI, YRefParam
+try: #dave
+    from yoctopuce.yocto_api import YAPI, YRefParam
+except Exception: # pylint: disable=broad-except
+    _log.debug('comm.py: Could not import YAPI')
+    pass
 
 
 _log: Final = logging.getLogger(__name__)

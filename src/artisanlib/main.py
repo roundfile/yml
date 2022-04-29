@@ -238,6 +238,7 @@ try:
     # spanning a second multiprocessing instance (Hottop server) on macOS falils to import the YAPI interface
     from yoctopuce.yocto_api import YAPI
 except Exception: # pylint: disable=broad-except
+    _log.debug('main.py: Could not import YAPI')
     pass
 
 platf = str(platform.system())
