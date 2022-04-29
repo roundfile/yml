@@ -103,6 +103,9 @@ os.system('rmdir /q /s ' + TARGET + 'mpl-data\\sample_data')
 os.system(r'mkdir ' + TARGET + 'yoctopuce\cdll')
 os.system(r'copy "' + YOCTO_BIN + r'\yapi.dll" ' + TARGET + 'yoctopuce\cdll')
 os.system(r'copy "' + YOCTO_BIN + r'\yapi64.dll" ' + TARGET + 'yoctopuce\cdll')
+#os.system(r'mkdir ' + TARGET + 'lib')
+#os.system(r'copy "' + YOCTO_BIN + r'\yapi.dll" ' + TARGET + 'lib')
+#os.system(r'copy "' + YOCTO_BIN + r'\yapi64.dll" ' + TARGET + 'lib')
 # YOCTO HACK END
 
 # copy Snap7 lib
@@ -151,6 +154,3 @@ os.system(r'xcopy includes\Themes ' + TARGET + 'Themes /y /S')
 
 os.system(r'mkdir ' +  TARGET + 'Icons')
 os.system(r'xcopy includes\Icons ' + TARGET + 'Icons /y /S')
-
-
-
