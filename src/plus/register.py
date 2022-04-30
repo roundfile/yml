@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # register.py
 #
@@ -48,19 +47,19 @@ register_semaphore = QSemaphore(1)
 
 uuid_cache_path = getDirectory(config.uuid_cache, share=True)
 uuid_cache_path_lock = getDirectory(
-    f"{config.uuid_cache}_lock", share=True
+    f'{config.uuid_cache}_lock', share=True
 )
 
 
 def addPathShelve(uuid: str, path: str, fh) -> None:
-    _log.debug("addPathShelve(%s,%s,_fh_)", uuid, path)
+    _log.debug('addPathShelve(%s,%s,_fh_)', uuid, path)
     import dbm
     import shelve
     try:
         with shelve.open(uuid_cache_path) as db:
             db[uuid] = str(path)
         _log.debug(
-            "DB type: %s", str(dbm.whichdb(uuid_cache_path))
+            'DB type: %s', str(dbm.whichdb(uuid_cache_path))
         )
     except Exception as e:  # pylint: disable=broad-except
         _log.exception(e)
@@ -68,27 +67,27 @@ def addPathShelve(uuid: str, path: str, fh) -> None:
             # in case we couldn't open the shelve file as  "shelve.open
             # db type could not be determined" remove all files name
             # uuid_cache_path with any extension as we do not know which
-            # extension is choosen by shelve
+            # extension is chosen by shelve
             _log.info(
-                "clean uuid cache %s", str(uuid_cache_path)
+                'clean uuid cache %s', str(uuid_cache_path)
             )
             # note that this deletes all "uuid" files including those for the
             # Viewer and other files of that name prefix like uuid.db.org!!
             for p in Path(Path(uuid_cache_path).parent).glob(
-                "{}*".format(config.uuid_cache)
+                f'{config.uuid_cache}*'
             ):
                 if str(p) != uuid_cache_path_lock:
                     # if not the lock file, delete:
                     p.unlink()
-            # try again to acccess/create the shelve file
+            # try again to access/create the shelve file
             with shelve.open(uuid_cache_path) as db:
                 db[uuid] = str(path)
             _log.info(
-                "Generated db type: %s",
+                'Generated db type: %s',
                 str(dbm.whichdb(uuid_cache_path)),
             )
-        except Exception as e:  # pylint: disable=broad-except
-            _log.exception(e)
+        except Exception as ex:  # pylint: disable=broad-except
+            _log.exception(ex)
     finally:
         fh.flush()
         os.fsync(fh.fileno())
@@ -97,7 +96,7 @@ def addPathShelve(uuid: str, path: str, fh) -> None:
 # register the path for the given uuid, assuming it points to the .alog profile
 # containing that uuid
 def addPath(uuid: str, path: str) -> None:
-    _log.debug("addPath(%s,%s)", uuid, path)
+    _log.debug('addPath(%s,%s)', uuid, path)
     import portalocker
     try:
         register_semaphore.acquire(1)
@@ -109,15 +108,15 @@ def addPath(uuid: str, path: str) -> None:
         # (from a crash?)
         # we remove the lock file and retry with a shorter timeout
         try:
-            _log.info("clean lock %s", str(uuid_cache_path))
+            _log.info('clean lock %s', str(uuid_cache_path))
             Path(uuid_cache_path_lock).unlink()
             _log.debug(
-                "retry register:addPath(%s,%s)", str(uuid), str(path)
+                'retry register:addPath(%s,%s)', str(uuid), str(path)
             )
             with portalocker.Lock(uuid_cache_path_lock, timeout=0.3) as fh:
                 addPathShelve(uuid, path, fh)
-        except Exception as e:  # pylint: disable=broad-except
-            _log.exception(e)
+        except Exception as ex:  # pylint: disable=broad-except
+            _log.exception(ex)
     except Exception as e:  # pylint: disable=broad-except
         _log.exception(e)
     finally:
@@ -127,7 +126,7 @@ def addPath(uuid: str, path: str) -> None:
 
 # returns None if given UUID is not registered, otherwise the registered path
 def getPath(uuid: str) -> Optional[str]:
-    _log.debug("getPath(%s)", uuid)
+    _log.debug('getPath(%s)', uuid)
     import portalocker
     import shelve
     try:
@@ -138,7 +137,7 @@ def getPath(uuid: str) -> Optional[str]:
                     try:
                         res_path = str(db[uuid])
                         _log.debug(
-                            "getPath(%s): %s", str(uuid), res_path
+                            'getPath(%s): %s', str(uuid), res_path
                         )
                         return res_path
                     except Exception:  # pylint: disable=broad-except
@@ -156,29 +155,29 @@ def getPath(uuid: str) -> Optional[str]:
         # a shorter timeout
         try:
             _log.info(
-                "clean lock %s", str(uuid_cache_path_lock)
+                'clean lock %s', str(uuid_cache_path_lock)
             )
             Path(uuid_cache_path_lock).unlink()
-            _log.debug("retry register:getPath(%s)", str(uuid))
+            _log.debug('retry register:getPath(%s)', str(uuid))
             with portalocker.Lock(uuid_cache_path_lock, timeout=0.3) as fh:
                 try:
                     with shelve.open(uuid_cache_path) as db:
                         try:
                             res_path = str(db[uuid])
                             _log.debug(
-                                "getPath(%s): %s", str(uuid), res_path
+                                'getPath(%s): %s', str(uuid), res_path
                             )
                             return res_path
                         except Exception:  # pylint: disable=broad-except
                             return None
-                except Exception as e:  # pylint: disable=broad-except
-                    _log.exception(e)
+                except Exception as ex:  # pylint: disable=broad-except
+                    _log.exception(ex)
                     return None
                 finally:
                     fh.flush()
                     os.fsync(fh.fileno())
-        except Exception as e:  # pylint: disable=broad-except
-            _log.exception(e)
+        except Exception as ex:  # pylint: disable=broad-except
+            _log.exception(ex)
             return None
     except Exception as e:  # pylint: disable=broad-except
         _log.exception(e)
@@ -190,7 +189,7 @@ def getPath(uuid: str) -> Optional[str]:
 
 # scans all .alog files for UUIDs and registers them in the cache
 def scanDir(path: Optional[str] = None):
-    _log.debug("scanDir(%s)", path)
+    _log.debug('scanDir(%s)', path)
     try:
         if path is None:
             # search the last used path
@@ -199,7 +198,7 @@ def scanDir(path: Optional[str] = None):
             )  # @UndefinedVariable
         else:
             currentDictory = Path(path)
-        for currentFile in currentDictory.glob(f"*.{config.profile_ext}"):
+        for currentFile in currentDictory.glob(f'*.{config.profile_ext}'):
             d = config.app_window.deserialize(
                 currentFile
             )  # @UndefinedVariable

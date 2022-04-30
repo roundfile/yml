@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # util.py
 #
@@ -36,7 +35,7 @@ except Exception:
 from artisanlib.util import decodeLocal
 from pathlib import Path
 from plus import config
-from typing import Optional, List
+from typing import Optional
 try:
     from typing import Final
 except ImportError:
@@ -46,6 +45,7 @@ import datetime
 import dateutil.parser
 import logging
 import os
+import numpy
 
 
 _log: Final = logging.getLogger(__name__)
@@ -69,8 +69,8 @@ def getModificationDate(path):
 
 # given a datetime object returns e.g. '2018-10-12T12:55:12.999Z'
 def datetime2ISO8601(dt):
-    (dtstr, micro) = dt.strftime("%Y-%m-%dT%H:%M:%S.%f").split(".")
-    return "%s.%03dZ" % (dtstr, int(micro) / 1000)
+    (dtstr, micro) = dt.strftime('%Y-%m-%dT%H:%M:%S.%f').split('.')
+    return '%s.%03dZ' % (dtstr, int(micro) / 1000)
 
 
 def ISO86012datetime(ts):
@@ -104,7 +104,7 @@ def getGMToffset():
 # extra simple information from a dict
 # res is assumed to be a dict and the projection result to be a non-empty string or a number
 def extractInfo(res, attr: str, default):
-    if attr in res and ((isinstance(res[attr], str) and res[attr] != "") or (isinstance(res[attr],(int, float)))):
+    if attr in res and ((isinstance(res[attr], str) and res[attr] != '') or (isinstance(res[attr],(int, float)))):
         return res[attr]
     return default
 
@@ -112,32 +112,42 @@ def extractInfo(res, attr: str, default):
 
 
 def fromFtoC(Ffloat: Optional[float]) -> Optional[float]:
-    if Ffloat in [-1, None]:
+    if Ffloat in [-1, None] or numpy.isnan(Ffloat):
         return Ffloat
     assert Ffloat is not None
     return (Ffloat - 32.0) * (5.0 / 9.0)
 
 
-def temp2C(temp: Optional[float]) -> Optional[float]:
+def temp2C(temp: Optional[float],mode=None) -> Optional[float]:
     if (
-        temp is not None and config.app_window is not None and config.app_window.qmc is not None and
-            config.app_window.qmc.mode == "F"
+        temp is not None and (mode == 'F' or (mode is None and config.app_window is not None and config.app_window.qmc is not None and
+            config.app_window.qmc.mode == 'F'))
     ):  # @UndefinedVariable
         return fromFtoC(temp)  # @UndefinedVariable
     return temp
 
+def tempDiff2C(temp: Optional[float]) -> Optional[float]:
+    if (
+        temp is not None and config.app_window is not None and config.app_window.qmc is not None and
+            config.app_window.qmc.mode == 'F'
+    ):  # @UndefinedVariable
+        if temp in [-1, None] or numpy.isnan(temp):
+            return temp
+        return temp * 5.0/9.0  # @UndefinedVariable
+    return temp
+
 
 def RoRfromFtoC(Ffloat: Optional[float]) -> Optional[float]:
-    if Ffloat in [-1, None]:
+    if Ffloat in [-1, None] or numpy.isnan(Ffloat):
         return Ffloat
     assert Ffloat is not None
     return Ffloat * (5.0 / 9.0)
 
 
-def RoRtemp2C(temp: Optional[float]) -> Optional[float]:
+def RoRtemp2C(temp: Optional[float],mode=None) -> Optional[float]:
     if (
-        temp is not None and config.app_window.qmc.mode == "F"
-    ):  # @UndefinedVariable
+        temp is not None and (mode == 'F' or (mode is None and config.app_window.qmc.mode == 'F'
+    ))):  # @UndefinedVariable
         return RoRfromFtoC(temp)  # @UndefinedVariable
     return temp
 
@@ -173,7 +183,7 @@ def limitnum(
 # Prepare temperature in C to the interval [-50,1000] for sending
 # for numbers out of range None is returned
 def limittemp(temp: Optional[float]) -> Optional[float]:
-    if temp is None or temp > 1000 or temp < -50:
+    if temp is None or numpy.isnan(temp) or temp > 1000 or temp < -50:
         return None
     return temp
 
@@ -181,7 +191,7 @@ def limittemp(temp: Optional[float]) -> Optional[float]:
 # Prepare time in s to the interval [0,3600] for sending
 # for numbers out of range None is returned
 def limittime(tx: Optional[float]) -> Optional[float]:
-    if tx is None or tx > 3600 or tx < 0:
+    if tx is None or numpy.isnan(tx) or  tx > 3600 or tx < 0:
         return None
     return tx
 
@@ -191,7 +201,7 @@ def limittime(tx: Optional[float]) -> Optional[float]:
 def limittext(maxlen: int, s: Optional[str]) -> Optional[str]:
     if s is not None:
         if len(s) > maxlen:
-            return f"{s[:maxlen]}.."
+            return f'{s[:maxlen]}..'
         return s
     return s
 
@@ -278,12 +288,18 @@ def addAllTime2dict(dict_source, dict_target, key_source_target_pairs):
         addTime2dict(dict_source, key_source, dict_target, key_target)
 
 
-def addTemp2dict(dict_source, key_source, dict_target, key_target):
+# mode indicates the temperature unit, "C" or "F", of the data if not None
+def addTemp2dict(dict_source, key_source, dict_target, key_target, mode=None):
     if key_source in dict_source and dict_source[key_source]:
-        temp = limittemp(temp2C(dict_source[key_source]))
-        if temp is not None:
+        temp = limittemp(temp2C(dict_source[key_source],mode))
+        if temp is not None and temp != -1 and not numpy.isnan(temp):
             dict_target[key_target] = float2floatMin(temp)
 
+def addTempDiff2dict(dict_source, key_source, dict_target, key_target):
+    if key_source in dict_source and dict_source[key_source]:
+        temp = limittemp(tempDiff2C(dict_source[key_source]))
+        if temp is not None and temp != -1 and not numpy.isnan(temp):
+            dict_target[key_target] = float2floatMin(temp)
 
 # consumes a list of source-target pairs, or just strings used as both source
 # and target key, to be processed with add2dict
@@ -296,9 +312,10 @@ def addAllTemp2dict(dict_source, dict_target, key_source_target_pairs):
         addTemp2dict(dict_source, key_source, dict_target, key_target)
 
 
-def addRoRTemp2dict(dict_source, key_source, dict_target, key_target):
+# mode indicates the temperature unit, "C" or "F", of the data if not None
+def addRoRTemp2dict(dict_source, key_source, dict_target, key_target, mode=None):
     if key_source in dict_source and dict_source[key_source]:
-        temp = limittemp(RoRtemp2C(dict_source[key_source]))
+        temp = limittemp(RoRtemp2C(dict_source[key_source],mode))
         if temp is not None:
             dict_target[key_target] = float2floatMin(temp)
 
@@ -321,45 +338,45 @@ def getLanguage() -> str:
     except Exception: # pylint: disable=broad-except
         # config.app_window might be still unbound
         pass
-    return "en"
+    return 'en'
 
 
 # processing responses
 
 # if rlimit = -1 or rused = -1 or pu = "", no update information is available and the state is not updated
 @pyqtSlot(float,float,str,int,list)
-def updateLimits(rlimit:float, rused:float, pu:str, notifications:int, machines: List[str]):
+def updateLimits(rlimit:float, rused:float, pu:str, notifications:int, machines: list[str]):
     if config.app_window:
         config.app_window.updateLimits(rlimit, rused, pu, notifications, machines)
 
-# takes the JSON response dict and returns the accont state as tuple
+# takes the JSON response dict and returns the account state as tuple
 # rlimit:float, rused:float, pu:str, notifications:int
 def extractAccountState(response: dict):
     rlimit = -1
     rused = -1
-    pu = ""
+    pu = ''
     notifications = 0 # unqualified notifications
     machines = [] # list of machine names with matching notifications
     try:
         if response:
-            if "ol" in response:
-                ol = response["ol"]
-                if "rlimit" in ol:
-                    rlimit = ol["rlimit"]
-                if "rused" in ol:
-                    rused = ol["rused"]
-            if "pu" in response:
-                pu = response["pu"]
-            if "notifications" in response:
-                notificationDict = response["notifications"]
-                if "unqualified" in notificationDict:
-                    notifications = notificationDict["unqualified"]
-                if "machines" in notificationDict:
-                    machines = notificationDict["machines"]
+            if 'ol' in response:
+                ol = response['ol']
+                if 'rlimit' in ol:
+                    rlimit = ol['rlimit']
+                if 'rused' in ol:
+                    rused = ol['rused']
+            if 'pu' in response:
+                pu = response['pu']
+            if 'notifications' in response:
+                notificationDict = response['notifications']
+                if 'unqualified' in notificationDict:
+                    notifications = notificationDict['unqualified']
+                if 'machines' in notificationDict:
+                    machines = notificationDict['machines']
     except Exception as e:  # pylint: disable=broad-except
         _log.exception(e)
     return rlimit, rused, pu, notifications, machines
-        
+
 @pyqtSlot(dict)
 def updateLimitsFromResponse(response: dict):
     rlimit,rused,pu,notifications,machines = extractAccountState(response)
@@ -370,24 +387,24 @@ def updateLimitsFromResponse(response: dict):
 
 
 def plusLink() -> str:
-    return f"{config.web_base_url}/{getLanguage()}/"
+    return f'{config.web_base_url}/{getLanguage()}/'
 
 
 def storeLink(plus_store) -> str:
-    return f"{config.web_base_url}/{getLanguage()}/stores;id={plus_store}"
+    return f'{config.web_base_url}/{getLanguage()}/stores;id={plus_store}'
 
 
 def coffeeLink(plus_coffee) -> str:
-    return f"{config.web_base_url}/{getLanguage()}/coffees;id={plus_coffee}"
+    return f'{config.web_base_url}/{getLanguage()}/coffees;id={plus_coffee}'
 
 
 def blendLink(plus_blend) -> str:
-    return f"{config.web_base_url}/{getLanguage()}/blends;id={plus_blend}"
+    return f'{config.web_base_url}/{getLanguage()}/blends;id={plus_blend}'
 
 
 def roastLink(plus_roast) -> str:
-    return f"{config.web_base_url}/{getLanguage()}/roasts;id={plus_roast}"
+    return f'{config.web_base_url}/{getLanguage()}/roasts;id={plus_roast}'
 
 
 def remindersLink() -> str:
-    return f"{config.web_base_url}/{getLanguage()}/reminders"
+    return f'{config.web_base_url}/{getLanguage()}/reminders'

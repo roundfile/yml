@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 
 '''
@@ -28,30 +27,30 @@ except Exception:
 
 class QtSingleApplication(QApplication):
     messageReceived = pyqtSignal(str)
-    
+
     __slots__ = [ '_id', '_viewer_id', '_activationWindow', '_activateOnMessage', '_inSocket', '_outSocket', '_isRunning', '_server',
         '_isRunningViewer', '_outSocketViewer', '_inStream', '_outStream', '_outStreamViewer' ]
 
     def __init__(self, _id,_viewer_id, *argv):
-    
-        if sys.platform.startswith("darwin") and mp.current_process().name == "WebLCDs":
+
+        if sys.platform.startswith('darwin') and mp.current_process().name == 'WebLCDs':
             import AppKit # pylint: disable=import-error
             info = AppKit.NSBundle.mainBundle().infoDictionary()  # @UndefinedVariable # pylint: disable=maybe-no-member
-            info["LSBackgroundOnly"] = "1"
+            info['LSBackgroundOnly'] = '1'
 
         super().__init__(*argv)
-        
+
         self._id = _id
         self._viewer_id = _viewer_id
         self._activationWindow = None
         self._activateOnMessage = False
 
         self._outSocket = None
-        self._isRunning = False        
+        self._isRunning = False
         self._server = None
-        
+
         # we exclude the WebLCDs parallel process from participating any Artisan inter-app communication
-        if mp.current_process().name != "WebLCDs":
+        if mp.current_process().name != 'WebLCDs':
             # Is there another instance running?
             self._outSocket = QLocalSocket()
             self._outSocket.connectToServer(self._id)
@@ -60,7 +59,7 @@ class QtSingleApplication(QApplication):
                 # Yes, there is.
                 self._outStream = QTextStream(self._outSocket)
                 try:
-                    self._outStream.setCodec('UTF-8') # setCodec not avaiable in PyQt6, but UTF-8 the default encoding
+                    self._outStream.setCodec('UTF-8') # setCodec not available in PyQt6, but UTF-8 the default encoding
                 except Exception: # pylint: disable=broad-except
                     pass
                 # Is there another viewer running?
@@ -70,13 +69,13 @@ class QtSingleApplication(QApplication):
                 if self._isRunningViewer:
                     self._outStreamViewer = QTextStream(self._outSocketViewer)
                     try:
-                        self._outStreamViewer.setCodec('UTF-8') # setCodec not avaiable in PyQt6, but UTF-8 the default encoding
+                        self._outStreamViewer.setCodec('UTF-8') # setCodec not available in PyQt6, but UTF-8 the default encoding
                     except Exception: # pylint: disable=broad-except
                         pass
                 else:
                     # app is running, we announce us as viewer app
                     # First we remove existing servers of that name that might not have been properly closed as the server died
-                    QLocalServer.removeServer(self._viewer_id) 
+                    QLocalServer.removeServer(self._viewer_id)
                     self._outSocketViewer = None
                     self._outStreamViewer = None
                     self._inSocket = None
@@ -88,7 +87,7 @@ class QtSingleApplication(QApplication):
                 self._isRunningViewer = False
                 # No, there isn't.
                 # First we remove existing servers of that name that might not have been properly closed as the server died
-                QLocalServer.removeServer(self._id) 
+                QLocalServer.removeServer(self._id)
                 self._outSocket = None
                 self._outStream = None
                 self._inSocket = None
@@ -139,7 +138,7 @@ class QtSingleApplication(QApplication):
             return
         self._inStream = QTextStream(self._inSocket)
         try:
-            self._inStream.setCodec('UTF-8') # setCodec not avaiable in PyQt6, but UTF-8 the default encoding
+            self._inStream.setCodec('UTF-8') # setCodec not available in PyQt6, but UTF-8 the default encoding
         except Exception: # pylint: disable=broad-except
             pass
         self._inSocket.readyRead.connect(self._onReadyRead)
