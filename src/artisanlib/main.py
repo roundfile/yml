@@ -112,7 +112,13 @@ QtWebEngineSupport = False # set to True if the QtWebEngine was successfully imp
 
 try:
     #pylint: disable-next = E, W, R, C
-    from PyQt6.QtWidgets import (QApplication, QWidget, QMessageBox, QLabel, QMainWindow, QFileDialog, QGraphicsDropShadowEffect) # @Reimport @UnresolvedImport @UnusedImport # pylint: disable=import-error
+    from PyQt6.QtWidgets import (QApplication) # @Reimport @UnresolvedImport @UnusedImport # pylint: disable=import-error
+    from PyQt6.QtWidgets import (QWidget) # @Reimport @UnresolvedImport @UnusedImport # pylint: disable=import-error
+    from PyQt6.QtWidgets import (QMessageBox) # @Reimport @UnresolvedImport @UnusedImport # pylint: disable=import-error
+    from PyQt6.QtWidgets import (QLabel) # @Reimport @UnresolvedImport @UnusedImport # pylint: disable=import-error
+    from PyQt6.QtWidgets import (QMainWindow) # @Reimport @UnresolvedImport @UnusedImport # pylint: disable=import-error
+    from PyQt6.QtWidgets import (QFileDialog) # @Reimport @UnresolvedImport @UnusedImport # pylint: disable=import-error
+    from PyQt6.QtWidgets import (QGraphicsDropShadowEffect) # @Reimport @UnresolvedImport @UnusedImport # pylint: disable=import-error
     from PyQt6.QtWidgets import (QInputDialog, QGroupBox, QLineEdit) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt6.QtWidgets import (QSizePolicy, QVBoxLayout, QHBoxLayout, QPushButton) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt6.QtWidgets import (QLCDNumber, QSpinBox, QComboBox) # @Reimport @UnresolvedImport @UnusedImport
