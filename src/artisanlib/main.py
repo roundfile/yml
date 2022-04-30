@@ -112,7 +112,6 @@ QtWebEngineSupport = False # set to True if the QtWebEngine was successfully imp
 
 try:
     #pylint: disable-next = E, W, R, C
-    from PyQt6.QtWidgets import (QApplication) # @Reimport @UnresolvedImport @UnusedImport # pylint: disable=import-error
     from PyQt6.QtWidgets import (QWidget) # @Reimport @UnresolvedImport @UnusedImport # pylint: disable=import-error
     from PyQt6.QtWidgets import (QMessageBox) # @Reimport @UnresolvedImport @UnusedImport # pylint: disable=import-error
     from PyQt6.QtWidgets import (QLabel) # @Reimport @UnresolvedImport @UnusedImport # pylint: disable=import-error
@@ -125,6 +124,7 @@ try:
     from PyQt6.QtWidgets import (QAbstractSlider, QSlider) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt6.QtWidgets import (QColorDialog, QFrame, QProgressDialog) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt6.QtWidgets import (QStyleFactory, QMenu, QLayout) # @Reimport @UnresolvedImport @UnusedImport
+    from PyQt6.QtWidgets import (QApplication) # @Reimport @UnresolvedImport @UnusedImport # pylint: disable=import-error
     from PyQt6.QtGui import (QAction, QImage, QImageReader, QWindow, # @Reimport @UnresolvedImport @UnusedImport
                                 QKeySequence, # @Reimport @UnresolvedImport @UnusedImport
                                 QPixmap,QColor,QDesktopServices,QIcon, # @Reimport @UnresolvedImport @UnusedImport
@@ -244,7 +244,6 @@ try:
     # spanning a second multiprocessing instance (Hottop server) on macOS falils to import the YAPI interface
     from yoctopuce.yocto_api import YAPI
 except Exception: # pylint: disable=broad-except
-    _log.debug('main.py: Could not import YAPI')
     pass
 
 platf = str(platform.system())
