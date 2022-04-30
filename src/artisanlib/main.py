@@ -112,13 +112,13 @@ QtWebEngineSupport = False # set to True if the QtWebEngine was successfully imp
 
 try:
     #pylint: disable-next = E, W, R, C
-    from PyQt6.QtWidgets import (QApplication, QWidget, QMessageBox, QLabel, QMainWindow, QFileDialog, QGraphicsDropShadowEffect, # @Reimport @UnresolvedImport @UnusedImport # pylint: disable=import-error
-                             QInputDialog, QGroupBox, QLineEdit, # @Reimport @UnresolvedImport @UnusedImport
-                             QSizePolicy, QVBoxLayout, QHBoxLayout, QPushButton, # @Reimport @UnresolvedImport @UnusedImport
-                             QLCDNumber, QSpinBox, QComboBox, # @Reimport @UnresolvedImport @UnusedImport
-                             QAbstractSlider, QSlider, # @Reimport @UnresolvedImport @UnusedImport
-                             QColorDialog, QFrame, QProgressDialog, # @Reimport @UnresolvedImport @UnusedImport
-                             QStyleFactory, QMenu, QLayout) # @Reimport @UnresolvedImport @UnusedImport
+    from PyQt6.QtWidgets import (QApplication, QWidget, QMessageBox, QLabel, QMainWindow, QFileDialog, QGraphicsDropShadowEffect) # @Reimport @UnresolvedImport @UnusedImport # pylint: disable=import-error
+    from PyQt6.QtWidgets import (QInputDialog, QGroupBox, QLineEdit) # @Reimport @UnresolvedImport @UnusedImport
+    from PyQt6.QtWidgets import (QSizePolicy, QVBoxLayout, QHBoxLayout, QPushButton) # @Reimport @UnresolvedImport @UnusedImport
+    from PyQt6.QtWidgets import (QLCDNumber, QSpinBox, QComboBox) # @Reimport @UnresolvedImport @UnusedImport
+    from PyQt6.QtWidgets import (QAbstractSlider, QSlider) # @Reimport @UnresolvedImport @UnusedImport
+    from PyQt6.QtWidgets import (QColorDialog, QFrame, QProgressDialog) # @Reimport @UnresolvedImport @UnusedImport
+    from PyQt6.QtWidgets import (QStyleFactory, QMenu, QLayout) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt6.QtGui import (QAction, QImage, QImageReader, QWindow, # @Reimport @UnresolvedImport @UnusedImport
                                 QKeySequence, # @Reimport @UnresolvedImport @UnusedImport
                                 QPixmap,QColor,QDesktopServices,QIcon, # @Reimport @UnresolvedImport @UnusedImport
