@@ -100,12 +100,9 @@ for tr in [
 
 os.system('rmdir /q /s ' + TARGET + 'mpl-data\\sample_data')
 # YOCTO HACK BEGIN: manually copy over the dlls
-#os.system(r'mkdir ' + TARGET + 'yoctopuce\cdll')
-#os.system(r'copy "' + YOCTO_BIN + r'\yapi.dll" ' + TARGET + 'yoctopuce\cdll')
-#os.system(r'copy "' + YOCTO_BIN + r'\yapi64.dll" ' + TARGET + 'yoctopuce\cdll')
-os.system(r'mkdir ' + TARGET + 'lib')
-os.system(r'copy "' + YOCTO_BIN + r'\yapi.dll" ' + TARGET + 'lib')
-os.system(r'copy "' + YOCTO_BIN + r'\yapi64.dll" ' + TARGET + 'lib')
+os.system(r'mkdir ' + TARGET + 'yoctopuce\cdll')
+os.system(r'copy "' + YOCTO_BIN + r'\yapi.dll" ' + TARGET + 'yoctopuce\cdll')
+os.system(r'copy "' + YOCTO_BIN + r'\yapi64.dll" ' + TARGET + 'yoctopuce\cdll')
 # YOCTO HACK END
 
 # copy Snap7 lib
@@ -126,6 +123,7 @@ for fn in [
     r'includes\Humor-Sans.ttf',
     r'includes\dijkstra.ttf',
     r'includes\WenQuanYiZenHei-01.ttf',
+    r'includes\WenQuanYiZenHeiMonoMedium.ttf',
     r'includes\SourceHanSansCN-Regular.otf',
     r'includes\SourceHanSansHK-Regular.otf',
     r'includes\SourceHanSansJP-Regular.otf',

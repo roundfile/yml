@@ -113,6 +113,7 @@ DATA_FILES = [
     ('../Resources', [r'includes/ranking-template.htm']),
     ('../Resources', [r'includes/Humor-Sans.ttf']),
     ('../Resources', [r'includes/WenQuanYiZenHei-01.ttf']),
+    ('../Resources', [r'includes/WenQuanYiZenHeiMonoMedium.ttf']),
     ('../Resources', [r'includes/SourceHanSansCN-Regular.otf']),
     ('../Resources', [r'includes/SourceHanSansHK-Regular.otf']),
     ('../Resources', [r'includes/SourceHanSansJP-Regular.otf']),
@@ -133,7 +134,10 @@ with open('Info.plist', 'r+b') as fp:
     plist['CFBundleIdentifier'] = 'org.artisan-scope.artisan'
     plist['CFBundleShortVersionString'] = VERSION
     plist['CFBundleVersion'] = 'Artisan ' + VERSION
-    plist['LSMinimumSystemVersion'] = os.environ['MACOSX_DEPLOYMENT_TARGET']
+    try:
+        plist['LSMinimumSystemVersion'] = os.environ['MACOSX_DEPLOYMENT_TARGET']
+    except Exception:
+        plist['LSMinimumSystemVersion'] = '10.15'
     plist['LSMultipleInstancesProhibited'] = 'false'
 #    plist['LSPrefersPPC'] = False # not in use longer
     plist['LSArchitecturePriority'] = ['x86_64']
@@ -158,7 +162,9 @@ OPTIONS = {
     'arch': 'x86_64',
     'matplotlib_backends': '-', # '-' for imported or explicit "Qt5Agg, PDF, PS, SVG"
     'includes': ['serial'],
-    'excludes' :  ['tkinter','curses', # 'sqlite3',
+    'excludes' :  ['tkinter','curses',
+                'PyQt5', # standard builds are now running on PyQt6. If PyQt5 is not excluded here it will be included in Resources/lib/python310.zip
+                # 'sqlite3',
                 ],
     'plist'    : plist}
 
@@ -329,7 +335,7 @@ for python_version in ['python3.8', 'python3.9', 'python3.10']:
             'PyQt6/lupdate',
             'PyQt6/uic',
             'PyQt6/Qt6/translations',
-            'PyQt6/Qt6/qml'
+            'PyQt6/Qt6/qml',
             'PyQt6/Qt6/qsci',
 #            "PyQt6/Qt6/lib", # comment for the non-Framework variant
         ]:

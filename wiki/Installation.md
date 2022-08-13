@@ -32,11 +32,11 @@ You need to (temporarily during installation) tick "Allow applications downloade
 #### Alternative: Homebrew
 Artisan is available on [Homebrew](https://brew.sh/). To install Homebrew:
 ```
-ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 To install Artisan via Homebrew:
 ```
-brew cask install artisan
+brew install --cask artisan
 ```
 
 ### Linux
@@ -86,6 +86,19 @@ To allow Artisan to remember the artisan.plus password gnome-keyring needs to be
 sudo apt-get update
 sudo apt-get install gnome-keyring
 ```
+
+---
+
+[A bug in Ubuntu 22.04 has been reported](https://bugs.launchpad.net/ubuntu/+source/brltty/+bug/1958224) that deactivates certain `/dev/ttyUSB` device ports, eg. the one used by the Mastech 6514. The culprit is a package called BRLTTY, which is installed automatically in 22.04. This package is for blind folks who use a TTY. A work around is to use synaptic or the following terminal commands to remove this package.
+
+```
+# sudo apt-get remove brltty
+```
+
+There is an [alternative, but more complex fix](https://askubuntu.com/questions/1403705/dev-ttyusb0-not-present-in-ubuntu-22-04) that works without deinstalling that package.
+
+---
+
 
 
 

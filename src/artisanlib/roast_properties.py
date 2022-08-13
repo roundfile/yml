@@ -46,7 +46,7 @@ from uic import MeasureDialog
 _log: Final = logging.getLogger(__name__)
 
 try:
-    #pylint: disable = E, W, R, C
+    #ylint: disable = E, W, R, C
     from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot, QRegularExpression, QSettings, QTimer, QEvent, QLocale # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtGui import QColor, QIntValidator, QRegularExpressionValidator, QKeySequence, QPalette # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtWidgets import (QApplication, QWidget, QCheckBox, QComboBox, QDialogButtonBox, QGridLayout, # @UnusedImport @Reimport  @UnresolvedImport
@@ -54,8 +54,8 @@ try:
                                  QPushButton, QSpinBox, QTableWidget, QTableWidgetItem, QTabWidget, QSizePolicy, # @UnusedImport @Reimport  @UnresolvedImport
                                  QGroupBox, QToolButton) # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6 import sip # @UnusedImport @Reimport  @UnresolvedImport
-except Exception:
-    #pylint: disable = E, W, R, C
+except Exception: # pylint: disable=broad-except
+    #ylint: disable = E, W, R, C
     from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot, QRegularExpression, QSettings, QTimer, QEvent, QLocale # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtGui import QColor, QIntValidator, QRegularExpressionValidator, QKeySequence, QPalette # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QApplication, QWidget, QCheckBox, QComboBox, QDialogButtonBox, QGridLayout, # @UnusedImport @Reimport  @UnresolvedImport
@@ -68,7 +68,7 @@ except Exception:
         import sip  # @Reimport @UnresolvedImport @UnusedImport
 
 if sys.platform.startswith('darwin'):
-    import darkdetect # @UnresolvedImport # pylint: disable=import-error
+    import darkdetect # @UnresolvedImport # ylint: disable=import-error
 
 
 ########################################################################################
@@ -3322,7 +3322,7 @@ class editGraphDlg(ArtisanResizeablDialog):
                 energy_unit = self.aw.qmc.energyunits[self.aw.qmc.energyresultunit_setup]
                 #
                 total_energy = self.scalefloat(self.aw.qmc.convertHeat(metrics['BTU_batch'],0,self.aw.qmc.energyresultunit_setup))
-                self.energy_ui.totalEnergyLabel.setText(f'{total_energy} {energy_unit}')
+                self.energy_ui.totalEnergyLabel.setText(f'<b>{total_energy} {energy_unit}</b>')
                 #
                 preheat_energy = self.scalefloat(self.aw.qmc.convertHeat(metrics['BTU_preheat'],0,self.aw.qmc.energyresultunit_setup))
                 self.energy_ui.preheatEnergyLabel.setText('{} {} ({})'.format(preheat_energy,energy_unit,QApplication.translate('Label','Preheat')))
@@ -3351,7 +3351,7 @@ class editGraphDlg(ArtisanResizeablDialog):
                 #
                 if metrics['CO2_batch'] >= 0:
                     scaled_co2_batch = str(self.scalefloat(metrics['CO2_batch']))+'g' if metrics['CO2_batch']<1000 else str(self.scalefloat(metrics['CO2_batch']/1000.)) +'kg'
-                    self.energy_ui.totalCO2Label.setText(scaled_co2_batch)
+                    self.energy_ui.totalCO2Label.setText(f'<b>{scaled_co2_batch}</b>')
                     #
                     scaled_co2_preheat = str(self.scalefloat(metrics['CO2_preheat']))+'g' if metrics['CO2_preheat']<1000 else str(self.scalefloat(metrics['CO2_preheat']/1000.)) +'kg'
                     self.energy_ui.preheatCO2label.setText('{} ({})'.format(scaled_co2_preheat,QApplication.translate('Label','Preheat')))

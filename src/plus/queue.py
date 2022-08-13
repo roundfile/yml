@@ -23,17 +23,17 @@
 
 
 try:
-    #pylint: disable = E, W, R, C
+    #ylint: disable = E, W, R, C
     from PyQt6.QtCore import QCoreApplication, QObject, QThread, pyqtSlot, pyqtSignal # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtWidgets import QApplication # @UnusedImport @Reimport  @UnresolvedImport
-except Exception:
-    #pylint: disable = E, W, R, C
+except Exception: # pylint: disable=broad-except
+    #ylint: disable = E, W, R, C
     from PyQt5.QtCore import QCoreApplication, QObject, QThread, pyqtSlot, pyqtSignal # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import QApplication # @UnusedImport @Reimport  @UnresolvedImport
 
 from artisanlib.util import getDirectory
 from plus import config, util, roast, connection, sync, controller
-from typing import Any
+from typing import Any, List, Dict  #for Python >= 3.9: can remove 'List' and 'Dict' since type hints can use the generic 'list' and 'dict'
 try:
     from typing import Final
 except ImportError:
@@ -228,7 +228,7 @@ class Worker(QObject):
             self._paused = True  # make self block and wait
 
 # will be evaluated in GUI thread
-def processReply(rlimit:float, rused:float, pu:str, notifications:int, machines:list[str]):
+def processReply(rlimit:float, rused:float, pu:str, notifications:int, machines:List[str]):  #for Python >= 3.9 can replace 'List' with the generic type hint 'list'
     try:
 #        _log.debug('thread id', threading.get_ident())
         _log.debug('processReply(%s,%s,%s,%s,%s', rlimit, rused, pu, notifications, machines)
@@ -303,7 +303,7 @@ def full_roast_in_queue(roast_id: str) -> bool:
 
 # returns true if the given roast_record r is a full record containing all
 # information (incl. the roast date) and not only an update
-def is_full_roast_record(r: dict[str, Any]) -> bool:
+def is_full_roast_record(r: Dict[str, Any]) -> bool:  #for Python >= 3.9 can replace 'Dict' with the generic type hint 'dict'
     return 'date' in r and r['date'] and 'amount' in r and 'roast_id' in r
 
 

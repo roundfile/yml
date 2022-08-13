@@ -38,11 +38,11 @@ except ImportError:
 from artisanlib.util import decs2string, fromCtoF, fromFtoC, hex2int, str2cmd, stringfromseconds, cmd2str
 
 try:
-    #pylint: disable = E, W, R, C
+    #ylint: disable = E, W, R, C
     from PyQt6.QtCore import pyqtSlot # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtWidgets import QApplication # @UnusedImport @Reimport  @UnresolvedImport
-except Exception:
-    #pylint: disable = E, W, R, C
+except Exception: # pylint: disable=broad-except
+    #ylint: disable = E, W, R, C
     from PyQt5.QtCore import pyqtSlot # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import QApplication # @UnusedImport @Reimport  @UnresolvedImport
 
@@ -1348,7 +1348,7 @@ class PIDcontrol():
                 self.pidActive = True
                 self.aw.qmc.pid.on()
                 self.aw.buttonCONTROL.setStyleSheet(self.aw.pushbuttonstyles['PIDactive'])
-            if self.sv is None:
+            if self.sv is None and self.svMode == 0: # only in manual SV mode we initialize the SV on PID ON
                 self.setSV(self.svValue)
 
     def pidOff(self):

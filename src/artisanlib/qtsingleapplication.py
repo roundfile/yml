@@ -14,12 +14,12 @@ import multiprocessing as mp
 
 
 try:
-    #pylint: disable = E, W, R, C
+    #ylint: disable = E, W, R, C
     from PyQt6.QtCore import pyqtSignal, QTextStream, Qt, pyqtSlot # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtWidgets import QApplication # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtNetwork import QLocalSocket, QLocalServer # @UnusedImport @Reimport  @UnresolvedImport
-except Exception:
-    #pylint: disable = E, W, R, C
+except Exception: # pylint: disable=broad-except
+    #ylint: disable = E, W, R, C
     from PyQt5.QtCore import pyqtSignal, QTextStream, Qt, pyqtSlot # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import QApplication # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtNetwork import QLocalSocket, QLocalServer # @UnusedImport @Reimport  @UnresolvedImport
