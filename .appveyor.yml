@@ -74,11 +74,11 @@ for:
 #    - cmd: python -m unittest discover
 
 #  artifacts:
-    - path: 'src\artisan-*.zip'
+#    - path: 'src\artisan-*.zip'
 
 #  deploy_script:
-#    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-#    - cmd: bash upload.sh artisan-*.zip
+    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
+    - cmd: bash upload.sh artisan-*.zip
 
 
 -
@@ -118,11 +118,11 @@ for:
 #    - cmd: python -m unittest discover
 
 #  artifacts:
-    - path: 'src\artisan-*.zip'
+#    - path: 'src\artisan-*.zip'
 
 #  deploy_script:
-#    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-#    - cmd: bash upload.sh artisan-*.zip
+    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
+    - cmd: bash upload.sh artisan-*.zip
 
 
 -
@@ -151,6 +151,7 @@ for:
   build_script:
     - echo "MacOS Build"
     - chmod +x src/*.sh
+    - chmod +x src/pylupdate6pro
     - .ci/script-${ARTISAN_OS}.sh
 
 # unit test fails as it runs on Py3.9 while the build installs under brew isntalled Py3.10 (see build-mac3.py)
@@ -158,14 +159,14 @@ for:
 #    - python -m unittest discover -s src
 
 #  artifacts:
-    - path: 'src/artisan-*.dmg'
+#    - path: 'src/artisan-*.dmg'
 
 #  deploy_script:
-#    - cd src
-#    - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-#    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
-#    - export UPLOADTOOL_ISPRERELEASE=true
-#    - bash upload.sh artisan-*.dmg
+    - cd src
+    - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
+    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
+    - export UPLOADTOOL_ISPRERELEASE=true
+    - bash upload.sh artisan-*.dmg
 
 -
   matrix:
@@ -198,18 +199,17 @@ for:
     - QT_QPA_PLATFORM=offscreen python -m unittest discover -s src
 
 #  artifacts:
-    - path: 'src/artisan-*.deb'
-    - path: 'src/artisan-*.rpm'
-    - path: 'src/artisan-*.AppImage'
+#    - path: 'src/artisan-*.deb'
+#    - path: 'src/artisan-*.rpm'
 
 #  deploy_script:
-#    - cd src
-#    - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-#    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
-#    - export UPLOADTOOL_ISPRERELEASE=true
-#    - bash upload.sh artisan-*.deb
-#    - bash upload.sh artisan-*.rpm
-#    - bash upload.sh artisan-*.AppImage
+    - cd src
+    - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
+    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
+    - export UPLOADTOOL_ISPRERELEASE=true
+    - bash upload.sh artisan-*.deb
+    - bash upload.sh artisan-*.rpm
+    - bash upload.sh artisan-*.AppImage
 
 -
   matrix:
