@@ -1774,6 +1774,11 @@ class editGraphDlg(ArtisanResizeablDialog):
         self.aw.qmc.operator_setup = self.setup_ui.lineEditOperator.text()
         self.aw.qmc.roastertype_setup = self.setup_ui.lineEditMachine.text()
         self.aw.qmc.roastersize_setup = self.setup_ui.doubleSpinBoxRoasterSize.value()
+        nominal_batch_size = self.aw.convertWeight(self.aw.qmc.roastersize_setup,1,self.aw.qmc.weight_units.index(self.aw.qmc.weight[2]))
+        self.aw.qmc.last_batchsize = nominal_batch_size
+        if self.weightinedit.text() == '0':
+            inw = '%g' % self.aw.float2floatWeightVolume(nominal_batch_size)
+            self.weightinedit.setText(inw)
         self.aw.qmc.roasterheating_setup = self.setup_ui.comboBoxHeating.currentIndex()
         self.aw.qmc.drumspeed_setup = self.setup_ui.lineEditDrumSpeed.text()
         self.populateSetupDefaults()
@@ -3322,7 +3327,7 @@ class editGraphDlg(ArtisanResizeablDialog):
                 energy_unit = self.aw.qmc.energyunits[self.aw.qmc.energyresultunit_setup]
                 #
                 total_energy = self.scalefloat(self.aw.qmc.convertHeat(metrics['BTU_batch'],0,self.aw.qmc.energyresultunit_setup))
-                self.energy_ui.totalEnergyLabel.setText(f'<b>{total_energy} {energy_unit}</b>')
+                self.energy_ui.totalEnergyLabel.setText(f'{total_energy} {energy_unit}')
                 #
                 preheat_energy = self.scalefloat(self.aw.qmc.convertHeat(metrics['BTU_preheat'],0,self.aw.qmc.energyresultunit_setup))
                 self.energy_ui.preheatEnergyLabel.setText('{} {} ({})'.format(preheat_energy,energy_unit,QApplication.translate('Label','Preheat')))
@@ -3351,7 +3356,7 @@ class editGraphDlg(ArtisanResizeablDialog):
                 #
                 if metrics['CO2_batch'] >= 0:
                     scaled_co2_batch = str(self.scalefloat(metrics['CO2_batch']))+'g' if metrics['CO2_batch']<1000 else str(self.scalefloat(metrics['CO2_batch']/1000.)) +'kg'
-                    self.energy_ui.totalCO2Label.setText(f'<b>{scaled_co2_batch}</b>')
+                    self.energy_ui.totalCO2Label.setText(f'{scaled_co2_batch}')
                     #
                     scaled_co2_preheat = str(self.scalefloat(metrics['CO2_preheat']))+'g' if metrics['CO2_preheat']<1000 else str(self.scalefloat(metrics['CO2_preheat']/1000.)) +'kg'
                     self.energy_ui.preheatCO2label.setText('{} ({})'.format(scaled_co2_preheat,QApplication.translate('Label','Preheat')))
@@ -4327,7 +4332,7 @@ class editGraphDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def copyDataTabletoClipboard(self,_=False):
-        self.aw.copy_cells_to_clipboard(self.datatable,adjustment=5)
+        self.aw.copy_cells_to_clipboard(self.datatable,adjustment=1)
         self.aw.sendmessage(QApplication.translate('Message','Data table copied to clipboard'))
 
     @pyqtSlot(bool)
@@ -4946,6 +4951,12 @@ class editGraphDlg(ArtisanResizeablDialog):
             self.aw.qmc.weight[0] = float(self.aw.comma2dot(str(self.weightinedit.text())))
         except Exception: # pylint: disable=broad-except
             self.aw.qmc.weight[0] = 0
+        if self.aw.qmc.weight[0] == 0 and self.aw.qmc.last_batchsize == 0:
+            nominal_batch_size = self.aw.convertWeight(self.aw.qmc.roastersize_setup,1,self.aw.qmc.weight_units.index(self.aw.qmc.weight[2]))
+            self.aw.qmc.last_batchsize = nominal_batch_size
+            self.aw.qmc.weight = [nominal_batch_size,0,self.aw.qmc.weight[2]]
+        else:
+            self.aw.qmc.last_batchsize = self.aw.qmc.weight[0] # remember last used batch size
         try:
             self.aw.qmc.weight[1] = float(self.aw.comma2dot(str(self.weightoutedit.text())))
         except Exception: # pylint: disable=broad-except

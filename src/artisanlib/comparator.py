@@ -359,62 +359,64 @@ class RoastProfile():
             self.E3 = []
             self.E4 = []
 
-            if not self.aw.qmc.compareBBP or self.aw.qmc.compareRoast:
-                # no special event curves if BBP only mode
-                last_E1, last_E2, last_E3, last_E4 = None, None, None, None
-                for i,e in enumerate(self.specialevents):
-                    try:
-                        etime = self.timex[e]
-                        etype = self.specialeventstype[i]
-                        evalue = self.aw.qmc.eventsInternal2ExternalValue(self.specialeventsvalue[i]) * value_factor + value_offset
-                        # remember last event value per type before CHARGE
-                        if (self.timeindex[0] != -1 and e < self.timeindex[0]):
-                            if etype == 0:
-                                last_E1 = evalue
-                            elif etype == 1:
-                                last_E2 = evalue
-                            elif etype == 2:
-                                last_E3 = evalue
-                            elif etype == 3:
-                                last_E4 = evalue
-                        # only draw events between CHARGE and DRY
-                        if (self.timeindex[0] == -1 or e >= self.timeindex[0]) and (self.timeindex[6] == 0 or e <= self.timeindex[6]):
-                            if etype == 0:
-                                if last_E1 is not None and last_E1 != evalue:
-                                    # add event value @CHARGE
-                                    self.E1.append((self.timex[self.timeindex[0]],last_E1))
-                                    last_E1 = None
-                                self.E1.append((etime,evalue))
-                            elif etype == 1:
-                                if last_E2 is not None and last_E2 != evalue:
-                                    # add event value @CHARGE
-                                    self.E2.append((self.timex[self.timeindex[0]],last_E2))
-                                    last_E2 = None
-                                self.E2.append((etime,evalue))
-                            elif etype == 2:
-                                if last_E3 is not None and last_E3 != evalue:
-                                    # add event value @CHARGE
-                                    self.E3.append((self.timex[self.timeindex[0]],last_E3))
-                                    last_E3 = None
-                                self.E3.append((etime,evalue))
-                            elif etype == 3:
-                                if last_E4 is not None and last_E4 != evalue:
-                                    # add event value @CHARGE
-                                    self.E4.append((self.timex[self.timeindex[0]],last_E4))
-                                    last_E4 = None
-                                self.E4.append((etime,evalue))
-                    except Exception as e: # pylint: disable=broad-except
-                        _log.exception(e)
-                # add a last event at DROP/END to extend the lines to the end of roast
+            last_E1, last_E2, last_E3, last_E4 = None, None, None, None
+            for i,e in enumerate(self.specialevents):
+                try:
+                    etime = self.timex[e]
+                    etype = self.specialeventstype[i]
+                    evalue = self.aw.qmc.eventsInternal2ExternalValue(self.specialeventsvalue[i]) * value_factor + value_offset
+                    # remember last event value per type before CHARGE
+                    if (not self.aw.qmc.compareBBP and self.timeindex[0] != -1 and e < self.timeindex[0]):
+                        if etype == 0:
+                            last_E1 = evalue
+                        elif etype == 1:
+                            last_E2 = evalue
+                        elif etype == 2:
+                            last_E3 = evalue
+                        elif etype == 3:
+                            last_E4 = evalue
+                    # only draw events between CHARGE and DRY
+                    if (self.aw.qmc.compareRoast and (self.aw.qmc.compareBBP  or self.timeindex[0] == -1 or e >= self.timeindex[0]) and (self.timeindex[6] == 0 or e <= self.timeindex[6])) or (not self.aw.qmc.compareRoast and self.aw.qmc.compareBBP and (self.timeindex[0] == -1 or e <= self.timeindex[0])):
+                        if etype == 0:
+                            if last_E1 is not None and last_E1 != evalue:
+                                # add event value @CHARGE
+                                self.E1.append((self.timex[self.timeindex[0]],last_E1))
+                                last_E1 = None
+                            self.E1.append((etime,evalue))
+                        elif etype == 1:
+                            if last_E2 is not None and last_E2 != evalue:
+                                # add event value @CHARGE
+                                self.E2.append((self.timex[self.timeindex[0]],last_E2))
+                                last_E2 = None
+                            self.E2.append((etime,evalue))
+                        elif etype == 2:
+                            if last_E3 is not None and last_E3 != evalue:
+                                # add event value @CHARGE
+                                self.E3.append((self.timex[self.timeindex[0]],last_E3))
+                                last_E3 = None
+                            self.E3.append((etime,evalue))
+                        elif etype == 3:
+                            if last_E4 is not None and last_E4 != evalue:
+                                # add event value @CHARGE
+                                self.E4.append((self.timex[self.timeindex[0]],last_E4))
+                                last_E4 = None
+                            self.E4.append((etime,evalue))
+                except Exception as e: # pylint: disable=broad-except
+                    _log.exception(e)
+            # add a last event at DROP/END to extend the lines to the end of roast
+            if not self.aw.qmc.compareRoast and self.aw.qmc.compareBBP:
+                # BBP-only mode
+                end = (self.timex[-1] if self.timeindex[0] == -1 else self.timex[self.timeindex[0]])
+            else:
                 end = (self.timex[-1] if self.timeindex[6] == 0 else self.timex[self.timeindex[6]])
-                if self.E1:
-                    self.E1.append((end,self.E1[-1][1]))
-                if self.E2:
-                    self.E2.append((end,self.E2[-1][1]))
-                if self.E3:
-                    self.E3.append((end,self.E3[-1][1]))
-                if self.E4:
-                    self.E4.append((end,self.E4[-1][1]))
+            if self.E1:
+                self.E1.append((end,self.E1[-1][1]))
+            if self.E2:
+                self.E2.append((end,self.E2[-1][1]))
+            if self.E3:
+                self.E3.append((end,self.E3[-1][1]))
+            if self.E4:
+                self.E4.append((end,self.E4[-1][1]))
 
     def firstTime(self):
         try:
@@ -832,7 +834,6 @@ class roastCompareDlg(ArtisanDialog):
         self.cb.flagChanged.connect(self.flagChanged)
 
         settings1Layout = QHBoxLayout()
-        settings1Layout.addSpacing(10)
         settings1Layout.addWidget(self.modeComboBox)
         settings1Layout.addStretch()
         settings1Layout.addSpacing(10)
@@ -939,7 +940,19 @@ class roastCompareDlg(ArtisanDialog):
 
     def onpick_event(self,event):
         p = next((p for p in self.profiles if event.artist in [p.l_mainEvents1,p.l_mainEvents2]), None)
-        if p is not None:
+        if p is not None and p.visible and p.active:
+            # determine zorder of this profile:
+            p_zorder = 0
+            if p.l_mainEvents1.get_visible():
+                p_zorder = p.l_mainEvents1.get_zorder()
+            elif p.l_mainEvents2.get_visible():
+                p_zorder = p.l_mainEvents2.get_zorder()
+
+            # if there is any profile op != p which is also triggered by this mouse event and has a higher z-order, ignore this pick
+            if any(op != p and any(me.get_visible() and me.get_zorder() > p_zorder and me.contains(event.mouseevent)[0] for me in [op.l_mainEvents1,op.l_mainEvents2])
+                    for op in self.profiles):
+                return
+
             ind = event.ind[0]
             time = p.timex[p.timeindex[ind]]
             if p.timeindex[0] != -1:
@@ -985,6 +998,11 @@ class roastCompareDlg(ArtisanDialog):
         if grid_axis is not None:
             self.aw.qmc.ax.grid(True,axis=grid_axis,color=self.aw.qmc.palette['grid'],linestyle=self.aw.qmc.gridstyles[self.aw.qmc.gridlinestyle],linewidth = self.aw.qmc.gridthickness,alpha = self.aw.qmc.gridalpha,sketch_params=0,path_effects=[])
 
+        self.aw.qmc.ax.spines.top.set_visible(self.aw.qmc.xgrid != 0 and self.aw.qmc.ygrid != 0 and self.aw.qmc.zgrid != 0)
+        self.aw.qmc.ax.spines.bottom.set_visible(self.aw.qmc.xgrid != 0)
+        self.aw.qmc.ax.spines.left.set_visible(self.aw.qmc.ygrid != 0)
+        self.aw.qmc.ax.spines.right.set_visible(self.aw.qmc.zgrid != 0)
+
         prop = self.aw.mpl_fontproperties.copy()
         prop.set_size('small')
         fontprop_medium = self.aw.mpl_fontproperties.copy()
@@ -992,8 +1010,12 @@ class roastCompareDlg(ArtisanDialog):
         fontprop_large = self.aw.mpl_fontproperties.copy()
         fontprop_large.set_size('large')
 
-        self.aw.qmc.ax.set_ylabel(self.aw.qmc.mode,color=self.aw.qmc.palette['ylabel'],rotation=0,labelpad=10,fontproperties=fontprop_large)
-        self.aw.qmc.ax.set_xlabel(self.aw.arabicReshape(QApplication.translate('Label', 'min')),color = self.aw.qmc.palette['xlabel'],fontproperties=fontprop_medium)
+        temp_axis_label = ('' if self.aw.qmc.ygrid == 0 else self.aw.qmc.mode)
+        self.aw.qmc.ax.set_ylabel(temp_axis_label,color=self.aw.qmc.palette['ylabel'],rotation=0,labelpad=10,fontproperties=fontprop_medium)
+
+        #time_axis_label = ("" if self.aw.qmc.xgrid == 0 else self.aw.arabicReshape(QApplication.translate('Label', 'min')))
+        time_axis_label = '' # always hide as not very productive
+        self.aw.qmc.set_xlabel(time_axis_label)
 
         tick_dir = 'inout'
         self.aw.qmc.ax.tick_params(\
@@ -1035,7 +1057,10 @@ class roastCompareDlg(ArtisanDialog):
             labelbottom=False)   # labels along the bottom edge are on
 
         self.aw.qmc.ax.patch.set_visible(True)
-        self.aw.qmc.delta_ax.set_ylabel(self.aw.qmc.mode + self.aw.arabicReshape(QApplication.translate('Label', '/min')),color = self.aw.qmc.palette['ylabel'],fontproperties=fontprop_large)
+
+        delta_axis_label = ('' if self.aw.qmc.zgrid == 0 else self.aw.qmc.mode + self.aw.arabicReshape(QApplication.translate('Label', '/min')))
+        self.aw.qmc.delta_ax.set_ylabel(delta_axis_label,color = self.aw.qmc.palette['ylabel'],fontproperties=fontprop_medium)
+
         self.aw.qmc.delta_ax.set_ylim(self.aw.qmc.zlimit_min,self.aw.qmc.zlimit)
         if self.aw.qmc.zgrid > 0:
             self.aw.qmc.delta_ax.yaxis.set_major_locator(ticker.MultipleLocator(self.aw.qmc.zgrid))
@@ -1145,7 +1170,8 @@ class roastCompareDlg(ArtisanDialog):
 
     def redraw(self):
         self.clearCanvas()
-        self.drawAlignmentLine()
+        if self.profiles:
+            self.drawAlignmentLine()
         self.recompute()
         for rp in self.profiles:
             rp.draw()
@@ -1322,6 +1348,7 @@ class roastCompareDlg(ArtisanDialog):
         self.realign()
         self.updateZorders()
         self.repaint()
+        self.aw.qpc.update_phases(self.getPhasesData())
 
     @pyqtSlot(int)
     def visibilityChanged(self,state):
@@ -1330,6 +1357,7 @@ class roastCompareDlg(ArtisanDialog):
         self.updateDeltaLimits()
         self.autoTimeLimits()
         self.repaint()
+        self.aw.qpc.update_phases(self.getPhasesData())
 
     @pyqtSlot(int,bool)
     def flagChanged(self,i,b):
@@ -1487,6 +1515,7 @@ class roastCompareDlg(ArtisanDialog):
                 else:
                     c = QColor.fromRgbF(*p.gray).lighter()
                 w.setBackground(c)
+        self.aw.qpc.update_phases(self.getPhasesData())
 
     # align all profiles to the first one w.r.t. to the event self.aw.qmc.compareAlignEvent
     #   0:CHARGE, 1:TP, 2:DRY, 3:FCs, 4:FCe, 5:SCs, 6:SCe, 7:DROP
@@ -1595,6 +1624,7 @@ class roastCompareDlg(ArtisanDialog):
                 self.realign()
                 self.updateZorders()
                 self.repaint()
+                self.aw.qpc.update_phases(self.getPhasesData())
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
 
@@ -1623,6 +1653,7 @@ class roastCompareDlg(ArtisanDialog):
             self.realign()
             self.updateZorders()
             self.repaint()
+            self.aw.qpc.update_phases(self.getPhasesData())
 
     def deleteProfile(self,i):
         self.profileTable.removeRow(i)
@@ -1639,6 +1670,7 @@ class roastCompareDlg(ArtisanDialog):
             self.realign()
             self.updateZorders()
             self.repaint()
+            self.aw.qpc.update_phases(self.getPhasesData())
 
     ### Utility
 
@@ -1647,6 +1679,22 @@ class roastCompareDlg(ArtisanDialog):
             if self.profileTable.visualRow(i) == 0:
                 return p
         return None
+
+    def getPhasesData(self):
+        data = []
+        profiles = self.getProfilesVisualOrder()
+        for p in reversed(profiles):
+            if p.visible:
+                start = p.timex[p.timeindex[0]] if p.timeindex[0] != -1 else p.timex[0]
+                total = p.timex[p.timeindex[6]] - start if p.timeindex[6] != 0 else p.timex[-1]
+                dry = p.timex[p.timeindex[1]] - start if p.timeindex[1] != 0 else 0
+                fcs = p.timex[p.timeindex[2]] - start if p.timeindex[2] != 0 else 0
+                p1 = dry
+                p3 = total - fcs if fcs != 0 else 0
+                p2 = total - p1 - p3 if p1 != 0 and p3 != 0 else 0
+                c = QColor.fromRgbF(*p.color)
+                data.append((p.label, total, (p1, p2, p3), p.active, c.name()))
+        return data
 
     def getProfilesVisualOrder(self):
         res = self.profiles[:]
@@ -1704,3 +1752,4 @@ class roastCompareDlg(ArtisanDialog):
             self.aw.ntb.enable_edit_curve_parameters()
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
+        self.aw.qpc.update_phases(None)
