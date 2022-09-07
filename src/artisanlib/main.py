@@ -10491,13 +10491,13 @@ class tgraphcanvas(FigureCanvas):
                 if aw.qmc.roastbatchnr != None and aw.qmc.roastbatchnr != 0 and aw.qmc.roastbatchpos != None and aw.qmc.roastbatchpos != 0:
                     if self.locale_str == 'en':
                         roastoftheday_segments = [f'\n{aw.qmc.roastbatchpos}']
-                        if aw.qmc.roastbatchpos > 3:
+                        if aw.qmc.roastbatchpos > 3 and aw.qmc.roastbatchpos not in [21,22,23,21,32,33,41,42,43]:
                             roastoftheday_segments.append('th')
-                        elif aw.qmc.roastbatchpos == 3:
+                        elif aw.qmc.roastbatchpos in [3,23,33,43]:
                             roastoftheday_segments.append('rd')
-                        elif aw.qmc.roastbatchpos == 2:
+                        elif aw.qmc.roastbatchpos in [2,22,32,42]:
                             roastoftheday_segments.append('nd')
-                        elif aw.qmc.roastbatchpos == 1:
+                        elif aw.qmc.roastbatchpos in [1,21,31,41]:
                             roastoftheday_segments.append('st')
                         statstr_segments.append(f'{roastoftheday_segments[0]}{roastoftheday_segments[1]}')
                     else:
@@ -39355,6 +39355,7 @@ class ApplicationWindow(QMainWindow):
             res['equ'] = self.qmc.lnRegression(power=exp, curvefit_starttime=curvefit_starttime, curvefit_endtime=curvefit_endtime, plot=False)
             self.deleteBackground()
             self.setbackgroundequ(EQU=['',res['equ']],recomputeAllDeltas=True,doDraw=False)  #redraw() called from setbackgroundequ()
+            _log.info("res['equ'] %s", res['equ'])  #dave
 
         result = self.curveSimilarity2(exp=exp, analysis_starttime=analysis_starttime, analysis_endtime=analysis_endtime)
 
