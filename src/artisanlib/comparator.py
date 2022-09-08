@@ -261,7 +261,6 @@ class RoastProfile():
                 elif profile['roastbatchpos'] in [1,21,31,41]:
                     self.metadata['roastoftheday'] = f'{profile["roastbatchpos"]}st Roast of the Day'
             else:
-                rod = QApplication.translate('AddlInfo', 'Roast of the Day')
                 self.metadata['roastoftheday'] = f'{aw.qmc.roastbatchpos} {QApplication.translate("AddlInfo", "Roast of the Day")}'
 
         if 'beans' in profile:
