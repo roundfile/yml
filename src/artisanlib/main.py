@@ -10491,14 +10491,14 @@ class tgraphcanvas(FigureCanvas):
                 if aw.qmc.roastbatchnr != None and aw.qmc.roastbatchnr != 0 and aw.qmc.roastbatchpos != None and aw.qmc.roastbatchpos != 0:
                     if self.locale_str == 'en':
                         roastoftheday_segments = [f'\n{aw.qmc.roastbatchpos}']
-                        if aw.qmc.roastbatchpos > 3 and aw.qmc.roastbatchpos not in [21,22,23,21,32,33,41,42,43]:
-                            roastoftheday_segments.append('th')
-                        elif aw.qmc.roastbatchpos in [3,23,33,43]:
-                            roastoftheday_segments.append('rd')
+                        if aw.qmc.roastbatchpos in [1,21,31,41]:
+                            roastoftheday_segments.append('st')
                         elif aw.qmc.roastbatchpos in [2,22,32,42]:
                             roastoftheday_segments.append('nd')
-                        elif aw.qmc.roastbatchpos in [1,21,31,41]:
-                            roastoftheday_segments.append('st')
+                        elif aw.qmc.roastbatchpos in [3,23,33,43]:
+                            roastoftheday_segments.append('rd')
+                        elif aw.qmc.roastbatchpos > 3:
+                            roastoftheday_segments.append('th')
                         statstr_segments.append(f'{roastoftheday_segments[0]}{roastoftheday_segments[1]}')
                     else:
                         statstr_segments.append(f'\n#{aw.qmc.roastbatchpos}')
