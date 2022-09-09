@@ -141,7 +141,7 @@ for:
 
   install:
     - echo "MacOS Install"
-    - export TEST_V ${PYTHON}
+    - export TEST_V=${PYTHON}
     - chmod +x .ci/*.sh
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
