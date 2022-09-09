@@ -15,8 +15,8 @@ environment:
 #    appveyor_build_worker_image: Visual Studio 2019
   - job_name: macos
     appveyor_build_worker_image: macos
-#  - job_name: linux
-#    appveyor_build_worker_image: Ubuntu2004
+  - job_name: linux
+    appveyor_build_worker_image: Ubuntu2004
 #  - job_name: rpi
 #    appveyor_build_worker_image: Ubuntu1604
 
@@ -178,10 +178,12 @@ for:
 
   environment:
     ARTISAN_OS: linux
-    PYTHON: $HOME/venv3.10.2
+    PYTHON: $HOME/venv3.10.6
     #PYTHON: $HOME/venv3.9.10
     # NOTE: there is an issue with Python 3.10.0 and pyinstaller fixed in Python 3.10.1 (not yet available on appveyor)
     # see pyinstaller Issue #6301
+    PYTHON_PATH: $PYTHON/lib/python3.10/site-packages
+    QT_PATH: $PYTHON_PATH/PyQt6/Qt6
 
   install:
     - echo "Linux Install"

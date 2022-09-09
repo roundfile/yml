@@ -8,13 +8,6 @@ set -e  # reduced logging
 if [ ! -z $APPVEYOR ]; then
     # Appveyor CI builds
     echo "NOTICE: Appveyor build"
-    echo ${TEST_V}
-#    export PYTHON_V=3.9
-#    export PYTHON=/Users/appveyor/venv3.9 # venv3.9 => venv3.9.6
-#    export PYTHONBIN=$PYTHON/bin
-#    export PYTHONPATH=$PYTHON/lib/python${PYTHON_V}
-#dave    export PYTHON_V=3.10
-#dave    export PYTHON=/usr/local/opt/python@3.10
     export PYTHON=/usr/local/opt/python@${PYTHON_V}
     export PYTHONBIN=$PYTHON/bin
     export PYTHONPATH=/usr/local/lib/python${PYTHON_V}
@@ -33,7 +26,7 @@ if [ ! -z $APPVEYOR ]; then
     export PYRCC=pyrcc6
     export PYLUPDATE=./pylupdate6pro
 
-    export MACOSX_DEPLOYMENT_TARGET=10.15
+#dave    export MACOSX_DEPLOYMENT_TARGET=10.15
 #    export DYLD_LIBRARY_PATH=$PYTHON/lib:$DYLD_LIBRARY_PATH
 else
     # standard local builds
