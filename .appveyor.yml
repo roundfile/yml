@@ -134,7 +134,7 @@ for:
   environment:
     ARTISAN_OS: osx
     #dave PYTHON: ~/venv3.10
-    PYTHON_V=3.10
+    PYTHON_V: 3.10
     language: generic
     HOMEBREW_NO_INSTALL_CLEANUP: 1
     HOMEBREW_NO_ANALYTICS: 1
