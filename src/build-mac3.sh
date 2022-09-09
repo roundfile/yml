@@ -13,8 +13,9 @@ if [ ! -z $APPVEYOR ]; then
 #    export PYTHON=/Users/appveyor/venv3.9 # venv3.9 => venv3.9.6
 #    export PYTHONBIN=$PYTHON/bin
 #    export PYTHONPATH=$PYTHON/lib/python${PYTHON_V}
-    export PYTHON_V=3.10
-    export PYTHON=/usr/local/opt/python@3.10
+#dave    export PYTHON_V=3.10
+#dave    export PYTHON=/usr/local/opt/python@3.10
+    export PYTHON=/usr/local/opt/python@${PYTHON_V}
     export PYTHONBIN=$PYTHON/bin
     export PYTHONPATH=/usr/local/lib/python${PYTHON_V}
 
