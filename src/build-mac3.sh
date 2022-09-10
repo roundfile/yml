@@ -22,14 +22,6 @@ if [ ! -z $APPVEYOR ]; then
 
 #dave    export MACOSX_DEPLOYMENT_TARGET=10.15
 #    export DYLD_LIBRARY_PATH=$PYTHON/lib:$DYLD_LIBRARY_PATH
-s/PyQt6/Qt6
-    export QT_SRC_PATH=~/Qt/6.2.3/macos
-    export PYUIC=pyuic6
-    export PYRCC=pyrcc6
-    export PYLUPDATE=./pylupdate6pro
-
-    export MACOSX_DEPLOYMENT_TARGET=10.15
-    export DYLD_LIBRARY_PATH=$PYTHON/lib:$DYLD_LIBRARY_PATH
 fi
 
 export PATH=$PYTHON/bin:$PYTHON/lib:$PATH
