@@ -18,4 +18,4 @@ pip install -r src/requirements-${ARTISAN_OS}.txt
 # the Phidget Python libs are installed via pid from requirements.txt
 #.ci/install-phidgets.sh
 #.ci/install-snap7.sh
-cp -f ${PYTHON_PATH}/snap7/lib/libsnap7.so /usr/lib
+sudo cp -f ${PYTHON_PATH}/snap7/lib/libsnap7.so /usr/lib

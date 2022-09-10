@@ -9,12 +9,12 @@ clone_depth: 1
 
 environment:
   matrix:
-  - job_name: windows_legacy
-    appveyor_build_worker_image: Visual Studio 2019
-  - job_name: windows
-    appveyor_build_worker_image: Visual Studio 2019
-  - job_name: macos
-    appveyor_build_worker_image: macos
+#  - job_name: windows_legacy
+#    appveyor_build_worker_image: Visual Studio 2019
+#  - job_name: windows
+#    appveyor_build_worker_image: Visual Studio 2019
+#  - job_name: macos
+#    appveyor_build_worker_image: macos
   - job_name: linux
     appveyor_build_worker_image: Ubuntu2004
 #  - job_name: rpi
@@ -135,11 +135,11 @@ for:
     ARTISAN_OS: osx
     #dave PYTHON: ~/venv3.10
     PYTHON_V: 3.10
-    language: generic
-    HOMEBREW_NO_INSTALL_CLEANUP: 1
-    HOMEBREW_NO_ANALYTICS: 1
+#    language: generic
+#    HOMEBREW_NO_INSTALL_CLEANUP: 1
+#    HOMEBREW_NO_ANALYTICS: 1
     MACOSX_DEPLOYMENT_TARGET: 10.15
-    PYTHON_PATH: /usr/local/lib/python${PYTHON_V}/site-packages
+#    PYTHON_PATH: /usr/local/lib/python${PYTHON_V}/site-packages
 
   install:
     - echo "MacOS Install"
@@ -179,12 +179,13 @@ for:
 
   environment:
     ARTISAN_OS: linux
-    PYTHON: $HOME/venv3.10
+    PYTHON_V: 3.10
+#    PYTHON: $HOME/venv3.10
     #PYTHON: $HOME/venv3.9.10
     # NOTE: there is an issue with Python 3.10.0 and pyinstaller fixed in Python 3.10.1 (not yet available on appveyor)
     # see pyinstaller Issue #6301
-    PYTHON_PATH: /home/appveyor/venv3.10/lib/python3.10/site-packages
-    QT_PATH: ${PYTHON_PATH}/PyQt6/Qt6
+#    PYTHON_PATH: /home/appveyor/venv3.10/lib/python3.10/site-packages
+#    QT_PATH: ${PYTHON_PATH}/PyQt6/Qt6
 
   install:
     - echo "Linux Install"
