@@ -32,7 +32,7 @@ set -e # reduced logging
 #brew install python@3.10
 #brew unlink python@3.9
 #brew link --force python@3.10
-export PATH="/usr/local/opt/python@3.10/bin:$PATH"
+export PATH="/usr/local/opt/python@${PYTHON_V}/bin:$PATH"
 
 hash -r
 which python3
@@ -73,4 +73,5 @@ sudo rm -rf /usr/local/opt/python@3.10/lib/python3.9/site-packages/matplotlib/mp
 sudo rm -rf /usr/local/opt/python@3.10/Frameworks/Python.framework/Versions/3.10/lib/python3.9/site-packages/matplotlib/mpl-data/sample_data
 
 #.ci/install-phidgets.sh # now installed via pip
-.ci/install-snap7.sh
+#.ci/install-snap7.sh
+cp -f ${PYTHON_PATH}/snap7/lib/libsnap7.dylib /usr/local/lib

@@ -19,5 +19,3 @@ fi
 curl -k -L -O https://netcologne.dl.sourceforge.net/project/snap7/${version}/snap7-full-${version}.7z
 7z x -bd snap7-full-${version}.7z
 (cd snap7-full-${version}/build/${os} && make -f ${mkfile}.mk -j4 all && sudo make -f ${mkfile}.mk LibInstall=${libinstall} install)
-echo "*********** SNAP7 ************"
-ls ${PYTHON_PATH}/snap7/lib
