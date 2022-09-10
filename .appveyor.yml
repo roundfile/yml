@@ -139,7 +139,7 @@ for:
 #    HOMEBREW_NO_INSTALL_CLEANUP: 1
 #    HOMEBREW_NO_ANALYTICS: 1
     MACOSX_DEPLOYMENT_TARGET: 10.15
-    PYTHONPATH: /usr/local/lib/python${PYTHON_V}/site-packages
+    PYTHONPATH: /usr/local/lib/python${PYTHON_V}
 
   install:
     - echo "MacOS Install"
