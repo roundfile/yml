@@ -3,8 +3,9 @@
 
 ::
 :: script comandline option LEGACY used to flag a legacy build
+::
 :: when running locally these paths need to be set here
-::   normally they are set in appveyor.yml
+::   normally the oaths are set in appveyor.yml
 ::
 setlocal enabledelayedexpansion
 if /i "%APPVEYOR%" NEQ "True" (
