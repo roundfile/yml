@@ -90,7 +90,7 @@ curl -L -O %VC_REDIST%
 ::
 :: copy the snap7 binary
 ::
-%PYTHON_PATH%\Lib\site-packages\snap7\lib\snap7.dll c:\windows
+copy /Y %PYTHON_PATH%\Lib\site-packages\snap7\lib\snap7.dll c:\windows
 
 echo curl libusb-win32
 curl -k -L -O https://netcologne.dl.sourceforge.net/project/libusb-win32/libusb-win32-releases/1.2.6.0/libusb-win32-bin-1.2.6.0.zip
