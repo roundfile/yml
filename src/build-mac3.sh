@@ -12,13 +12,6 @@ if [ ! -z $APPVEYOR ]; then
     export PYTHONBIN=$PYTHON/bin
     export PYTHONPATH=/usr/local/lib/python${PYTHON_V}
 
-# for PyQt5:
-#    export PYLUPDATE=$PYTHONBIN/pylupdate5
-#    export QT_PATH=${PYTHONPATH}/site-packages/PyQt5/Qt5 # from PyQt v5.15.4 this dir changed form PyQt5/Qt to PyQt5/Qt5
-#    export QT_SRC_PATH=${QT_PATH}
-#    export PYUIC=pyuic5
-#    export PYRCC=pyrcc5
-
 # for PyQt6
     export QT_PATH=${PYTHONPATH}/site-packages/PyQt6/Qt6
     export QT_SRC_PATH==${QT_PATH}
