@@ -74,4 +74,4 @@ sudo rm -rf /usr/local/opt/python@3.10/Frameworks/Python.framework/Versions/3.10
 
 #.ci/install-phidgets.sh # now installed via pip
 #.ci/install-snap7.sh
-cp -f ${PYTHON_PATH}/snap7/lib/libsnap7.dylib /usr/local/lib
+cp -f ${PYTHONPATH}/snap7/lib/libsnap7.dylib /usr/local/lib

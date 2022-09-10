@@ -10,7 +10,8 @@ if [ ! -z $APPVEYOR ]; then
     echo "NOTICE: Appveyor build"
     export PYTHON=/usr/local/opt/python@${PYTHON_V}
     export PYTHONBIN=$PYTHON/bin
-    export PYTHONPATH=/usr/local/lib/python${PYTHON_V}
+    #PYTHONPATH set in appveyor.yml
+#    export PYTHONPATH=/usr/local/lib/python${PYTHON_V}
 
 # for PyQt6
     export QT_PATH=${PYTHONPATH}/site-packages/PyQt6/Qt6
