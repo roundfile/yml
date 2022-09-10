@@ -186,6 +186,8 @@ for:
     # see pyinstaller Issue #6301
 #    PYTHON_PATH: /home/appveyor/venv3.10/lib/python3.10/site-packages
 #    QT_PATH: ${PYTHON_PATH}/PyQt6/Qt6
+    PYTHON_PATH: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
+
 
   install:
     - echo "Linux Install"
