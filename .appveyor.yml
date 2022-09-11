@@ -55,7 +55,7 @@ for:
 
   install:
     - cmd: echo version
-    - cmd: echo %%version%%
+    - cmd: %version%
     - cmd: echo Windows Legacy Install
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
     - cmd: .ci\install-win.bat LEGACY
