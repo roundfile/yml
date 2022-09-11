@@ -54,7 +54,7 @@ for:
     UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
-    - cmd: scho version
+    - cmd: echo version
     - cmd: echo %version%
     - cmd: echo Windows Legacy Install
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
