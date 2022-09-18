@@ -179,8 +179,8 @@ for:
   environment:
     ARTISAN_OS: linux
     PYTHON_V: 3.10
-    PYTHON: /home/appveyor/venv${PYTHON_V}
-    PYTHON_PATH: $PYTHON/lib/python${PYTHON_V}/site-packages
+    PYTHON: $HOME/venv${PYTHON_V}
+    PYTHON_PATH: $HOME/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
     #PYTHON_PATH: ${PYTHON}/lib/python${PYTHON_V}/site-packages
     #PYTHON: $HOME/venv3.10.2
     #PYTHON: $HOME/venv3.9.10
