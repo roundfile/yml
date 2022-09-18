@@ -11,8 +11,7 @@ if [ ! -z $APPVEYOR ]; then
     # Appveyor environment
     echo "NOTICE: Appveyor build"
     #PYTHON_PATH passed from appveyor.yml
-    #dave debug export QT_PATH=$PYTHON_PATH/PyQt6/Qt6
-    export QT_PATH=/home/appveyor/venv3.10.6/lib/python3.10/site-packages/PyQt6/Qt6
+    export QT_PATH=$PYTHON_PATH/PyQt6/Qt6
 elif [ -d /usr/lib/python3/dist-packages/PyQt5 ]; then
     # ARM builds
     export PYTHON_PATH=`python3 -m site --user-site`

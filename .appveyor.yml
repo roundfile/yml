@@ -179,31 +179,24 @@ for:
   environment:
     ARTISAN_OS: linux
     PYTHON_V: 3.10
-    PYTHON: $HOME/venv${PYTHON_V}
-    PYTHON_PATH: $HOME/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
-    PASTA: ${HOME}
-    #PYTHON_PATH: ${PYTHON}/lib/python${PYTHON_V}/site-packages
-    #PYTHON: $HOME/venv3.10.2
-    #PYTHON: $HOME/venv3.9.10
+    PYTHON: /home/appveyor/venv${PYTHON_V}
+    PYTHON_PATH: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
     # NOTE: there is an issue with Python 3.10.0 and pyinstaller fixed in Python 3.10.1 (not yet available on appveyor)
     # see pyinstaller Issue #6301
 
   install:
     - echo "Linux Install"
-    #debug
-    - chmod +x echo.sh
-    - ./echo.sh
     - chmod +x .ci/*.sh
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
     # run the install script
-#    - .ci/install-${ARTISAN_OS}.sh
+    - .ci/install-${ARTISAN_OS}.sh
 
   build_script:
     - echo "Linux Build"
-#    - chmod +x src/*.sh
-#    - .ci/script-${ARTISAN_OS}.sh
+    - chmod +x src/*.sh
+    - .ci/script-${ARTISAN_OS}.sh
 
   test_script:
     - QT_QPA_PLATFORM=offscreen python -m unittest discover -s src
