@@ -54,8 +54,6 @@ for:
     UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
-    - cmd: echo version
-    - cmd: echo $version
     - cmd: echo Windows Legacy Install
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
     - cmd: .ci\install-win.bat LEGACY
@@ -135,17 +133,16 @@ for:
 
   environment:
     ARTISAN_OS: osx
-    #dave PYTHON: ~/venv3.10
     PYTHON_V: 3.10
-#    language: generic
-#    HOMEBREW_NO_INSTALL_CLEANUP: 1
-#    HOMEBREW_NO_ANALYTICS: 1
-    MACOSX_DEPLOYMENT_TARGET: 10.15
     PYTHONPATH: /usr/local/lib/python${PYTHON_V}
+    MACOSX_DEPLOYMENT_TARGET: 10.15
+    #PYTHON: ~/venv3.10
+    #language: generic
+    #HOMEBREW_NO_INSTALL_CLEANUP: 1
+    #HOMEBREW_NO_ANALYTICS: 1
 
   install:
     - echo "MacOS Install"
-    - export TEST_V=${PYTHON}
     - chmod +x .ci/*.sh
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
@@ -154,7 +151,7 @@ for:
     - .ci/install-${ARTISAN_OS}.sh
 
   build_script:
-    - echo "MacOS Build" 
+    - echo "MacOS Build"
     - chmod +x src/*.sh
     - chmod +x src/pylupdate6pro
     - .ci/script-${ARTISAN_OS}.sh
@@ -182,14 +179,11 @@ for:
   environment:
     ARTISAN_OS: linux
     PYTHON_V: 3.10
-#    PYTHON: $HOME/venv3.10
+    PYTHON_PATH: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
+    #PYTHON: $HOME/venv3.10.2
     #PYTHON: $HOME/venv3.9.10
     # NOTE: there is an issue with Python 3.10.0 and pyinstaller fixed in Python 3.10.1 (not yet available on appveyor)
     # see pyinstaller Issue #6301
-#    PYTHON_PATH: /home/appveyor/venv3.10/lib/python3.10/site-packages
-#    QT_PATH: ${PYTHON_PATH}/PyQt6/Qt6
-    PYTHON_PATH: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
-
 
   install:
     - echo "Linux Install"

@@ -248,8 +248,6 @@ class RoastProfile():
                 self.metadata['roastdate'] = QDateTime.fromSecsSinceEpoch(profile['roastepoch'])
             except Exception: # pylint: disable=broad-except
                 pass
-#dave
-        # build roast of the day string
         if 'roastbatchnr' in profile and profile['roastbatchnr'] != 0 and 'roastbatchpos' in profile and profile['roastbatchpos'] != 0:
             if self.aw.locale_str == 'en':
                 if profile['roastbatchpos'] in [1,21,31,41]:
@@ -262,7 +260,6 @@ class RoastProfile():
                     self.metadata['roastoftheday'] = f'{profile["roastbatchpos"]}th Roast of the Day'
             else:
                 self.metadata['roastoftheday'] = f'{aw.qmc.roastbatchpos} {QApplication.translate("AddlInfo", "Roast of the Day")}'
-
         if 'beans' in profile:
             self.metadata['beans'] = decodeLocal(profile['beans'])
         if 'weight' in profile and profile['weight'][0] != 0.0:
@@ -1227,7 +1224,6 @@ class roastCompareDlg(ArtisanDialog):
                 if 'roastdate' in profile.metadata:
                     tooltip = profile.metadata['roastdate'].date().toString()
                     tooltip += ', ' + profile.metadata['roastdate'].time().toString()[:-3]
-#dave
                 if 'roastoftheday' in profile.metadata:
                     if tooltip != '':
                         tooltip += '\n'
@@ -1482,7 +1478,9 @@ class roastCompareDlg(ArtisanDialog):
                         (self.cb.itemCheckState(3) == Qt.CheckState.Checked and self.cb.itemCheckState(2) != Qt.CheckState.Checked and self.aw.qmc.autodeltaxET) : # DeltaBT
                         dmax = max(dmax,rp.max_DeltaBT)
             if dmax > 0:
+                dmax = int(dmax) + 1
                 self.aw.qmc.delta_ax.set_ylim(top=dmax) # we only autoadjust the upper limit
+                self.aw.qmc.zlimit = int(round(dmax))
 
     def recompute(self):
         for rp in self.profiles:

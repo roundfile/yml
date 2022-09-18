@@ -8,10 +8,24 @@ set -e  # reduced logging
 if [ ! -z $APPVEYOR ]; then
     # Appveyor CI builds
     echo "NOTICE: Appveyor build"
+#    export PYTHON_V=3.9
+#    export PYTHON=/Users/appveyor/venv3.9 # venv3.9 => venv3.9.6
+#    export PYTHONBIN=$PYTHON/bin
+#    export PYTHONPATH=$PYTHON/lib/python${PYTHON_V}
+#    export PYTHON_V=3.10
+#    export PYTHON=/usr/local/opt/python@3.10
+#    export PYTHONBIN=$PYTHON/bin
+#    export PYTHONPATH=/usr/local/lib/python${PYTHON_V}
     export PYTHON=/usr/local/opt/python@${PYTHON_V}
     export PYTHONBIN=$PYTHON/bin
     #PYTHONPATH set in appveyor.yml
-#    export PYTHONPATH=/usr/local/lib/python${PYTHON_V}
+
+# for PyQt5:
+#    export PYLUPDATE=$PYTHONBIN/pylupdate5
+#    export QT_PATH=${PYTHONPATH}/site-packages/PyQt5/Qt5 # from PyQt v5.15.4 this dir changed form PyQt5/Qt to PyQt5/Qt5
+#    export QT_SRC_PATH=${QT_PATH}
+#    export PYUIC=pyuic5
+#    export PYRCC=pyrcc5
 
 # for PyQt6
     export QT_PATH=${PYTHONPATH}/site-packages/PyQt6/Qt6
@@ -20,6 +34,8 @@ if [ ! -z $APPVEYOR ]; then
     export PYRCC=pyrcc6
     export PYLUPDATE=./pylupdate6pro
 
+#    export MACOSX_DEPLOYMENT_TARGET=10.15  #now set in appveyor.yml
+#    export DYLD_LIBRARY_PATH=$PYTHON/lib:$DYLD_LIBRARY_PATH  #unused?
 else
     # standard local builds
     echo "NOTICE: Standard build"
@@ -57,7 +73,7 @@ if [ -z $APPVEYOR ]; then
     # ui
     find ui -iname "*.ui" | while read f
     do
-       fullfilename=$(basename $f)
+        fullfilename=$(basename $f)
         fn=${fullfilename%.*}
         if [ "$PYUIC" == "pyuic5" ]; then
             $PYUIC -o uic/${fn}.py --from-imports ui/${fn}.ui
@@ -98,4 +114,3 @@ rm -rf build dist
 sleep .3 # sometimes it takes a little for dist to get really empty
 echo "************* 3 **************"
 $PYTHONBIN/python3 setup-mac3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'
- 
