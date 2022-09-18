@@ -180,8 +180,8 @@ for:
     ARTISAN_OS: linux
     PYTHON_V: 3.10
     PYTHON: $HOME/venv${PYTHON_V}
-    #PYTHON_PATH: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
-    PYTHON_PATH: ${PYTHON}/lib/python${PYTHON_V}/site-packages
+    PYTHON_PATH: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
+    #PYTHON_PATH: ${PYTHON}/lib/python${PYTHON_V}/site-packages
     #PYTHON: $HOME/venv3.10.2
     #PYTHON: $HOME/venv3.9.10
     # NOTE: there is an issue with Python 3.10.0 and pyinstaller fixed in Python 3.10.1 (not yet available on appveyor)
