@@ -190,6 +190,8 @@ for:
   install:
     - echo "Linux Install"
     - echo ${HOME}
+    - echo ${PYTHON}
+    - echo ${PYTHON_PATH}
     - chmod +x .ci/*.sh
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
