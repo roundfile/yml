@@ -190,21 +190,19 @@ for:
 
   install:
     - echo "Linux Install"
-    - echo ${HOME}
-    - echo ${PASTA}
-    - echo ${PYTHON}
-    - echo ${PYTHON_PATH}
+    #debug
+    - ./echo.sh
     - chmod +x .ci/*.sh
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
     # run the install script
-    - .ci/install-${ARTISAN_OS}.sh
+#    - .ci/install-${ARTISAN_OS}.sh
 
   build_script:
     - echo "Linux Build"
-    - chmod +x src/*.sh
-    - .ci/script-${ARTISAN_OS}.sh
+#    - chmod +x src/*.sh
+#    - .ci/script-${ARTISAN_OS}.sh
 
   test_script:
     - QT_QPA_PLATFORM=offscreen python -m unittest discover -s src
