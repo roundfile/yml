@@ -1,5 +1,5 @@
 #!/bin/sh
 
 echo ${HOME}
-export FAZOOL= ${HOME}/butterball
+export FAZOOL=${HOME}/butterball
 echo ${FAZOOL}
