@@ -11,3 +11,5 @@ echo ${PYTHON_PATH}
 #wget -c https://github.com/AppImage/pkg2appimage/releases/download/continuous/pkg2appimage-1807-x86_64.AppImage
 echo wget -c https://github.com/AppImage/pkg2appimage/releases/pkg2appimage-1807-x86_64.AppImage
 wget -c https://github.com/AppImage/pkg2appimage/releases -O foo.txt
+echo cat foo.txt
+cat foo.txt
