@@ -16,5 +16,7 @@ echo cat foo.txt
 echo ------------
 cat foo.txt
 
+echo ------------
 echo https://github.com/AppImage/pkg2appimage/releases -O - | grep "pkg2appimage-.*-x86_64.AppImage" | head -n 1 | cut -d '"' -f 2
+echo ------------
 https://github.com/AppImage/pkg2appimage/releases -O - | grep "pkg2appimage-.*-x86_64.AppImage" | head -n 1 | cut -d '"' -f 2
