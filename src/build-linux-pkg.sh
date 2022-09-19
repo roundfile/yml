@@ -78,9 +78,6 @@ mv *.deb ${NAME}.deb
 export ARCH=x86_64
 # Create AppImage by using the pkg2appimage tool
 #dave debug wget -c https://github.com/$(wget -q https://github.com/AppImage/pkg2appimage/releases -O - | grep "pkg2appimage-.*-x86_64.AppImage" | head -n 1 | cut -d '"' -f 2)
-echo wget -c https://github.com/AppImage/pkg2appimage/releases/pkg2appimage-1807-x86_64.AppImage
-wget -c https://github.com/AppImage/pkg2appimage/releases/pkg2appimage-1807-x86_64.AppImage
-chmod +x ./pkg2appimage-*.AppImage
 ARCH=x86_64 ./pkg2appimage-*.AppImage artisan-AppImage.yml
 
 mv ./out/*.AppImage ${NAME}.AppImage
