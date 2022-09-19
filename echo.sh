@@ -17,6 +17,6 @@ echo ------------
 cat foo.txt
 
 echo ------------
-echo "wget -c https://github.com/AppImage/pkg2appimage/releases -O - pipe grep "pkg2appimage-.*-x86_64.AppImage" pipe head -n 1 pipe cut -d '"' -f 2
+echo wget -c https://github.com/AppImage/pkg2appimage/releases -O - pipe grep "pkg2appimage-.*-x86_64.AppImage" pipe head -n 1 pipe cut -d '"' -f 2
 echo ------------
 wget -c https://github.com/AppImage/pkg2appimage/releases -O - | grep "pkg2appimage-.*-x86_64.AppImage" | head -n 1 | cut -d '"' -f 2
