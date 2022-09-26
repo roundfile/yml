@@ -9,12 +9,12 @@ clone_depth: 1
 
 environment:
   matrix:
-#  - job_name: windows_legacy
-#    appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: windows
-#    appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: macos
-#    appveyor_build_worker_image: macos
+  - job_name: windows_legacy
+    appveyor_build_worker_image: Visual Studio 2019
+  - job_name: windows
+    appveyor_build_worker_image: Visual Studio 2019
+  - job_name: macos
+    appveyor_build_worker_image: macos
   - job_name: linux
     appveyor_build_worker_image: Ubuntu2004
 #  - job_name: rpi
@@ -47,7 +47,7 @@ for:
     PYTHON_PATH: "C:\\Python38-x64"
     QT_PATH: "c:\\qt\\5.15\\msvc2019_64"
     PYUIC: "pyuic5.exe"
-    PYINSTALLER_VER: "5.2"
+    PYINSTALLER_VER: "5.4.1"
     BUILD_PYINSTALLER: "True"
     ARTISAN_LEGACY: "True"
     VC_REDIST: "https://aka.ms/vs/16/release/vc_redist.x64.exe"
@@ -91,7 +91,7 @@ for:
     PYTHON_PATH: "C:\\Python310-x64"
     QT_PATH: "C:\\qt\\6.2\\msvc2019_64"
     PYUIC: "pyuic6.exe"
-    PYINSTALLER_VER: "5.2"
+    PYINSTALLER_VER: "5.4.1"
     BUILD_PYINSTALLER: "True"
     ARTISAN_LEGACY: "False"
     VC_REDIST: "https://aka.ms/vs/17/release/vc_redist.x64.exe"
@@ -179,17 +179,14 @@ for:
   environment:
     ARTISAN_OS: linux
     PYTHON_V: 3.10
-    PYTHON: /home/appveyor/venv${PYTHON_V}
     PYTHON_PATH: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
+    #PYTHON: $HOME/venv3.10.2
+    #PYTHON: $HOME/venv3.9.10
     # NOTE: there is an issue with Python 3.10.0 and pyinstaller fixed in Python 3.10.1 (not yet available on appveyor)
     # see pyinstaller Issue #6301
 
   install:
     - echo "Linux Install"
-    
-#    - chmod +x echo.sh
-#    - ./echo.sh
-
     - chmod +x .ci/*.sh
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`

@@ -11,6 +11,7 @@ if [ ! -z $APPVEYOR ]; then
     # Appveyor environment
     echo "NOTICE: Appveyor build"
     #PYTHON_PATH passed from appveyor.yml
+    #export PYTHON_PATH=/home/appveyor/venv3.10.6/lib/python3.10/site-packages
     export QT_PATH=$PYTHON_PATH/PyQt6/Qt6
 elif [ -d /usr/lib/python3/dist-packages/PyQt5 ]; then
     # ARM builds
@@ -34,8 +35,7 @@ else
     ln -s /usr/lib/libusb-1.0.so.0
 fi
 
-pyinstaller -D -n artisan -y -c --hidden-import scipy._lib.messagestream \
-	    --log-level=INFO artisan-linux.spec
+pyinstaller -y --log-level=INFO artisan-linux.spec
 
 mv dist/artisan dist/artisan.d
 mv dist/artisan.d/* dist

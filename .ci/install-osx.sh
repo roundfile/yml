@@ -58,6 +58,7 @@ sudo -H python3 -m pip install -r src/requirements-${ARTISAN_OS}.txt
 
 # copy the snap7 binary installed by pip
 cp -f ${PYTHONPATH}/site-packages/snap7/lib/libsnap7.dylib /usr/local/lib
+
 # use a custom py2app v0.23 with apptemplate main-x86_64 build for
 # target 10.13 using MacOSX10.15.sdk build on macOS 10.15 to add dark-mode support to builds
 #sudo -H python3 -m pip install .ci/py2app-0.23-py2.py3-none-any.whl

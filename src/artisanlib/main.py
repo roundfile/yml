@@ -697,11 +697,13 @@ class tphasescanvas(FigureCanvas):
     #   (label, total_time, (phase1_time, phase2_time, phase3_time), active, color)
     # each time value in the tripple is in seconds and can be 0 if corresponding phase is missing
     # active is of type bool indicating the state of the corresponding profile
+    # aligned is of type bool indicating that the profile is aligned to the current selected alignment target
     # color is a regular color string like '#00b950'
     def set_phases(self, data):
         self.data = data
 
     # updates the phases graphs data and redraws its canvas
+    # side condition: only profile data of visible profiles are contained in data
     def update_phases(self, data):
         self.set_phases(data)
         self.redraw_phases()
@@ -735,8 +737,8 @@ class tphasescanvas(FigureCanvas):
             i = 0
             # add bars
             for p in self.data:
-                label, total_time, phases_times, active, color = p
-                if not active:
+                label, total_time, phases_times, active, aligned, color = p
+                if not (active and aligned):
                     color = toGrey(color)
                 rects = None
                 if all(phases_times):
@@ -26681,7 +26683,7 @@ class ApplicationWindow(QMainWindow):
                     self.qmc.fig.canvas.draw()
                 return
             if currentevent > lenevents:
-                self.eNumberSpinBox.setValue(lenevents)
+                self.eNumberSpinBox.setValue(int(lenevents))
                 return
             self.lineEvent.setText(self.qmc.specialeventsStrings[currentevent-1])
             if aw.qmc.timeindex[0] > -1:
@@ -27275,7 +27277,7 @@ class ApplicationWindow(QMainWindow):
                 self.loadbackground(filename)
                 self.qmc.background = not self.qmc.hideBgafterprofileload
                 self.autoAdjustAxis()
-                self.qmc.timealign(redraw=True)
+                self.qmc.timealign(redraw=True, recompute=True)
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
                 self.deleteBackground() # delete a loaded background if any
