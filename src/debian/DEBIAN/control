@@ -1,6 +1,6 @@
 Source: artisan
 Package: artisan
-Version: _VERSION_
+Version: 2.6.1
 Section: misc
 Depends: libc6 (>= 2.17)
 Priority: extra
