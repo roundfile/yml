@@ -30,8 +30,11 @@ try:
     from PyQt6 import QtBluetooth # @UnusedImport @Reimport  @UnresolvedImport
 except Exception: # pylint: disable=broad-except
     #ylint: disable = E, W, R, C
-    from PyQt5 import QtCore # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt5 import QtBluetooth # @UnusedImport @Reimport  @UnresolvedImport
+    try:
+        from PyQt5 import QtCore # @UnusedImport @Reimport  @UnresolvedImport
+        from PyQt5 import QtBluetooth # @UnusedImport @Reimport  @UnresolvedImport
+    except Exception:
+        pass
 
 
 _log: Final = logging.getLogger(__name__)
