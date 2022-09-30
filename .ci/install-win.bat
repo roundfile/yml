@@ -96,9 +96,3 @@ echo curl libusb-win32
 curl -k -L -O https://netcologne.dl.sourceforge.net/project/libusb-win32/libusb-win32-releases/1.2.6.0/libusb-win32-bin-1.2.6.0.zip
 7z x libusb-win32-bin-1.2.6.0.zip
 copy libusb-win32-bin-1.2.6.0\bin\amd64\libusb0.dll C:\Windows\SysWOW64
-
-::
-:: Hack to fix QTBluetooth in legacy builds with PyQt5.15.5
-copy %PYTHON_PATH%\Lib\site-packages\PyQt5\Qt5\bin\Qt5Bluetooth.dll %PYTHON_PATH%\Lib\site-packages\PyQt5\QtBluetooth.dll
-echo --- DIR OF PyQt5 ---
-dir %PYTHON_PATH%\Lib\site-packages\PyQt5

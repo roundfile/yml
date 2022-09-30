@@ -50,7 +50,9 @@ for:
     PYINSTALLER_VER: "5.4.1"
     BUILD_PYINSTALLER: "True"
     ARTISAN_LEGACY: "True"
-    VC_REDIST: "https://aka.ms/vs/16/release/vc_redist.x64.exe"
+    #VC_REDIST: "https://aka.ms/vs/16/release/vc_redist.x64.exe"
+    #use th e latest redist
+    VC_REDIST: "https://aka.ms/vs/17/release/vc_redist.x64.exe"
     UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
