@@ -265,9 +265,9 @@ def fill_gaps(l, interpolate_max=3):
 # for the platform
 # note that the path is based on the ApplicationName and OrganizationName
 # setting of the app
-# eg. ~/Library/Application Support/artisan-Scope/Artisan (macOS)
-#     C:/Users/<USER>/AppData/Local/artisan-Scope/Artisan" (Windows)
-#     ~/.local/shared/artisan-scope/Artisan" (Linux)
+# eg. ~/Library/Application Support/artisan-scope/Artisan (macOS)
+#     C:\Users\<USER>\AppData\Local\artisan-scope\Artisan (Windows)
+#     ~/.local/shared/artisan-scope/Artisan (Linux)
 
 # getDataDirectory() returns the Artisan data directory
 # if app is not yet initialized None is returned
@@ -443,6 +443,20 @@ def debugLogLevelToggle() -> bool:
     setDebugLogLevel(newDebugLevel)
     return newDebugLevel
 
-
 def natsort(s):
     return [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', s)]
+
+#convert number to string an auto set the number of decimal places 0, 0.999, 9.99, 999.9, 9999
+def scaleFloat2String(num):
+    n = toFloat(num)
+    if n == 0:
+        res = '0'
+    elif abs(n) < 1:
+        res = f'{n:.3f}'.rstrip('0').rstrip('.')
+    elif abs(n) >= 1000:
+        res = f'{n:.0f}'
+    elif abs(n) >= 100:
+        res = f'{n:.1f}'.rstrip('0').rstrip('.')
+    else:
+        res = f'{n:.2f}'.rstrip('0').rstrip('.')
+    return res

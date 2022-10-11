@@ -226,7 +226,7 @@ from artisanlib.util import (appFrozen, stringp, uchr, decodeLocal, encodeLocal,
         fromFtoC, fromCtoF, RoRfromFtoC, RoRfromCtoF, convertRoR, convertTemp, path2url, toInt, toString, toList, toFloat,
         toBool, toStringList, toMap, removeAll, application_name, application_viewer_name, application_organization_name,
         application_organization_domain, getDataDirectory, getAppPath, getResourcePath, getDirectory, debugLogLevelToggle,
-        debugLogLevelActive, setDebugLogLevel, abbrevString, createGradient, natsort, toGrey, toDim)
+        debugLogLevelActive, setDebugLogLevel, abbrevString, createGradient, natsort, toGrey, toDim, scaleFloat2String)
 
 from artisanlib.qtsingleapplication import QtSingleApplication
 from artisanlib.filters import LiveMedian
@@ -2505,7 +2505,7 @@ class tgraphcanvas(FigureCanvas):
         self.dropDuplicates = False
         self.dropDuplicatesLimit = 0.3
 
-        self.liveMedianRoRfilter = LiveMedian(5) # the offline filter uses a window length of 5, but does not introduce any delay. This is a compromize
+        self.liveMedianRoRfilter = LiveMedian(5) # the offline filter uses a window length of 5, introducing some delay, compared to the medfilt() in offline mode which does not introduce any delay
 
         self.interpolatemax = 3 # maximal number of dropped readings (-1) that will be interpolated
 
@@ -3469,9 +3469,11 @@ class tgraphcanvas(FigureCanvas):
                     # Mark starting point of click-and-drag with a marker
                     self.base_horizontalcrossline, = self.ax.plot(self.baseX,self.baseY,'r+', markersize=20)
                     self.base_verticalcrossline, = self.ax.plot(self.baseX,self.baseY,'wo', markersize = 2)
-            elif event.button == 3 and event.inaxes and not self.designerflag and not self.wheelflag and not aw.ntb.mode == 'pan/zoom':# and not self.flagon:
+            elif event.button == 3 and event.inaxes and not self.designerflag and not self.wheelflag and not aw.ntb.mode in ['pan/zoom', 'zoom rect']:# and not self.flagon:
+                # popup not available if pan/zoom or zoom rect is active as it interacts
                 timex = self.time2index(event.xdata)
                 if timex > 0:
+                    # reset the zoom rectangles
                     menu = QMenu(aw) # if we bind this to self, we inherit the background-color: transparent from self.fig
 #                    menu.setStyleSheet("QMenu::item {background-color: palette(window); selection-color: palette(window); selection-background-color: darkBlue;}")
                     # populate menu
@@ -6854,6 +6856,7 @@ class tgraphcanvas(FigureCanvas):
             aw.qmc.roastbatchprefix = aw.qmc.batchprefix
 
             aw.sendmessage(QApplication.translate('Message','Scope has been reset'))
+            aw.AUClcd.setNumDigits(3)
             aw.buttonFCs.setDisabled(False)
             aw.buttonFCe.setDisabled(False)
             aw.buttonSCs.setDisabled(False)
@@ -9989,33 +9992,38 @@ class tgraphcanvas(FigureCanvas):
                         else:
                             loc = self.legend._loc # pylint: disable=protected-access
                         try:
-                            leg = self.ax.legend(self.handles,self.labels,loc=loc,ncol=ncol,fancybox=True,prop=prop,shadow=False,frameon=True)
+                            try:
+                                leg = self.ax.legend(self.handles,self.labels,loc=loc,ncols=ncol,fancybox=True,prop=prop,shadow=False,frameon=True)
+                            except Exception: # pylint: disable=broad-except
+                                # ncol keyword argument to legend renamed to ncols in MPL 3.6, thus for older MPL versions we need to still use ncol
+                                leg = self.ax.legend(self.handles,self.labels,loc=loc,ncol=ncol,fancybox=True,prop=prop,shadow=False,frameon=True)
+                            try:
+                                leg.set_in_layout(False) # remove legend from tight_layout calculation
+                            except Exception: # pylint: disable=broad-except # set_in_layout not available in mpl<3.x
+                                pass
+                            self.legend = leg
+                            self.legend_lines = leg.get_lines()
+                            for h in leg.legendHandles:
+                                h.set_picker(False) # we disable the click to hide on the handles feature
+                                #h.set_picker(aw.draggable_text_box_picker) # as setting this picker results in non-termination
+                            for l in leg.texts:
+                                #l.set_picker(5)
+                                l.set_picker(aw.draggable_text_box_picker)
+                            try:
+                                leg.set_draggable(state=True,use_blit=True)  #,update='bbox')
+                                leg.set_picker(aw.draggable_text_box_picker)
+                            except Exception: # pylint: disable=broad-except # not available in mpl<3.x
+                                leg.draggable(state=True) # for mpl 2.x
+                            frame = leg.get_frame()
+                            frame.set_facecolor(self.palette['legendbg'])
+                            frame.set_alpha(self.alpha['legendbg'])
+                            frame.set_edgecolor(self.palette['legendborder'])
+                            frame.set_linewidth(0.5)
+                            for line,text in zip(leg.get_lines(), leg.get_texts()):
+                                text.set_color(line.get_color())
                         except Exception: # pylint: disable=broad-except
                             pass
-                        try:
-                            leg.set_in_layout(False) # remove legend from tight_layout calculation
-                        except Exception: # pylint: disable=broad-except # set_in_layout not available in mpl<3.x
-                            pass
-                        self.legend = leg
-                        self.legend_lines = leg.get_lines()
-                        for h in leg.legendHandles:
-                            h.set_picker(False) # we disable the click to hide on the handles feature
-                            #h.set_picker(aw.draggable_text_box_picker) # as setting this picker results in non-termination
-                        for l in leg.texts:
-                            #l.set_picker(5)
-                            l.set_picker(aw.draggable_text_box_picker)
-                        try:
-                            leg.set_draggable(state=True,use_blit=True)  #,update='bbox')
-                            leg.set_picker(aw.draggable_text_box_picker)
-                        except Exception: # pylint: disable=broad-except # not available in mpl<3.x
-                            leg.draggable(state=True) # for mpl 2.x
-                        frame = leg.get_frame()
-                        frame.set_facecolor(self.palette['legendbg'])
-                        frame.set_alpha(self.alpha['legendbg'])
-                        frame.set_edgecolor(self.palette['legendborder'])
-                        frame.set_linewidth(0.5)
-                        for line,text in zip(leg.get_lines(), leg.get_texts()):
-                            text.set_color(line.get_color())
+
                         if aw.qmc.patheffects:
                             rcParams['path.effects'] = [PathEffects.withStroke(linewidth=aw.qmc.patheffects, foreground=self.palette['background'])]
                     else:
@@ -10467,6 +10475,21 @@ class tgraphcanvas(FigureCanvas):
             aw.qmc.adderror((QApplication.translate('Error Message','Exception:') + ' logoloadfile() {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             aw.logofilename = ''
 
+    #return a 'roast of the day' string with ordinals when english
+    def roastOfTheDay(self,roastbatchpos):
+        rotd_str = ''  #return an empty string if roastbatchpos is None
+        if roastbatchpos != None:
+            #add an ordinal suffix for english
+            if self.locale_str == 'en':
+                prefix = ''
+                ordinal_suffix = lambda x: f'{dict([(1, "st"),(2, "nd"),(3, "rd")]).get(0 if x % 100 in [11,12,13] else x % 10, "th")}'
+                suffix = ordinal_suffix(roastbatchpos)
+            else:
+                prefix = '#'
+                suffix = ''
+            rotd_str = f'{prefix}{roastbatchpos}{suffix} {QApplication.translate("AddlInfo", "Roast of the Day")}'
+        return rotd_str
+
     #add stats summary to graph
     def statsSummary(self):
         import textwrap
@@ -10490,21 +10513,8 @@ class tgraphcanvas(FigureCanvas):
                     aw.qmc.roastdate.time().toString()]
 
                 # build roast of the day string
-                if aw.qmc.roastbatchnr != None and aw.qmc.roastbatchnr != 0 and aw.qmc.roastbatchpos != None and aw.qmc.roastbatchpos != 0:
-                    if self.locale_str == 'en':
-                        roastoftheday_segments = [f'\n{aw.qmc.roastbatchpos}']
-                        if aw.qmc.roastbatchpos in [1,21,31,41]:
-                            roastoftheday_segments.append('st')
-                        elif aw.qmc.roastbatchpos in [2,22,32,42]:
-                            roastoftheday_segments.append('nd')
-                        elif aw.qmc.roastbatchpos in [3,23,33,43]:
-                            roastoftheday_segments.append('rd')
-                        elif aw.qmc.roastbatchpos > 3:
-                            roastoftheday_segments.append('th')
-                        statstr_segments.append(f'{roastoftheday_segments[0]}{roastoftheday_segments[1]}')
-                    else:
-                        statstr_segments.append(f'\n#{aw.qmc.roastbatchpos}')
-                    statstr_segments += [' ', QApplication.translate('AddlInfo', 'Roast of the Day')]
+                if aw.qmc.roastbatchpos != None and aw.qmc.roastbatchpos != 0:
+                    statstr_segments += [f'\n{self.roastOfTheDay(aw.qmc.roastbatchpos)}']
 
                 if aw.qmc.ambientTemp not in [None,0] or aw.qmc.ambient_humidity not in [None,0] or aw.qmc.ambient_pressure not in [None,0]:
                     statstr_segments.append(skipline)
@@ -11706,7 +11716,7 @@ class tgraphcanvas(FigureCanvas):
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
 
-            if recording and self.flagKeepON:
+            if recording and self.flagKeepON and len(self.timex) > 10:
                 self.OnMonitor()
 
         except Exception as ex: # pylint: disable=broad-except
@@ -15248,6 +15258,10 @@ class tgraphcanvas(FigureCanvas):
 
             self.releaseMouse()
             self.mousepress = False
+            # reset the zoom rectangles
+            aw.ntb.release_pan(event)
+            aw.ntb.release_zoom(event)
+            # set cursor
             self.setCursor(Qt.CursorShape.OpenHandCursor)
 
             self.currentx = event.xdata
@@ -17178,7 +17192,7 @@ class ApplicationWindow(QMainWindow):
         self.processingKeyEvent = False
 
         self.quickEventShortCut = None
-        # this is None if inactive, or holds a tuple (n,s) with n a number {1,..,4} indicating the custom event number
+        # this is None if inactive, or holds a tuple (n,s) with n a number {-1,..,4} indicating the custom event number (0-3), 4 for SV, or -1 for custom event buttons to be addressed
         # and s a string of length 0 (no digit yet), length 1 (if first digit is typed) or 2 (both digits are typed) indicating the value (00-99)
 
         # html2pdf() state:
@@ -17765,7 +17779,6 @@ class ApplicationWindow(QMainWindow):
         self.htmlAction.triggered.connect(self.htmlReport)
         self.htmlAction.setShortcut('Ctrl+R')
         self.roastReportMenu.addAction(self.htmlAction)
-
 
         self.productionMenu = self.reportMenu.addMenu(QApplication.translate('Menu', 'Batches'))
 
@@ -19230,7 +19243,7 @@ class ApplicationWindow(QMainWindow):
         self.AUClcd = QLCDNumber()
         self.AUClcd.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.AUClcd.customContextMenuRequested.connect(self.AUClcdClicked)
-        self.AUClcd.display('---')
+        self.AUClcd.display('--')
         self.AUClcdFrame = self.makePhasesLCDbox(self.AUClabel,self.AUClcd)
 #        self.AUClcdFrame.setFrameStyle(QFrame.Shadow.Plain)
         self.AUClcd.setNumDigits(3)
@@ -20636,8 +20649,7 @@ class ApplicationWindow(QMainWindow):
         if action:
             label = (action.text() if action.data()[1] == '' else f'{action.data()[1]} {action.text()}')
             label = label.replace('&&','&') # we reduce those && again to & that were introduced to have the & rendered in the menu entry
-            string = QApplication.translate('Message', 'Configure for {0}?<br><br>Your current settings will be overwritten!<br><br>'+
-                    'It is advisable to save your current settings beforehand via menu Help >> Save Settings.').format(label)
+            string = QApplication.translate('Message', 'Configure for {0}?<br><br>Your current settings will be overwritten!<br><br>It is advisable to save your current settings beforehand via menu Help >> Save Settings.').format(label)
             reply = QMessageBox.question(aw,QApplication.translate('Message', 'Adjust Settings'),string,
                 QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.Cancel)
             if reply == QMessageBox.StandardButton.Cancel:
@@ -22443,14 +22455,19 @@ class ApplicationWindow(QMainWindow):
                 (aw.qmc.AUCbegin == 1 and aw.qmc.TPalarmtimeindex) or
                 (aw.qmc.AUCbegin == 2 and self.qmc.timeindex[1] > 0) or
                 (aw.qmc.AUCbegin == 3 and self.qmc.timeindex[2] > 0)):
-                if aw.qmc.AUCLCDmode == 0:
+                if aw.qmc.AUCLCDmode == 0: # AUC abs value
                     v = int(round(aw.qmc.AUCvalue))
-                    if v > 999:
-                        auc_value_str = '---'
+                    if v > 9999:
+                        auc_value_str = '--'
+                        self.AUClcd.setNumDigits(3)
                     else:
                         auc_value_str = str(v)
+                        if v > 999:
+                            self.AUClcd.setNumDigits(4)
+                        else:
+                            self.AUClcd.setNumDigits(3)
                     auc_style = 'QLCDNumber { color: black; }'
-                elif aw.qmc.AUCLCDmode == 1:
+                elif aw.qmc.AUCLCDmode == 1: # AUC delta to target/background
                     if aw.qmc.AUCtargetFlag and aw.qmc.backgroundprofile is not None and aw.qmc.AUCbackground > 0:
                         # background AUC as target
                         target = aw.qmc.AUCbackground
@@ -22466,20 +22483,31 @@ class ApplicationWindow(QMainWindow):
                         auc_style = 'QLCDNumber { color: red; }'
                         self.AUClabel.setText('<small><b>' + QApplication.translate('Label', 'AUC') + '&laquo;</b></small>')
                     v = abs(int(round(d)))
-                    if v > 999:
-                        auc_value_str = '---'
+                    if v > 9999:
+                        auc_value_str = '--'
                         auc_style = 'QLCDNumber { color: black; }'
+                        self.AUClcd.setNumDigits(3)
                     else:
                         auc_value_str = str(v)
-                elif aw.qmc.timeindex[2] > 0:
+                        if v > 999:
+                            self.AUClcd.setNumDigits(4)
+                        else:
+                            self.AUClcd.setNumDigits(3)
+                elif aw.qmc.timeindex[2] > 0: # AUC since FCs
                     v = int(round(aw.qmc.AUCsinceFCs))
-                    if v > 999:
-                        auc_value_str = '---'
+                    if v > 9999:
+                        auc_value_str = '--'
+                        self.AUClcd.setNumDigits(3)
                     else:
                         auc_value_str = str(v)
+                        if v > 999:
+                            self.AUClcd.setNumDigits(4)
+                        else:
+                            self.AUClcd.setNumDigits(3)
                     auc_style = 'QLCDNumber { color: black; }'
                 else:
-                    auc_value_str = '---'
+                    self.AUClcd.setNumDigits(3)
+                    auc_value_str = '--'
                     auc_style = 'QLCDNumber { color: black; }'
             self.AUClcd.display(auc_value_str)
             self.AUClcd.setStyleSheet(auc_style)
@@ -26124,8 +26152,13 @@ class ApplicationWindow(QMainWindow):
                         self.quickEventShortCut = (4,'')
                         aw.sendmessage('SV')
                 elif k == 66:  #letter b hides/shows extra rows of event buttons
-                    if not app.artisanviewerMode and not self.qmc.designerflag and not self.qmc.wheelflag:
-                        self.toggleextraeventrows()
+                    if (alt_modifier and platf != 'Windows') or (control_shift_modifier and platf == 'Windows'):
+                        # activate custom event button
+                        self.quickEventShortCut = (-1,'')
+                        aw.sendmessage(f"{QApplication.translate('Label','Event button')}")
+                    else:
+                        if not app.artisanviewerMode and not self.qmc.designerflag and not self.qmc.wheelflag:
+                            self.toggleextraeventrows()
                 elif k == 77:  #letter m hides/shows standard buttons row
                     if aw.qmc.flagstart:
                         self.standardButtonsVisibility()
@@ -26137,11 +26170,26 @@ class ApplicationWindow(QMainWindow):
                             # quick custom event entry
                             eventNr = self.quickEventShortCut[0]
                             eventValueStr = self.quickEventShortCut[1] + str(button.index(k))
-                            if eventNr == 4:
+                            if eventNr == -1:
+                                aw.sendmessage(f"{QApplication.translate('Label','Event button')} {eventValueStr}")
+                            elif eventNr == 4:
                                 aw.sendmessage('SV %s'%(eventValueStr))
                             else:
                                 aw.sendmessage('%s %s'%(aw.qmc.etypes[eventNr],eventValueStr))
-                            if eventNr == 4: # SV
+                            if eventNr == -1: # Custom Event Button
+                                if len(eventValueStr) == 2:
+                                    buttonnumber = int(eventValueStr)-1
+                                    if buttonnumber < len(self.extraeventstypes):
+                                        self.recordextraevent(buttonnumber,parallel=False,updateButtons=False)
+                                    else:
+                                        try:
+                                            aw.sendmessage(QApplication.translate('Message',f'Button {int(eventValueStr)} not defined'))
+                                        except Exception: # pylint: disable=broad-except
+                                            pass
+                                else:
+                                    # keep on looking for digits
+                                    self.quickEventShortCut = (eventNr,eventValueStr)
+                            elif eventNr == 4: # SV
                                 if len(eventValueStr) == 3:
                                     # three digits entered, set the SV
                                     self.quickEventShortCut = None
@@ -31248,6 +31296,10 @@ class ApplicationWindow(QMainWindow):
                 self.modbus.parity = s2a(toString(settings.value('parity',self.modbus.parity)))
             if settings.contains('timeout'):
                 self.modbus.timeout = aw.float2float(toFloat(settings.value('timeout',self.modbus.timeout)))
+            if settings.contains('modbus_serial_extra_read_delay'):
+                self.modbus.modbus_serial_extra_read_delay = toFloat(settings.value('modbus_serial_extra_read_delay',self.modbus.modbus_serial_extra_read_delay))
+            if settings.contains('serial_readRetries'):
+                self.modbus.serial_readRetries = toInt(settings.value('serial_readRetries',self.modbus.serial_readRetries))
             if settings.contains('IP_timeout'):
                 self.modbus.IP_timeout = aw.float2float(toFloat(settings.value('IP_timeout',self.modbus.IP_timeout)))
             if settings.contains('IP_retries'):
@@ -32989,6 +33041,8 @@ class ApplicationWindow(QMainWindow):
             settings.setValue('stopbits',self.modbus.stopbits)
             settings.setValue('parity',self.modbus.parity)
             settings.setValue('timeout',self.modbus.timeout)
+            settings.setValue('modbus_serial_extra_read_delay',self.modbus.modbus_serial_extra_read_delay)
+            settings.setValue('serial_readRetries',self.modbus.serial_readRetries)
             settings.setValue('IP_timeout',self.modbus.IP_timeout)
             settings.setValue('IP_retries',self.modbus.IP_retries)
             settings.setValue('PID_slave_ID',self.modbus.PID_slave_ID)
@@ -35777,7 +35831,6 @@ class ApplicationWindow(QMainWindow):
         except Exception as e:
             _log.exception(e)
 
-
     # if batch_process is True and pdf_filename is given, the caller needs to cleanup the QWebEngineView by calling self.releaseQWebEngineView() the after processing all reports
     def roastReport(self,pdf_filename=None, batch_process=False):
         import html as htmllib
@@ -36638,7 +36691,7 @@ class ApplicationWindow(QMainWindow):
     @pyqtSlot()
     @pyqtSlot(bool)
     def helpAbout(self,_=False):
-        coredevelopers = '<br>Rafael Cobo, Marko Luther, Dave Baxter &amp; Rui Paulo'
+        coredevelopers = '<br>Rafael Cobo, Marko Luther, &amp; Dave Baxter'
         contribs = ['<br>' + uchr(199) + 'etin Barut, Marcio Carnerio, Bradley Collins, ',
                     'Sebastien Delgrande, Kalle Deligeorgakis, Jim Gall, ',
                     'Frans Goddijn, Rich Helms, Kyle Iseminger, Ingo, ',
@@ -36805,7 +36858,15 @@ class ApplicationWindow(QMainWindow):
             self.modbus.stopbits = int(str(dialog.modbus_stopbitsComboBox.currentText()))
             self.modbus.parity = str(dialog.modbus_parityComboBox.currentText())
             self.modbus.timeout = aw.float2float(toFloat(str(dialog.modbus_timeoutEdit.text())))
-            self.modbus.IP_timeout = aw.float2float(toFloat(str(dialog.modbus_IP_timeoutEdit.text())))
+            try:
+                self.modbus.modbus_serial_extra_read_delay = toInt(dialog.modbus_Serial_delayEdit.text()) / 1000
+            except Exception: # pylint: disable=broad-except
+                pass
+            self.modbus.serial_readRetries = dialog.modbus_Serial_retriesComboBox.currentIndex()
+            try:
+                self.modbus.IP_timeout = aw.float2float(toFloat(str(dialog.modbus_IP_timeoutEdit.text())))
+            except Exception: # pylint: disable=broad-except
+                pass
             self.modbus.IP_retries = dialog.modbus_IP_retriesComboBox.currentIndex()
             self.modbus.PID_slave_ID = int(str(dialog.modbus_PIDslave_Edit.text()))
             self.modbus.PID_SV_register = int(str(dialog.modbus_SVregister_Edit.text()))
@@ -39357,7 +39418,7 @@ class ApplicationWindow(QMainWindow):
             res['equ'] = self.qmc.lnRegression(power=exp, curvefit_starttime=curvefit_starttime, curvefit_endtime=curvefit_endtime, plot=False)
             self.deleteBackground()
             self.setbackgroundequ(EQU=['',res['equ']],recomputeAllDeltas=True,doDraw=False)  #redraw() called from setbackgroundequ()
-            _log.info("res['equ'] %s", res['equ'])  #dave
+            _log.debug("res['equ'] %s", res['equ'])
 
         result = self.curveSimilarity2(exp=exp, analysis_starttime=analysis_starttime, analysis_endtime=analysis_endtime)
 

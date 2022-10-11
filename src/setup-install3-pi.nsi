@@ -133,8 +133,7 @@ SetCompressor lzma
 ; MUI Settings
 !define MUI_ABORTWARNING
 !define MUI_ICON "artisan.ico"
-!define MUI_UNICON "artisan.ico"
-; !define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
+!define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
 
 ; Welcome page
 !insertmacro MUI_PAGE_WELCOME
@@ -330,10 +329,10 @@ Section Uninstall
   RMDir /r "$INSTDIR\PIL"
   RMDir /r "$INSTDIR\pyinstaller"
   RMDir /r "$INSTDIR\pytz"
+  RMDir /r "$INSTDIR\pywin32_system32"
   RMDir /r "$INSTDIR\scipy"
   RMDir /r "$INSTDIR\tcl"
   RMDir /r "$INSTDIR\tcl8"
-  RMDir /r "$INSTDIR\Themes"
   RMDir /r "$INSTDIR\Themes"
   RMDir /r "$INSTDIR\tk"
   RMDir /r "$INSTDIR\tornado"
