@@ -201,8 +201,8 @@ for:
     - chmod +x src/*.sh
     - .ci/script-${ARTISAN_OS}.sh
 
-  test_script:
-    - QT_QPA_PLATFORM=offscreen python -m unittest discover -s src
+#  test_script:
+#    - QT_QPA_PLATFORM=offscreen python -m unittest discover -s src
 
 #  artifacts:
 #    - path: 'src/artisan-*.deb'
