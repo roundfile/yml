@@ -78,23 +78,24 @@ for:
 #  test_script:
 #    - cmd: python -m unittest discover
 
-  artifacts:
-    - path: 'src\artisan-*.zip'
+#  artifacts:
+#    - path: 'src\artisan-*.zip'
 
-#  deploy_script:
+  deploy_script:
 #    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
 #    - cmd: bash upload.sh artisan-*.zip
+    - cmd: bash ../.ci/upload.sh artisan-*.zip
 
-  deploy:
-    release: continuous
-    description: 'Continuous build'
-    provider: GitHub
-    auth_token:
-      secure: 5NTtIMyG6aTMWDGmgG9vtaoF4fKfIecOCenVyzmogwvHz/12Bv71HwgmuykeE6bY # your encrypted token from GitHub
-    artifact: /artisan-.*\.zip/            # upload all NuGet packages to release assets
-    draft: false
-    prerelease: true
-    force_update: true
+#  deploy:
+#    release: continuous
+#    description: 'Continuous build'
+#    provider: GitHub
+#    auth_token:
+#      secure: 5NTtIMyG6aTMWDGmgG9vtaoF4fKfIecOCenVyzmogwvHz/12Bv71HwgmuykeE6bY # your encrypted token from GitHub
+#    artifact: /artisan-.*\.zip/            # upload all NuGet packages to release assets
+#    draft: false
+#    prerelease: true
+#    force_update: true
 #    on:
 #      branch: master                 # release from master branch only
 #      APPVEYOR_REPO_TAG: true        # deploy on tag push only
@@ -114,7 +115,7 @@ for:
     BUILD_PYINSTALLER: "True"
     ARTISAN_LEGACY: "False"
     VC_REDIST: "https://aka.ms/vs/17/release/vc_redist.x64.exe"
-    UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
+#    UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
     - cmd: echo Windows Install
@@ -141,23 +142,24 @@ for:
 #  test_script:
 #    - cmd: python -m unittest discover
 
-  artifacts:
-    - path: 'src\artisan-*.zip'
+#  artifacts:
+#    - path: 'src\artisan-*.zip'
 
-#  deploy_script:
+  deploy_script:
 #    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
 #    - cmd: bash upload.sh artisan-*.zip
+    - cmd: bash ../.ci/upload.sh artisan-*.zip
 
-  deploy:
-    release: continuous
-    description: 'Continuous build'
-    provider: GitHub
-    auth_token:
-      secure: 5NTtIMyG6aTMWDGmgG9vtaoF4fKfIecOCenVyzmogwvHz/12Bv71HwgmuykeE6bY # your encrypted token from GitHub
-    artifact: /artisan-.*\.zip/            # upload all NuGet packages to release assets
-    draft: false
-    prerelease: true
-    force_update: true
+#  deploy:
+#    release: continuous
+#    description: 'Continuous build'
+#    provider: GitHub
+#    auth_token:
+#      secure: 5NTtIMyG6aTMWDGmgG9vtaoF4fKfIecOCenVyzmogwvHz/12Bv71HwgmuykeE6bY # your encrypted token from GitHub
+#    artifact: /artisan-.*\.zip/            # upload all NuGet packages to release assets
+#    draft: false
+#    prerelease: true
+#    force_update: true
 
 
 -
@@ -197,9 +199,10 @@ for:
   deploy_script:
     - cd src
     - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
-    - export UPLOADTOOL_ISPRERELEASE=true
-    - bash upload.sh artisan-*.dmg
+#    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
+#    - export UPLOADTOOL_ISPRERELEASE=true
+#    - bash upload.sh artisan-*.dmg
+    - bash ../.ci/upload.sh artisan-*.dmg
 
 -
   matrix:
@@ -235,12 +238,15 @@ for:
 
   deploy_script:
     - cd src
-    - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
-    - export UPLOADTOOL_ISPRERELEASE=true
-    - bash upload.sh artisan-*.deb
-    - bash upload.sh artisan-*.rpm
-    - bash upload.sh artisan-*.AppImage
+#    - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
+#    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
+#    - export UPLOADTOOL_ISPRERELEASE=true
+#    - bash upload.sh artisan-*.deb
+#    - bash upload.sh artisan-*.rpm
+#    - bash upload.sh artisan-*.AppImage
+    - bash ../ci./upload.sh artisan-*.deb
+    - bash ../ci./upload.sh artisan-*.rpm
+    - bash ../ci./upload.sh artisan-*.AppImage
 
 -
   matrix:
