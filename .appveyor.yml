@@ -11,8 +11,8 @@ environment:
   matrix:
   - job_name: windows_legacy
     appveyor_build_worker_image: Visual Studio 2019
-  - job_name: windows
-    appveyor_build_worker_image: Visual Studio 2019
+#  - job_name: windows
+#    appveyor_build_worker_image: Visual Studio 2019
 #  - job_name: macos
 #    appveyor_build_worker_image: macos
 #  - job_name: linux
@@ -81,9 +81,22 @@ for:
 #  artifacts:
 #    - path: 'src\artisan-*.zip'
 
-  deploy_script:
-    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-    - cmd: bash upload.sh artisan-*.zip
+#  deploy_script:
+#    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
+#    - cmd: bash upload.sh artisan-*.zip
+
+  deploy:
+    release: continuous
+    description: 'Continuous build'
+    provider: GitHub
+    auth_token:
+      secure: 5NTtIMyG6aTMWDGmgG9vtaoF4fKfIecOCenVyzmogwvHz/12Bv71HwgmuykeE6bY # your encrypted token from GitHub
+    artifact: /artisan-.*\.zip/            # upload all NuGet packages to release assets
+    draft: false
+    prerelease: true
+#    on:
+#      branch: master                 # release from master branch only
+#      APPVEYOR_REPO_TAG: true        # deploy on tag push only
 
 
 -
