@@ -45,7 +45,7 @@ for:
     PYTHON_PATH: "C:\\Python38-x64"
     QT_PATH: "c:\\qt\\5.15\\msvc2019_64"
     PYUIC: "pyuic5.exe"
-    PYINSTALLER_VER: "5.4.1"
+    PYINSTALLER_VER: "5.5"
     BUILD_PYINSTALLER: "True"
     ARTISAN_LEGACY: "True"
     VC_REDIST: "https://aka.ms/vs/16/release/vc_redist.x64.exe"
@@ -92,7 +92,7 @@ for:
     PYTHON_PATH: "C:\\Python310-x64"
     QT_PATH: "C:\\qt\\6.2\\msvc2019_64"
     PYUIC: "pyuic6.exe"
-    PYINSTALLER_VER: "5.4.1"
+    PYINSTALLER_VER: "5.5"
     BUILD_PYINSTALLER: "True"
     ARTISAN_LEGACY: "False"
     VC_REDIST: "https://aka.ms/vs/17/release/vc_redist.x64.exe"
@@ -207,7 +207,8 @@ for:
 
   deploy_script:
     - cd src
-    - bash ../ci./upload.sh artisan-*.deb
-    - bash ../ci./upload.sh artisan-*.rpm
-    - bash ../ci./upload.sh artisan-*.AppImage
+    - bash ../.ci/upload.sh artisan-*.deb
+    - bash ../.ci/upload.sh artisan-*.rpm
+    - bash ../.ci/upload.sh artisan-*.AppImage
+        
 
