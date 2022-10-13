@@ -1,11 +1,11 @@
 # Generic build number, later set to commit hash by init
 version: '{build}'
 
+# Include "nodeploy" in the commit message to prevent deployment to github
+
 # Do not build on tags (GitHub only)
 skip_tags: true
 clone_depth: 1
-
-# Include "nodeploy" in the commit message to prevent deployment to github
 
 environment:
   matrix:
@@ -13,12 +13,10 @@ environment:
     appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
     appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: macos
-#    appveyor_build_worker_image: macos
-#  - job_name: linux
-#    appveyor_build_worker_image: Ubuntu2004
-#  - job_name: rpi
-#    appveyor_build_worker_image: Ubuntu1604
+  - job_name: macos
+    appveyor_build_worker_image: macos
+  - job_name: linux
+    appveyor_build_worker_image: Ubuntu2004
 
 matrix:
   allow_failures:
@@ -51,7 +49,6 @@ for:
     BUILD_PYINSTALLER: "True"
     ARTISAN_LEGACY: "True"
     VC_REDIST: "https://aka.ms/vs/16/release/vc_redist.x64.exe"
-    UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
     - cmd: echo Windows Legacy Install
@@ -82,23 +79,7 @@ for:
 #    - path: 'src\artisan-*.zip'
 
   deploy_script:
-#    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-#    - cmd: bash upload.sh artisan-*.zip
     - cmd: bash ../.ci/upload.sh artisan-*.zip
-
-#  deploy:
-#    release: continuous
-#    description: 'Continuous build'
-#    provider: GitHub
-#    auth_token:
-#      secure: 5NTtIMyG6aTMWDGmgG9vtaoF4fKfIecOCenVyzmogwvHz/12Bv71HwgmuykeE6bY # your encrypted token from GitHub
-#    artifact: /artisan-.*\.zip/            # upload all NuGet packages to release assets
-#    draft: false
-#    prerelease: true
-#    force_update: true
-#    on:
-#      branch: master                 # release from master branch only
-#      APPVEYOR_REPO_TAG: true        # deploy on tag push only
 
 
 -
@@ -146,20 +127,7 @@ for:
 #    - path: 'src\artisan-*.zip'
 
   deploy_script:
-#    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-#    - cmd: bash upload.sh artisan-*.zip
     - cmd: bash ../.ci/upload.sh artisan-*.zip
-
-#  deploy:
-#    release: continuous
-#    description: 'Continuous build'
-#    provider: GitHub
-#    auth_token:
-#      secure: 5NTtIMyG6aTMWDGmgG9vtaoF4fKfIecOCenVyzmogwvHz/12Bv71HwgmuykeE6bY # your encrypted token from GitHub
-#    artifact: /artisan-.*\.zip/            # upload all NuGet packages to release assets
-#    draft: false
-#    prerelease: true
-#    force_update: true
 
 
 -
@@ -177,9 +145,11 @@ for:
   install:
     - echo "MacOS Install"
     - chmod +x .ci/*.sh
+
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
+
     # run the install script
     - .ci/install-${ARTISAN_OS}.sh
 
@@ -199,9 +169,6 @@ for:
   deploy_script:
     - cd src
     - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-#    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
-#    - export UPLOADTOOL_ISPRERELEASE=true
-#    - bash upload.sh artisan-*.dmg
     - bash ../.ci/upload.sh artisan-*.dmg
 
 -
@@ -218,9 +185,11 @@ for:
   install:
     - echo "Linux Install"
     - chmod +x .ci/*.sh
+
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
+
     # run the install script
     - .ci/install-${ARTISAN_OS}.sh
 
@@ -238,44 +207,7 @@ for:
 
   deploy_script:
     - cd src
-#    - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-#    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
-#    - export UPLOADTOOL_ISPRERELEASE=true
-#    - bash upload.sh artisan-*.deb
-#    - bash upload.sh artisan-*.rpm
-#    - bash upload.sh artisan-*.AppImage
     - bash ../ci./upload.sh artisan-*.deb
     - bash ../ci./upload.sh artisan-*.rpm
     - bash ../ci./upload.sh artisan-*.AppImage
 
--
-  matrix:
-    only:
-      - job_name: rpi
-    fast_finish: false
-
-  environment:
-    ARTISAN_OS: rpi
-    PYTHON: $HOME/venv3.9
-
-  install:
-    - echo "RPI Install"
-    - chmod +x ./.ci/*.sh
-    - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
-    - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
-    - .ci/install-${ARTISAN_OS}.sh
-
-  build_script:
-    - echo "RPI Build"
-    - chmod +x src/*.sh
-    - .ci/script-${ARTISAN_OS}.sh
-
-#  artifacts:
-#    - path: 'src/artisan-*.deb'
-
-  deploy_script:
-    - cd src
-    - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
-    - export UPLOADTOOL_ISPRERELEASE=true
-    - bash upload.sh artisan-*.deb
