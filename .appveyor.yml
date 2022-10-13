@@ -3,24 +3,20 @@ version: '{build}'
 
 # Include "nodeploy" in the commit message to prevent deployment to github
 
-# Do not build on tags (GitHub only)
+# Do not build on tags
 skip_tags: true
 clone_depth: 1
 
 environment:
   matrix:
-#  - job_name: windows_legacy
-#    appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: windows
-#    appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: macos
-#    appveyor_build_worker_image: macos
+  - job_name: windows_legacy
+    appveyor_build_worker_image: Visual Studio 2019
+  - job_name: windows
+    appveyor_build_worker_image: Visual Studio 2019
+  - job_name: macos
+    appveyor_build_worker_image: macos
   - job_name: linux
     appveyor_build_worker_image: Ubuntu2004
-
-matrix:
-  allow_failures:
-    - job_name: rpi
 
 init:
   # Set "build version number" shown in appveyor build status to the commit hash, the build number keeps it unique
@@ -96,7 +92,6 @@ for:
     BUILD_PYINSTALLER: "True"
     ARTISAN_LEGACY: "False"
     VC_REDIST: "https://aka.ms/vs/17/release/vc_redist.x64.exe"
-#    UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
     - cmd: echo Windows Install
@@ -171,6 +166,7 @@ for:
     - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
     - bash ../.ci/upload.sh artisan-*.dmg
 
+
 -
   matrix:
     only:
@@ -211,4 +207,3 @@ for:
     - bash ../.ci/upload.sh artisan-*.rpm
     - bash ../.ci/upload.sh artisan-*.AppImage
         
-

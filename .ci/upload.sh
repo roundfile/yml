@@ -1,4 +1,9 @@
 #!/bin/bash
+#
+#this script derived, simplified and adapted for Appveyor from https://github.com/probonopd/uploadtool
+#only the file to upload is specified on the command line
+#there are no other command line or environment options to this script, all information comes from Appveyor
+#
 
 set +x # Do not leak information
 
@@ -34,10 +39,15 @@ if [ ! -z "$APPVEYOR" ]; then
     APPVEYOR_REPO_COMMIT="$APPVEYOR_REPO_COMMIT"
     APPVEYOR_JOB_ID="$APPVEYOR_JOB_ID"
     APPVEYOR_BUILD_WEB_URL="${APPVEYOR_URL}/project/${APPVEYOR_ACCOUNT_NAME}/${APPVEYOR_PROJECT_SLUG}/build/job/${APPVEYOR_JOB_ID}"
+    RELEASE_NAME="continuous"
+    RELEASE_TITLE="Continuous build"
+    UPLOADTOOL_BODY="WARNING: pre-release builds may not work. Use at your own risk."
+    is_prerelease="true"
     if [[ $APPVEYOR_REPO_COMMIT_MESSAGE =~ nodeploy ]] || [[ $APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED =~ nodeploy ]] ; then
       echo "Release uploading disabled, commit message contains 'nodeploy'"
       exit 0
     fi
+    #this is in fact redundant since Appveyor does not execute deploy on public repostiries for pull requests
     if [ ! -z "$APPVEYOR_PULL_REQUEST_NUMBER" ] ; then
       echo "Release uploading disabled for pull requests"
       exit 0
@@ -48,18 +58,11 @@ else
   exit 0
 fi
 
-#force these values for now
-RELEASE_NAME="continuous"
-RELEASE_TITLE="Continuous build"
-UPLOADTOOL_BODY="WARNING: pre-release builds may not work. Use at your own risk."
-is_prerelease="true"
-
 
 if [ ! -z "$APPVEYOR_REPO_NAME" ] ; then
   # We are running on Appveyor CI
   echo "Running on Appveyor CI"
   echo "APPVEYOR_REPO_COMMIT: $APPVEYOR_REPO_COMMIT"
-  REPO_SLUG="$APPVEYOR_REPO_NAME"
   if [ -z "$GITHUB_TOKEN" ] ; then
     echo "\$GITHUB_TOKEN missing, please set it in the Appveyor CI settings of this project"
     echo "You can get one from https://github.com/settings/tokens"
@@ -71,13 +74,13 @@ else
   exit 1
 fi
 
-tag_url="https://api.github.com/repos/$REPO_SLUG/git/refs/tags/$RELEASE_NAME"
+tag_url="https://api.github.com/repos/$APPVEYOR_REPO_NAME/git/refs/tags/$RELEASE_NAME"
 tag_infos=$(curl -XGET --header "Authorization: token ${GITHUB_TOKEN}" "${tag_url}")
 echo "tag_infos: $tag_infos"
 tag_sha=$(echo "$tag_infos" | grep '"sha":' | head -n 1 | cut -d '"' -f 4 | cut -d '{' -f 1)
 echo "tag_sha: $tag_sha"
 
-release_url="https://api.github.com/repos/$REPO_SLUG/releases/tags/$RELEASE_NAME"
+release_url="https://api.github.com/repos/$APPVEYOR_REPO_NAME/releases/tags/$RELEASE_NAME"
 echo "Getting the release ID..."
 echo "release_url: $release_url"
 release_infos=$(curl -XGET --header "Authorization: token ${GITHUB_TOKEN}" "${release_url}")
@@ -96,7 +99,7 @@ if [ "$APPVEYOR_REPO_COMMIT" != "$target_commit_sha" ] ; then
   echo "APPVEYOR_REPO_COMMIT != target_commit_sha, hence deleting $RELEASE_NAME..."
   
   if [ ! -z "$release_id" ]; then
-    delete_url="https://api.github.com/repos/$REPO_SLUG/releases/$release_id"
+    delete_url="https://api.github.com/repos/$APPVEYOR_REPO_NAME/releases/$release_id"
     echo "Delete the release..."
     echo "delete_url: $delete_url"
     curl -XDELETE \
@@ -113,7 +116,7 @@ if [ "$APPVEYOR_REPO_COMMIT" != "$target_commit_sha" ] ; then
     # if this is a continuous build tag, then delete the old tag
     # in preparation for the new release
     echo "Delete the tag..."
-    delete_url="https://api.github.com/repos/$REPO_SLUG/git/refs/tags/$RELEASE_NAME"
+    delete_url="https://api.github.com/repos/$APPVEYOR_REPO_NAME/git/refs/tags/$RELEASE_NAME"
     echo "delete_url: $delete_url"
     curl -XDELETE \
         --header "Authorization: token ${GITHUB_TOKEN}" \
@@ -137,7 +140,7 @@ if [ "$APPVEYOR_REPO_COMMIT" != "$target_commit_sha" ] ; then
   fi
 
   release_infos=$(curl -H "Authorization: token ${GITHUB_TOKEN}" \
-       --data '{"tag_name": "'"$RELEASE_NAME"'","target_commitish": "'"$APPVEYOR_REPO_COMMIT"'","name": "'"$RELEASE_TITLE"'","body": "'"$BODY"'","draft": false,"prerelease": '$is_prerelease'}' "https://api.github.com/repos/$REPO_SLUG/releases")
+       --data '{"tag_name": "'"$RELEASE_NAME"'","target_commitish": "'"$APPVEYOR_REPO_COMMIT"'","name": "'"$RELEASE_TITLE"'","body": "'"$BODY"'","draft": false,"prerelease": '$is_prerelease'}' "https://api.github.com/repos/$APPVEYOR_REPO_NAME/releases")
 
   echo "$release_infos"
 
