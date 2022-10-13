@@ -78,8 +78,8 @@ for:
 #  test_script:
 #    - cmd: python -m unittest discover
 
-#  artifacts:
-#    - path: 'src\artisan-*.zip'
+  artifacts:
+    - path: 'src\artisan-*.zip'
 
 #  deploy_script:
 #    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
@@ -141,8 +141,8 @@ for:
 #  test_script:
 #    - cmd: python -m unittest discover
 
-#  artifacts:
-#    - path: 'src\artisan-*.zip'
+  artifacts:
+    - path: 'src\artisan-*.zip'
 
 #  deploy_script:
 #    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
