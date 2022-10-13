@@ -26,14 +26,14 @@ else
 fi
 
 if [ ! -z "$APPVEYOR" ]; then
-    TRAVIS_REPO_SLUG="$APPVEYOR_REPO_NAME"
-    TRAVIS_TAG="$APPVEYOR_REPO_TAG_NAME"
-    TRAVIS_BUILD_NUMBER="$APPVEYOR_BUILD_NUMBER"
-    TRAVIS_BUILD_ID="$APPVEYOR_BUILD_ID"
-    TRAVIS_BRANCH="$APPVEYOR_REPO_BRANCH"
-    TRAVIS_COMMIT="$APPVEYOR_REPO_COMMIT"
-    TRAVIS_JOB_ID="$APPVEYOR_JOB_ID"
-    TRAVIS_BUILD_WEB_URL="${APPVEYOR_URL}/project/${APPVEYOR_ACCOUNT_NAME}/${APPVEYOR_PROJECT_SLUG}/build/job/${APPVEYOR_JOB_ID}"
+    APPVEYOR_REPO_NAME="$APPVEYOR_REPO_NAME"
+    APPVEYOR_REPO_TAG_NAME="$APPVEYOR_REPO_TAG_NAME"  #unused
+    APPVEYOR_BUILD_NUMBER="$APPVEYOR_BUILD_NUMBER"
+    APPVEYOR_BUILD_ID="$APPVEYOR_BUILD_ID"
+    APPVEYOR_REPO_BRANCH="$APPVEYOR_REPO_BRANCH"
+    APPVEYOR_REPO_COMMIT="$APPVEYOR_REPO_COMMIT"
+    APPVEYOR_JOB_ID="$APPVEYOR_JOB_ID"
+    APPVEYOR_BUILD_WEB_URL="${APPVEYOR_URL}/project/${APPVEYOR_ACCOUNT_NAME}/${APPVEYOR_PROJECT_SLUG}/build/job/${APPVEYOR_JOB_ID}"
     if [[ $APPVEYOR_REPO_COMMIT_MESSAGE =~ nodeploy ]] || [[ $APPVEYOR_REPO_COMMIT_MESSAGE_EXTENDED =~ nodeploy ]] ; then
       echo "Release uploading disabled, commit message contains 'nodeploy'"
       exit 0
@@ -43,8 +43,8 @@ if [ ! -z "$APPVEYOR" ]; then
       exit 0
     fi
 else
-  # We are not running on Travis CI
-  echo "Not running on Travis CI"
+  # We are not running on Appveyor CI
+  echo "Not running on Appveyor CI"
   exit 0
 fi
 
@@ -55,19 +55,19 @@ UPLOADTOOL_BODY="WARNING: pre-release builds may not work. Use at your own risk.
 is_prerelease="true"
 
 
-if [ ! -z "$TRAVIS_REPO_SLUG" ] ; then
-  # We are running on Travis CI
-  echo "Running on Travis CI"
-  echo "TRAVIS_COMMIT: $TRAVIS_COMMIT"
-  REPO_SLUG="$TRAVIS_REPO_SLUG"
+if [ ! -z "$APPVEYOR_REPO_NAME" ] ; then
+  # We are running on Appveyor CI
+  echo "Running on Appveyor CI"
+  echo "APPVEYOR_REPO_COMMIT: $APPVEYOR_REPO_COMMIT"
+  REPO_SLUG="$APPVEYOR_REPO_NAME"
   if [ -z "$GITHUB_TOKEN" ] ; then
-    echo "\$GITHUB_TOKEN missing, please set it in the Travis CI settings of this project"
+    echo "\$GITHUB_TOKEN missing, please set it in the Appveyor CI settings of this project"
     echo "You can get one from https://github.com/settings/tokens"
     exit 1
   fi
 else
-  # We are not running on Travis CI
-  echo "Not running on Travis CI"
+  # We are not running on Appveyor CI
+  echo "Not running on Appveyor CI"
   exit 1
 fi
 
@@ -91,9 +91,9 @@ echo "release_url: $release_url"
 target_commit_sha=$(echo "$release_infos" | grep '"target_commitish":' | head -n 1 | cut -d '"' -f 4 | cut -d '{' -f 1)
 echo "target_commit_sha: $target_commit_sha"
 
-if [ "$TRAVIS_COMMIT" != "$target_commit_sha" ] ; then
+if [ "$APPVEYOR_REPO_COMMIT" != "$target_commit_sha" ] ; then
 
-  echo "TRAVIS_COMMIT != target_commit_sha, hence deleting $RELEASE_NAME..."
+  echo "APPVEYOR_REPO_COMMIT != target_commit_sha, hence deleting $RELEASE_NAME..."
   
   if [ ! -z "$release_id" ]; then
     delete_url="https://api.github.com/repos/$REPO_SLUG/releases/$release_id"
@@ -122,13 +122,13 @@ if [ "$TRAVIS_COMMIT" != "$target_commit_sha" ] ; then
 
   echo "Create release..."
 
-  if [ -z "$TRAVIS_BRANCH" ] ; then
-    TRAVIS_BRANCH="master"
+  if [ -z "$APPVEYOR_REPO_BRANCH" ] ; then
+    APPVEYOR_REPO_BRANCH="master"
   fi
 
-  if [ ! -z "$TRAVIS_JOB_ID" ] ; then
+  if [ ! -z "$APPVEYOR_JOB_ID" ] ; then
     if [ -z "${UPLOADTOOL_BODY+x}" ] ; then
-      BODY="Travis CI build log: ${TRAVIS_BUILD_WEB_URL}"
+      BODY="Appveyor CI build log: ${APPVEYOR_BUILD_WEB_URL}"
     else
       BODY="$UPLOADTOOL_BODY"
     fi
@@ -137,7 +137,7 @@ if [ "$TRAVIS_COMMIT" != "$target_commit_sha" ] ; then
   fi
 
   release_infos=$(curl -H "Authorization: token ${GITHUB_TOKEN}" \
-       --data '{"tag_name": "'"$RELEASE_NAME"'","target_commitish": "'"$TRAVIS_COMMIT"'","name": "'"$RELEASE_TITLE"'","body": "'"$BODY"'","draft": false,"prerelease": '$is_prerelease'}' "https://api.github.com/repos/$REPO_SLUG/releases")
+       --data '{"tag_name": "'"$RELEASE_NAME"'","target_commitish": "'"$APPVEYOR_REPO_COMMIT"'","name": "'"$RELEASE_TITLE"'","body": "'"$BODY"'","draft": false,"prerelease": '$is_prerelease'}' "https://api.github.com/repos/$REPO_SLUG/releases")
 
   echo "$release_infos"
 
@@ -149,7 +149,7 @@ if [ "$TRAVIS_COMMIT" != "$target_commit_sha" ] ; then
   release_url=$(echo "$release_infos" | grep '"url":' | head -n 1 | cut -d '"' -f 4 | cut -d '{' -f 1)
   echo "release_url: $release_url"
 
-fi # if [ "$TRAVIS_COMMIT" != "$tag_sha" ]
+fi # if [ "$APPVEYOR_REPO_COMMIT" != "$tag_sha" ]
 
 if [ -z "$release_url" ] ; then
 	echo "Cannot figure out the release URL for $RELEASE_NAME"
@@ -187,11 +187,11 @@ done
 
 $shatool "$@"
 
-if [ "$TRAVIS_COMMIT" != "$tag_sha" ] ; then
+if [ "$APPVEYOR_REPO_COMMIT" != "$tag_sha" ] ; then
   echo "Publish the release..."
 
   release_infos=$(curl -H "Authorization: token ${GITHUB_TOKEN}" \
        --data '{"draft": false}' "$release_url")
 
   echo "$release_infos"
-fi # if [ "$TRAVIS_COMMIT" != "$tag_sha" ]
+fi # if [ "$APPVEYOR_REPO_COMMIT" != "$tag_sha" ]
