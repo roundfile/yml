@@ -89,9 +89,9 @@ for:
     draft: false
     prerelease: true
     force_update: true
-#    on:
-#      branch: master                 # release from master branch only
-#      APPVEYOR_REPO_TAG: true        # deploy on tag push only
+    on:
+      branch: master                 # release from master branch only
+      APPVEYOR_REPO_TAG: true        # deploy on tag push only
 
 
 -
