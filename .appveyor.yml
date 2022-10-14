@@ -67,7 +67,7 @@ for:
 
     # run the install script
 #    - cmd: build-win3-pi.bat LEGACY
-     - cmd: cd
+    - cmd: cd
 
 #  test_script:
 #    - cmd: python -m unittest discover
