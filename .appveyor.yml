@@ -81,16 +81,17 @@ for:
 #    - cmd: bash ../.ci/upload.sh artisan-*.zip
 
   deploy:
-    release: 'Continuous build'
-    description: 'WARNING: pre-release builds may not work. Use at your own risk.'
-    provider: GitHub
-    auth_token:
-      secure: 5NTtIMyG6aTMWDGmgG9vtaoF4fKfIecOCenVyzmogwvHz/12Bv71HwgmuykeE6bY # your encrypted token from GitHub
-    #artifact: /artisan-.*\.zip/
-#    artifact: src/requirements-win.txt
-    draft: false
-    prerelease: true
-    force_update: true
+  deploy:
+    - release: 'Continuous build'
+      description: 'WARNING: pre-release builds may not work. Use at your own risk.'
+      provider: GitHub
+      auth_token:
+        secure: 5NTtIMyG6aTMWDGmgG9vtaoF4fKfIecOCenVyzmogwvHz/12Bv71HwgmuykeE6bY # your encrypted token from GitHub
+      #artifact: /artisan-.*\.zip/
+      artifact: /.*win.*/
+      draft: false
+      prerelease: true
+      force_update: true
 #    on:
 #      branch: master                 # release from master branch only
 #      APPVEYOR_REPO_TAG: false        # deploy on tag push only
