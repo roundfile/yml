@@ -68,6 +68,7 @@ for:
     # run the install script
 #    - cmd: build-win3-pi.bat LEGACY
     - cmd: cd
+    - cmd: dir
 
 #  test_script:
 #    - cmd: python -m unittest discover
@@ -85,7 +86,7 @@ for:
     auth_token:
       secure: 5NTtIMyG6aTMWDGmgG9vtaoF4fKfIecOCenVyzmogwvHz/12Bv71HwgmuykeE6bY # your encrypted token from GitHub
     #artifact: /artisan-.*\.zip/
-    artifact: /requirements-win\.txt/
+    artifact: requirements-win.txt
     draft: false
     prerelease: true
     force_update: true
