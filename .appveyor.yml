@@ -85,13 +85,13 @@ for:
     auth_token:
       secure: 5NTtIMyG6aTMWDGmgG9vtaoF4fKfIecOCenVyzmogwvHz/12Bv71HwgmuykeE6bY # your encrypted token from GitHub
     #artifact: /artisan-.*\.zip/
-    artifact: /requirements.*\.txt/
+    artifact: /requirements-win\.txt/
     draft: false
     prerelease: true
     force_update: true
-    on:
-      branch: master                 # release from master branch only
-      APPVEYOR_REPO_TAG: false        # deploy on tag push only
+#    on:
+#      branch: master                 # release from master branch only
+#      APPVEYOR_REPO_TAG: false        # deploy on tag push only
 
 
 -
