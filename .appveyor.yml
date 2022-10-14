@@ -81,7 +81,6 @@ for:
 #    - cmd: bash ../.ci/upload.sh artisan-*.zip
 
   deploy:
-  deploy:
     - release: 'Continuous build'
       description: 'WARNING: pre-release builds may not work. Use at your own risk.'
       provider: GitHub
