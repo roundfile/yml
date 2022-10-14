@@ -73,8 +73,9 @@ for:
 #  test_script:
 #    - cmd: python -m unittest discover
 
-#  artifacts:
+  artifacts:
 #    - path: 'src\artisan-*.zip'
+    - path: 'src\requirements-*.txt'
 
 #  deploy_script:
 #    - cmd: bash ../.ci/upload.sh artisan-*.zip
@@ -86,7 +87,7 @@ for:
     auth_token:
       secure: 5NTtIMyG6aTMWDGmgG9vtaoF4fKfIecOCenVyzmogwvHz/12Bv71HwgmuykeE6bY # your encrypted token from GitHub
     #artifact: /artisan-.*\.zip/
-    artifact: src/requirements-win.txt
+#    artifact: src/requirements-win.txt
     draft: false
     prerelease: true
     force_update: true
