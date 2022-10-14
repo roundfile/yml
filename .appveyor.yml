@@ -67,6 +67,7 @@ for:
 
     # run the install script
 #    - cmd: build-win3-pi.bat LEGACY
+     - cmd: cd
 
 #  test_script:
 #    - cmd: python -m unittest discover
@@ -78,6 +79,7 @@ for:
 #    - cmd: bash ../.ci/upload.sh artisan-*.zip
 
   deploy:
+    - cmd: cd
     release: 'Continuous build'
     description: 'WARNING: pre-release builds may not work. Use at your own risk.'
     provider: GitHub
