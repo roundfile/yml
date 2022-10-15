@@ -11,11 +11,11 @@ set +x # Do not leak information
 # because we don't want to delete the existing release if we don't have
 # the new files that should be uploaded 
 for file in "$@"
-    do
-        if [ ! -e "$file" ]
-            then echo "$file is missing, giving up." >&2; exit 1
-        fi
-    done
+do
+    if [ ! -e "$file" ]
+        then echo "$file is missing, giving up." >&2; exit 1
+    fi
+done
 
 if [ $# -eq 0 ]; then
     echo "No artifacts to use for release, giving up."
@@ -57,6 +57,7 @@ fi
 if [ ! -z "$APPVEYOR_PULL_REQUEST_NUMBER" ] ; then
     echo "Release uploading disabled for pull requests"
     exit 0
+fi
 
 if [ ! -z "$APPVEYOR_REPO_NAME" ] ; then
     # We are running on Appveyor CI

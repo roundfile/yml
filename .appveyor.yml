@@ -49,7 +49,7 @@ for:
   install:
     - cmd: echo Windows Legacy Install
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
-#    - cmd: .ci\install-win.bat LEGACY
+    - cmd: .ci\install-win.bat LEGACY
 
   build_script:
     - cmd: echo Windows Legacy Build
