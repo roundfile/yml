@@ -34,7 +34,7 @@ if [ -z "$APPVEYOR" ]; then
     # We are not running on Appveyor CI
     echo "Not running on Appveyor CI"
     exit 0
-
+fi
 
 APPVEYOR_REPO_NAME="$APPVEYOR_REPO_NAME"
 APPVEYOR_REPO_TAG_NAME="$APPVEYOR_REPO_TAG_NAME"  #unused
