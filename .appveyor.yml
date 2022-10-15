@@ -11,12 +11,12 @@ environment:
   matrix:
   - job_name: windows_legacy
     appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: windows
-#    appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: macos
-#   appveyor_build_worker_image: macos
-#  - job_name: linux
-#    appveyor_build_worker_image: Ubuntu2004
+  - job_name: windows
+    appveyor_build_worker_image: Visual Studio 2019
+  - job_name: macos
+   appveyor_build_worker_image: macos
+  - job_name: linux
+    appveyor_build_worker_image: Ubuntu2004
 
 init:
   # Set "build version number" shown in appveyor build status to the commit hash, the build number keeps it unique
@@ -66,31 +66,31 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the install script
-#    - cmd: build-win3-pi.bat LEGACY
+    - cmd: build-win3-pi.bat LEGACY
     - cmd: cd
     - cmd: dir
 
 #  test_script:
 #    - cmd: python -m unittest discover
 
-  artifacts:
+#  artifacts:
 #    - path: 'src\artisan-*.zip'
-    - path: 'src\requirements-*.txt'
+#    - path: 'src\requirements-*.txt'
 
-#  deploy_script:
-#    - cmd: bash ../.ci/upload.sh artisan-*.zip
+  deploy_script:
+    - cmd: bash ../.ci/upload.sh artisan-*.zip
 
-  deploy:
-    - release: 'Continuous build'
-      description: 'WARNING: pre-release builds may not work. Use at your own risk.'
-      provider: GitHub
-      auth_token:
-        secure: 5NTtIMyG6aTMWDGmgG9vtaoF4fKfIecOCenVyzmogwvHz/12Bv71HwgmuykeE6bY # your encrypted token from GitHub
-      #artifact: /artisan-.*\.zip/
-      artifact: /.*win.*/
-      draft: false
-      prerelease: true
-      force_update: true
+#  deploy:
+#    - release: 'Continuous build'
+#      description: 'WARNING: pre-release builds may not work. Use at your own risk.'
+#      provider: GitHub
+#      auth_token:
+#        secure: 5NTtIMyG6aTMWDGmgG9vtaoF4fKfIecOCenVyzmogwvHz/12Bv71HwgmuykeE6bY # your encrypted token from GitHub
+#      #artifact: /artisan-.*\.zip/
+#      #artifact: /.*win.*/
+#      draft: false
+#      prerelease: true
+#      force_update: true
 #    on:
 #      branch: master                 # release from master branch only
 #      APPVEYOR_REPO_TAG: false        # deploy on tag push only
