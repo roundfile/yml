@@ -1,15 +1,18 @@
 #!/bin/bash
 #
-#this script derived, simplified and adapted for Appveyor from https://github.com/probonopd/uploadtool
+#this script is derived, simplified and adapted for Appveyor from https://github.com/probonopd/uploadtool
 #only the file to upload is specified on the command line
 #there are no other command line or environment options to this script, all information comes from Appveyor
 #
 
 set +x # Do not leak information
 
-# Exit immediately if one of the files given as arguments is not there
-# because we don't want to delete the existing release if we don't have
-# the new files that should be uploaded 
+# Exit immediately if there are no files or one of the files given as arguments is not there
+if [ $# -eq 0 ]; then
+    echo "No artifacts to use for release, giving up."
+    exit 0
+fi
+
 for file in "$@"
 do
     if [ ! -e "$file" ]
@@ -17,11 +20,7 @@ do
     fi
 done
 
-if [ $# -eq 0 ]; then
-    echo "No artifacts to use for release, giving up."
-    exit 0
-fi
-
+# Confirm existance of a toolans set chatool
 if command -v sha256sum >/dev/null 2>&1 ; then
     shatool="sha256sum"
 elif command -v shasum >/dev/null 2>&1 ; then
@@ -30,12 +29,14 @@ else
     echo "Neither sha256sum nor shasum is available, cannot check hashes"
 fi
 
+# Confirm running on Appveyor
 if [ -z "$APPVEYOR" ]; then
     # We are not running on Appveyor CI
     echo "Not running on Appveyor CI"
     exit 0
 fi
 
+# Set the variables based on the Appveyor environment variables
 APPVEYOR_REPO_NAME="$APPVEYOR_REPO_NAME"
 APPVEYOR_REPO_TAG_NAME="$APPVEYOR_REPO_TAG_NAME"  #unused
 APPVEYOR_BUILD_NUMBER="$APPVEYOR_BUILD_NUMBER"
@@ -59,6 +60,7 @@ if [ ! -z "$APPVEYOR_PULL_REQUEST_NUMBER" ] ; then
     exit 0
 fi
 
+# Confirm there is a repo commit value and that there is a valid Githuf token
 if [ ! -z "$APPVEYOR_REPO_NAME" ] ; then
     # We are running on Appveyor CI
     echo "Running on Appveyor CI"
@@ -74,6 +76,7 @@ else
     exit 1
 fi
 
+# Setup URLs
 tag_url="https://api.github.com/repos/$APPVEYOR_REPO_NAME/git/refs/tags/$RELEASE_NAME"
 tag_infos=$(curl -XGET --header "Authorization: token ${GITHUB_TOKEN}" "${tag_url}")
 echo "tag_infos: $tag_infos"
@@ -94,6 +97,7 @@ echo "release_url: $release_url"
 target_commit_sha=$(echo "$release_infos" | grep '"target_commitish":' | head -n 1 | cut -d '"' -f 4 | cut -d '{' -f 1)
 echo "target_commit_sha: $target_commit_sha"
 
+# Delete the Github release and tag when appropriate and setup the release
 if [ "$APPVEYOR_REPO_COMMIT" != "$target_commit_sha" ] ; then
     echo "APPVEYOR_REPO_COMMIT != target_commit_sha, hence deleting $RELEASE_NAME..."
 
@@ -145,7 +149,6 @@ if [ "$APPVEYOR_REPO_COMMIT" != "$target_commit_sha" ] ; then
     unset release_url
     release_url=$(echo "$release_infos" | grep '"url":' | head -n 1 | cut -d '"' -f 4 | cut -d '{' -f 1)
     echo "release_url: $release_url"
-
 fi
 
 if [ -z "$release_url" ] ; then
@@ -171,6 +174,7 @@ urlencode() {
     LC_COLLATE=$old_lc_collate
 }
 
+# Upload each file
 for FILE in "$@" ; do
     FULLNAME="${FILE}"
     BASENAME="$(basename "${FILE}")"
