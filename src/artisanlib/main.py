@@ -5979,7 +5979,7 @@ class tgraphcanvas(FigureCanvas):
             delta_main_events = ['dCHARGE','dDRY','dFCs','dFCe','dSCs','dSCe','dDROP', 'dCOOL']
             try:
                 for i,v in enumerate(delta_main_events):
-                    if (i == 0 and self.timeindex[i] > -1) or (self.timeindex[i] > 0):
+                    if len(sample_timex)>0 and (i == 0 and self.timeindex[i] > -1) or (self.timeindex[i] > 0) and len(sample_timex)>self.timeindex[i]:
                         # we return the time after the event in seconds
                         mathdictionary[v] = sample_timex[-1] - sample_timex[self.timeindex[i]]
                     else:
@@ -34899,7 +34899,6 @@ class ApplicationWindow(QMainWindow):
             # get profile filenames
             files = self.reportFiles()
             if files and len(files) > 0:
-                _log.debug('curFIle %s', aw.curFile)  #dave
                 cont = aw.qmc.reset(soundOn=False)
                 if cont:
                     profiles = [self.deserialize(f) for f in files]
@@ -34952,7 +34951,6 @@ class ApplicationWindow(QMainWindow):
                     # collect data
 #                    c = 1
                     foreground_profile_path = aw.curFile  # @UndefinedVariable
-                    _log.debug('curFIle %s', aw.curFile)  #dave
                     min_start_time = max_end_time = 0
                     first_profile = True
                     first_profile_event_time = 0
@@ -35415,8 +35413,6 @@ class ApplicationWindow(QMainWindow):
                         aw.qmc.adderror((QApplication.translate('Error Message','Exception:') + ' rankingReport() {0}').format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
                     try:
-                        _log.debug('foreground_profile_path %s',foreground_profile_path)
-                        _log.debug('aw.qmc.backgroundpath %s',aw.qmc.backgroundpath)
                         # redraw original graph
                         if foreground_profile_path:
                             aw.loadFile(foreground_profile_path)
