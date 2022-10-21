@@ -85,7 +85,7 @@ echo ***** Finished installing pyinstaller v%PYINSTALLER_VER%
 ::
 echo curl vc_redist.x64.exe
 curl -L -O %VC_REDIST%
-if not exist %VC_REDIST% (exit /b 104)
+if not exist vc_redist.x64.exe (exit /b 104)
 
 ::echo curl snap7
 ::curl -k -L -O https://netcologne.dl.sourceforge.net/project/snap7/1.4.2/snap7-full-1.4.2.7z
