@@ -13,12 +13,10 @@ environment:
     appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
     appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: macos
-#    appveyor_build_worker_image: macos
-#  - job_name: linux
-#    appveyor_build_worker_image: Ubuntu2004
-#  - job_name: rpi
-#    appveyor_build_worker_image: Ubuntu1604
+  - job_name: macos
+    appveyor_build_worker_image: macos
+  - job_name: linux
+    appveyor_build_worker_image: Ubuntu2004
 
 matrix:
   allow_failures:
@@ -45,14 +43,11 @@ for:
 
   environment:
     PYTHON_PATH: "C:\\Python38-x64"
-    QT_PATH: "c:\\qt\\5.15\\msvc2019_64"  #https://www.appveyor.com/docs/windows-images-software/#qt
+    QT_PATH: "c:\\qt\\5.15\\msvc2019_64"
     PYUIC: "pyuic5.exe"
-#    PYINSTALLER_VER: "5.4.1"
     BUILD_PYINSTALLER: "True"
-#    LIBUSB_VER: "1.2.6.0"
     ARTISAN_LEGACY: "True"
     VC_REDIST: "https://aka.ms/vs/16/release/vc_redist.x64.exe"
-    UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
     - cmd: echo Windows Legacy Install
@@ -85,8 +80,8 @@ for:
 #    - path: 'src\artisan-*.zip'
 
   deploy_script:
-    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-    - cmd: bash upload.sh artisan-*.zip
+    - cmd: bash ../.ci/upload.sh artisan-*.zip
+
 
 
 -
@@ -97,14 +92,11 @@ for:
 
   environment:
     PYTHON_PATH: "C:\\Python310-x64"
-    QT_PATH: "C:\\qt\\6.2\\msvc2019_64"  #https://www.appveyor.com/docs/windows-images-software/#qt
+    QT_PATH: "C:\\qt\\6.2\\msvc2019_64"
     PYUIC: "pyuic6.exe"
-    PYINSTALLER_VER: "5.4.1"
-    LIBUSB_VER: "1.2.6.0"
     BUILD_PYINSTALLER: "True"
     ARTISAN_LEGACY: "False"
     VC_REDIST: "https://aka.ms/vs/17/release/vc_redist.x64.exe"
-    UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
     - cmd: echo Windows Install
@@ -137,8 +129,7 @@ for:
 #    - path: 'src\artisan-*.zip'
 
   deploy_script:
-    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-    - cmd: bash upload.sh artisan-*.zip
+    - cmd: bash ../.ci/upload.sh artisan-*.zip
 
 
 -
@@ -177,10 +168,11 @@ for:
 
   deploy_script:
     - cd src
-    - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
-    - export UPLOADTOOL_ISPRERELEASE=true
-    - bash upload.sh artisan-*.dmg
+#    - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
+#    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
+#    - export UPLOADTOOL_ISPRERELEASE=true
+#    - bash upload.sh artisan-*.dmg
+     - bash ../.ci/upload.sh artisan-*.dmg
 
 -
   matrix:
@@ -213,44 +205,11 @@ for:
 #  artifacts:
 #    - path: 'src/artisan-*.deb'
 #    - path: 'src/artisan-*.rpm'
+#    - path: 'src/artisan-*.AppImage'
 
   deploy_script:
     - cd src
-    - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
-    - export UPLOADTOOL_ISPRERELEASE=true
-    - bash upload.sh artisan-*.deb
-    - bash upload.sh artisan-*.rpm
-    - bash upload.sh artisan-*.AppImage
+    - bash ../.ci/upload.sh artisan-*.deb
+    - bash ../.ci/upload.sh artisan-*.rpm
+    - bash ../.ci/upload.sh artisan-*.AppImage
 
--
-  matrix:
-    only:
-      - job_name: rpi
-    fast_finish: false
-
-  environment:
-    ARTISAN_OS: rpi
-    PYTHON: $HOME/venv3.9
-
-  install:
-    - echo "RPI Install"
-    - chmod +x ./.ci/*.sh
-    - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
-    - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
-    - .ci/install-${ARTISAN_OS}.sh
-
-  build_script:
-    - echo "RPI Build"
-    - chmod +x src/*.sh
-    - .ci/script-${ARTISAN_OS}.sh
-
-#  artifacts:
-#    - path: 'src/artisan-*.deb'
-
-  deploy_script:
-    - cd src
-    - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
-    - export UPLOADTOOL_ISPRERELEASE=true
-    - bash upload.sh artisan-*.deb
