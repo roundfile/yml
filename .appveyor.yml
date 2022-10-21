@@ -86,6 +86,7 @@ for:
 
   deploy_script:
     - ps: $env:Foo
+    - cmd: echo %Foo%
     - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
     - cmd: bash upload.sh artisan-*.zip
 
