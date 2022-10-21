@@ -57,8 +57,8 @@ for:
   install:
     - cmd: echo Windows Legacy Install
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
-    - ps: $env:PYINSTALLER_VER = Select-String -Path ./src/requirements-win-legacy.txt 'pyinstaller==(\d\.\d*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
-    - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements-win-legacy.txt 'libusb==(\d\.\d*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
+    - ps: $env:PYINSTALLER_VER = Select-String -Path ./src/requirements-win-legacy.txt 'pyinstaller==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
+    - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements-win-legacy.txt 'libusb==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
     - cmd: .ci\install-win.bat LEGACY
 
   build_script:
@@ -109,8 +109,8 @@ for:
   install:
     - cmd: echo Windows Install
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
-    - ps: $env:PYINSTALLER_VER = Select-String -Path ./src/requirements-win.txt 'pyinstaller==(\d\.\d*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
-    - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements-win.txt 'libusb==(\d\.\d*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
+    - ps: $env:PYINSTALLER_VER = Select-String -Path ./src/requirements-win.txt 'pyinstaller==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
+    - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements-win.txt 'libusb==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
     - cmd: .ci\install-win.bat
 
   build_script:
