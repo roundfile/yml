@@ -56,7 +56,7 @@ for:
 
   install:
     - ps: $env:Foo = Select-String -Path ./src/requirements-win-legacy.txt 'pyinstaller==(\d\.\d*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
-    - cmd %Foo%
+    - cmd: %Foo%
     - cmd: echo Windows Legacy Install
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 #    - cmd: .ci\install-win.bat LEGACY
