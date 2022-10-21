@@ -55,6 +55,8 @@ for:
     UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
+    - ps: $env:Foo = Select-String -Path ./src/requirements-win-legacy.txt 'pyinstaller==(\d\.\d*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
+     -ps: $env:Foo
     - cmd: echo Windows Legacy Install
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 #    - cmd: .ci\install-win.bat LEGACY
@@ -106,7 +108,6 @@ for:
     UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
-    - ps: $env:Foo = Select-String -Path ./src/requirements-win-legacy.txt 'pyinstaller==(\d\.\d*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
     - cmd: echo Windows Install
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
     - cmd: .ci\install-win.bat
