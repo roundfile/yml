@@ -18,10 +18,6 @@ environment:
   - job_name: linux
     appveyor_build_worker_image: Ubuntu2004
 
-matrix:
-  allow_failures:
-    - job_name: rpi
-
 init:
   # Set "build version number" shown in appveyor build status to the commit hash, the build number keeps it unique
   - ps: Update-AppveyorBuild -Version "$($env:APPVEYOR_REPO_COMMIT.substring(0,7)) ($env:APPVEYOR_BUILD_NUMBER)"
