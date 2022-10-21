@@ -11,8 +11,8 @@ environment:
   matrix:
   - job_name: windows_legacy
     appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: windows
-#    appveyor_build_worker_image: Visual Studio 2019
+  - job_name: windows
+    appveyor_build_worker_image: Visual Studio 2019
 #  - job_name: macos
 #    appveyor_build_worker_image: macos
 #  - job_name: linux
@@ -45,21 +45,21 @@ for:
 
   environment:
     PYTHON_PATH: "C:\\Python38-x64"
-    QT_PATH: "c:\\qt\\5.15\\msvc2019_64"
+    QT_PATH: "c:\\qt\\5.15\\msvc2019_64"  #https://www.appveyor.com/docs/windows-images-software/#qt
     PYUIC: "pyuic5.exe"
-    PYINSTALLER_VER: "5.4.1"
+#    PYINSTALLER_VER: "5.4.1"
     BUILD_PYINSTALLER: "True"
-    LIBUSB_VER: "1.2.6.0"
+#    LIBUSB_VER: "1.2.6.0"
     ARTISAN_LEGACY: "True"
     VC_REDIST: "https://aka.ms/vs/16/release/vc_redist.x64.exe"
     UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
-    - ps: $env:Foo = Select-String -Path ./src/requirements-win-legacy.txt 'pyinstaller==(\d\.\d*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
-    - cmd: echo %Foo%
     - cmd: echo Windows Legacy Install
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
-#    - cmd: .ci\install-win.bat LEGACY
+    - ps: $env:PYINSTALLER_VER = Select-String -Path ./src/requirements-win-legacy.txt 'pyinstaller==(\d\.\d*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
+    - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements-win-legacy.txt 'libusb==(\d\.\d*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
+    - cmd: .ci\install-win.bat LEGACY
 
   build_script:
     - cmd: echo Windows Legacy Build
@@ -76,7 +76,7 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the install script
-#    - cmd: build-win3-pi.bat LEGACY
+    - cmd: build-win3-pi.bat LEGACY
 
 #  test_script:
 #    - cmd: python -m unittest discover
@@ -85,8 +85,6 @@ for:
 #    - path: 'src\artisan-*.zip'
 
   deploy_script:
-    - ps: $env:Foo
-    - cmd: echo %Foo%
     - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
     - cmd: bash upload.sh artisan-*.zip
 
@@ -99,7 +97,7 @@ for:
 
   environment:
     PYTHON_PATH: "C:\\Python310-x64"
-    QT_PATH: "C:\\qt\\6.2\\msvc2019_64"
+    QT_PATH: "C:\\qt\\6.2\\msvc2019_64"  #https://www.appveyor.com/docs/windows-images-software/#qt
     PYUIC: "pyuic6.exe"
     PYINSTALLER_VER: "5.4.1"
     LIBUSB_VER: "1.2.6.0"
@@ -111,6 +109,8 @@ for:
   install:
     - cmd: echo Windows Install
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
+    - ps: $env:PYINSTALLER_VER = Select-String -Path ./src/requirements-win.txt 'pyinstaller==(\d\.\d*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
+    - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements-win.txt 'libusb==(\d\.\d*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
     - cmd: .ci\install-win.bat
 
   build_script:
