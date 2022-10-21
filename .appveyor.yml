@@ -172,7 +172,7 @@ for:
 #    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
 #    - export UPLOADTOOL_ISPRERELEASE=true
 #    - bash upload.sh artisan-*.dmg
-     - bash ../.ci/upload.sh artisan-*.dmg
+    - bash ../.ci/upload.sh artisan-*.dmg
 
 -
   matrix:
