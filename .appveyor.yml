@@ -11,8 +11,8 @@ environment:
   matrix:
   - job_name: windows_legacy
     appveyor_build_worker_image: Visual Studio 2019
-  - job_name: windows
-    appveyor_build_worker_image: Visual Studio 2019
+#  - job_name: windows
+#    appveyor_build_worker_image: Visual Studio 2019
 #  - job_name: macos
 #    appveyor_build_worker_image: macos
 #  - job_name: linux
@@ -83,6 +83,7 @@ for:
 #    - path: 'src\artisan-*.zip'
 
   deploy_script:
+    - ps: $env:Foo
     - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
     - cmd: bash upload.sh artisan-*.zip
 
@@ -105,6 +106,7 @@ for:
     UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
+    - ps: $env:Foo = Select-String -Path ./src/requirements-win-legacy.txt 'pyinstaller==(\d\.\d*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
     - cmd: echo Windows Install
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
     - cmd: .ci\install-win.bat
