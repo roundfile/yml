@@ -1,13 +1,3 @@
-##########################################################
-# Windows Stand alone version builds
-#
-#   set appveyor project settings to use this custom yml file (or rename it and replace .appveyor.yml)
-# 
-#   requires build-win3-standalone-pi.bat and setup-standalone3-pi.nsi to be in .\src folder
-#
-#   .exe files upload to appveyor artifacts
-##########################################################
-
 # Generic build number, later set to commit hash by init
 version: '{build}'
 
@@ -23,10 +13,10 @@ environment:
     appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
     appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: macos
-#    appveyor_build_worker_image: macos
-#  - job_name: linux
-#    appveyor_build_worker_image: Ubuntu2004
+  - job_name: macos
+    appveyor_build_worker_image: macos
+  - job_name: linux
+    appveyor_build_worker_image: Ubuntu2004
 #  - job_name: rpi
 #    appveyor_build_worker_image: Ubuntu1604
 
@@ -59,6 +49,7 @@ for:
     PYUIC: "pyuic5.exe"
     PYINSTALLER_VER: "5.4.1"
     BUILD_PYINSTALLER: "True"
+    LIBUSB_VER: "1.2.6.0"
     ARTISAN_LEGACY: "True"
     VC_REDIST: "https://aka.ms/vs/16/release/vc_redist.x64.exe"
     UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
@@ -83,18 +74,17 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the install script
-    - cmd: build-win3-standalone-pi.bat LEGACY
+    - cmd: build-win3-pi.bat LEGACY
 
 #  test_script:
 #    - cmd: python -m unittest discover
 
-  artifacts:
+#  artifacts:
 #    - path: 'src\artisan-*.zip'
-    - path: 'src\artisan*.exe'
 
-#  deploy_script:
-#    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-#    - cmd: bash upload.sh artisan-*.zip
+  deploy_script:
+    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
+    - cmd: bash upload.sh artisan-*.zip
 
 
 -
@@ -108,6 +98,7 @@ for:
     QT_PATH: "C:\\qt\\6.2\\msvc2019_64"
     PYUIC: "pyuic6.exe"
     PYINSTALLER_VER: "5.4.1"
+    LIBUSB_VER: "1.2.6.0"
     BUILD_PYINSTALLER: "True"
     ARTISAN_LEGACY: "False"
     VC_REDIST: "https://aka.ms/vs/17/release/vc_redist.x64.exe"
@@ -133,18 +124,17 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the install script
-    - cmd: build-win3-standalone-pi.bat
+    - cmd: build-win3-pi.bat
 
 #  test_script:
 #    - cmd: python -m unittest discover
 
-  artifacts:
+#  artifacts:
 #    - path: 'src\artisan-*.zip'
-    - path: 'src\artisan*.exe'
 
-#  deploy_script:
-#    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-#    - cmd: bash upload.sh artisan-*.zip
+  deploy_script:
+    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
+    - cmd: bash upload.sh artisan-*.zip
 
 
 -

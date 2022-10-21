@@ -13,13 +13,15 @@ if /i "%APPVEYOR%" NEQ "True" (
         set QT_PATH=c:\qt\5.15\msvc2019_64
         set ARTISAN_SPEC=win-legacy
         set PYINSTALLER_VER=5.3
+        set LIBUSB_VER=1.2.6.0
         set BUILD_PYINSTALLER=False
         set VC_REDIST=https://aka.ms/vs/16/release/vc_redist.x64.exe
     ) else (
         set PYTHON_PATH=c:\Python310-64
         set QT_PATH=c:\qt\6.2\msvc2019_64
         set ARTISAN_SPEC=win
-        set PYINSTALLER_VER=5.3
+        set PYINSTALLER_VER=5.5
+        set LIBUSB_VER=1.2.6.0
         set BUILD_PYINSTALLER=True
         set VC_REDIST=https://aka.ms/vs/17/release/vc_redist.x64.exe
     )
@@ -54,6 +56,7 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     echo ***** Start build pyinstaller v%PYINSTALLER_VER%
     echo ***** curl pyinstaller v%PYINSTALLER_VER%
     curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
+    if not exist v%PYINSTALLER_VER%.zip (exit /b 100)
     7z x v%PYINSTALLER_VER%.zip
     del v%PYINSTALLER_VER%.zip
     if not exist pyinstaller-%PYINSTALLER_VER%\bootloader\ (exit /b 101)
@@ -82,6 +85,7 @@ echo ***** Finished installing pyinstaller v%PYINSTALLER_VER%
 ::
 echo curl vc_redist.x64.exe
 curl -L -O %VC_REDIST%
+if not exist %VC_REDIST% (exit /b 104)
 
 ::echo curl snap7
 ::curl -k -L -O https://netcologne.dl.sourceforge.net/project/snap7/1.4.2/snap7-full-1.4.2.7z
@@ -93,6 +97,7 @@ curl -L -O %VC_REDIST%
 copy %PYTHON_PATH%\Lib\site-packages\snap7\lib\snap7.dll C:\Windows
 
 echo curl libusb-win32
-curl -k -L -O https://netcologne.dl.sourceforge.net/project/libusb-win32/libusb-win32-releases/1.2.6.0/libusb-win32-bin-1.2.6.0.zip
-7z x libusb-win32-bin-1.2.6.0.zip
-copy libusb-win32-bin-1.2.6.0\bin\amd64\libusb0.dll C:\Windows\SysWOW64
+curl -k -L -O https://netcologne.dl.sourceforge.net/project/libusb-win32/libusb-win32-releases/%LIBUSB_VER%/libusb-win32-bin-%LIBUSB_VER%.zip
+if not exist libusb-win32-bin-%LIBUSB_VER%.zip (exit /b 105)
+7z x libusb-win32-bin-%LIBUSB_VER%.zip
+copy libusb-win32-bin-%LIBUSB_VER%\bin\amd64\libusb0.dll C:\Windows\SysWOW64
