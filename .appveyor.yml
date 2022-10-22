@@ -147,6 +147,8 @@ for:
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
     - export LIBXML_VER="$(grep -F -m 1 'libxml==' ./src/requirements-osx.txt)"; LIBXML_VER="${LIBXML_VER#*\=\=}"; LIBXML_VER="${LIBXML_VER%% *}"
+    - echo $GIT_VERSION
+    - echo $LIBXML_VER
     # run the install script
 #    - .ci/install-${ARTISAN_OS}.sh
 
@@ -165,7 +167,7 @@ for:
 
   deploy_script:
     - echo "LIBXML_VER"
-    - echo ${LIBXML_VER}
+    - echo $LIBXML_VER
     - cd src
 #    - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
 #    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
