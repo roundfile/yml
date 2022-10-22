@@ -1,7 +1,7 @@
 ######
 # platform specifics:
 #
-# libxml=4.9.1  # downloaded
+# libxml==4.9.1  # downloaded
 appnope==0.1.3
 pyobjc-core==8.5.1 #8.5
 pyobjc-framework-Cocoa==8.5.1 #8.5
