@@ -98,7 +98,8 @@ for:
 
   install:
     - ps: Write-Host $env:PYTHON_VER
-    - ps: $env:PYTHON_PATH = $env:PYTHON_VER -replace '\.',''
+    - ps: $env:PYTHON_PATH = "C:\\Python${$env:PYTHON_VER -replace '\.',''}-x64"
+    - ps: Write-Host $env:PYTHON_PATH
 
     - cmd: echo Windows Install
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
