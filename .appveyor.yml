@@ -8,6 +8,9 @@ clone_depth: 1
 # Include "nodeploy" in the commit message to prevent deployment to github
 
 environment:
+  # set the Python version for macos and linux here, for windows set the path in the
+  PYTHON_VER: 3.10
+
   matrix:
 #  - job_name: windows_legacy
 #    appveyor_build_worker_image: Visual Studio 2019
@@ -18,7 +21,6 @@ environment:
 #  - job_name: linux
 #    appveyor_build_worker_image: Ubuntu2004
 
-  PYTHON_VER: 3.10
   
 init:
   # Set "build version number" shown in appveyor build status to the commit hash, the build number keeps it unique
@@ -30,7 +32,7 @@ branches:
     - master
 
 stack:
-  python 3.10 # if nothing else is specified per platform, this indicates the Python version to be used
+  python ${PYTHON_VER}  #3.10 # if nothing else is specified per platform, this indicates the Python version to be used
 
 for:
 -
