@@ -108,7 +108,7 @@ for:
 #    - cmd: .ci\install-win.bat
 
   build_script:
-    - ps: Write-Host $env:PYTHON_VER
+    - ps: Write-Host $env:PYTHON_V
     - cmd: echo Windows Build
     - cmd: cd src
 
