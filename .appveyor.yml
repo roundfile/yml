@@ -137,7 +137,7 @@ for:
   environment:
     ARTISAN_OS: osx
     #PYTHON_V: 3.10
-    PYTHON_V: {PYTHON_VER}  #3.10
+    PYTHON_V: ${PYTHON_VER}  #3.10
     PYTHONPATH: /usr/local/lib/python${PYTHON_V}
     MACOSX_DEPLOYMENT_TARGET: 10.15
 
