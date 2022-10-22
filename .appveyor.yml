@@ -98,7 +98,7 @@ for:
 
   install:
     - ps: Write-Host $env:PYTHON_VER
-    - ps: $env:PYTHON_PATH = "C:\\Python${$env:PYTHON_VER -replace '\.',''}-x64"
+    - ps: $env:PYTHON_PATH = "C:\\Python{$env:PYTHON_VER -replace '\.',''}-x64"
     - ps: Write-Host $env:PYTHON_PATH
 
     - cmd: echo Windows Install
