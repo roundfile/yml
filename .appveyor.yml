@@ -97,10 +97,8 @@ for:
     VC_REDIST: "https://aka.ms/vs/17/release/vc_redist.x64.exe"
 
   install:
-    - sh: echo "${PYTHON_V}"
-    - sh: echo ${PYTHON_V}
-    - sh: export PYTHON_PATH=`echo "${PYTHON_V}" | sed 's/\.//g'`
-
+    - echo ${PYTHON_VER}
+    - ps: $env:PYTHON_PATH = $env:PYTHON_VER -replace '\.',''
 
     - cmd: echo Windows Install
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
