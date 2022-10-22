@@ -97,13 +97,13 @@ for:
     VC_REDIST: "https://aka.ms/vs/17/release/vc_redist.x64.exe"
 
   install:
+    - sh: export PYTHON_PATH=`echo "${PYTHON_V}" | sed 's/\.//g'`
+
+
     - cmd: echo Windows Install
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
     - ps: $env:PYINSTALLER_VER = Select-String -Path ./src/requirements-win.txt 'pyinstaller==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
     - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements-win.txt 'libusb==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
-
-    - sh: export PYTHON_PATH=``echo "${PYTHON_V}" | sed 's/\.//g'`
-
 
 #    - cmd: .ci\install-win.bat
 
