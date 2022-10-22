@@ -8,7 +8,7 @@ clone_depth: 1
 # Include "nodeploy" in the commit message to prevent deployment to github
 
 environment:
-  # set the Python version for macos and linux here, for windows set the path in the
+  # Set the Python version for windows macos and linux here. Does not affect windows_legacy.
   PYTHON_VER: 3.10
 
   matrix:
@@ -97,20 +97,17 @@ for:
     VC_REDIST: "https://aka.ms/vs/17/release/vc_redist.x64.exe"
 
   install:
-    - ps: Write-Host $env:PYTHON_VER
-    - ps: $env:PYTHON_PATH = "C:\\Python$($env:PYTHON_VER -replace '\.','')-x64"
-    #- ps: $env:PYTHON_PATH = "C:\\Python${env:PYTHON_VER}-x64"
-    - ps: Write-Host $env:PYTHON_PATH
 
     - cmd: echo Windows Install
-    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
+    - ps: $env:PYTHON_PATH = "C:\\Python$($env:PYTHON_VER -replace '\.','')-x64"
+    - ps: Write-Host $env:PYTHON_PATH
     - ps: $env:PYINSTALLER_VER = Select-String -Path ./src/requirements-win.txt 'pyinstaller==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
     - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements-win.txt 'libusb==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
+    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 
-#    - cmd: .ci\install-win.bat
+    - cmd: .ci\install-win.bat
 
   build_script:
-    - ps: Write-Host $env:PYTHON_PATH
     - cmd: echo Windows Build
     - cmd: cd src
 
@@ -125,7 +122,7 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the install script
-#    - cmd: build-win3-pi.bat
+    - cmd: build-win3-pi.bat
 
 #  test_script:
 #    - cmd: python -m unittest discover
