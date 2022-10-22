@@ -9,15 +9,15 @@ clone_depth: 1
 
 environment:
   # set the Python version for macos and linux here, for windows set the path in the
-  PYTHON_VER: 3.9
+  PYTHON_VER: 3.10
 
   matrix:
 #  - job_name: windows_legacy
 #    appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: windows
-#    appveyor_build_worker_image: Visual Studio 2019
-  - job_name: macos
-    appveyor_build_worker_image: macos
+  - job_name: windows
+    appveyor_build_worker_image: Visual Studio 2019
+#  - job_name: macos
+#    appveyor_build_worker_image: macos
 #  - job_name: linux
 #    appveyor_build_worker_image: Ubuntu2004
 
@@ -89,7 +89,7 @@ for:
     fast_finish: false
 
   environment:
-    PYTHON_PATH: "C:\\Python310-x64"
+#    PYTHON_PATH: "C:\\Python310-x64"
     QT_PATH: "C:\\qt\\6.2\\msvc2019_64"
     PYUIC: "pyuic6.exe"
     BUILD_PYINSTALLER: "True"
@@ -101,9 +101,14 @@ for:
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
     - ps: $env:PYINSTALLER_VER = Select-String -Path ./src/requirements-win.txt 'pyinstaller==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
     - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements-win.txt 'libusb==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
-    - cmd: .ci\install-win.bat
+
+    - sh: export PYTHON_PATH=``echo "${PYTHON_V}" | sed 's/\.//g'`
+
+
+#    - cmd: .ci\install-win.bat
 
   build_script:
+    - echo ${PYTHON_PATH}
     - cmd: echo Windows Build
     - cmd: cd src
 
@@ -118,7 +123,7 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the install script
-    - cmd: build-win3-pi.bat
+#    - cmd: build-win3-pi.bat
 
 #  test_script:
 #    - cmd: python -m unittest discover
