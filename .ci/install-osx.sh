@@ -52,7 +52,7 @@ python3 -m pip install --upgrade pip
 # (an alternative could be to use pip install --user ..)
 # the lxml binaries are compiled with an SDK older than the 10.9 SDK which breaks the notarization
 # thus we force the compilation from source
-sudo -H python3 -m pip install --no-binary lxml lxml==$(LIBUSB_VER} #4.9.1 #4.7.1
+sudo -H python3 -m pip install --no-binary lxml lxml==${LIBUSB_VER} #4.9.1 #4.7.1
 sudo -H python3 -m pip install -r src/requirements.txt
 sudo -H python3 -m pip install -r src/requirements-${ARTISAN_OS}.txt
 
