@@ -146,7 +146,7 @@ for:
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
-    - LIBXML_VER="$(grep -F -m 1 'libxml==' src/requirements-osx.txt)"; LIBXML_VER="${LIBXML_VER#*\=\=}"; LIBXML_VER="${LIBXML_VER%% *}"
+    - LIBXML_VER="$(grep -F -m 1 'libxml==' src/requirements-osx.txt)" #; LIBXML_VER="${LIBXML_VER#*\=\=}"; LIBXML_VER="${LIBXML_VER%% *}"
     - echo $GIT_VERSION
     - echo $LIBXML_VER
     # run the install script
