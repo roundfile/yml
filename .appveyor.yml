@@ -146,9 +146,11 @@ for:
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
-    - export LIBXML_VER=3.4.5.6  #"$(grep -F -m 1 'libxml==' src/requirements-osx.txt)"; LIBXML_VER="${LIBXML_VER#*\=\=}"; LIBXML_VER="${LIBXML_VER%% *}"
+    - ps: $env:LIBXML_VER = Select-String -Path ./src/requirements-osx.txt 'libxml==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value} 
+#    - export LIBXML_VER=3.4.5.6  #"$(grep -F -m 1 'libxml==' src/requirements-osx.txt)"; LIBXML_VER="${LIBXML_VER#*\=\=}"; LIBXML_VER="${LIBXML_VER%% *}"
     - echo $GIT_VERSION
     - echo $LIBXML_VER
+    - echo ${LIBXML_VER}
     # run the install script
 #    - .ci/install-${ARTISAN_OS}.sh
 
