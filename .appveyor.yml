@@ -9,7 +9,7 @@ clone_depth: 1
 
 environment:
   # set the Python version for macos and linux here, for windows set the path in the
-  PYTHON_VER: 3.10
+  PYTHON_VER: 3.9
 
   matrix:
 #  - job_name: windows_legacy
