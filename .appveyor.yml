@@ -9,14 +9,14 @@ clone_depth: 1
 
 environment:
   matrix:
-  - job_name: windows_legacy
-    appveyor_build_worker_image: Visual Studio 2019
-  - job_name: windows
-    appveyor_build_worker_image: Visual Studio 2019
+#  - job_name: windows_legacy
+#    appveyor_build_worker_image: Visual Studio 2019
+#  - job_name: windows
+#    appveyor_build_worker_image: Visual Studio 2019
   - job_name: macos
     appveyor_build_worker_image: macos
-  - job_name: linux
-    appveyor_build_worker_image: Ubuntu2004
+#  - job_name: linux
+#    appveyor_build_worker_image: Ubuntu2004
 
 init:
   # Set "build version number" shown in appveyor build status to the commit hash, the build number keeps it unique
@@ -146,14 +146,15 @@ for:
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
+    - export LIBXML_VER="$(grep -F -m 1 'libxml==' <<< $a)"; LIBXML_VER="${LIBXML_VER#*\=\=}"; LIBXML_VER="${LIBXML_VER%% *}"
     # run the install script
-    - .ci/install-${ARTISAN_OS}.sh
+#    - .ci/install-${ARTISAN_OS}.sh
 
   build_script:
     - echo "MacOS Build"
     - chmod +x src/*.sh
     - chmod +x src/pylupdate6pro
-    - .ci/script-${ARTISAN_OS}.sh
+#    - .ci/script-${ARTISAN_OS}.sh
 
 # unit test fails as it runs on Py3.9 while the build installs under brew isntalled Py3.10 (see build-mac3.py)
 #  test_script:
@@ -163,6 +164,8 @@ for:
 #    - path: 'src/artisan-*.dmg'
 
   deploy_script:
+    - echo "LIBXML_VER"
+    - echo $(LIBXML_VER}
     - cd src
 #    - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
 #    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
