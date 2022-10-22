@@ -2,6 +2,7 @@
 :: the current directory on entry to this script must be the folder above src
 ::
 :: script comandline option LEGACY used to flag a legacy build
+::
 
 :: ----------------------------------------------------------------------
 :: normally these paths are set in appveyor.yml

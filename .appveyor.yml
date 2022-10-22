@@ -23,6 +23,9 @@ init:
   - ps: Update-AppveyorBuild -Version "$($env:APPVEYOR_REPO_COMMIT.substring(0,7)) ($env:APPVEYOR_BUILD_NUMBER)"
   - ps: if($Env:inhibit_deploy -eq 'true'){Write-Host "**** Deploy Inhibited ****"}
 
+environment:
+  PYTHON_V: 3.10
+  
 branches:
   only:
     - master
@@ -77,8 +80,6 @@ for:
 
   deploy_script:
     - cmd: bash ../.ci/upload.sh artisan-*.zip
-
-
 
 -
   matrix:
@@ -147,8 +148,8 @@ for:
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
     # set env variable for libxml version
-    - ps: $env:LIBXML_VER = Select-String -Path src/requirements-osx.txt 'libxml==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value}`
-    #- export LIBXML_VER="$(grep -F -m 1 'libxml==' src/requirements-osx.txt)"; LIBXML_VER="${LIBXML_VER#*\=\=}"; LIBXML_VER="${LIBXML_VER%% *}"
+    - ps: $env:LXML_VER = Select-String -Path src/requirements-osx.txt 'libxml==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value}`
+    #- export LXML_VER="$(grep -F -m 1 'libxml==' src/requirements-osx.txt)"; LIBXML_VER="${LIBXML_VER#*\=\=}"; LIBXML_VER="${LIBXML_VER%% *}"
 
     # run the install script
     - .ci/install-${ARTISAN_OS}.sh
@@ -168,11 +169,8 @@ for:
 
   deploy_script:
     - cd src
-#    - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-#    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
-#    - export UPLOADTOOL_ISPRERELEASE=true
-#    - bash upload.sh artisan-*.dmg
     - bash ../.ci/upload.sh artisan-*.dmg
+
 
 -
   matrix:
