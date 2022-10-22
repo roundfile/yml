@@ -9,22 +9,21 @@ clone_depth: 1
 
 environment:
   matrix:
-  - job_name: windows_legacy
-    appveyor_build_worker_image: Visual Studio 2019
-  - job_name: windows
-    appveyor_build_worker_image: Visual Studio 2019
+#  - job_name: windows_legacy
+#    appveyor_build_worker_image: Visual Studio 2019
+#  - job_name: windows
+#    appveyor_build_worker_image: Visual Studio 2019
   - job_name: macos
     appveyor_build_worker_image: macos
-  - job_name: linux
-    appveyor_build_worker_image: Ubuntu2004
+#  - job_name: linux
+#    appveyor_build_worker_image: Ubuntu2004
 
+  PYTHON_VER: 3.10
+  
 init:
   # Set "build version number" shown in appveyor build status to the commit hash, the build number keeps it unique
   - ps: Update-AppveyorBuild -Version "$($env:APPVEYOR_REPO_COMMIT.substring(0,7)) ($env:APPVEYOR_BUILD_NUMBER)"
   - ps: if($Env:inhibit_deploy -eq 'true'){Write-Host "**** Deploy Inhibited ****"}
-
-environment:
-  PYTHON_V: 3.10
   
 branches:
   only:
@@ -137,11 +136,15 @@ for:
 
   environment:
     ARTISAN_OS: osx
-    PYTHON_V: 3.10
+    #PYTHON_V: 3.10
+    PYTHON_V: {PYTHON_VER}  #3.10
     PYTHONPATH: /usr/local/lib/python${PYTHON_V}
     MACOSX_DEPLOYMENT_TARGET: 10.15
 
   install:
+    - echo ${PYTHON_V}
+    - echo $PYTHON_V
+
     - echo "MacOS Install"
     - chmod +x .ci/*.sh
     # update the __revision__ field with the left seven of the GIT commit hash
@@ -180,7 +183,7 @@ for:
 
   environment:
     ARTISAN_OS: linux
-    PYTHON_V: 3.10
+    PYTHON_V: ${PYTHON_VER}  #3.10
     PYTHON_PATH: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
 
   install:
