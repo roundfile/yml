@@ -165,7 +165,7 @@ for:
 
   deploy_script:
     - echo "LIBXML_VER"
-    - echo $LIBXML_VER
+    - echo ${LIBXML_VER}
     - cd src
 #    - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
 #    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
