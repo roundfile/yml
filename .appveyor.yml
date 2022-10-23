@@ -18,6 +18,7 @@ environment:
 #  - job_name: linux
 #    appveyor_build_worker_image: Ubuntu2004
 
+artifacts: off
 
 # Generic build number, later set to commit hash by init
 version: '{build}'
@@ -172,7 +173,7 @@ for:
     #- export LXML_VER="$(grep -F -m 1 'libxml==' src/requirements-osx.txt)"; LIBXML_VER="${LIBXML_VER#*\=\=}"; LIBXML_VER="${LIBXML_VER%% *}"
 
     # run the install script
-    - .ci/install-${ARTISAN_OS}.sh
+#    - .ci/install-${ARTISAN_OS}.sh
 
   build_script:
     - echo "MacOS Build"
@@ -180,9 +181,8 @@ for:
     - chmod +x src/pylupdate6pro
         
     # run the build script
-#    - .ci/script-${ARTISAN_OS}.sh
     - cd src
-    - ./build-mac3.sh
+#    - ./build-mac3.sh
 
 # unit test fails as it runs on Py3.9 while the build installs under brew isntalled Py3.10 (see build-mac3.py)
 #  test_script:
