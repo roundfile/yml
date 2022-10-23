@@ -9,14 +9,14 @@ environment:
   PYTHON_V: 3.10
 
   matrix:
-  - job_name: windows_legacy
-    appveyor_build_worker_image: Visual Studio 2019
-  - job_name: windows
-    appveyor_build_worker_image: Visual Studio 2019
+#  - job_name: windows_legacy
+#    appveyor_build_worker_image: Visual Studio 2019
+#  - job_name: windows
+#    appveyor_build_worker_image: Visual Studio 2019
   - job_name: macos
     appveyor_build_worker_image: macos
-  - job_name: linux
-    appveyor_build_worker_image: Ubuntu2004
+#  - job_name: linux
+#    appveyor_build_worker_image: Ubuntu2004
 
 
 # Generic build number, later set to commit hash by init
@@ -156,8 +156,6 @@ for:
 
   environment:
     ARTISAN_OS: osx
-    #PYTHON_V: 3.10
-#    PYTHON_V: ${PYTHON_VER}  #3.10
     PYTHONPATH: /usr/local/lib/python${PYTHON_V}
     MACOSX_DEPLOYMENT_TARGET: 10.15
 
@@ -184,14 +182,14 @@ for:
     # run the build script
 #    - .ci/script-${ARTISAN_OS}.sh
     - cd src
-    - build-mac3.sh
+    - ./build-mac3.sh
 
 # unit test fails as it runs on Py3.9 while the build installs under brew isntalled Py3.10 (see build-mac3.py)
 #  test_script:
 #    - python -m unittest discover -s src
 
-#  artifacts:
-#    - path: 'src/artisan-*.dmg'
+  artifacts:
+    - path: 'src/artisan-*.dmg'
 
   deploy_script:
 #    - cd src
