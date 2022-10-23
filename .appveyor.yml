@@ -182,7 +182,8 @@ for:
     - chmod +x src/pylupdate6pro
         
     # run the build script
-    - .ci/script-${ARTISAN_OS}.sh
+#    - .ci/script-${ARTISAN_OS}.sh
+    - src/build-mac3.sh
 
 # unit test fails as it runs on Py3.9 while the build installs under brew isntalled Py3.10 (see build-mac3.py)
 #  test_script:

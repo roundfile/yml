@@ -48,11 +48,6 @@ python3 --version
 #brew install p7zip
 
 python3 -m pip install --upgrade pip
-# to allow the installation of numpy >v1.15.4, avoiding the Permission denied: '/usr/local/bin/f2py' error, we run the following pip3 installs under sudo:
-# (an alternative could be to use pip install --user ..)
-# the lxml binaries are compiled with an SDK older than the 10.9 SDK which breaks the notarization
-# thus we force the compilation from source
-sudo -H python3 -m pip install --no-binary lxml lxml==${LXML_VER} #4.9.1 #4.7.1
 sudo -H python3 -m pip install -r src/requirements.txt
 sudo -H python3 -m pip install -r src/requirements-${ARTISAN_OS}.txt
 
