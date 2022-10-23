@@ -31,8 +31,7 @@ init:
   # Sets the commit hash to "build version number" shown in appveyor build status, the build number keeps it unique
   - ps: Update-AppveyorBuild -Version "$($env:APPVEYOR_REPO_COMMIT.substring(0,7)) ($env:APPVEYOR_BUILD_NUMBER)"
   # Write a message to the appveyor log when nodeploy 
-  - ps: if($Env:inhibit_deploy -eq 'true'){Write-Host "**** Deploy Inhibited ****"}
-  - exit(1)
+  - ps: if($Env:inhibit_deploy -eq 'false'){Write-Host "**** Deploy Inhibited ****"}
   
 branches:
   only:
