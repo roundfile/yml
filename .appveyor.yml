@@ -16,7 +16,7 @@ environment:
   - job_name: macos
     appveyor_build_worker_image: macos
   - job_name: linux
-   appveyor_build_worker_image: Ubuntu2004
+    appveyor_build_worker_image: Ubuntu2004
 
 
 # Generic build number, later set to commit hash by init
