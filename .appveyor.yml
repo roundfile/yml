@@ -3,7 +3,6 @@
 #     for Windows, Windows legacy, macOS, and Linux
 ################################################################### 
 # Include "skip ci" in the commit message to prevent this build process from running
-# Include "nodeploy" in the commit message to prevent deploying to github
 
 environment:
   # Set the Python version for windows, macos and linux here. Does not affect windows_legacy.
@@ -12,12 +11,12 @@ environment:
   matrix:
   - job_name: windows_legacy
     appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: windows
-#    appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: macos
-#    appveyor_build_worker_image: macos
-#  - job_name: linux
-#   appveyor_build_worker_image: Ubuntu2004
+  - job_name: windows
+    appveyor_build_worker_image: Visual Studio 2019
+  - job_name: macos
+    appveyor_build_worker_image: macos
+  - job_name: linux
+   appveyor_build_worker_image: Ubuntu2004
 
 
 # Generic build number, later set to commit hash by init
@@ -30,8 +29,6 @@ clone_depth: 1
 init:
   # Sets the commit hash to "build version number" shown in appveyor build status, the build number keeps it unique
   - ps: Update-AppveyorBuild -Version "$($env:APPVEYOR_REPO_COMMIT.substring(0,7)) ($env:APPVEYOR_BUILD_NUMBER)"
-  # Write a message to the appveyor log when nodeploy 
-  - ps: if($Env:inhibit_deploy -eq 'true'){Write-Output "**** Deploy Inhibited ****"}
   
 branches:
   only:
@@ -56,10 +53,6 @@ for:
     VC_REDIST: "https://aka.ms/vs/16/release/vc_redist.x64.exe"
 
   install:
-    - ps: Write-Output $Env:inhibit_deploy
-    - ps: Write-Output $Env:PYTHON_PATH
-    - ps: Exit-AppveyorBuild
-        
     - cmd: echo Windows Legacy Install
 
     # pull library versions from requirments file
