@@ -183,7 +183,8 @@ for:
         
     # run the build script
 #    - .ci/script-${ARTISAN_OS}.sh
-    - src/build-mac3.sh
+    - cd src
+    - build-mac3.sh
 
 # unit test fails as it runs on Py3.9 while the build installs under brew isntalled Py3.10 (see build-mac3.py)
 #  test_script:
@@ -193,7 +194,7 @@ for:
 #    - path: 'src/artisan-*.dmg'
 
   deploy_script:
-    - cd src
+#    - cd src
     - bash ../.ci/upload.sh artisan-*.dmg
 
 
