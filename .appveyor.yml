@@ -31,7 +31,7 @@ init:
   # Sets the commit hash to "build version number" shown in appveyor build status, the build number keeps it unique
   - ps: Update-AppveyorBuild -Version "$($env:APPVEYOR_REPO_COMMIT.substring(0,7)) ($env:APPVEYOR_BUILD_NUMBER)"
   # Write a message to the appveyor log when nodeploy 
-  - ps: if($Env:inhibit_deploy -eq 'false'){Write-Host "**** Deploy Inhibited ****"}
+  - ps: if($Env:inhibit_deploy -eq 'true'){Write-Output "**** Deploy Inhibited ****"}
   
 branches:
   only:
@@ -56,6 +56,10 @@ for:
     VC_REDIST: "https://aka.ms/vs/16/release/vc_redist.x64.exe"
 
   install:
+    - ps: Write-Output $Env:inhibit_deploy
+    - ps: Write-Output $Env:PYTHON_PATH
+    - ps: Exit-AppveyorBuild
+        
     - cmd: echo Windows Legacy Install
 
     # pull library versions from requirments file
