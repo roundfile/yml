@@ -69,7 +69,7 @@ for:
     - cmd: echo Windows Legacy Build
     - cmd: cd src
         
-    #update the copyright year used by pyinstaller to set exe propertis for Windows
+    #update the copyright year used by pyinstaller to set exe properties for Windows
     - ps: $YEAR=(Get-Date).year
     - ps: gc version-metadata.yml | %{ $_ -replace "yyyy", "$YEAR" } | out-file newfile -encoding ascii
     - ps: move -force newfile version-metadata.yml
@@ -125,7 +125,7 @@ for:
     - cmd: echo Windows Build
     - cmd: cd src
 
-    #update the copyright year used by pyinstaller to set exe propertis for Windows
+    #update the copyright year used by pyinstaller to set exe properties for Windows
     - ps: $YEAR=(Get-Date).year
     - ps: gc version-metadata.yml | %{ $_ -replace "yyyy", "$YEAR" } | out-file newfile -encoding ascii
     - ps: move -force newfile version-metadata.yml
@@ -188,7 +188,7 @@ for:
 
   deploy_script:
 #    - cd src
-    - bash ../.ci/upload.sh artisan-*.dmg
+    - ../.ci/upload.sh artisan-*.dmg
 
 
 -
@@ -230,7 +230,7 @@ for:
 
   deploy_script:
     - cd src
-    - bash ../.ci/upload.sh artisan-*.deb
-    - bash ../.ci/upload.sh artisan-*.rpm
-    - bash ../.ci/upload.sh artisan-*.AppImage
+    - ../.ci/upload.sh artisan-*.deb
+    - ../.ci/upload.sh artisan-*.rpm
+    - ../.ci/upload.sh artisan-*.AppImage
 
