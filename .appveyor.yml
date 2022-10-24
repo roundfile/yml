@@ -9,12 +9,12 @@ environment:
   PYTHON_V: 3.10
 
   matrix:
-#  - job_name: windows_legacy
-#    appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: windows
-#    appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: macos
-#    appveyor_build_worker_image: macos
+  - job_name: windows_legacy
+    appveyor_build_worker_image: Visual Studio 2019
+  - job_name: windows
+    appveyor_build_worker_image: Visual Studio 2019
+  - job_name: macos
+    appveyor_build_worker_image: macos
   - job_name: linux
     appveyor_build_worker_image: Ubuntu2004
 
@@ -168,7 +168,7 @@ for:
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
 
     # run the install script
-    - .ci/install-${ARTISAN_OS}.sh
+    - .ci/install-macos.sh
 
   build_script:
     - echo "MacOS Build"
@@ -211,15 +211,15 @@ for:
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
 
     # run the install script
-    - .ci/install-${ARTISAN_OS}.sh
+    - .ci/install-linux.sh
 
   build_script:
     - echo "Linux Build"
     - chmod +x src/*.sh
     - cd src
 
-    # run the build script
-    - ./build-${ARTISAN_OS}.sh
+    # run the build scripts
+    - ./build-linux.sh
     - ./build-linux-pkg.sh
 
 #  test_script:
