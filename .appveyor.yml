@@ -216,9 +216,10 @@ for:
   build_script:
     - echo "Linux Build"
     - chmod +x src/*.sh
+    - cd src
 
     # run the build script
-    - .ci/script-${ARTISAN_OS}.sh
+    - ./build-${ARTISAN_OS}.sh
 
 #  test_script:
 #    - QT_QPA_PLATFORM=offscreen python -m unittest discover -s src
@@ -229,7 +230,6 @@ for:
 #    - path: 'src/artisan-*.AppImage'
 
   deploy_script:
-    - cd src
     - ../.ci/upload.sh artisan-*.deb
     - ../.ci/upload.sh artisan-*.rpm
     - ../.ci/upload.sh artisan-*.AppImage
