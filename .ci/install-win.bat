@@ -52,6 +52,7 @@ echo Python Version
 ::
 %PYTHON_PATH%\python.exe -m pip install -r src\requirements.txt
 %PYTHON_PATH%\python.exe -m pip install -r src\requirements-%ARTISAN_SPEC%.txt
+if not ERRORLEVEL 1 (exit /b 1)
 
 ::
 :: custom build the pyinstaller bootloader or install a prebuilt
