@@ -92,15 +92,14 @@ echo NSIS makensis.exe file date %NSIS_DATE%
 if /i "%APPVEYOR%" == "True" (
     copy ..\LICENSE LICENSE.txt
     7z a artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
-    del LICENSE.txt
 )
 
 ::
 :: test the file size
 ::
-::set file=artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip
+set file=artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip
 set expectedbytesize=170000000
-for /F "usebackq" %%A in ('%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip') do set size=%%~zA
+for /F "usebackq" %%A in ('%file%') do set size=%%~zA
 if %size% LSS %expectedbytesize% (
     echo ***Zip file is smaller than expected
     exit /b 1
