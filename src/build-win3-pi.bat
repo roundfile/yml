@@ -101,4 +101,7 @@ if /i "%APPVEYOR%" == "True" (
 set file=artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip
 set expectedbytesize=170000000
 for /F "usebackq" %%A in ('%file%') do set size=%%~zA
-if %size% LSS %expectedbytesize% (exit /b 1)
+if %size% LSS %expectedbytesize% (
+    echo Zip file is smaller than expected!
+    exit /b 1
+)
