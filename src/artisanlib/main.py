@@ -226,7 +226,7 @@ from artisanlib.util import (appFrozen, stringp, uchr, decodeLocal, encodeLocal,
         fromFtoC, fromCtoF, RoRfromFtoC, RoRfromCtoF, convertRoR, convertTemp, path2url, toInt, toString, toList, toFloat,
         toBool, toStringList, toMap, removeAll, application_name, application_viewer_name, application_organization_name,
         application_organization_domain, getDataDirectory, getAppPath, getResourcePath, getDirectory, debugLogLevelToggle,
-        debugLogLevelActive, setDebugLogLevel, abbrevString, createGradient, natsort, toGrey, toDim)
+        debugLogLevelActive, setDebugLogLevel, abbrevString, createGradient, natsort, toGrey, toDim, setDeviceDebugLogLevel)
 
 from artisanlib.qtsingleapplication import QtSingleApplication
 from artisanlib.filters import LiveMedian
@@ -1245,7 +1245,8 @@ class tgraphcanvas(FigureCanvas):
         #DEVICES
         self.device = 18                                    # default device selected to None (18). Calls appropriate function
 
-        self.device_logging = False # turn on/off device logging
+        self.device_logging = False # turn on/off device debug logging (MODBUS, ..) # Note that MODBUS log messages are written to the main artisan log file
+        # Phidget messages are logged to the artisan device log
         self.device_log_file_name = 'artisan_device'
         self.device_log_file = getDirectory(self.device_log_file_name,'.log')
 
@@ -8811,6 +8812,7 @@ class tgraphcanvas(FigureCanvas):
                                 self.E1backgroundtimex,self.E2backgroundtimex,self.E3backgroundtimex,self.E4backgroundtimex = [],[],[],[]
                                 self.E1backgroundvalues,self.E2backgroundvalues,self.E3backgroundvalues,self.E4backgroundvalues = [],[],[],[]
                                 E1b_last = E2b_last = E3b_last = E4b_last = 0  #not really necessary but guarantees that Exb_last is defined
+                                E1_CHARGE_B = E2_CHARGE_B = E3_CHARGE_B = E4_CHARGE_B = None # remember event value @CHARGE (or last before CHARGE) to add if not self.backgroundShowFullflag
                                 event_pos_offset = self.eventpositionbars[0]
                                 event_pos_factor = self.eventpositionbars[1] - self.eventpositionbars[0]
                                 #properties for the event annotation
@@ -8821,10 +8823,16 @@ class tgraphcanvas(FigureCanvas):
                                 self.overlapList = []
                                 for i in range(len(self.backgroundEvents)):
                                     event_idx = self.backgroundEvents[i]
-                                    if (not self.backgroundShowFullflag and (((not self.autotimex or self.autotimexMode == 0) and event_idx < bcharge_idx) or event_idx > bdrop_idx)):
-                                        continue
+                                    tx = self.timeB[event_idx]
                                     pos = max(0,int(round((self.backgroundEvalues[i]-1)*10)))
+                                    skip_event = (not self.backgroundShowFullflag and (((not self.autotimex or self.autotimexMode == 0) and event_idx < bcharge_idx) or event_idx > bdrop_idx))
                                     if self.backgroundEtypes[i] == 0 and aw.qmc.showEtypes[0]:
+                                        if skip_event:
+                                            if (self.timeindexB[0] > -1 and tx < self.timeB[self.timeindexB[0]]):
+                                                E1_CHARGE_B = pos # remember event value at CHARGE
+                                                if not self.clampEvents:
+                                                    E1_CHARGE_B = (E1_CHARGE_B*event_pos_factor)+event_pos_offset
+                                            continue
                                         self.E1backgroundtimex.append(self.timeB[self.backgroundEvents[i]])
                                         if self.clampEvents:
                                             self.E1backgroundvalues.append(pos)
@@ -8861,6 +8869,12 @@ class tgraphcanvas(FigureCanvas):
                                             _, _, exc_tb = sys.exc_info()
                                             aw.qmc.adderror((QApplication.translate('Error Message','Exception:') + ' redraw() anno {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
                                     elif self.backgroundEtypes[i] == 1 and aw.qmc.showEtypes[1]:
+                                        if skip_event:
+                                            if (self.timeindexB[0] > -1 and tx < self.timeB[self.timeindexB[0]]):
+                                                E2_CHARGE_B = pos # remember event value at CHARGE
+                                                if not self.clampEvents:
+                                                    E2_CHARGE_B = (E2_CHARGE_B*event_pos_factor)+event_pos_offset
+                                            continue
                                         self.E2backgroundtimex.append(self.timeB[self.backgroundEvents[i]])
                                         if self.clampEvents:
                                             self.E2backgroundvalues.append(pos)
@@ -8897,6 +8911,12 @@ class tgraphcanvas(FigureCanvas):
                                             _, _, exc_tb = sys.exc_info()
                                             aw.qmc.adderror((QApplication.translate('Error Message','Exception:') + ' redraw() anno {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
                                     elif self.backgroundEtypes[i] == 2 and aw.qmc.showEtypes[2]:
+                                        if skip_event:
+                                            if (self.timeindexB[0] > -1 and tx < self.timeB[self.timeindexB[0]]):
+                                                E3_CHARGE_B = pos # remember event value at CHARGE
+                                                if not self.clampEvents:
+                                                    E3_CHARGE_B = (E3_CHARGE_B*event_pos_factor)+event_pos_offset
+                                            continue
                                         self.E3backgroundtimex.append(self.timeB[self.backgroundEvents[i]])
                                         if self.clampEvents:
                                             self.E3backgroundvalues.append(pos)
@@ -8933,6 +8953,12 @@ class tgraphcanvas(FigureCanvas):
                                             _, _, exc_tb = sys.exc_info()
                                             aw.qmc.adderror((QApplication.translate('Error Message','Exception:') + ' redraw() anno {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
                                     elif self.backgroundEtypes[i] == 3 and aw.qmc.showEtypes[3]:
+                                        if skip_event:
+                                            if (self.timeindexB[0] > -1 and tx < self.timeB[self.timeindexB[0]]):
+                                                E4_CHARGE_B = pos # remember event value at CHARGE
+                                                if not self.clampEvents:
+                                                    E4_CHARGE_B = (E4_CHARGE_B*event_pos_factor)+event_pos_offset
+                                            continue
                                         self.E4backgroundtimex.append(self.timeB[self.backgroundEvents[i]])
                                         if self.clampEvents:
                                             self.E4backgroundvalues.append(pos)
@@ -8978,7 +9004,13 @@ class tgraphcanvas(FigureCanvas):
                                             self.E1backgroundvalues.append(pos)
                                         else:
                                             self.E1backgroundvalues.append((pos*event_pos_factor)+event_pos_offset)
-                                    self.l_backgroundeventtype1dots, = self.ax.plot(self.E1backgroundtimex, self.E1backgroundvalues, color=self.EvalueColor[0],
+                                    if E1_CHARGE_B is not None and len(self.E1backgroundvalues)>1 and self.E1backgroundvalues[0] != E1_CHARGE_B:
+                                        E1xB = [self.timeB[self.timeindexB[0]]] + self.E1backgroundtimex
+                                        E1yB = [E1_CHARGE_B] + self.E1backgroundvalues
+                                    else:
+                                        E1xB = self.E1backgroundtimex
+                                        E1yB = self.E1backgroundvalues
+                                    self.l_backgroundeventtype1dots, = self.ax.plot(E1xB, E1yB, color=self.EvalueColor[0],
                                                                                 marker=(self.EvalueMarker[0] if self.eventsGraphflag != 4 else None),
                                                                                 markersize = self.EvalueMarkerSize[0],
                                                                                 picker=True,
@@ -8994,7 +9026,13 @@ class tgraphcanvas(FigureCanvas):
                                             self.E2backgroundvalues.append(pos)
                                         else:
                                             self.E2backgroundvalues.append((pos*event_pos_factor)+event_pos_offset)
-                                    self.l_backgroundeventtype2dots, = self.ax.plot(self.E2backgroundtimex, self.E2backgroundvalues, color=self.EvalueColor[1],
+                                    if E2_CHARGE_B is not None and len(self.E2backgroundvalues)>1 and self.E2backgroundvalues[0] != E2_CHARGE_B:
+                                        E2xB = [self.timeB[self.timeindexB[0]]] + self.E2backgroundtimex
+                                        E2yB = [E2_CHARGE_B] + self.E2backgroundvalues
+                                    else:
+                                        E2xB = self.E2backgroundtimex
+                                        E2yB = self.E2backgroundvalues
+                                    self.l_backgroundeventtype2dots, = self.ax.plot(E2xB, E2yB, color=self.EvalueColor[1],
                                                                                 marker=(self.EvalueMarker[1] if self.eventsGraphflag != 4 else None),
                                                                                 markersize = self.EvalueMarkerSize[1],
                                                                                 picker=True,
@@ -9010,7 +9048,13 @@ class tgraphcanvas(FigureCanvas):
                                             self.E3backgroundvalues.append(pos)
                                         else:
                                             self.E3backgroundvalues.append((pos*event_pos_factor)+event_pos_offset)
-                                    self.l_backgroundeventtype3dots, = self.ax.plot(self.E3backgroundtimex, self.E3backgroundvalues, color=self.EvalueColor[2],
+                                    if E3_CHARGE_B is not None and len(self.E3backgroundvalues)>1 and self.E3backgroundvalues[0] != E3_CHARGE_B:
+                                        E3xB = [self.timeB[self.timeindexB[0]]] + self.E3backgroundtimex
+                                        E3yB = [E3_CHARGE_B] + self.E3backgroundvalues
+                                    else:
+                                        E3xB = self.E3backgroundtimex
+                                        E3yB = self.E3backgroundvalues
+                                    self.l_backgroundeventtype3dots, = self.ax.plot(E3xB, E3yB, color=self.EvalueColor[2],
                                                                                 marker=(self.EvalueMarker[2] if self.eventsGraphflag != 4 else None),
                                                                                 markersize = self.EvalueMarkerSize[2],
                                                                                 picker=True,
@@ -9026,7 +9070,13 @@ class tgraphcanvas(FigureCanvas):
                                             self.E4backgroundvalues.append(pos)
                                         else:
                                             self.E4backgroundvalues.append((pos*event_pos_factor)+event_pos_offset)
-                                    self.l_backgroundeventtype4dots, = self.ax.plot(self.E4backgroundtimex, self.E4backgroundvalues, color=self.EvalueColor[3],
+                                    if E4_CHARGE_B is not None and len(self.E4backgroundvalues)>1 and self.E4backgroundvalues[0] != E4_CHARGE_B:
+                                        E4xB = [self.timeB[self.timeindexB[0]]] + self.E4backgroundtimex
+                                        E4yB = [E4_CHARGE_B] + self.E4backgroundvalues
+                                    else:
+                                        E4xB = self.E4backgroundtimex
+                                        E4yB = self.E4backgroundvalues
+                                    self.l_backgroundeventtype4dots, = self.ax.plot(E4xB, E4yB, color=self.EvalueColor[3],
                                                                                 marker=(self.EvalueMarker[3] if self.eventsGraphflag != 4 else None),
                                                                                 markersize = self.EvalueMarkerSize[3],
                                                                                 picker=True,
@@ -9306,7 +9356,7 @@ class tgraphcanvas(FigureCanvas):
                             self.E1values,self.E2values,self.E3values,self.E4values = [],[],[],[]
                             E1_nonempty = E2_nonempty = E3_nonempty = E4_nonempty = False
                             E1_last = E2_last = E3_last = E4_last = 0  #not really necessary but guarantees that Ex_last is defined
-                            E1_CHARGE = E2_CHARGE = E3_CHARGE = E4_CHARGE = None # remember event value @CHARGE to add if not self.foregroundShowFullflag
+                            E1_CHARGE = E2_CHARGE = E3_CHARGE = E4_CHARGE = None # remember event value @CHARGE (or last before CHARGE) to add if not self.foregroundShowFullflag
                             event_pos_offset = self.eventpositionbars[0]
                             event_pos_factor = self.eventpositionbars[1] - self.eventpositionbars[0]
                             #properties for the event annotations
@@ -9317,13 +9367,16 @@ class tgraphcanvas(FigureCanvas):
                             eventannotationprop.set_size('x-small')
                             for i in range(Nevents):
                                 pos = max(0,int(round((self.specialeventsvalue[i]-1)*10)))
+                                tx = self.timex[self.specialevents[i]]
+                                skip_event = ((not self.foregroundShowFullflag and (not self.autotimex or self.autotimexMode == 0) and self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]) or
+                                            (not self.foregroundShowFullflag and self.timeindex[6] > 0 and tx > self.timex[self.timeindex[6]]))
                                 try:
-                                    tx = self.timex[self.specialevents[i]]
                                     if self.specialeventstype[i] == 0 and aw.qmc.showEtypes[0]:
-                                        if ((not self.foregroundShowFullflag and (not self.autotimex or self.autotimexMode == 0) and self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]) or
-                                            (not self.foregroundShowFullflag and self.timeindex[6] > 0 and tx > self.timex[self.timeindex[6]])):
+                                        if skip_event:
                                             if (self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]):
                                                 E1_CHARGE = pos # remember event value at CHARGE
+                                                if not self.clampEvents:
+                                                    E1_CHARGE = (E1_CHARGE*event_pos_factor)+event_pos_offset
                                             # don't draw event lines before CHARGE if foregroundShowFullflag is not set
                                             continue
                                         self.E1timex.append(tx)
@@ -9361,10 +9414,11 @@ class tgraphcanvas(FigureCanvas):
                                             aw.qmc.adderror((QApplication.translate('Error Message','Exception:') + ' redraw() anno {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
                                     elif self.specialeventstype[i] == 1 and aw.qmc.showEtypes[1]:
                                         tx = self.timex[self.specialevents[i]]
-                                        if ((not self.foregroundShowFullflag and (not self.autotimex or self.autotimexMode == 0) and self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]) or
-                                            (not self.foregroundShowFullflag and self.timeindex[6] > 0 and tx > self.timex[self.timeindex[6]])):
+                                        if skip_event:
                                             if (self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]):
                                                 E2_CHARGE = pos # remember event value at CHARGE
+                                                if not self.clampEvents:
+                                                    E2_CHARGE = (E2_CHARGE*event_pos_factor)+event_pos_offset
                                             # don't draw event lines before CHARGE if foregroundShowFullflag is not set
                                             continue
                                         self.E2timex.append(tx)
@@ -9403,10 +9457,11 @@ class tgraphcanvas(FigureCanvas):
                                             aw.qmc.adderror((QApplication.translate('Error Message','Exception:') + ' redraw() anno {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
                                     elif self.specialeventstype[i] == 2 and aw.qmc.showEtypes[2]:
                                         tx = self.timex[self.specialevents[i]]
-                                        if ((not self.foregroundShowFullflag and (not self.autotimex or self.autotimexMode == 0) and self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]) or
-                                            (not self.foregroundShowFullflag and self.timeindex[6] > 0 and tx > self.timex[self.timeindex[6]])):
+                                        if skip_event:
                                             if (self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]):
                                                 E3_CHARGE = pos # remember event value at CHARGE
+                                                if not self.clampEvents:
+                                                    E3_CHARGE = (E3_CHARGE*event_pos_factor)+event_pos_offset
                                             # don't draw event lines before CHARGE if foregroundShowFullflag is not set
                                             continue
                                         self.E3timex.append(tx)
@@ -9444,10 +9499,11 @@ class tgraphcanvas(FigureCanvas):
                                             aw.qmc.adderror((QApplication.translate('Error Message','Exception:') + ' redraw() anno {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
                                     elif self.specialeventstype[i] == 3 and aw.qmc.showEtypes[3]:
                                         tx = self.timex[self.specialevents[i]]
-                                        if ((not self.foregroundShowFullflag and (not self.autotimex or self.autotimexMode == 0) and self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]) or
-                                            (not self.foregroundShowFullflag and self.timeindex[6] > 0 and tx > self.timex[self.timeindex[6]])):
+                                        if skip_event:
                                             if (self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]):
                                                 E4_CHARGE = pos # remember event value at CHARGE
+                                                if not self.clampEvents:
+                                                    E4_CHARGE = (E4_CHARGE*event_pos_factor)+event_pos_offset
                                             # don't draw event lines before CHARGE if foregroundShowFullflag is not set
                                             continue
                                         self.E4timex.append(tx)
@@ -11577,10 +11633,6 @@ class tgraphcanvas(FigureCanvas):
             if not bool(aw.simulator) and aw.qmc.device == 53:
                 from artisanlib.hottop import startHottop
                 startHottop(0.6,aw.ser.comport,aw.ser.baudrate,aw.ser.bytesize,aw.ser.parity,aw.ser.stopbits,aw.ser.timeout)
-            try:
-                aw.eventactionx(self.extrabuttonactions[0],self.extrabuttonactionstrings[0])
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
 
             aw.initializedMonitoringExtraDeviceStructures()
 
@@ -11628,12 +11680,18 @@ class tgraphcanvas(FigureCanvas):
             self.threadserver.createSampleThread()
             if not bool(aw.simulator):
                 self.StartAsyncSamplingAction()
+            try:
+                aw.eventactionx(self.extrabuttonactions[0],self.extrabuttonactionstrings[0])
+            except Exception as e: # pylint: disable=broad-except
+                _log.exception(e)
+            _log.info('ON MONITOR')
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
             self.adderror((QApplication.translate('Error Message', 'Exception:') + ' OnMonitor() {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     def OffMonitor(self):
+        _log.info('OFF MONITOR')
         try:
             # first activate "Stopping Mode" to ensure that sample() is not resetting the timer now (independent of the flagstart state)
 
@@ -12129,13 +12187,14 @@ class tgraphcanvas(FigureCanvas):
                 QTimer.singleShot(self.chargeTimerPeriod*1000, self.fireChargeTimer)
 
 
-
+            _log.info('START RECORDING')
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate('Error Message', 'Exception:') + ' OffMonitor() {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate('Error Message', 'Exception:') + ' OnRecorder() {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     def OffRecorder(self, autosave=True):
+        _log.info('STOP RECORDING')
         try:
             # mark DROP if not yet set, at least 7min roast time and CHARGE is set and either autoDROP is active or DROP button is hidden
             if self.timeindex[6] == 0 and aw.qmc.timeindex[0] != -1 and (self.autoDropFlag or not self.buttonvisibility[6]):
@@ -19821,21 +19880,24 @@ class ApplicationWindow(QMainWindow):
         )
         try:
             for log_file_name in ['artisan.log', 'artisanViewer.log']:
-                with open(os.path.join(getDataDirectory(),log_file_name), 'rb') as attachment:
-                    # Add file as application/octet-stream
-                    # Email client can usually download this automatically
-                    # as attachment
-                    part = MIMEBase('application', 'octet-stream')
-                    part.set_payload(attachment.read())
-                # Encode file in ASCII characters to send by email
-                encoders.encode_base64(part)
-                # Add header as key/value pair to attachment part
-                part.add_header(
-                    'Content-Disposition',
-                    f'attachment; filename= {log_file_name}',
-                )
-                # Add attachment to message and convert message to string
-                message.attach(part)
+                try:
+                    with open(os.path.join(getDataDirectory(),log_file_name), 'rb') as attachment:
+                        # Add file as application/octet-stream
+                        # Email client can usually download this automatically
+                        # as attachment
+                        part = MIMEBase('application', 'octet-stream')
+                        part.set_payload(attachment.read())
+                    # Encode file in ASCII characters to send by email
+                    encoders.encode_base64(part)
+                    # Add header as key/value pair to attachment part
+                    part.add_header(
+                        'Content-Disposition',
+                        f'attachment; filename= {log_file_name}',
+                    )
+                    # Add attachment to message and convert message to string
+                    message.attach(part)
+                except FileNotFoundError:
+                    _log.debug('log file %s not found', log_file_name)
         except Exception as e:  # pylint: disable=broad-except
             _log.exception(e)
         try:
@@ -19856,6 +19918,8 @@ class ApplicationWindow(QMainWindow):
             )
             # Add attachment to message and convert message to string
             message.attach(part2)
+        except FileNotFoundError:
+            _log.debug('log file %s not found', self.qmc.device_log_file)
         except Exception as e:  # pylint: disable=broad-except
             _log.exception(e)
         # Save message to file tmp file
@@ -23024,6 +23088,8 @@ class ApplicationWindow(QMainWindow):
 # required for the default tracking sliders
     @pyqtSlot(int)
     def updateSlider1LCD(self,v):
+        if aw.eventslidercoarse[0]:
+            v = int(round(v / 10.))*10
         self.updateSliderLCD(0,v)
         if self.eventslidermoved[0]:
             # if slider was moved by a keyboard action, we have to explicitly update the value and send the signals
@@ -23033,6 +23099,8 @@ class ApplicationWindow(QMainWindow):
             self.eventslidermoved[0] = 0
     @pyqtSlot(int)
     def updateSlider2LCD(self,v):
+        if aw.eventslidercoarse[1]:
+            v = int(round(v / 10.))*10
         self.updateSliderLCD(1,v)
         if self.eventslidermoved[1]:
             # if slider was moved by a keyboard action, we have to explicitly update the value and send the signals
@@ -23042,6 +23110,8 @@ class ApplicationWindow(QMainWindow):
             self.eventslidermoved[1] = 0
     @pyqtSlot(int)
     def updateSlider3LCD(self,v):
+        if aw.eventslidercoarse[2]:
+            v = int(round(v / 10.))*10
         self.updateSliderLCD(2,v)
         if self.eventslidermoved[2]:
             # if slider was moved by a keyboard action, we have to explicitly update the value and send the signals
@@ -23051,6 +23121,8 @@ class ApplicationWindow(QMainWindow):
             self.eventslidermoved[2] = 0
     @pyqtSlot(int)
     def updateSlider4LCD(self,v):
+        if aw.eventslidercoarse[3]:
+            v = int(round(v / 10.))*10
         self.updateSliderLCD(3,v)
         if self.eventslidermoved[3]:
             # if slider was moved by a keyboard action, we have to explicitly update the value and send the signals
@@ -23127,7 +23199,7 @@ class ApplicationWindow(QMainWindow):
                 if aw.eventslidercoarse[0]:
                     sv1 = int(round(sv1 / 10.))*10
                 self.eventslidervalues[0] = sv1
-                if updateLCD:
+                if updateLCD or (aw.eventslidercoarse[0] and sv1 != self.slider1.value()):
                     self.moveslider(0,sv1,forceLCDupdate=True) # move slider if need and update slider LCD
                 self.recordsliderevent(n)
         elif n == 1:
@@ -23137,7 +23209,7 @@ class ApplicationWindow(QMainWindow):
                 if aw.eventslidercoarse[1]:
                     sv2 = int(round(sv2 / 10.))*10
                 self.eventslidervalues[1] = sv2
-                if updateLCD:
+                if updateLCD or (aw.eventslidercoarse[1] and sv2 != self.slider2.value()):
                     self.moveslider(1,sv2,forceLCDupdate=True) # move slider if need and update slider LCD
                 self.recordsliderevent(n)
         elif n == 2:
@@ -23147,7 +23219,7 @@ class ApplicationWindow(QMainWindow):
                 if aw.eventslidercoarse[2]:
                     sv3 = int(round(sv3 / 10.))*10
                 self.eventslidervalues[2] = sv3
-                if updateLCD:
+                if updateLCD or (aw.eventslidercoarse[2] and sv3 != self.slider3.value()):
                     self.moveslider(2,sv3,forceLCDupdate=True) # move slider if need and update slider LCD
                 self.recordsliderevent(n)
         elif n == 3:
@@ -23157,7 +23229,7 @@ class ApplicationWindow(QMainWindow):
                 if aw.eventslidercoarse[3]:
                     sv4 = int(round(sv4 / 10.))*10
                 self.eventslidervalues[3] = sv4
-                if updateLCD:
+                if updateLCD or (aw.eventslidercoarse[3] and sv4 != self.slider4.value()):
                     self.moveslider(3,sv4,forceLCDupdate=True) # move slider if need and update slider LCD
                 self.recordsliderevent(n)
         return False
@@ -24714,6 +24786,18 @@ class ApplicationWindow(QMainWindow):
                                     if ((value.lower() in ('yes', 'true', 't', '1') and self.qmc.flagstart and self.keyboardmoveflag == 0) or
                                         (value.lower() not in ('yes', 'true', 't', '1') and self.keyboardmoveflag == 1)):
                                         self.moveButtonSignal.emit('enter')
+                                except Exception as e: # pylint: disable=broad-except
+                                    _log.exception(e)
+                            # keepON(<bool>) enable/disable Keep ON mode
+                            elif cs.startswith('keepON(') and cs.endswith(')'):
+                                try:
+                                    value = cs[len('keepON('):-1]
+                                    if (value.lower() in ('yes', 'true', 't', '1')):
+                                        self.qmc.flagKeepON = True
+                                        aw.sendmessage(QApplication.translate('Message','Keep ON enabled'))
+                                    else:
+                                        self.qmc.flagKeepON = False
+                                        aw.sendmessage(QApplication.translate('Message','Keep ON disable'))
                                 except Exception as e: # pylint: disable=broad-except
                                     _log.exception(e)
                             # showCurve(<name>, <bool>) with <name> one of { ET, BT, DeltaET, DeltaBT, BackgroundET, BackgroundBT}
@@ -26520,7 +26604,7 @@ class ApplicationWindow(QMainWindow):
             fields = [
                 ('batch_long', self.qmc.roastbatchprefix + str(bnr) + ' (' + str(self.qmc.roastbatchpos) + ')'),
                 ('batchprefix',self.qmc.roastbatchprefix),
-                ('batchcounter',str(bnr) if bnr!=0 else '**'),
+                ('batchcounter',str(bnr)),
                 ('batchposition',str(self.qmc.roastbatchpos)),
                 ('batch', self.qmc.roastbatchprefix + str(bnr)),
                 ('title',self.qmc.title),
@@ -30857,8 +30941,12 @@ class ApplicationWindow(QMainWindow):
 
             #restore device
             settings.beginGroup('Device')
-            if settings.contains('device_logging'):
+            if filename is None and settings.contains('device_logging'):
                 self.qmc.device_logging = bool(toBool(settings.value('device_logging',self.qmc.device_logging)))
+                try:
+                    setDeviceDebugLogLevel(self.aw.qmc.device_logging)
+                except Exception: # pylint: disable=broad-except
+                    pass
             if settings.contains('id'):
                 self.qmc.device = toInt(settings.value('id',self.qmc.device))
             # Phidget configurations
@@ -34899,6 +34987,9 @@ class ApplicationWindow(QMainWindow):
             # get profile filenames
             files = self.reportFiles()
             if files and len(files) > 0:
+                prev_foreground_profile_path = aw.curFile
+                prev_backgroundpath = aw.qmc.backgroundpath
+                prev_background = aw.qmc.background
                 cont = aw.qmc.reset(soundOn=False)
                 if cont:
                     profiles = [self.deserialize(f) for f in files]
@@ -34950,7 +35041,6 @@ class ApplicationWindow(QMainWindow):
                     color=iter(cm.tab20(numpy.linspace(0,1,max_profiles)))  # @UndefinedVariable # pylint: disable=maybe-no-member
                     # collect data
 #                    c = 1
-                    foreground_profile_path = aw.curFile  # @UndefinedVariable
                     min_start_time = max_end_time = 0
                     first_profile = True
                     first_profile_event_time = 0
@@ -35020,8 +35110,9 @@ class ApplicationWindow(QMainWindow):
                                 BT_AUC += self.calcAUC(rtbt,p['timex'],p['temp2'],i)
                             BT_AUC = int(round(BT_AUC/60.))
                             rd['AUC'] = BT_AUC
-                        except Exception as e: # pylint: disable=broad-except
-                            _log.exception(e)
+                        except Exception: # pylint: disable=broad-except
+                            # 'TP_index' might not be in computedProfile and then we fail here
+                            pass
                         # --
                         if 'AUC' in rd:
                             AUC += rd['AUC']
@@ -35414,10 +35505,11 @@ class ApplicationWindow(QMainWindow):
 
                     try:
                         # redraw original graph
-                        if foreground_profile_path:
-                            aw.loadFile(foreground_profile_path)
-                        if aw.qmc.backgroundpath:
-                            aw.loadbackground(aw.qmc.backgroundpath)
+                        if prev_foreground_profile_path:
+                            aw.loadFile(prev_foreground_profile_path)
+                        if prev_backgroundpath:
+                            aw.loadbackground(prev_backgroundpath)
+                            aw.qmc.background = prev_background
                         self.qmc.timealign()
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
@@ -36753,7 +36845,7 @@ class ApplicationWindow(QMainWindow):
             phidgetlibversion = PhidgetDriver.getLibraryVersion()
             otherlibs += ', ' + phidgetlibversion
         except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+            _log.debug(e)
         try:
             from Phidget22 import __version__ as phidget_lib_version # @UnresolvedImport
             otherlibs += f' ({phidget_lib_version})'
@@ -37182,6 +37274,7 @@ class ApplicationWindow(QMainWindow):
     @pyqtSlot()
     @pyqtSlot(bool)
     def loadSettings_triggered(self,_=False):
+        _log.info('menu load settings')
         self.loadSettings()
 
     def loadSettings(self,fn=None,remember=True,reset=True,machine=False,theme=False,reload=True):
@@ -37274,6 +37367,7 @@ class ApplicationWindow(QMainWindow):
         if action:
             fname = toString(action.data())
             if os.path.isfile(fname):
+                _log.info('menu load recent settings: %s',fname)
                 self.loadSettings(fn=fname)
             else:
                 settings = QSettings()
