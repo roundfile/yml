@@ -92,6 +92,7 @@ echo NSIS makensis.exe file date %NSIS_DATE%
 if /i "%APPVEYOR%" == "True" (
     copy ..\LICENSE LICENSE.txt
     7z a artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
+    del artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip
 )
 
 ::
