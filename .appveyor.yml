@@ -118,6 +118,7 @@ for:
     # update path env var
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 
+    #debug
     - echo %PATH%
     - cmd: dir c:\Python311-x64\Scripts
 
@@ -125,6 +126,7 @@ for:
     - cmd: .ci\install-win.bat
 
   build_script:
+    #debug
     - cmd: dir c:\Python311-x64\Scripts
 
     - cmd: echo Windows Build
