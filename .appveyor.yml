@@ -119,13 +119,13 @@ for:
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 
     - echo %PATH%
-    - cmd: dir %PYTHON_PATH%\Scripts
+    - cmd: dir c:\Python311-x64\Scripts
 
     # run the install script
     - cmd: .ci\install-win.bat
 
   build_script:
-    - cmd: dir %PYTHON_PATH%\Scripts
+    - cmd: dir c:\Python311-x64\Scripts
 
     - cmd: echo Windows Build
     - cmd: cd src
