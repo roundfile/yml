@@ -6,7 +6,7 @@
 
 environment:
   # Set the Python version for windows, macos and linux here. Does not affect windows_legacy.
-  PYTHON_V: 3.10
+  PYTHON_V: 3.11
 
   matrix:
   - job_name: windows_legacy
