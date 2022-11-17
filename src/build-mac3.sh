@@ -3,13 +3,12 @@
 #set -ex
 set -e  # reduced logging
 
-# add argument "legacy" to make a build that supports older OS X systems using an outdated Qt
-
 if [ ! -z $APPVEYOR ]; then
     # Appveyor CI builds
     echo "NOTICE: Appveyor build"
     export PYTHON=/usr/local/opt/python@${PYTHON_V}
     export PYTHONBIN=$PYTHON/bin
+#new    export PYTHONLIB=/usr/local/lib/python${PYTHON_V}
 
 # for PyQt6
     export QT_PATH=${PYTHONPATH}/site-packages/PyQt6/Qt6
@@ -88,7 +87,7 @@ fi
 rm -rf build dist
 sleep .3 # sometimes it takes a little for dist to get really empty
 echo "************* 3 **************"
-$PYTHONBIN/python3 setup-mac3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'
+python3 setup-mac3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'
 
 #$PYTHONPATH/python3 setup-mac3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'
 #python3 setup-mac3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'
