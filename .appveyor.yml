@@ -9,14 +9,14 @@ environment:
   PYTHON_V: 3.10
 
   matrix:
-  - job_name: windows_legacy
-    appveyor_build_worker_image: Visual Studio 2019
-  - job_name: windows
-    appveyor_build_worker_image: Visual Studio 2019
+#  - job_name: windows_legacy
+#    appveyor_build_worker_image: Visual Studio 2019
+#  - job_name: windows
+#    appveyor_build_worker_image: Visual Studio 2019
   - job_name: macos
     appveyor_build_worker_image: macos
-  - job_name: linux
-    appveyor_build_worker_image: Ubuntu2004
+#  - job_name: linux
+#    appveyor_build_worker_image: Ubuntu2004
 
 
 # Generic build number, later set to commit hash by init
@@ -156,11 +156,13 @@ for:
     fast_finish: false
 
   environment:
-    ARTISAN_OS: osx
+    ARTISAN_OS: osx  # change to macOS
     PYTHONPATH: /usr/local/lib/python${PYTHON_V}
     MACOSX_DEPLOYMENT_TARGET: 10.15
 
   install:
+    - ls /usr/local/lib/
+    - ls /usr/local/opt
     - echo "MacOS Install"
     - chmod +x .ci/*.sh
 
