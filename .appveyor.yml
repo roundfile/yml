@@ -160,6 +160,8 @@ for:
     PYTHONPATH: /usr/local/lib/python${PYTHON_V}
     #PYTHONPATH: /usr/local/opt/python@${PYTHON_V}
     MACOSX_DEPLOYMENT_TARGET: 10.15
+    
+    PATH: /usr/local/opt/python@${PYTHON_V}/bin:${PATH}
 
   install:
     - echo "MacOS Install"

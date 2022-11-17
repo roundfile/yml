@@ -32,7 +32,7 @@ set -e # reduced logging
 #brew install python@3.10
 #brew unlink python@3.9
 #brew link --force python@3.10
-export PATH="/usr/local/opt/python@${PYTHON_V}/bin:$PATH"
+#dave-test  export PATH="/usr/local/opt/python@${PYTHON_V}/bin:$PATH"
 #export PATH="$PYTHONPATH/bin:$PATH"
 
 hash -r
