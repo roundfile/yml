@@ -161,11 +161,12 @@ for:
     #PYTHONPATH: /usr/local/opt/python@${PYTHON_V}
     MACOSX_DEPLOYMENT_TARGET: 10.15
     
-    PATH: /usr/local/opt/python@${PYTHON_V}/bin:${PATH}
 
   install:
     - echo "MacOS Install"
     - chmod +x .ci/*.sh
+        
+    - export PATH="/usr/local/opt/python@${PYTHON_V}/bin:$PATH"
 #    - ls -l /usr/local/lib/python3.10
     - ls -l ${PYTHONPATH}
 #    - ls -l  /usr/local/opt/python@${PYTHON_V}/3.10.2
