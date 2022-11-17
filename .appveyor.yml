@@ -157,14 +157,14 @@ for:
 
   environment:
     ARTISAN_OS: osx  # change to macOS
-    PYTHONPATH: /usr/local/lib/python${PYTHON_V}
+    PYTHONPATH: /usr/local/opt/python${PYTHON_V}
     MACOSX_DEPLOYMENT_TARGET: 10.15
 
   install:
-    - ls /usr/local/lib/
-    - ls /usr/local/opt
     - echo "MacOS Install"
     - chmod +x .ci/*.sh
+    - ls -l /usr/local/lib
+    - ls -l /usr/local/opt
 
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
