@@ -3,7 +3,7 @@
 #set -ex # increased logging
 set -e # reduced logging
 
-#.ci/slience.sh brew update # this seems to help to work around some homebrew issues; and fails on others
+#.ci/silence.sh brew update # this seems to help to work around some homebrew issues; and fails on others
 
 #------------
 # Python 3.7.5 is installed by default
@@ -32,8 +32,7 @@ set -e # reduced logging
 #brew install python@3.10
 #brew unlink python@3.9
 #brew link --force python@3.10
-#dave-test  export PATH="/usr/local/opt/python@${PYTHON_V}/bin:$PATH"
-#export PATH="$PYTHONPATH/bin:$PATH"
+#export PATH="/usr/local/opt/python@$3.10/bin:$PATH"
 
 hash -r
 which python3
@@ -52,13 +51,7 @@ python3 -m pip install --upgrade pip
 sudo -H python3 -m pip install --root-user-action=ignore -r src/requirements.txt
 sudo -H python3 -m pip install --root-user-action=ignore -r src/requirements-${ARTISAN_OS}.txt
 
-#debug
-sudo -H python3 -m pip freeze
-sudo -H python3 -m pip show python-snap7
-
 # copy the snap7 binary installed by pip
-#cp -f ${PYTHONPATH}/lib/site-packages/snap7/lib/libsnap7.dylib /usr/local/lib
-#cp -f ${PYTHONPATH}/site-packages/snap7/lib/libsnap7.dylib /usr/local/lib
 cp -f ${PYTHONLIB}/site-packages/snap7/lib/libsnap7.dylib /usr/local/lib
 
 
