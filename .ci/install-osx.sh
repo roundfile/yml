@@ -58,6 +58,7 @@ sudo -H python3 -m pip show python-snap7
 
 # copy the snap7 binary installed by pip
 #cp -f ${PYTHONPATH}/lib/site-packages/snap7/lib/libsnap7.dylib /usr/local/lib
-cp -f ${PYTHONPATH}/site-packages/snap7/lib/libsnap7.dylib /usr/local/lib
+#cp -f ${PYTHONPATH}/site-packages/snap7/lib/libsnap7.dylib /usr/local/lib
+cp -f ${PYTHONLIB}/site-packages/snap7/lib/libsnap7.dylib /usr/local/lib
 
 
