@@ -32,8 +32,8 @@ set -e # reduced logging
 #brew install python@3.10
 #brew unlink python@3.9
 #brew link --force python@3.10
-#export PATH="/usr/local/opt/python@${PYTHON_V}/bin:$PATH"
-export PATH="$PYTHONPATH/bin:$PATH"
+export PATH="/usr/local/opt/python@${PYTHON_V}/bin:$PATH"
+#export PATH="$PYTHONPATH/bin:$PATH"
 
 hash -r
 which python3
@@ -56,6 +56,7 @@ sudo -H python3 -m pip install --root-user-action=ignore -r src/requirements-${A
 sudo -H python3 -m pip show snap7
 
 # copy the snap7 binary installed by pip
-cp -f ${PYTHONPATH}/lib/site-packages/snap7/lib/libsnap7.dylib /usr/local/lib
+#cp -f ${PYTHONPATH}/lib/site-packages/snap7/lib/libsnap7.dylib /usr/local/lib
+cp -f ${PYTHONPATH}/site-packages/snap7/lib/libsnap7.dylib /usr/local/lib
 
 
