@@ -550,6 +550,7 @@ _log.info(
     str(__revision__),
     str(__build__),
 )
+_log.info('platform: %s',str(platform.platform()))
 
 
 if platf == 'Windows':
@@ -23773,6 +23774,60 @@ class ApplicationWindow(QMainWindow):
                                         followupCmd = 0.03
                                 except Exception as e: # pylint: disable=broad-except
                                     _log.exception(e)
+                            elif cs.startswith('readSigned'):
+                                try:
+                                    cmds = eval(cs[len('readSigned'):]) # pylint: disable=eval-used
+                                    if isinstance(cmds,tuple) and len(cmds) == 2:
+                                        # cmd has format "readSigned(s,r)"
+                                        aw.modbus.lastReadResult = aw.modbus.readSingleRegister(*cmds,force=True,signed=True)
+                                        followupCmd = 0.03
+                                except Exception as e: # pylint: disable=broad-except
+                                    _log.exception(e)
+                            elif cs.startswith('readBCD'):
+                                try:
+                                    cmds = eval(cs[len('readBCD'):]) # pylint: disable=eval-used
+                                    if isinstance(cmds,tuple) and len(cmds) == 2:
+                                        # cmd has format "readBCD(s,r)"
+                                        aw.modbus.lastReadResult = aw.modbus.readBCDint(*cmds,force=True)
+                                        followupCmd = 0.03
+                                except Exception as e: # pylint: disable=broad-except
+                                    _log.exception(e)
+                            elif cs.startswith('read32'):
+                                try:
+                                    cmds = eval(cs[len('read32'):]) # pylint: disable=eval-used
+                                    if isinstance(cmds,tuple) and len(cmds) == 2:
+                                        # cmd has format "read32(s,r)"
+                                        aw.modbus.lastReadResult = aw.modbus.readInt32(*cmds,force=True)
+                                        followupCmd = 0.03
+                                except Exception as e: # pylint: disable=broad-except
+                                    _log.exception(e)
+                            elif cs.startswith('read32Signed'):
+                                try:
+                                    cmds = eval(cs[len('read32Signed'):]) # pylint: disable=eval-used
+                                    if isinstance(cmds,tuple) and len(cmds) == 2:
+                                        # cmd has format "read32Signed(s,r)"
+                                        aw.modbus.lastReadResult = aw.modbus.readInt32(*cmds,force=True,signed=True)
+                                        followupCmd = 0.03
+                                except Exception as e: # pylint: disable=broad-except
+                                    _log.exception(e)
+                            elif cs.startswith('read32BCD'):
+                                try:
+                                    cmds = eval(cs[len('read32BCD'):]) # pylint: disable=eval-used
+                                    if isinstance(cmds,tuple) and len(cmds) == 2:
+                                        # cmd has format "read32BCD(s,r)"
+                                        aw.modbus.lastReadResult = aw.modbus.readBCD(*cmds,force=True)
+                                        followupCmd = 0.03
+                                except Exception as e: # pylint: disable=broad-except
+                                    _log.exception(e)
+                            elif cs.startswith('readFloat'):
+                                try:
+                                    cmds = eval(cs[len('readFloat'):]) # pylint: disable=eval-used
+                                    if isinstance(cmds,tuple) and len(cmds) == 2:
+                                        # cmd has format "readFloat(s,r)"
+                                        aw.modbus.lastReadResult = aw.modbus.readFloat(*cmds,force=True)
+                                        followupCmd = 0.03
+                                except Exception as e: # pylint: disable=broad-except
+                                    _log.exception(e)
                             elif cs.startswith('button'):
                                 # cmd has format "button(<bool>)" # 0 or 1 or True or False
                                 try:
@@ -32039,6 +32094,17 @@ class ApplicationWindow(QMainWindow):
             if settings.contains('machinesetup'):
                 self.qmc.machinesetup = toString(settings.value('machinesetup',self.qmc.machinesetup))
 #            self.qmc.density[2] = toFloat(settings.value("densitySampleVolume",self.qmc.density[2])) # fixed to 1l now
+
+            try:
+                _log.info('machine: %s (%s, %skg, %s)', self.qmc.machinesetup, self.qmc.roastertype_setup, self.qmc.roastersize_setup, ([''] + self.qmc.sourcenames)[self.qmc.roasterheating_setup])
+                _log.info('device: %s (%s extra devices)', (['Fuji PID']+self.qmc.devices)[self.qmc.device], len(self.qmc.extradevices))
+                _log.info('serial: %s @%s', self.ser.comport, self.ser.baudrate)
+                _log.info('MODBUS %s: %s, %s @%s', ['Serial RTU','Serial ASCII','Serial Binary','TCP','UDP'][self.modbus.type], self.modbus.host, self.modbus.comport, self.modbus.baudrate)
+                _log.info('S7: %s', self.s7.host)
+                _log.info('WebSocket: %s', self.ws.host)
+            except Exception as e: # pylint: disable=broad-except
+                _log.error(e)
+
             if settings.contains('beansize'):
                 self.qmc.beansize = toFloat(settings.value('beansize',self.qmc.beansize))
             if settings.contains('beansize_min'):
