@@ -169,7 +169,7 @@ for:
     - export PATH="${PYTHONPATH}:$PATH"
 #    - ls -l /usr/local/lib/python3.10
     - ls -l ${PYTHONPATH}
-    -ls -l /usr/local/opt/python@${PYTHON_V}/lib
+    - ls -l /usr/local/opt/python@${PYTHON_V}/lib
 #    - ls -l  /usr/local/opt/python@${PYTHON_V}/3.10.2
 #    - ls -l /Library/Frameworks/Python.framework/Versions/${PYTHON_V}
 
