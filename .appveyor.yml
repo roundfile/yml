@@ -163,7 +163,7 @@ for:
   install:
     - echo "MacOS Install"
     - chmod +x .ci/*.sh
-    - ls -l /usr/local/lib
+    - ls -l /usr/local/lib/python3.10/lib
     - ls -l /usr/local/opt
 
     # update the __revision__ field with the left seven of the GIT commit hash
