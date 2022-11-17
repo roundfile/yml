@@ -89,4 +89,6 @@ rm -rf build dist
 sleep .3 # sometimes it takes a little for dist to get really empty
 echo "************* 3 **************"
 #$PYTHONBIN/python3 setup-mac3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'
-$PYTHONPATH/python3 setup-mac3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'
+
+#$PYTHONPATH/python3 setup-mac3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'
+python3 setup-mac3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'
