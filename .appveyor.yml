@@ -166,8 +166,8 @@ for:
     - chmod +x .ci/*.sh
 #    - ls -l /usr/local/lib/python3.10
     - ls -l ${PYTHONPATH}
-    - ls -l /Library/Frameworks/Python.framework/Versions/${PYTHON_V}
-    - ls -l  /usr/local/opt/python@${PYTHON_V}/3.10.2
+#    - ls -l  /usr/local/opt/python@${PYTHON_V}/3.10.2
+#    - ls -l /Library/Frameworks/Python.framework/Versions/${PYTHON_V}
 
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
