@@ -157,7 +157,7 @@ for:
 
   environment:
     ARTISAN_OS: osx  # change to macOS
-    PYTHONLIB:  /usr/local/lib/python${PYTHON_V}  #PYTHONPATH: /usr/local/lib/python${PYTHON_V}
+    PYTHONSITEPKGS:  /usr/local/lib/python${PYTHON_V}/site-packages  #PYTHONPATH: /usr/local/lib/python${PYTHON_V}
     PYTHONPATH: /usr/local/opt/python@${PYTHON_V}/bin
     MACOSX_DEPLOYMENT_TARGET: 10.15
     
@@ -179,7 +179,7 @@ for:
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
 
     # run the install script
-#    - .ci/install-osx.sh
+    - .ci/install-osx.sh
 
   build_script:
     - echo "MacOS Build"

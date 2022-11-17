@@ -10,8 +10,7 @@ if [ ! -z $APPVEYOR ]; then
     export PYTHONBIN=$PYTHON/bin
 
 # for PyQt6
-    #export QT_PATH=${PYTHONPATH}/site-packages/PyQt6/Qt6
-    export QT_PATH=${PYTHONLIB}/site-packages/PyQt6/Qt6
+    export QT_PATH=${PYTHONSITEPKGS}/PyQt6/Qt6
     export QT_SRC_PATH==${QT_PATH}
     export PYUIC=pyuic6
     export PYRCC=pyrcc6
@@ -36,7 +35,7 @@ else
     export DYLD_LIBRARY_PATH=$PYTHON/lib:$DYLD_LIBRARY_PATH
 fi
 
-export PATH=$PYTHON/bin:$PYTHON/lib:$PATH
+#test if this is required  export PATH=$PYTHON/bin:$PYTHON/lib:$PATH
 export PATH=$QT_PATH/bin:$QT_PATH/lib:$PATH
 #export DYLD_FRAMEWORK_PATH=$QT_PATH/lib # with this line all Qt libs are copied into Contents/Frameworks. Why?
 
