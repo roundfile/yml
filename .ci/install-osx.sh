@@ -52,7 +52,10 @@ python3 -m pip install --upgrade pip
 sudo -H python3 -m pip install --root-user-action=ignore -r src/requirements.txt
 sudo -H python3 -m pip install --root-user-action=ignore -r src/requirements-${ARTISAN_OS}.txt
 
+#debug
+sudo -H python3 pip show snap7
+
 # copy the snap7 binary installed by pip
-cp -f ${PYTHONPATH}/site-packages/snap7/lib/libsnap7.dylib /usr/local/lib
+cp -f ${PYTHONPATH}/lib/site-packages/snap7/lib/libsnap7.dylib /usr/local/lib
 
 
