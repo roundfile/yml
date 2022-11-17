@@ -157,7 +157,7 @@ for:
 
   environment:
     ARTISAN_OS: osx  # change to macOS
-    PYTHONPATH: /usr/local/opt/python${PYTHON_V}
+    PYTHONPATH: /usr/local/lib/python${PYTHON_V}
     MACOSX_DEPLOYMENT_TARGET: 10.15
 
   install:
