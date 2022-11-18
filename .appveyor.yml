@@ -162,7 +162,7 @@ for:
     QT_PATH: ${PYTHONSITEPKGS}/PyQt6/Qt6
     PYUIC: pyuic6
     PYRCC: pyrcc6
-    PYLUPDATE: pylupdate6pro  #./pylupdate6pro
+    PYLUPDATE: ./pylupdate6pro  #the dot slash is required
     MACOSX_DEPLOYMENT_TARGET: 10.15
 
   install:
