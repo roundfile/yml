@@ -171,6 +171,8 @@ for:
     - echo ${PATH}
     - ls -l /Users/appveyor/venv3.10.2
     - ls -l /Users/appveyor/venv3.10.2/bin
+    - which python
+    - which pip
 #    - export PATH="${PYTHONPATH}:$PATH"
 
     # update the __revision__ field with the left seven of the GIT commit hash
