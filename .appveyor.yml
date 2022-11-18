@@ -13,10 +13,10 @@ environment:
 #    appveyor_build_worker_image: Visual Studio 2019
 #  - job_name: windows
 #    appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: macos
-#    appveyor_build_worker_image: macos
-  - job_name: linux
-    appveyor_build_worker_image: Ubuntu2004
+  - job_name: macos
+    appveyor_build_worker_image: macos
+#  - job_name: linux
+#    appveyor_build_worker_image: Ubuntu2004
 
 
 # Generic build number, later set to commit hash by init
@@ -158,7 +158,7 @@ for:
   environment:
     ARTISAN_OS: macos  # change to macOS
     PYTHONSITEPKGS: /usr/local/lib/python${PYTHON_V}/site-packages  #PYTHONPATH: /usr/local/lib/python${PYTHON_V}
-    PYTHONPATH: /usr/local/opt/python@${PYTHON_V}/bin
+    #PYTHONPATH: /usr/local/opt/python@${PYTHON_V}/bin
     QT_PATH: ${PYTHONSITEPKGS}/PyQt6/Qt6
     PYUIC: pyuic6
     PYRCC: pyrcc6
