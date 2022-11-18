@@ -158,7 +158,7 @@ for:
   environment:
     ARTISAN_OS: macos
 #    PYTHONSITEPKGS: /usr/local/lib/python${PYTHON_V}/site-packages
-    PYTHONSITEPKGS: $HOME/venv3.10/python${PYTHON_V}/lib/site-packages
+    PYTHONSITEPKGS: $HOME/venv${PYTHON_V}/lib/site-packages
 #    PYTHONPATH: /usr/local/opt/python@${PYTHON_V}/bin
     QT_PATH: ${PYTHONSITEPKGS}/PyQt6/Qt6
     PYUIC: pyuic6
@@ -181,6 +181,7 @@ for:
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
 
+    - ls -l ${PYTHONSITEPKGS}
     # run the install script
     - .ci/install-macos.sh
 
