@@ -173,8 +173,9 @@ for:
     - ls -l /Users/appveyor/venv3.10.2
     - ls -l /Users/appveyor/venv3.10.2/bin
     - pip install qrcode
-    - ls -l /Users/appveyor/venv3.10.2/lib
-    - ls -l $HOME
+    - ls -l /Users/appveyor/venv3.10.2/lib/python${PYTHON_V}
+    - ls -l ${PYTHONSITEPKGS}
+#    - ls -l $HOME
     - which python
     - which pip
 #    - export PATH="${PYTHONPATH}:$PATH"
@@ -183,9 +184,8 @@ for:
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
 
-    - ls -l ${PYTHONSITEPKGS}
     # run the install script
-    - .ci/install-macos.sh
+#    - .ci/install-macos.sh
 
   build_script:
     - echo "MacOS Build"
