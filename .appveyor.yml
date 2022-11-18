@@ -158,7 +158,7 @@ for:
   environment:
     ARTISAN_OS: macos
 #    PYTHONSITEPKGS: /usr/local/lib/python${PYTHON_V}/site-packages
-    PYTHONSITEPKGS: ${HOME}/venv${PYTHON_V}/lib/python${PYTHON_V}site-packages
+    PYTHONSITEPKGS: /Users/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}site-packages
 #    PYTHONPATH: /usr/local/opt/python@${PYTHON_V}/bin
     QT_PATH: ${PYTHONSITEPKGS}/PyQt6/Qt6
     PYUIC: pyuic6
@@ -170,6 +170,7 @@ for:
     - echo "MacOS Install"
     - chmod +x .ci/*.sh
     - echo ${PATH}
+    - echo ${HOME}
     - ls -l /Users/appveyor/venv3.10.2
     - ls -l /Users/appveyor/venv3.10.2/bin
     - pip install qrcode
