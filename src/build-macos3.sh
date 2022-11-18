@@ -7,12 +7,6 @@ if [ ! -z $APPVEYOR ]; then
     # Appveyor CI builds
     echo "NOTICE: Appveyor build"
 
-# for PyQt6
-#    export QT_PATH=${PYTHONSITEPKGS}/PyQt6/Qt6
-#    export PYUIC=pyuic6
-#    export PYRCC=pyrcc6
-#    export PYLUPDATE=./pylupdate6pro
-
 else
     # standard local builds
     echo "NOTICE: Standard build"
@@ -83,4 +77,4 @@ fi
 rm -rf build dist
 sleep .3 # sometimes it takes a little for dist to get really empty
 echo "************* 3 **************"
-python3 setup-macos3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'
+python setup-macos3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'

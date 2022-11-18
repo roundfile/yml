@@ -157,29 +157,16 @@ for:
 
   environment:
     ARTISAN_OS: macos
-#    PYTHONSITEPKGS: /usr/local/lib/python${PYTHON_V}/site-packages
+    MACOSX_DEPLOYMENT_TARGET: 10.15
     PYTHONSITEPKGS: /Users/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
-#    PYTHONPATH: /usr/local/opt/python@${PYTHON_V}/bin
     QT_PATH: ${PYTHONSITEPKGS}/PyQt6/Qt6
     PYUIC: pyuic6
     PYRCC: pyrcc6
     PYLUPDATE: ./pylupdate6pro  #the dot slash is important
-    MACOSX_DEPLOYMENT_TARGET: 10.15
 
   install:
     - echo "MacOS Install"
     - chmod +x .ci/*.sh
-    - echo ${PATH}
-    - echo ${HOME}
-    - ls -l /Users/appveyor/venv3.10.2
-    - ls -l /Users/appveyor/venv3.10.2/bin
-    - pip install qrcode
-    - ls -l /Users/appveyor/venv3.10.2/lib/python${PYTHON_V}
-    - ls -l ${PYTHONSITEPKGS}
-#    - ls -l $HOME
-    - which python
-    - which pip
-    - export PATH="${PYTHONPATH}:$PATH"
 
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
