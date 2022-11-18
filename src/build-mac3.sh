@@ -37,7 +37,6 @@ fi
 
 #test if this is required  export PATH=$PYTHON/bin:$PYTHON/lib:$PATH
 #see if both parts are required  export PATH=$QT_PATH/bin:$QT_PATH/lib:$PATH
-export PATH=$QT_PATH/bin:$PATH
 
 #export DYLD_FRAMEWORK_PATH=$QT_PATH/lib # with this line all Qt libs are copied into Contents/Frameworks. Why?
 
