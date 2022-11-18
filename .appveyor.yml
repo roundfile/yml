@@ -156,9 +156,9 @@ for:
     fast_finish: false
 
   environment:
-    ARTISAN_OS: macos  # change to macOS
-    PYTHONSITEPKGS: /usr/local/lib/python${PYTHON_V}/site-packages  #PYTHONPATH: /usr/local/lib/python${PYTHON_V}
-    #PYTHONPATH: /usr/local/opt/python@${PYTHON_V}/bin
+    ARTISAN_OS: macos
+    PYTHONSITEPKGS: /usr/local/lib/python${PYTHON_V}/site-packages
+    PYTHONPATH: /usr/local/opt/python@${PYTHON_V}/bin
     QT_PATH: ${PYTHONSITEPKGS}/PyQt6/Qt6
     PYUIC: pyuic6
     PYRCC: pyrcc6
@@ -168,7 +168,7 @@ for:
   install:
     - echo "MacOS Install"
     - chmod +x .ci/*.sh
-        
+    - echo ${PATH}
     - export PATH="${PYTHONPATH}:$PATH"
 
     # update the __revision__ field with the left seven of the GIT commit hash
