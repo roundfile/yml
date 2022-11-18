@@ -15,8 +15,8 @@ environment:
 #    appveyor_build_worker_image: Visual Studio 2019
   - job_name: macos
     appveyor_build_worker_image: macos
-#  - job_name: linux
-#    appveyor_build_worker_image: Ubuntu2004
+  - job_name: linux
+    appveyor_build_worker_image: Ubuntu2004
 
 
 # Generic build number, later set to commit hash by init
@@ -208,8 +208,8 @@ for:
   environment:
     PYTHON_V: 3.11
     ARTISAN_OS: linux
-#    PYTHON_V: ${PYTHON_VER}  #3.10
     PYTHON_PATH: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
+    QT_PATH: $PYTHON_PATH/PyQt6/Qt6
 
   install:
     - echo "Linux Install"
