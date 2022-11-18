@@ -160,7 +160,10 @@ for:
     PYTHONSITEPKGS:  /usr/local/lib/python${PYTHON_V}/site-packages  #PYTHONPATH: /usr/local/lib/python${PYTHON_V}
     PYTHONPATH: /usr/local/opt/python@${PYTHON_V}/bin
     MACOSX_DEPLOYMENT_TARGET: 10.15
-    
+    QT_PATH: ${PYTHONSITEPKGS}/PyQt6/Qt6
+    PYUIC: pyuic6
+    PYRCC: pyrcc6
+    PYLUPDATE: ./pylupdate6pro
 
   install:
     - echo "MacOS Install"
