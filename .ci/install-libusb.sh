@@ -24,5 +24,5 @@ sudo apt-get remove -y libusb-1.0-0
 
 #curl -k -L -O https://github.com/libusb/libusb/releases/download/v1.0.25/libusb-1.0.25.tar.bz2
 curl -k -L -O https://github.com/libusb/libusb/releases/download/v${LIBUSB_VER}/libusb-${LIBUSB_VER}.tar.bz2
-tar xjf libusb-1.0.25.tar.bz2
+tar xjf libusb-${LIBUSB_VER}.tar.bz2
 (cd libusb-1.0.25 && ./configure --prefix=/usr && make -j4 && sudo make install)
