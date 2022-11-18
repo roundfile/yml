@@ -170,9 +170,11 @@ for:
     - echo "MacOS Install"
     - chmod +x .ci/*.sh
     - echo ${PATH}
-#    - ls -l /Users/appveyor/venv3.10.2
-#    - ls -l /Users/appveyor/venv3.10.2/bin
-#    - ls -l $HOME
+    - ls -l /Users/appveyor/venv3.10.2
+    - ls -l /Users/appveyor/venv3.10.2/bin
+    - pip install qrcode
+    - ls -l /Users/appveyor/venv3.10.2/lib
+    - ls -l $HOME
     - which python
     - which pip
 #    - export PATH="${PYTHONPATH}:$PATH"
