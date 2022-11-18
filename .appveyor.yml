@@ -158,7 +158,7 @@ for:
   environment:
     ARTISAN_OS: macos
 #    PYTHONSITEPKGS: /usr/local/lib/python${PYTHON_V}/site-packages
-    PYTHONSITEPKGS: $HOME/venv3.10/python${PYTHON_V}/site-packages
+    PYTHONSITEPKGS: $HOME/venv3.10/python${PYTHON_V}/lib/site-packages
 #    PYTHONPATH: /usr/local/opt/python@${PYTHON_V}/bin
     QT_PATH: ${PYTHONSITEPKGS}/PyQt6/Qt6
     PYUIC: pyuic6
