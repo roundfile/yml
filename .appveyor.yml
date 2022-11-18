@@ -156,33 +156,27 @@ for:
     fast_finish: false
 
   environment:
-    ARTISAN_OS: osx  # change to macOS
-    PYTHONSITEPKGS:  /usr/local/lib/python${PYTHON_V}/site-packages  #PYTHONPATH: /usr/local/lib/python${PYTHON_V}
+    ARTISAN_OS: macos  # change to macOS
+    PYTHONSITEPKGS: /usr/local/lib/python${PYTHON_V}/site-packages  #PYTHONPATH: /usr/local/lib/python${PYTHON_V}
     PYTHONPATH: /usr/local/opt/python@${PYTHON_V}/bin
-    MACOSX_DEPLOYMENT_TARGET: 10.15
     QT_PATH: ${PYTHONSITEPKGS}/PyQt6/Qt6
     PYUIC: pyuic6
     PYRCC: pyrcc6
-    PYLUPDATE: ./pylupdate6pro
+    PYLUPDATE: pylupdate6pro  #./pylupdate6pro
+    MACOSX_DEPLOYMENT_TARGET: 10.15
 
   install:
     - echo "MacOS Install"
     - chmod +x .ci/*.sh
         
     - export PATH="${PYTHONPATH}:$PATH"
-#    - ls -l /usr/local/lib/python3.10
-    - ls -l ${PYTHONPATH}
-    - ls -l /usr/local/opt/python@${PYTHON_V}/lib
-    - ls -l /usr/local/opt/python@${PYTHON_V}/bin
-#    - ls -l  /usr/local/opt/python@${PYTHON_V}/3.10.2
-#    - ls -l /Library/Frameworks/Python.framework/Versions/${PYTHON_V}
 
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
 
     # run the install script
-    - .ci/install-osx.sh
+    - .ci/install-macos.sh
 
   build_script:
     - echo "MacOS Build"
@@ -191,7 +185,7 @@ for:
         
     # run the build script
     - cd src
-    - ./build-mac3.sh
+    - ./build-macos3.sh
 
 # unit test fails as it runs on Py3.9 while the build installs under brew isntalled Py3.10 (see build-mac3.py)
 #  test_script:
