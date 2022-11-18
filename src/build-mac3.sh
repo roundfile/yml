@@ -6,12 +6,12 @@ set -e  # reduced logging
 if [ ! -z $APPVEYOR ]; then
     # Appveyor CI builds
     echo "NOTICE: Appveyor build"
-    export PYTHON=/usr/local/opt/python@${PYTHON_V}
-    export PYTHONBIN=$PYTHON/bin
+#    export PYTHON=/usr/local/opt/python@${PYTHON_V}
+#    export PYTHONBIN=$PYTHON/bin
 
 # for PyQt6
     export QT_PATH=${PYTHONSITEPKGS}/PyQt6/Qt6
-    export QT_SRC_PATH==${QT_PATH}
+#    export QT_SRC_PATH==${QT_PATH}
     export PYUIC=pyuic6
     export PYRCC=pyrcc6
     export PYLUPDATE=./pylupdate6pro
@@ -33,13 +33,11 @@ else
 
     export MACOSX_DEPLOYMENT_TARGET=10.15
     export DYLD_LIBRARY_PATH=$PYTHON/lib:$DYLD_LIBRARY_PATH
+    export PATH=$PYTHON/bin:$PYTHON/lib:$PATH
+    export PATH=$QT_PATH/bin:$QT_PATH/lib:$PATH
+    #export DYLD_FRAMEWORK_PATH=$QT_PATH/lib # with this line all Qt libs are copied into Contents/Frameworks. Why?
+
 fi
-
-#test if this is required  export PATH=$PYTHON/bin:$PYTHON/lib:$PATH
-#see if both parts are required  export PATH=$QT_PATH/bin:$QT_PATH/lib:$PATH
-
-#export DYLD_FRAMEWORK_PATH=$QT_PATH/lib # with this line all Qt libs are copied into Contents/Frameworks. Why?
-
 
 # ui / qrc
 if [ -z $APPVEYOR ]; then
@@ -88,6 +86,3 @@ rm -rf build dist
 sleep .3 # sometimes it takes a little for dist to get really empty
 echo "************* 3 **************"
 python3 setup-mac3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'
-
-#$PYTHONPATH/python3 setup-mac3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'
-#python3 setup-mac3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'
