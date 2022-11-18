@@ -47,9 +47,10 @@ python3 --version
 
 #brew install p7zip
 
-python3 -m pip install --upgrade pip
-sudo -H python3 -m pip install --root-user-action=ignore -r src/requirements.txt
-sudo -H python3 -m pip install --root-user-action=ignore -r src/requirements-${ARTISAN_OS}.txt
+python -m pip install --upgrade pip
+sudo -H python -m pip install --root-user-action=ignore -r src/requirements.txt
+sudo -H python -m pip install --root-user-action=ignore -r src/requirements-${ARTISAN_OS}.txt
+ls -l /Users/appveyor/venv3.10.2
 
 # copy the snap7 binary installed by pip
 cp -f ${PYTHONSITEPKGS}/snap7/lib/libsnap7.dylib /usr/local/lib
