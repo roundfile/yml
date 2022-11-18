@@ -158,7 +158,7 @@ for:
   environment:
     ARTISAN_OS: macos
 #    PYTHONSITEPKGS: /usr/local/lib/python${PYTHON_V}/site-packages
-    PYTHONSITEPKGS: $HOME/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
+    PYTHONSITEPKGS: /Users/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
 #    PYTHONPATH: /usr/local/opt/python@${PYTHON_V}/bin
     QT_PATH: ${PYTHONSITEPKGS}/PyQt6/Qt6
     PYUIC: pyuic6
@@ -179,7 +179,7 @@ for:
 #    - ls -l $HOME
     - which python
     - which pip
-#    - export PATH="${PYTHONPATH}:$PATH"
+    - export PATH="${PYTHONPATH}:$PATH"
 
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
