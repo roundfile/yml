@@ -34,6 +34,16 @@ set -e # reduced logging
 #brew link --force python@3.10
 #export PATH="/usr/local/opt/python@$3.10/bin:$PATH"
 
+## upgrade python from 3.10 to 3.11
+# 3.10.2 now already installed on AppVeyor
+deactivate
+echo "pwd"
+pwd
+brew install python@3.11
+brew unlink python@3.10
+brew link --force python@3.11
+export PATH="/usr/local/opt/python@$3.10/bin:$PATH"
+
 hash -r
 which python3
 python3 --version
