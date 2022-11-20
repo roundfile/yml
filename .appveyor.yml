@@ -182,7 +182,7 @@ for:
         
     # run the build script
     - cd src
-    - ./build-macos3.sh
+#    - ./build-macos3.sh
 
 # unit test fails as it runs on Py3.9 while the build installs under brew isntalled Py3.10 (see build-mac3.py)
 #  test_script:
