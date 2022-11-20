@@ -41,7 +41,10 @@ pwd
 brew install python@3.11
 brew unlink python@3.10
 brew link --force python@3.11
-export PATH="/usr/local/opt/python@$3.10/bin:$PATH"
+export PATH="/usr/local/opt/python@$3.11/bin:$PATH"
+python -m venv myvenv
+pip install qrcode
+pip show qrcode
 
 hash -r
 which python3
