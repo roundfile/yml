@@ -1,3 +1,12 @@
+;
+; .nsi command line options:
+;    /DPRODUCT_VERSION=ww.xx.yy.zz  -explicitly set the product version, default is 0.0.0.0
+;    /DLEGACY=True|False            -True is a build for legacy Windows, default is False
+;    /DSIGN=True|False              -True if the build is part of the process to sign files, default is False (SignArtisan is not a part of CI)
+;
+; installer command line options
+;    /S                             -silent operation
+
 RequestExecutionLevel admin
 
 !macro APP_ASSOCIATE_URL FILECLASS DESCRIPTION COMMANDTEXT COMMAND
@@ -102,6 +111,8 @@ RequestExecutionLevel admin
 !define PRODUCT_NAME "Artisan"
 !define PRODUCT_PUBLISHER "The Artisan Team"
 !define PRODUCT_WEB_SITE "https://github.com/artisan-roaster-scope/artisan/blob/master/README.md"
+; Note that for 64bit Windows the registry API redirects the following two keys to 
+;   Software\Wow6432Node\Microsoft\Windows\CurrentVersion\...
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\artisan.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
@@ -294,6 +305,14 @@ FunctionEnd
 
 Function un.onInit
     !insertmacro IsRunning
+    
+    ${If} ${REMALL} == "True"
+        MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Well it looks like REMALL is True" IDYES +6
+        Abort
+    ${Else}
+        MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Well it looks like REMALL is False" IDYES +3
+        Abort
+    ${EndIf}
 
     IfSilent +3
         MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Are you sure you want to completely remove $(^Name) and all of its components?" IDYES +2
