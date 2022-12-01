@@ -34,27 +34,9 @@ set -e # reduced logging
 #brew link --force python@3.10
 #export PATH="/usr/local/opt/python@$3.10/bin:$PATH"
 
-### upgrade python from 3.10 to 3.11
-## 3.10.2 now already installed on AppVeyor
-#echo "pwd"
-#pwd
-#brew install python@3.11
-#brew unlink python@3.10
-#brew link --force python@3.11
-#export PATH="/usr/local/opt/python@$3.11/bin:$PATH"
-#python -m venv myvenv
-if [ -z ${VIRTUAL_ENV} ]; then 
-    echo "VIRTUAL_ENV is active"
-    echo ${VIRTUAL_ENV}
-fi
-pip install qrcode
-pip show qrcode
-
 hash -r
 which python3
 python3 --version
-
-exit(1)
 
 
 # to work around a wget open ssl issue: dyld: Library not loaded: /usr/local/opt/openssl/lib/libssl.1.0.0.dylib
@@ -71,5 +53,3 @@ sudo -H python -m pip install --root-user-action=ignore -r src/requirements-${AR
 
 # copy the snap7 binary installed by pip
 cp -f ${PYTHONSITEPKGS}/snap7/lib/libsnap7.dylib /usr/local/lib
-
-
