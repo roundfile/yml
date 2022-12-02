@@ -9,6 +9,74 @@
 
 RequestExecutionLevel admin
 
+!include LogicLib.nsh
+!include WinVer.nsh
+!include x64.nsh
+!include "MUI.nsh"
+
+SetCompressor lzma
+
+; HM NIS Edit Wizard helper defines
+!define pyinstallerOutputDir 'dist/artisan'
+!define PRODUCT_NAME "Artisan"
+!define PRODUCT_PUBLISHER "The Artisan Team"
+!define PRODUCT_WEB_SITE "https://github.com/artisan-roaster-scope/artisan/blob/master/README.md"
+; Note that for 64bit Windows the registry API redirects the following two keys to 
+;   Software\Wow6432Node\Microsoft\Windows\CurrentVersion\...
+!define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\artisan.exe"
+!define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
+!define PRODUCT_UNINST_ROOT_KEY "HKLM"
+
+;Special commandline options
+;Product version can be defined on the command line '/DPRODUCT_VERSION=ww.xx.yy.zz'
+;  and will override the version explicitly set below.
+!define /ifndef PRODUCT_VERSION "0.0.0.0"
+!define /ifndef SIGN "False"
+!define /ifndef LEGACY "False"
+
+Caption "${PRODUCT_NAME} Installer"
+VIProductVersion ${PRODUCT_VERSION}
+VIAddVersionKey ProductName "${PRODUCT_NAME}"
+VIAddVersionKey Comments "Installer for Artisan"
+VIAddVersionKey CompanyName ""
+VIAddVersionKey LegalCopyright "Copyright 2010-2022, Artisan developers. GNU General Public License"
+VIAddVersionKey FileVersion "${PRODUCT_VERSION}"
+VIAddVersionKey FileDescription "${PRODUCT_NAME} Installer"
+VIAddVersionKey ProductVersion "${PRODUCT_VERSION}"
+
+; MUI 1.67 compatible ------
+; MUI Settings
+!define MUI_ABORTWARNING
+!define MUI_ICON "artisan.ico"
+!define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
+
+; Welcome page
+!insertmacro MUI_PAGE_WELCOME
+; Directory page
+!insertmacro MUI_PAGE_DIRECTORY
+; Instfiles page
+!insertmacro MUI_PAGE_INSTFILES
+; Finish page
+!insertmacro MUI_PAGE_FINISH
+
+; Uninstaller pages
+!insertmacro MUI_UNPAGE_INSTFILES
+
+; Language files
+!insertmacro MUI_LANGUAGE "English"
+
+; Reserve files
+!insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
+
+; MUI end ------
+
+Name "${PRODUCT_NAME}"
+OutFile "Setup-${PRODUCT_NAME}-${PRODUCT_VERSION}.exe"
+InstallDir "C:\Program Files\Artisan"
+InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
+ShowInstDetails show
+ShowUnInstDetails show
+
 !macro APP_ASSOCIATE_URL FILECLASS DESCRIPTION COMMANDTEXT COMMAND
   WriteRegStr HKCR "${FILECLASS}" "" `${DESCRIPTION}`
   WriteRegStr HKCR "${FILECLASS}" "URL Protocol" ""
@@ -88,15 +156,15 @@ RequestExecutionLevel admin
   ReadRegStr ${OUTPUT} HKCR ".${EXT}" ""
 !macroend
 
-; !defines for use with SHChangeNotify
-!ifdef SHCNE_ASSOCCHANGED
-!undef SHCNE_ASSOCCHANGED
-!endif
-!define SHCNE_ASSOCCHANGED 0x08000000
-!ifdef SHCNF_FLUSH
-!undef SHCNF_FLUSH
-!endif
-!define SHCNF_FLUSH        0x1000
+;; !defines for use with SHChangeNotify
+;!ifdef SHCNE_ASSOCCHANGED
+;!undef SHCNE_ASSOCCHANGED
+;!endif
+;!define SHCNE_ASSOCCHANGED 0x08000000
+;!ifdef SHCNF_FLUSH
+;!undef SHCNF_FLUSH
+;!endif
+;!define SHCNF_FLUSH        0x1000
 
 !macro UPDATEFILEASSOC
 ; Using the system.dll plugin to call the SHChangeNotify Win32 API function so we
@@ -104,76 +172,6 @@ RequestExecutionLevel admin
   System::Call "shell32::SHChangeNotify(i,i,i,i) (${SHCNE_ASSOCCHANGED}, ${SHCNF_FLUSH}, 0, 0)"
 !macroend
 ;End Unused macros ------
-
-
-; HM NIS Edit Wizard helper defines
-!define pyinstallerOutputDir 'dist/artisan'
-!define PRODUCT_NAME "Artisan"
-!define PRODUCT_PUBLISHER "The Artisan Team"
-!define PRODUCT_WEB_SITE "https://github.com/artisan-roaster-scope/artisan/blob/master/README.md"
-; Note that for 64bit Windows the registry API redirects the following two keys to 
-;   Software\Wow6432Node\Microsoft\Windows\CurrentVersion\...
-!define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\artisan.exe"
-!define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
-!define PRODUCT_UNINST_ROOT_KEY "HKLM"
-
-;Special commandline options
-;Product version can be defined on the command line '/DPRODUCT_VERSION=ww.xx.yy.zz'
-;  and will override the version explicitly set below.
-!define /ifndef PRODUCT_VERSION "0.0.0.0"
-!define /ifndef SIGN "False"
-!define /ifndef LEGACY "False"
-
-Caption "${PRODUCT_NAME} Installer"
-VIProductVersion ${PRODUCT_VERSION}
-VIAddVersionKey ProductName "${PRODUCT_NAME}"
-VIAddVersionKey Comments "Installer for Artisan"
-VIAddVersionKey CompanyName ""
-VIAddVersionKey LegalCopyright "Copyright 2010-2022, Artisan developers. GNU General Public License"
-VIAddVersionKey FileVersion "${PRODUCT_VERSION}"
-VIAddVersionKey FileDescription "${PRODUCT_NAME} Installer"
-VIAddVersionKey ProductVersion "${PRODUCT_VERSION}"
-
-SetCompressor lzma
-
-!include x64.nsh
-
-; MUI 1.67 compatible ------
-!include "MUI.nsh"
-
-; MUI Settings
-!define MUI_ABORTWARNING
-!define MUI_ICON "artisan.ico"
-!define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
-
-; Welcome page
-!insertmacro MUI_PAGE_WELCOME
-; Directory page
-!insertmacro MUI_PAGE_DIRECTORY
-; Instfiles page
-!insertmacro MUI_PAGE_INSTFILES
-; Finish page
-!insertmacro MUI_PAGE_FINISH
-
-; Uninstaller pages
-!insertmacro MUI_UNPAGE_INSTFILES
-
-; Language files
-!insertmacro MUI_LANGUAGE "English"
-
-; Reserve files
-!insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
-
-; MUI end ------
-
-Name "${PRODUCT_NAME}"
-OutFile "Setup-${PRODUCT_NAME}-${PRODUCT_VERSION}.exe"
-InstallDir "C:\Program Files\Artisan"
-InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
-ShowInstDetails show
-ShowUnInstDetails show
-
-!include WinVer.nsh
 
 Function .onInit
   ${If} ${LEGACY} == "False"
@@ -307,12 +305,21 @@ FunctionEnd
 Function un.onInit
     !insertmacro IsRunning
     
-    IfSilent +5
-        MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Are you sure you want to completely remove the $(^Name) application?" IDYES +2
-        Abort
-        MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Do you want to permanently remove all saved $(^Name) settings?" IDNO +2
-        StrCpy $R1 "RemoveSettings"
+    ${GetParameters} $1
+    ClearErrors
+    ${GetOptions} $1 "--removesettings" $2
+    ${IfNot} ${Errors}
+        MessageBox mb_ok "Got RemoveSettings"
+    ${Else}
+        MessageBox mb_ok "Did not get RemoveSettings"
+    ${EndIf}
+;    IfSilent +5
+;        MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Are you sure you want to completely remove the $(^Name) application?" IDYES +2
+;        Abort
+;        MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Do you want to permanently remove all saved $(^Name) settings?" IDNO +2
+;        StrCpy $R1 "RemoveSettings"
     HideWindow
+
 
 FunctionEnd
 
