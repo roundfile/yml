@@ -927,7 +927,7 @@ class tgraphcanvas(FigureCanvas):
         'on_timex', 'on_temp1', 'on_temp2', 'on_ctimex1', 'on_ctimex2', 'on_ctemp1', 'on_ctemp2','on_tstemp1', 'on_tstemp2', 'on_unfiltereddelta1',
         'on_unfiltereddelta2', 'on_delta1', 'on_delta2', 'on_extratemp1', 'on_extratemp2', 'on_extratimex', 'on_extractimex1', 'on_extractemp1', 'on_extractimex2', 'on_extractemp2',
         'timeindex', 'ETfunction', 'BTfunction', 'DeltaETfunction', 'DeltaBTfunction', 'safesaveflag', 'pid', 'background', 'backgroundprofile', 'backgroundprofile_moved_x', 'backgroundprofile_moved_y', 'backgroundDetails',
-        'backgroundeventsflag', 'backgroundpath', 'backgroundUUID', 'backgroundUUID', 'backgroundShowFullflag', 'titleB', 'roastbatchnrB', 'roastbatchprefixB',
+        'backgroundeventsflag', 'backgroundpath', 'backgroundUUID', 'backgroundUUID', 'backgroundShowFullflag', 'backgroundKeyboardControlFlag', 'titleB', 'roastbatchnrB', 'roastbatchprefixB',
         'roastbatchposB', 'temp1B', 'temp2B', 'temp1BX', 'temp2BX', 'timeB', 'temp1Bdelta', 'temp2Bdelta',
         'stemp1B', 'stemp2B', 'stemp1BX', 'stemp2BX', 'extraname1B', 'extraname2B', 'extratimexB', 'xtcurveidx', 'ytcurveidx', 'delta1B', 'delta2B', 'timeindexB',
         'TP_time_B_loaded', 'backgroundEvents', 'backgroundEtypes', 'backgroundEvalues', 'backgroundEStrings', 'backgroundalpha', 'backgroundmetcolor',
@@ -1856,6 +1856,7 @@ class tgraphcanvas(FigureCanvas):
         self.backgroundUUID = None
         self.backgroundmovespeed = 30
         self.backgroundShowFullflag = False
+        self.backgroundKeyboardControlFlag = True
         self.titleB = ''
         self.roastbatchnrB = 0
         self.roastbatchprefixB = ''
@@ -16993,7 +16994,13 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
             )
         elif modifiers == Qt.KeyboardModifier.AltModifier:
             # ALT-click (OPTION on macOS) sends the log file by email
-            aw.sendLog()
+            #dave start
+            import zipfile
+            with zipfile.ZipFile(os.path.join(getDataDirectory(),"hello.zip"), mode="w") as archive:
+                archive.write(os.path.join(getDataDirectory(),"artisan.log"))
+            foo = aw.ArtisanOpenFileDialog(path=getDataDirectory(),ext='*.log')
+            #dave end
+            #dave aw.sendLog()
         else:
             plus.controller.toggle(aw)
 
@@ -17359,7 +17366,7 @@ class ApplicationWindow(QMainWindow):
         'extrabytesize', 'extraparity', 'extrastopbits', 'extratimeout', 'fujipid', 'dtapid', 'pidcontrol', 'soundflag', 'recentRoasts', 'maxRecentRoasts',
         'lcdpaletteB', 'lcdpaletteF', 'extraeventsbuttonsflags', 'extraeventslabels', 'extraeventbuttoncolor', 'extraeventsactionstrings',
         'extraeventbuttonround', 'block_quantification_sampling_ticks', 'sampling_ticks_to_block_quantifiction', 'extraeventsactionslastvalue',
-        'org_extradevicesettings', 'eventslidervalues', 'eventslidervisibilities', 'eventslideractions', 'eventslidercommands', 'eventslideroffsets',
+        'org_extradevicesettings', 'eventslidervalues', 'eventslidervisibilities', 'eventsliderKeyboardControl', 'eventslideractions', 'eventslidercommands', 'eventslideroffsets',
         'eventsliderfactors', 'eventslidermin', 'eventsMaxValue', 'eventslidermax', 'eventslidersflags', 'eventsliderBernoulli', 'eventslidercoarse',
         'eventslidertemp', 'eventsliderunits', 'eventslidermoved', 'SVslidermoved', 'eventquantifieractive', 'eventquantifiersource', 'eventquantifierSV',
         'eventquantifiermin', 'eventquantifiermax', 'eventquantifiercoarse', 'eventquantifieraction', 'clusterEventsFlag', 'eventquantifierlinspaces',
@@ -17549,7 +17556,7 @@ class ApplicationWindow(QMainWindow):
         #mpl.rcParams['toolbar'] is None # this does not work to remove the default toolbar
 
         settings = QSettings()
-        if settings.contains('dpi') and (not settings.contains('resetqsettings') or toInt(settings.value('resetqsettings',self.resetqsettings)) == 0) and Qt.KeyboardModifier.AltModifier not in QApplication.queryKeyboardModifiers():
+        if settings.contains('dpi') and (not settings.contains('resetqsettings') or toInt(settings.value('resetqsettings',self.resetqsettings)) == 0) and QApplication.queryKeyboardModifiers() != Qt.KeyboardModifier.AltModifier:
             try:
                 dpi = toInt(settings.value('dpi',self.dpi))
                 if dpi >= 40:
@@ -17671,6 +17678,7 @@ class ApplicationWindow(QMainWindow):
         #event sliders
         self.eventslidervalues = [0,0,0,0]
         self.eventslidervisibilities = [0,0,0,0]
+        self.eventsliderKeyboardControl = True # if false sliders cannot be moved using up/down keys
         self.eventslideractions = [0,0,0,0] # 0: None, 1: Serial Command, 2: Modbus Command, 3: DTA Command, 4: Call Program, 5: Hottop Heater, 6: Hottop Fan
         self.eventslidercommands = ['','','','']
         self.eventslideroffsets = [0,0,0,0]
@@ -19559,7 +19567,7 @@ class ApplicationWindow(QMainWindow):
         self.splitter.setFrameShape(QFrame.Shape.NoFrame)
         #self.splitter.handle(0).setVisible(False)
         settings = QSettings()
-        if settings.contains('MainSplitter') and Qt.KeyboardModifier.AltModifier not in QApplication.queryKeyboardModifiers():
+        if settings.contains('MainSplitter') and QApplication.queryKeyboardModifiers() != Qt.KeyboardModifier.AltModifier:
             self.splitter.restoreState(settings.value('MainSplitter'))
 
         self.splitter.setHandleWidth(7)
@@ -19631,7 +19639,7 @@ class ApplicationWindow(QMainWindow):
         self.slider1.sliderReleased.connect(self.slider1released)
         # needed for both tracking variants:
         self.slider1.actionTriggered.connect(self.slider1actionTriggered)
-        self.slider1.setFocusPolicy(Qt.FocusPolicy.StrongFocus) # ClickFocus TabFocus StrongFocus
+        self.slider1.setFocusPolicy(Qt.FocusPolicy.StrongFocus) # ClickFocus TabFocus StrongFocus NoFocus
 
         self.slider2 = self.slider()
         self.sliderLCD2 = self.sliderLCD()
@@ -22533,22 +22541,22 @@ class ApplicationWindow(QMainWindow):
     # set slider focus to Qt.FocusPolicy.StrongFocus to allow keyboard control and
     # Qt.FocusPolicy.NoFocus to deactivate it
     def setSliderFocusPolicy(self,focus):
-        if bool(aw.eventslidervisibilities[0]):
+        if self.eventsliderKeyboardControl and bool(aw.eventslidervisibilities[0]):
             self.slider1.setFocusPolicy(focus)
         else:
             self.slider1.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.slider1.clearFocus()
-        if bool(aw.eventslidervisibilities[1]):
+        if self.eventsliderKeyboardControl and bool(aw.eventslidervisibilities[1]):
             self.slider2.setFocusPolicy(focus)
         else:
             self.slider2.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.slider2.clearFocus()
-        if bool(aw.eventslidervisibilities[2]):
+        if self.eventsliderKeyboardControl and bool(aw.eventslidervisibilities[2]):
             self.slider3.setFocusPolicy(focus)
         else:
             self.slider3.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.slider3.clearFocus()
-        if bool(aw.eventslidervisibilities[3]):
+        if self.eventsliderKeyboardControl and bool(aw.eventslidervisibilities[3]):
             self.slider4.setFocusPolicy(focus)
         else:
             self.slider4.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -26387,24 +26395,24 @@ class ApplicationWindow(QMainWindow):
                 elif k == 16777234:               #MOVES CURRENT BUTTON LEFT
                     if self.keyboardmoveflag:
                         self.moveKbutton('left')
-                    elif aw.qmc.background:
+                    elif aw.qmc.background and aw.qmc.backgroundKeyboardControlFlag:
                         aw.qmc.movebackground('left',aw.qmc.backgroundmovespeed)
                         self.qmc.backmoveflag = 0 # do not align background automatically during redraw!
                         aw.qmc.redraw(recomputeAllDeltas=True,sampling=aw.qmc.flagon)
                 elif k == 16777236:               #MOVES CURRENT BUTTON RIGHT
                     if self.keyboardmoveflag:
                         self.moveKbutton('right')
-                    elif aw.qmc.background:
+                    elif aw.qmc.background and aw.qmc.backgroundKeyboardControlFlag:
                         aw.qmc.movebackground('right',aw.qmc.backgroundmovespeed)
                         self.qmc.backmoveflag = 0 # do not align background automatically during redraw!
                         aw.qmc.redraw(recomputeAllDeltas=True,sampling=aw.qmc.flagon)
                 elif k == 16777235:               #UP
-                    if aw.qmc.background:
+                    if aw.qmc.background and aw.qmc.backgroundKeyboardControlFlag:
                         aw.qmc.movebackground('up',aw.qmc.backgroundmovespeed)
                         self.qmc.backmoveflag = 0 # do not align background automatically during redraw!
                         aw.qmc.redraw(recomputeAllDeltas=False,sampling=aw.qmc.flagon)
                 elif k == 16777237:               #DOWN
-                    if aw.qmc.background:
+                    if aw.qmc.background and aw.qmc.backgroundKeyboardControlFlag:
                         aw.qmc.movebackground('down',aw.qmc.backgroundmovespeed)
                         self.qmc.backmoveflag = 0 # do not align background automatically during redraw!
                         aw.qmc.redraw(recomputeAllDeltas=False,sampling=aw.qmc.flagon)
@@ -27382,53 +27390,67 @@ class ApplicationWindow(QMainWindow):
 
 
 
-#                #####
-#                ##### START of autoCHARGE/autoDROP debug
-#                ##
-#                ## uncomment this section to run BTbreak() to re-calc CHARGE and DROP for debugging
-#                ##
-#                _log.info("PRINT #########")
-#                _log.info("PRINT autoCHARGE/autoDROP debug")
-#                chargetime = 0
-#                if self.qmc.timeindex[0] > -1:
-#                    chargetime = self.qmc.timex[self.qmc.timeindex[0]]
-#                    _log.info("PRINT CHARGE Idx: %s (%s@%s)",self.qmc.timeindex[0],stringfromseconds(self.qmc.timex[self.qmc.timeindex[0]]-chargetime),self.qmc.temp2[self.qmc.timeindex[0]])
-#                if aw.qmc.timeindex[6]:
-#                    _log.info("PRINT DROP Idx: %s (%s@%s)",self.qmc.timeindex[6],stringfromseconds(self.qmc.timex[self.qmc.timeindex[6]]-chargetime),self.qmc.temp2[self.qmc.timeindex[6]])
-#                if aw.qmc.mode == 'C':
-#                    o = 0.5
-#                else:
-#                    o = 0.5 * 1.8
-#                if aw.qmc.mode == 'C':
-#                    oo = 0.2
-#                else:
-#                    oo = 0.2 * 1.8
-#                autoChargeIdx = 0
-#                autoDropIdx = 0
-#                for i in range(len(self.qmc.temp2)):
-#                    if i>=5 and self.qmc.temp2 is not None and self.qmc.temp2 != -1:
-#                        # autoCharge:
-#                        if not autoChargeIdx and ((self.qmc.mode == 'C' and self.qmc.temp2[i] > 77) or (self.qmc.mode == 'F' and self.qmc.temp2[-1] > 170)):
-#                            b = self.BTbreak(i,o)
-#                            if b > 0:
-#                                autoChargeIdx = i - b + 1
-#                                _log.info("PRINT autoChargeIdx: %s (%s@%s)",autoChargeIdx,stringfromseconds(self.qmc.timex[autoChargeIdx]-chargetime),self.qmc.temp2[autoChargeIdx])
-#                                # add event marker
-#                                self.qmc.specialevents.append(autoChargeIdx)
-#                                self.qmc.specialeventstype.append(4)
-#                                self.qmc.specialeventsStrings.append("CHARGE")
-#                                self.qmc.specialeventsvalue.append(0)
-#                        if autoChargeIdx and not autoDropIdx and ((self.qmc.timex[i] - chargetime) > 420) and ((self.qmc.mode == 'C' and self.qmc.temp2[i] > 160) or (self.qmc.mode == 'F' and self.qmc.temp2[i] > 320)):
-#                            b = self.BTbreak(i,oo)
-#                            if b > 0:
-#                                autoDropIdx = i - b + 1
-#                                _log.info("PRINT autoDropIdx: %s (%s@%s)",autoDropIdx,stringfromseconds(self.qmc.timex[autoDropIdx]-chargetime),self.qmc.temp2[autoDropIdx])
-#                                # add event marker
-#                                self.qmc.specialevents.append(autoDropIdx)
-#                                self.qmc.specialeventstype.append(4)
-#                                self.qmc.specialeventsStrings.append("DROP")
-#                                self.qmc.specialeventsvalue.append(0)
-#                ##### END of autoCHARGE/autoDROP debug
+                #####
+                ##### START of autoCHARGE/autoDROP debug
+                ##
+                ## uncomment this section to run BTbreak() to re-calc CHARGE and DROP for debugging
+                ##
+                _log.info("PRINT #########")
+                _log.info("PRINT autoCHARGE/autoDROP debug")
+                chargetime = 0
+                if self.qmc.timeindex[0] > -1:
+                    chargetime = self.qmc.timex[self.qmc.timeindex[0]]
+                    _log.info("PRINT CHARGE Idx: %s (%s@%s)",self.qmc.timeindex[0],stringfromseconds(self.qmc.timex[self.qmc.timeindex[0]]-chargetime),self.qmc.temp2[self.qmc.timeindex[0]])
+                if aw.qmc.timeindex[6]:
+                    _log.info("PRINT DROP Idx: %s (%s@%s)",self.qmc.timeindex[6],stringfromseconds(self.qmc.timex[self.qmc.timeindex[6]]-chargetime),self.qmc.temp2[self.qmc.timeindex[6]])
+                if aw.qmc.mode == 'C':
+                    o = 0.5
+                else:
+                    o = 0.5 * 1.8
+                if aw.qmc.mode == 'C':
+                    oo = 0.2
+                else:
+                    oo = 0.2 * 1.8
+                autoChargeIdx = 0
+                autoDropIdx = 0
+                for i in range(len(self.qmc.temp2)):
+                    if i>=5 and self.qmc.temp2 is not None and self.qmc.temp2 != -1:
+                        # autoCharge:
+                        if not autoChargeIdx and ((self.qmc.mode == 'C' and self.qmc.temp2[i] > 77) or (self.qmc.mode == 'F' and self.qmc.temp2[-1] > 170)):
+                            b = self.BTbreak(i,o)
+                            if b > 0:
+                                autoChargeIdx = i - b + 1
+                                _log.info("PRINT autoChargeIdx: %s (%s@%s)",autoChargeIdx,stringfromseconds(self.qmc.timex[autoChargeIdx]-chargetime),self.qmc.temp2[autoChargeIdx])
+                                # add event marker
+                                self.qmc.specialevents.append(autoChargeIdx)
+                                self.qmc.specialeventstype.append(4)
+                                self.qmc.specialeventsStrings.append("CHARGE")
+                                self.qmc.specialeventsvalue.append(0)
+                        if autoChargeIdx and not autoDropIdx and ((self.qmc.timex[i] - chargetime) > 420) and  ((self.qmc.mode == 'C' and self.qmc.temp2[i] > 160) or (self.qmc.mode == 'F' and self.qmc.temp2[i] > 320)):
+                            b = self.BTbreak(i,oo)
+                            if b > 0:
+                                autoDropIdx = i - b + 1
+                                _log.info("PRINT autoDropIdx: %s (%s@%s)",autoDropIdx,stringfromseconds(self.qmc.timex[autoDropIdx]-chargetime),self.qmc.temp2[autoDropIdx])
+                                # add event marker
+                                self.qmc.specialevents.append(autoDropIdx)
+                                self.qmc.specialeventstype.append(4)
+                                self.qmc.specialeventsStrings.append("DROP")
+                                self.qmc.specialeventsvalue.append(0)
+                #dave start
+                try:
+                    if log_adt:
+                        pass
+                except:
+                    from log2d import Log
+                    log_adt = Log("adt", path="c:\\temp\\autodroptest", to_file=True, fmt='%(message)s')
+                Log.adt.info(" ")
+                Log.adt.info(filename.replace("/","\\"))  #windows path requires backslashes
+                if self.qmc.timeindex[0] != autoChargeIdx:
+                    Log.adt.info(f'autoCharge {autoChargeIdx - self.qmc.timeindex[0]}')
+                if self.qmc.timeindex[6] != autoDropIdx:
+                    Log.adt.info(f'autoDrop {autoDropIdx - self.qmc.timeindex[6]}')
+                #dave end
+                ##### END of autoCHARGE/autoDROP debug
 
 
                 #Plot everything
@@ -31169,7 +31191,7 @@ class ApplicationWindow(QMainWindow):
                 settings = QSettings()
             if settings.contains('resetqsettings'):
                 self.resetqsettings = toInt(settings.value('resetqsettings',self.resetqsettings))
-                if self.resetqsettings or (filename is None and Qt.KeyboardModifier.AltModifier in QApplication.queryKeyboardModifiers()):
+                if self.resetqsettings or (filename is None and QApplication.queryKeyboardModifiers() == Qt.KeyboardModifier.AltModifier):
                     self.resetqsettings = 0
                     if 'canvas' in aw.qmc.palette:
                         aw.updateCanvasColors(checkColors=False)
@@ -32528,6 +32550,8 @@ class ApplicationWindow(QMainWindow):
                 self.eventslidercommands = list(map(str,list(toStringList(settings.value('slidercommands',self.eventslidercommands)))))
                 self.eventslideroffsets = [toFloat(x) for x in toList(settings.value('slideroffsets',self.eventslideroffsets))]
                 self.eventsliderfactors = [toFloat(x) for x in toList(settings.value('sliderfactors',self.eventsliderfactors))]
+            if settings.contains('eventsliderKeyboardControl'):
+                aw.eventsliderKeyboardControl = bool(toBool(settings.value('eventsliderKeyboardControl',aw.eventsliderKeyboardControl)))
             if settings.contains('slidermin'):
                 self.eventslidermin = [toInt(x) for x in toList(settings.value('slidermin',self.eventslidermin))]
                 self.eventslidermax = [toInt(x) for x in toList(settings.value('slidermax',self.eventslidermax))]
@@ -32593,6 +32617,8 @@ class ApplicationWindow(QMainWindow):
                 aw.qmc.backgroundBTcurve = bool(toBool(settings.value('BTBflag',aw.qmc.backgroundBTcurve)))
             if settings.contains('backgroundShowFullflag'):
                 aw.qmc.backgroundShowFullflag = bool(toBool(settings.value('backgroundShowFullflag',aw.qmc.backgroundShowFullflag)))
+            if settings.contains('backgroundKeyboardControlFlag'):
+                aw.qmc.backgroundKeyboardControlFlag = bool(toBool(settings.value('backgroundKeyboardControlFlag',aw.qmc.backgroundKeyboardControlFlag)))
             if settings.contains('clearBgbeforeprofileload'):
                 aw.qmc.clearBgbeforeprofileload = bool(toBool(settings.value('clearBgbeforeprofileload',aw.qmc.clearBgbeforeprofileload)))
             if settings.contains('hideBgafterprofileload'):
@@ -33156,8 +33182,8 @@ class ApplicationWindow(QMainWindow):
             if platform.system().startswith('Windows'):
                 return 'Windows', platform.release(), platform.machine()
             # we assume Linux
-            if os.uname()[4][:3] == 'arm':
-                return 'RPi',platform.release(),os.uname()[4]
+            if os.uname()[4][:3] == 'arm': # pylint: disable=no-member  #dave  windows only
+                return 'RPi',platform.release(),os.uname()[4]  # pylint: disable=no-member  #dave  windows only
             try:
                 lib,version = platform.libc_ver()
                 return 'Linux',f'{lib} {version}', platform.machine()
@@ -33907,6 +33933,7 @@ class ApplicationWindow(QMainWindow):
             settings.setValue('ETBflag',aw.qmc.backgroundETcurve)
             settings.setValue('BTBflag',aw.qmc.backgroundBTcurve)
             settings.setValue('backgroundShowFullflag',aw.qmc.backgroundShowFullflag)
+            settings.setValue('backgroundKeyboardControlFlag',aw.qmc.backgroundKeyboardControlFlag)
             settings.setValue('clearBgbeforeprofileload',aw.qmc.clearBgbeforeprofileload)
             settings.setValue('hideBgafterprofileload',aw.qmc.hideBgafterprofileload)
             settings.endGroup()
@@ -33971,6 +33998,7 @@ class ApplicationWindow(QMainWindow):
             settings.endGroup()
             settings.beginGroup('Sliders')
             settings.setValue('slidervisibilities',self.eventslidervisibilities)
+            settings.setValue('eventsliderKeyboardControl',self.eventsliderKeyboardControl)
             settings.setValue('slideractions',self.eventslideractions)
             settings.setValue('slidercommands',self.eventslidercommands)
             settings.setValue('slideroffsets',self.eventslideroffsets)
@@ -34188,7 +34216,7 @@ class ApplicationWindow(QMainWindow):
                 if unsaved_changes:
                     # in case we have unsaved changes and the user decided to discard those, we first reset to have the correct settings (like axis limits) saved
                     self.qmc.reset(redraw=False,soundOn=False,sampling=False,keepProperties=False,fireResetAction=False)
-                if Qt.KeyboardModifier.AltModifier not in QApplication.queryKeyboardModifiers():
+                if QApplication.queryKeyboardModifiers() != Qt.KeyboardModifier.AltModifier:
                     self.closeEventSettings()
                 gc.collect()
                 QApplication.exit()

@@ -14,6 +14,8 @@ RequestExecutionLevel admin
 !include WinVer.nsh
 !include x64.nsh
 !include "MUI.nsh"
+Var PARAMS
+Var REMOVE_SETTINGS
 
 SetCompressor lzma
 
@@ -212,8 +214,7 @@ Function .onInit
   ;Run the uninstaller
   uninst:
     ClearErrors
-    ;IfSilent mysilent nosilent
-    IfSilent mysilent mysilent
+    IfSilent mysilent nosilent
 
   mysilent:
     ExecWait '$R0 /S _?=$INSTDIR' ;Do not copy the uninstaller to a temp file
@@ -299,20 +300,21 @@ SectionEnd
 
 Function un.onUninstSuccess
   HideWindow
-  IfSilent +2 0
+  IfSilent +2
     MessageBox MB_ICONINFORMATION|MB_OK "$(^Name) was successfully removed from your computer." /SD IDOK
 FunctionEnd
 
 Function un.onInit
     !insertmacro IsRunning
     
-    ${GetParameters} $1
+    ${GetParameters} $PARAMS
     ClearErrors
-    ${GetOptions} $1 "--removesettings" $2
+    ${GetOptions} $PARAMS "--keepsettings" $2
     ${IfNot} ${Errors}
-        MessageBox mb_ok "Got RemoveSettings"
+        MessageBox mb_ok "Got KeepSettings"
     ${Else}
-        MessageBox mb_ok "Did not get RemoveSettings"
+        MessageBox mb_ok "Did not get KeepSettings"
+        StrCpy $REMOVE_SETTINGS "RemoveSettings"
     ${EndIf}
 ;    IfSilent +5
 ;        MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Are you sure you want to completely remove the $(^Name) application?" IDYES +2
@@ -333,10 +335,10 @@ Section Uninstall
   Delete "$INSTDIR\*.dll"
   Delete "$INSTDIR\base_library.zip"
 
-  StrCmp $R1 "RemoveSettings" 0 SkipRemoveSettings
-  RMDir /r "$INSTDIR\certifi"
-  RMDir /r "$INSTDIR\contourpy"
-  SkipRemoveSettings:
+  ${If} $REMOVE_SETTINGS == "RemoveSettings"
+    RMDir /r "$INSTDIR\certifi"
+    RMDir /r "$INSTDIR\contourpy"
+  ${EndIf}
   
   RMDir /r "$INSTDIR\gevent"
   RMDir /r "$INSTDIR\greenlet"
