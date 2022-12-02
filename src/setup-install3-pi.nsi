@@ -309,7 +309,7 @@ Function un.onInit
     IfSilent +3
         MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Are you sure you want to completely remove $(^Name) and all of its components?" IDYES +2
         Abort
-        $R1 = "RemoveAll"
+        StrCpy $R1 "RemoveAll"
     HideWindow
 
 FunctionEnd
