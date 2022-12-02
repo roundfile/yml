@@ -213,7 +213,8 @@ Function .onInit
   ;Run the uninstaller
   uninst:
     ClearErrors
-    IfSilent mysilent nosilent
+    ;IfSilent mysilent nosilent
+    IfSilent mysilent mysilent
 
   mysilent:
     ExecWait '$R0 /S _?=$INSTDIR' ;Do not copy the uninstaller to a temp file
@@ -307,10 +308,10 @@ Function un.onInit
     !insertmacro IsRunning
     
     IfSilent +5
-        MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Are you sure you want to completely remove $(^Name) and all of its components?" IDYES +2
+        MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Are you sure you want to completely remove the $(^Name) application?" IDYES +2
         Abort
-        MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Do you want to remove saved settings?" IDYES +2
-        StrCpy $R1 "RemoveAll"
+        MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Do you want to permanently remove all saved $(^Name) settings?" IDNO +2
+        StrCpy $R1 "RemoveSettings"
     HideWindow
 
 FunctionEnd
@@ -324,7 +325,7 @@ Section Uninstall
   Delete "$INSTDIR\*.dll"
   Delete "$INSTDIR\base_library.zip"
 
-  StrCmp $R1 "RemoveAll" +2 0
+  StrCmp $R1 "RemoveSettings" +3 0
   RMDir /r "$INSTDIR\certifi"
   RMDir /r "$INSTDIR\contourpy"
   RMDir /r "$INSTDIR\gevent"
