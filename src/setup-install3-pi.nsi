@@ -325,9 +325,11 @@ Section Uninstall
   Delete "$INSTDIR\*.dll"
   Delete "$INSTDIR\base_library.zip"
 
-  StrCmp $R1 "RemoveSettings" +3 0
+  StrCmp $R1 "RemoveSettings" 0 SkipRemoveSettings
   RMDir /r "$INSTDIR\certifi"
   RMDir /r "$INSTDIR\contourpy"
+  SkipRemoveSettings:
+  
   RMDir /r "$INSTDIR\gevent"
   RMDir /r "$INSTDIR\greenlet"
   RMDir /r "$INSTDIR\Icons"
