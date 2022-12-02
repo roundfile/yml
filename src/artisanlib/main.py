@@ -16998,7 +16998,7 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
             import zipfile
             with zipfile.ZipFile(os.path.join(getDataDirectory(),"hello.zip"), mode="w") as archive:
                 archive.write(os.path.join(getDataDirectory(),"artisan.log"))
-            foo = aw.ArtisanOpenFileDialog(path=getDataDirectory(),ext='*.log')
+            _ = aw.ArtisanOpenFileDialog(path=getDataDirectory(),ext='*.log')
             #dave end
             #dave aw.sendLog()
         else:
@@ -27438,9 +27438,11 @@ class ApplicationWindow(QMainWindow):
                                 self.qmc.specialeventsvalue.append(0)
                 #dave start
                 try:
-                    if log_adt:
+                    if log_adt: # pylint: disable=used-before-assignment
+
                         pass
-                except:
+                except Exception as ex: # pylint: disable=broad-except
+                    _log.exception(ex)
                     from log2d import Log
                     log_adt = Log("adt", path="c:\\temp\\autodroptest", to_file=True, fmt='%(message)s')
                 Log.adt.info(" ")

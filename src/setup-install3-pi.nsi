@@ -217,11 +217,11 @@ Function .onInit
     IfSilent mysilent nosilent
 
   mysilent:
-    ExecWait '$R0 /S _?=$INSTDIR' ;Do not copy the uninstaller to a temp file
+    ExecWait '$R0 /S --keepsettings _?=$INSTDIR' ;Do not copy the uninstaller to a temp file
     IfErrors no_remove_uninstaller done
 
   nosilent:
-    ExecWait '$R0 _?=$INSTDIR' ;Do not copy the uninstaller to a temp file
+    ExecWait '$R0 --keepsettings _?=$INSTDIR' ;Do not copy the uninstaller to a temp file
     IfErrors no_remove_uninstaller done
 
   no_remove_uninstaller:
@@ -307,20 +307,24 @@ FunctionEnd
 Function un.onInit
     !insertmacro IsRunning
     
-    ${GetParameters} $PARAMS
-    ClearErrors
-    ${GetOptions} $PARAMS "--keepsettings" $2
-    ${IfNot} ${Errors}
-        MessageBox mb_ok "Got KeepSettings"
-    ${Else}
-        MessageBox mb_ok "Did not get KeepSettings"
-        StrCpy $REMOVE_SETTINGS "RemoveSettings"
-    ${EndIf}
-;    IfSilent +5
-;        MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Are you sure you want to completely remove the $(^Name) application?" IDYES +2
-;        Abort
-;        MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Do you want to permanently remove all saved $(^Name) settings?" IDNO +2
-;        StrCpy $R1 "RemoveSettings"
+    IfSilent skip_whensilent
+        MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Are you sure you want to completely remove the $(^Name) application?" IDYES +2
+        Abort
+    
+        ;look for option on the command line when uninstall is exec'd from this installer
+        ${GetParameters} $PARAMS
+        ClearErrors
+        ${GetOptions} $PARAMS "--keepsettings" $2
+        ${IfNot} ${Errors}
+            MessageBox mb_ok "Got KeepSettings"
+            StrCpy $REMOVE_SETTINGS "False"
+        ${Else}
+            MessageBox mb_ok "Did not get KeepSettings"
+            MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Do you want to permanently remove all saved $(^Name) settings?" IDNO +2
+            StrCpy $REMOVE_SETTINGS "True"
+        ${EndIf}
+    
+        skip_whensilent:
     HideWindow
 
 
@@ -335,7 +339,7 @@ Section Uninstall
   Delete "$INSTDIR\*.dll"
   Delete "$INSTDIR\base_library.zip"
 
-  ${If} $REMOVE_SETTINGS == "RemoveSettings"
+  ${If} $REMOVE_SETTINGS == "True"
     RMDir /r "$INSTDIR\certifi"
     RMDir /r "$INSTDIR\contourpy"
   ${EndIf}
