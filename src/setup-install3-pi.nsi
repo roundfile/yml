@@ -306,17 +306,10 @@ FunctionEnd
 Function un.onInit
     !insertmacro IsRunning
     
-    ${If} ${REMALL} == "True"
-        MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Well it looks like REMALL is True" IDYES +6
-        Abort
-    ${Else}
-        MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Well it looks like REMALL is False" IDYES +3
-        Abort
-    ${EndIf}
-
     IfSilent +3
         MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Are you sure you want to completely remove $(^Name) and all of its components?" IDYES +2
         Abort
+        $R1 = "RemoveAll"
     HideWindow
 
 FunctionEnd
@@ -330,6 +323,7 @@ Section Uninstall
   Delete "$INSTDIR\*.dll"
   Delete "$INSTDIR\base_library.zip"
 
+  StrCmp $R1 "RemoveAll" 0 2
   RMDir /r "$INSTDIR\certifi"
   RMDir /r "$INSTDIR\contourpy"
   RMDir /r "$INSTDIR\gevent"
