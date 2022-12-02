@@ -10,6 +10,7 @@
 RequestExecutionLevel admin
 
 !include LogicLib.nsh
+!include FileFunc.nsh
 !include WinVer.nsh
 !include x64.nsh
 !include "MUI.nsh"
