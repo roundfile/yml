@@ -323,7 +323,7 @@ Section Uninstall
   Delete "$INSTDIR\*.dll"
   Delete "$INSTDIR\base_library.zip"
 
-  StrCmp $R1 "RemoveAll" 0 2
+  StrCmp $R1 "RemoveAll" 0 +2
   RMDir /r "$INSTDIR\certifi"
   RMDir /r "$INSTDIR\contourpy"
   RMDir /r "$INSTDIR\gevent"
