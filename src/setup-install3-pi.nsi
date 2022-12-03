@@ -450,8 +450,8 @@ Section Uninstall
   ; new stuff still testing
     SetOutPath "$PROGRAMFILES"
     StrCmp $InstallDir $INSTDIR 0 +2
-      MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories MATCH" IDOK 2
-      MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories DO NOT MATCH" IDOK 1
+      MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories MATCH" /SD IDOK +2
+      MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories DO NOT MATCH" /SD IDOK +1
   RMDir "$INSTDIR"
 
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
