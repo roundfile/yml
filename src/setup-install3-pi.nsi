@@ -447,7 +447,7 @@ Section Uninstall
   Delete "$SMPROGRAMS\Artisan\Artisan.lnk"
 
   RMDir "$SMPROGRAMS\Artisan"
-  SetOutPath "$PROGRAMFILES
+  SetOutPath "$PROGRAMFILES"
   RMDir "$INSTDIR"
 
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
