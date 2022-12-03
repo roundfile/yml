@@ -261,6 +261,12 @@ Section -AdditionalIcons
 SectionEnd
 
 Section -Post
+;-------
+GetTempFileName $0
+DetailPrint "Writing log to $0"
+Push $0
+Call DumpLog
+;---------
   ;The generated uninst.exe file needs to be redirected when signing so the signed uninstaller is packed. Include '/DSign="True"' on the command line.
   !if ${Sign} S== "True"
     WriteUninstaller "$%TEMP%\uninst.exe"
@@ -299,12 +305,6 @@ Section -Post
   !insertmacro APP_ASSOCIATE_URL "artisan" "URL:artisan Protocol" \
      "Open with URL" "$INSTDIR\artisan.exe $\"%1$\""
 
-;-------
-GetTempFileName $0
-DetailPrint "Writing log to $0"
-Push $0
-Call DumpLog
-;---------
 SectionEnd
 
 
