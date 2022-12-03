@@ -449,7 +449,7 @@ Section Uninstall
   RMDir "$SMPROGRAMS\Artisan"
   ; new stuff still testing
     SetOutPath "$PROGRAMFILES"
-    StrCmp $InstallDir $INSTDIR 0 2
+    StrCmp $InstallDir $INSTDIR 0 +2
       MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories MATCH" IDOK 2
       MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories DO NOT MATCH" IDOK 1
   RMDir "$INSTDIR"
