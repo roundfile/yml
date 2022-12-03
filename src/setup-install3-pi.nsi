@@ -318,7 +318,7 @@ Function un.onInit
     !insertmacro IsRunning
     
     IfSilent skip_whensilent
-        MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Are you sure you want to completely remove the $(^Name) application?" IDYES +2
+        MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Are you sure you want to remove $(^Name)?" IDYES +2
         Abort
     
         ;look for option on the command line when uninstall is exec'd from this installer
@@ -447,7 +447,11 @@ Section Uninstall
   Delete "$SMPROGRAMS\Artisan\Artisan.lnk"
 
   RMDir "$SMPROGRAMS\Artisan"
-  SetOutPath "$PROGRAMFILES"
+  ; new stuff still testing
+    SetOutPath "$PROGRAMFILES"
+    StrCmp $InstallDir $INSTDIR 0 2
+      MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories MATCH" IDOK 2
+      MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories DO NOT MATCH" IDOK 1
   RMDir "$INSTDIR"
 
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
