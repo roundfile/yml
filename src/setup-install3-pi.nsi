@@ -24,15 +24,14 @@ SetCompressor lzma
 !define PRODUCT_NAME "Artisan"
 !define PRODUCT_PUBLISHER "The Artisan Team"
 !define PRODUCT_WEB_SITE "https://github.com/artisan-roaster-scope/artisan/blob/master/README.md"
-; Note that for 64bit Windows the registry API redirects the following two keys to 
+;Note for the next two keys, do not use their true address explicitly.  The 64bit Windows API will auto redirect them to
 ;   Software\Wow6432Node\Microsoft\Windows\CurrentVersion\...
 !define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\artisan.exe"
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
 ;Special commandline options
-;Product version can be defined on the command line '/DPRODUCT_VERSION=ww.xx.yy.zz'
-;  and will override the version explicitly set below.
+;Product version should be defined on the command line '/DPRODUCT_VERSION=ww.xx.yy.zz'
 !define /ifndef PRODUCT_VERSION "0.0.0.0"
 !define /ifndef SIGN "False"
 !define /ifndef LEGACY "False"
@@ -47,7 +46,6 @@ VIAddVersionKey FileVersion "${PRODUCT_VERSION}"
 VIAddVersionKey FileDescription "${PRODUCT_NAME} Installer"
 VIAddVersionKey ProductVersion "${PRODUCT_VERSION}"
 
-; MUI 1.67 compatible ------
 ; MUI Settings
 !define MUI_ABORTWARNING
 !define MUI_ICON "artisan.ico"
@@ -131,50 +129,6 @@ ShowUnInstDetails show
 !macroEnd
 
 
-;Unused macros ------
-!macro APP_ASSOCIATE_EX EXT FILECLASS DESCRIPTION ICON VERB DEFAULTVERB SHELLNEW COMMANDTEXT COMMAND
-  ; Backup the previously associated file class
-  ReadRegStr $R0 HKCR ".${EXT}" ""
-  WriteRegStr HKCR ".${EXT}" "${FILECLASS}_backup" "$R0"
-  WriteRegStr HKCR ".${EXT}" "" "${FILECLASS}"
-  StrCmp "${SHELLNEW}" "0" +2
-  WriteRegStr HKCR ".${EXT}\ShellNew" "NullFile" ""
-  WriteRegStr HKCR "${FILECLASS}" "" `${DESCRIPTION}`
-  WriteRegStr HKCR "${FILECLASS}\DefaultIcon" "" `${ICON}`
-  WriteRegStr HKCR "${FILECLASS}\shell" "" `${DEFAULTVERB}`
-  WriteRegStr HKCR "${FILECLASS}\shell\${VERB}" "" `${COMMANDTEXT}`
-  WriteRegStr HKCR "${FILECLASS}\shell\${VERB}\command" "" `${COMMAND}`
-!macroend
-
-!macro APP_ASSOCIATE_ADDVERB FILECLASS VERB COMMANDTEXT COMMAND
-  WriteRegStr HKCR "${FILECLASS}\shell\${VERB}" "" `${COMMANDTEXT}`
-  WriteRegStr HKCR "${FILECLASS}\shell\${VERB}\command" "" `${COMMAND}`
-!macroend
-
-!macro APP_ASSOCIATE_REMOVEVERB FILECLASS VERB
-  DeleteRegKey HKCR `${FILECLASS}\shell\${VERB}`
-!macroend
-
-!macro APP_ASSOCIATE_GETFILECLASS OUTPUT EXT
-  ReadRegStr ${OUTPUT} HKCR ".${EXT}" ""
-!macroend
-
-;; !defines for use with SHChangeNotify
-;!ifdef SHCNE_ASSOCCHANGED
-;!undef SHCNE_ASSOCCHANGED
-;!endif
-;!define SHCNE_ASSOCCHANGED 0x08000000
-;!ifdef SHCNF_FLUSH
-;!undef SHCNF_FLUSH
-;!endif
-;!define SHCNF_FLUSH        0x1000
-
-!macro UPDATEFILEASSOC
-; Using the system.dll plugin to call the SHChangeNotify Win32 API function so we
-; can update the shell.
-  System::Call "shell32::SHChangeNotify(i,i,i,i) (${SHCNE_ASSOCCHANGED}, ${SHCNF_FLUSH}, 0, 0)"
-!macroend
-;End Unused macros ------
 
 Function .onInit
   ${If} ${LEGACY} == "False"
@@ -233,7 +187,57 @@ Function .onInit
   done:
 FunctionEnd
 
-
+;-------------
+!define /IfNDef LVM_GETITEMCOUNT 0x1004
+!define /IfNDef LVM_GETITEMTEXTA 0x102D
+!define /IfNDef LVM_GETITEMTEXTW 0x1073
+!if "${NSIS_CHAR_SIZE}" > 1
+!define /IfNDef LVM_GETITEMTEXT ${LVM_GETITEMTEXTW}
+!else
+!define /IfNDef LVM_GETITEMTEXT ${LVM_GETITEMTEXTA}
+!endif
+ 
+Function DumpLog
+  Exch $5
+  Push $0
+  Push $1
+  Push $2
+  Push $3
+  Push $4
+  Push $6
+  FindWindow $0 "#32770" "" $HWNDPARENT
+  GetDlgItem $0 $0 1016
+  StrCmp $0 0 exit
+  FileOpen $5 $5 "w"
+  StrCmp $5 "" exit
+    SendMessage $0 ${LVM_GETITEMCOUNT} 0 0 $6
+    System::Call '*(&t${NSIS_MAX_STRLEN})p.r3'
+    StrCpy $2 0
+    System::Call "*(i, i, i, i, i, p, i, i, i) i  (0, 0, 0, 0, 0, r3, ${NSIS_MAX_STRLEN}) .r1"
+    loop: StrCmp $2 $6 done
+      System::Call "User32::SendMessage(i, i, i, i) i ($0, ${LVM_GETITEMTEXT}, $2, r1)"
+      System::Call "*$3(&t${NSIS_MAX_STRLEN} .r4)"
+      !ifdef DumpLog_As_UTF16LE
+      FileWriteUTF16LE ${DumpLog_As_UTF16LE} $5 "$4$\r$\n"
+      !else
+      FileWrite $5 "$4$\r$\n" ; Unicode will be translated to ANSI!
+      !endif
+      IntOp $2 $2 + 1
+      Goto loop
+    done:
+      FileClose $5
+      System::Free $1
+      System::Free $3
+  exit:
+    Pop $6
+    Pop $4
+    Pop $3
+    Pop $2
+    Pop $1
+    Pop $0
+    Pop $5
+FunctionEnd
+;----------------------
 
 Section "MainSection" SEC01
   SetShellVarContext all
@@ -295,6 +299,12 @@ Section -Post
   !insertmacro APP_ASSOCIATE_URL "artisan" "URL:artisan Protocol" \
      "Open with URL" "$INSTDIR\artisan.exe $\"%1$\""
 
+;-------
+GetTempFileName $0
+DetailPrint "Writing log to $0"
+Push $0
+Call DumpLog
+;---------
 SectionEnd
 
 
@@ -339,11 +349,8 @@ Section Uninstall
   Delete "$INSTDIR\*.dll"
   Delete "$INSTDIR\base_library.zip"
 
-  ${If} $REMOVE_SETTINGS == "True"
-    RMDir /r "$INSTDIR\certifi"
-    RMDir /r "$INSTDIR\contourpy"
-  ${EndIf}
-  
+  RMDir /r "$INSTDIR\certifi"
+  RMDir /r "$INSTDIR\contourpy"
   RMDir /r "$INSTDIR\gevent"
   RMDir /r "$INSTDIR\greenlet"
   RMDir /r "$INSTDIR\Icons"
@@ -440,6 +447,7 @@ Section Uninstall
   Delete "$SMPROGRAMS\Artisan\Artisan.lnk"
 
   RMDir "$SMPROGRAMS\Artisan"
+  SetOutPath "$PROGRAMFILES
   RMDir "$INSTDIR"
 
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
@@ -460,6 +468,10 @@ Section Uninstall
   DeleteRegKey HKCR "artisan\shell"
   DeleteRegKey HKCR "artisan\shell\open\command"
   DeleteRegKey HKCR "artisan"
+  
+;  ${If} $REMOVE_SETTINGS == "True"
+;  ${EndIf}
+  
 
   SetAutoClose true
 SectionEnd
