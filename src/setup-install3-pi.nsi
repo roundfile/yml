@@ -317,7 +317,7 @@ Function un.onUninstSuccess
       MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories DO NOT MATCH" /SD IDOK
     ${EndIf}
   ClearErrors
-  RMDir "$INSTDIR"
+  RMDir /REBOOTOK "$INSTDIR"
     ${If} ${Errors}
       MessageBox MB_OK|MB_ICONEXCLAMATION "INSTDIR made an error" /SD IDOK
     ${Else}
