@@ -449,7 +449,7 @@ Section Uninstall
   RMDir "$SMPROGRAMS\Artisan"
   ; new stuff still testing
     SetOutPath "$PROGRAMFILES"
-    ${If} ${InstallDir} == $INSTDIR
+    ${If} $INSTDIR == "C:\Program Files\Artisan"
       MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories MATCH" /SD IDOK
     ${Else}
       MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories DO NOT MATCH" /SD IDOK
