@@ -309,6 +309,14 @@ SectionEnd
 
 
 Function un.onUninstSuccess
+  ; new stuff still testing
+    SetOutPath "$PROGRAMFILES"
+    ${If} $INSTDIR == "C:\Program Files\Artisan"
+      MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories MATCH" /SD IDOK
+    ${Else}
+      MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories DO NOT MATCH" /SD IDOK
+    ${EndIf}
+  RMDir "$INSTDIR"
   HideWindow
   IfSilent +2
     MessageBox MB_ICONINFORMATION|MB_OK "$(^Name) was successfully removed from your computer." /SD IDOK
@@ -447,14 +455,14 @@ Section Uninstall
   Delete "$SMPROGRAMS\Artisan\Artisan.lnk"
 
   RMDir "$SMPROGRAMS\Artisan"
-  ; new stuff still testing
-    SetOutPath "$PROGRAMFILES"
-    ${If} $INSTDIR == "C:\Program Files\Artisan"
-      MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories MATCH" /SD IDOK
-    ${Else}
-      MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories DO NOT MATCH" /SD IDOK
-    ${EndIf}
-  RMDir "$INSTDIR"
+;  ; new stuff still testing
+;    SetOutPath "$PROGRAMFILES"
+;    ${If} $INSTDIR == "C:\Program Files\Artisan"
+;      MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories MATCH" /SD IDOK
+;    ${Else}
+;      MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories DO NOT MATCH" /SD IDOK
+;    ${EndIf}
+;  RMDir "$INSTDIR"
 
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
   DeleteRegKey HKLM "${PRODUCT_DIR_REGKEY}"
