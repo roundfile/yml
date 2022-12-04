@@ -449,9 +449,10 @@ Section Uninstall
   RMDir "$SMPROGRAMS\Artisan"
   ; new stuff still testing
     SetOutPath "$PROGRAMFILES"
-    StrCmp $InstallDir $INSTDIR 0 +2
-      MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories MATCH" /SD IDOK +2
-      MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories DO NOT MATCH" /SD IDOK +1
+    ${If} $InstallDir == $INSTDIR
+      MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories MATCH" /SD IDOK
+    ${Else}
+      MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories DO NOT MATCH" /SD IDOK
   RMDir "$INSTDIR"
 
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
