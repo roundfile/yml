@@ -453,6 +453,7 @@ Section Uninstall
       MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories MATCH" /SD IDOK
     ${Else}
       MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories DO NOT MATCH" /SD IDOK
+    ${EndIf}
   RMDir "$INSTDIR"
 
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
