@@ -316,8 +316,14 @@ Function un.onUninstSuccess
     ${Else}
       MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories DO NOT MATCH" /SD IDOK
     ${EndIf}
+  ClearErrors
   RMDir "$INSTDIR"
-  HideWindow
+    ${If} ${Errors}
+      MessageBox MB_OK|MB_ICONEXCLAMATION "INSTDIR made an error" /SD IDOK
+    ${Else}
+      MessageBox MB_OK|MB_ICONEXCLAMATION "INSTDIR no error" /SD IDOK
+    ${EndIf}
+HideWindow
   IfSilent +2
     MessageBox MB_ICONINFORMATION|MB_OK "$(^Name) was successfully removed from your computer." /SD IDOK
 FunctionEnd
