@@ -6,13 +6,13 @@
 
 environment:
   # Set the Python version for windows, macos and linux here. Does not affect windows_legacy.
-  PYTHON_V: 3.10
+  PYTHON_V: 3.11
 
   matrix:
-  - job_name: windows_legacy
-    appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: windows
+#  - job_name: windows_legacy
 #    appveyor_build_worker_image: Visual Studio 2019
+  - job_name: windows
+    appveyor_build_worker_image: Visual Studio 2019
 #  - job_name: macos
 #    appveyor_build_worker_image: macos
 #  - job_name: linux

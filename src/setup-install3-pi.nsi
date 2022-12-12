@@ -131,18 +131,21 @@ ShowUnInstDetails show
 
 
 Function .onInit
+  ; Warn and abort if Win install and <Windows 10
   ${If} ${LEGACY} == "False"
   ${AndIfNot} ${AtLeastWin10}
     MessageBox mb_iconStop "Artisan requires Windows 10 or later to install and run."
     Abort
   ${EndIf}
 
+  ; Warn and abort if Win Legacy install and >Windows 8
   ${If} ${LEGACY} == "True"
   ${AndIf} ${AtLeastWin10}
     MessageBox mb_iconStop "Artisan Legacy builds require 64 bit Windows 7 or Windows 8 to install and run."
     Abort
   ${EndIf}
 
+  ; Warn and abort if Win Legacy install and 32bit Windows
   ${If} ${LEGACY} == "True"
   ${AndIfNot} ${AtLeastWin7}
     MessageBox mb_iconStop "Artisan Legacy builds require 64 bit Windows 7 or Windows 8 to install and run."
@@ -150,18 +153,19 @@ Function .onInit
   ${EndIf}
   !insertmacro IsRunning
 
-  ${If} ${RunningX64}
-    ReadRegStr $R0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" \
-    "UninstallString"
-    StrCmp $R0 "" done
+  ; Check for 64bit Windows
+  ${IfNot} ${RunningX64}
+    MessageBox MB_OK "You are not using a 64bit system.\nSorry, we can not install Artisan on your system."
+    Abort
+  ${EndIf}
 
+  ; Check for Artisan already installed
+  ReadRegStr $R0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString"
+  ${IfNot} $R0 == ""
     MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
     "${PRODUCT_NAME} is already installed. $\n$\nClick `OK` to remove the \
     previous version or `Cancel` to cancel this upgrade." /SD IDOK \
     IDOK uninst
-    Abort
-  ${Else}
-    MessageBox MB_OK "You are not using a 64bit system.\nSorry, we can not install Artisan on your system."
     Abort
   ${EndIf}
 
@@ -187,57 +191,6 @@ Function .onInit
   done:
 FunctionEnd
 
-;-------------
-!define /IfNDef LVM_GETITEMCOUNT 0x1004
-!define /IfNDef LVM_GETITEMTEXTA 0x102D
-!define /IfNDef LVM_GETITEMTEXTW 0x1073
-!if "${NSIS_CHAR_SIZE}" > 1
-!define /IfNDef LVM_GETITEMTEXT ${LVM_GETITEMTEXTW}
-!else
-!define /IfNDef LVM_GETITEMTEXT ${LVM_GETITEMTEXTA}
-!endif
- 
-Function DumpLog
-  Exch $5
-  Push $0
-  Push $1
-  Push $2
-  Push $3
-  Push $4
-  Push $6
-  FindWindow $0 "#32770" "" $HWNDPARENT
-  GetDlgItem $0 $0 1016
-  StrCmp $0 0 exit
-  FileOpen $5 $5 "w"
-  StrCmp $5 "" exit
-    SendMessage $0 ${LVM_GETITEMCOUNT} 0 0 $6
-    System::Call '*(&t${NSIS_MAX_STRLEN})p.r3'
-    StrCpy $2 0
-    System::Call "*(i, i, i, i, i, p, i, i, i) i  (0, 0, 0, 0, 0, r3, ${NSIS_MAX_STRLEN}) .r1"
-    loop: StrCmp $2 $6 done
-      System::Call "User32::SendMessage(i, i, i, i) i ($0, ${LVM_GETITEMTEXT}, $2, r1)"
-      System::Call "*$3(&t${NSIS_MAX_STRLEN} .r4)"
-      !ifdef DumpLog_As_UTF16LE
-      FileWriteUTF16LE ${DumpLog_As_UTF16LE} $5 "$4$\r$\n"
-      !else
-      FileWrite $5 "$4$\r$\n" ; Unicode will be translated to ANSI!
-      !endif
-      IntOp $2 $2 + 1
-      Goto loop
-    done:
-      FileClose $5
-      System::Free $1
-      System::Free $3
-  exit:
-    Pop $6
-    Pop $4
-    Pop $3
-    Pop $2
-    Pop $1
-    Pop $0
-    Pop $5
-FunctionEnd
-;----------------------
 
 Section "MainSection" SEC01
   SetShellVarContext all
@@ -261,12 +214,6 @@ Section -AdditionalIcons
 SectionEnd
 
 Section -Post
-;-------
-GetTempFileName $0
-DetailPrint "Writing log to $0"
-Push $0
-Call DumpLog
-;---------
   ;The generated uninst.exe file needs to be redirected when signing so the signed uninstaller is packed. Include '/DSign="True"' on the command line.
   !if ${Sign} S== "True"
     WriteUninstaller "$%TEMP%\uninst.exe"
