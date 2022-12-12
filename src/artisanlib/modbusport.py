@@ -18,11 +18,7 @@
 import sys
 import time
 import logging
-try:
-    from typing import Final
-except ImportError:
-    # for Python 3.7:
-    from typing_extensions import Final
+from typing import Final
 
 try:
     #ylint: disable = E, W, R, C
@@ -107,7 +103,7 @@ class modbusport():
     __slots__ = [ 'aw', 'modbus_serial_read_delay', 'modbus_serial_extra_read_delay', 'modbus_serial_write_delay', 'maxCount', 'readRetries', 'comport', 'baudrate', 'bytesize', 'parity', 'stopbits',
         'timeout', 'IP_timeout', 'IP_retries', 'serial_readRetries', 'PID_slave_ID', 'PID_SV_register', 'PID_p_register', 'PID_i_register', 'PID_d_register', 'PID_ON_action', 'PID_OFF_action',
         'channels', 'inputSlaves', 'inputRegisters', 'inputFloats', 'inputBCDs', 'inputFloatsAsInt', 'inputBCDsAsInt', 'inputSigned', 'inputCodes', 'inputDivs',
-        'inputModes', 'optimizer', 'fetch_max_blocks', 'fail_on_cache_miss', 'reset_socket', 'activeRegisters', 'readingsCache', 'SVmultiplier', 'PIDmultiplier',
+        'inputModes', 'optimizer', 'fetch_max_blocks', 'fail_on_cache_miss', 'disconnect_on_error', 'reset_socket', 'activeRegisters', 'readingsCache', 'SVmultiplier', 'PIDmultiplier',
         'byteorderLittle', 'wordorderLittle', 'master', 'COMsemaphore', 'host', 'port', 'type', 'lastReadResult', 'commError' ]
 
     def __init__(self,aw):
@@ -125,9 +121,9 @@ class modbusport():
         self.bytesize = 8
         self.parity= 'N'
         self.stopbits = 1
-        self.timeout = 0.4 # serial MODBUS timeout
+        self.timeout = 0.3 # serial MODBUS timeout
         self.serial_readRetries = 0 # user configurable, defaults to 0
-        self.IP_timeout = 0.4 # UDP/TCP MODBUS timeout in seconds
+        self.IP_timeout = 0.2 # UDP/TCP MODBUS timeout in seconds
         self.IP_retries = 1 # UDP/TCP MODBUS retries (max 2)
         self.PID_slave_ID = 0
         self.PID_SV_register = 0
@@ -159,6 +155,8 @@ class modbusport():
         self.fetch_max_blocks = False # if set, the optimizer fetches only one sequence per area from the minimum to the maximum register ignoring gaps
         self.fail_on_cache_miss = True # if False and request cannot be resolved from optimizer cache while optimizer is active,
             # send individual reading request; if set to True, never send individual data requests while optimizer is on
+            # NOTE: if TRUE read requests with force=False (default) will fail
+        self.disconnect_on_error = True # if True we explicitly disconnect the MODBUS connection on IO errors if on MODBUS serial and restart it on next request
 
         self.reset_socket = False # reset socket connection on error (True by default in pymodbus>v2.5.2, False by default in pymodbus v2.3)
 
@@ -218,6 +216,12 @@ class modbusport():
             _log.exception(e)
         self.master = None
         self.clearReadingsCache()
+        self.aw.sendmessage(QApplication.translate('Message', 'MODBUS disconnected'))
+
+    def disconnectOnError(self):
+        # we only disconnect on error if mechanism is active, we are no longer connected or there is a IO commError, and we are on serial MODBUS (IP MODBUS reconnects automtically)
+        if self.disconnect_on_error and (self.commError or not self.isConnected()) and self.type < 3:
+            self.disconnect()
 
     # t a duration between start and end time in seconds to be formatted in a string as ms
     @staticmethod
@@ -323,7 +327,7 @@ class modbusport():
                     time.sleep(.5) # avoid possible hickups on startup
                     self.aw.sendmessage(QApplication.translate('Message', 'Connected via MODBUS'))
                 else:
-                    _log.debug('connect(): failed to connect')
+                    self.aw.qmc.adderror(QApplication.translate('Error Message','Modbus Error: failed to connect'))
             except Exception as ex: # pylint: disable=broad-except
                 _log.exception(ex)
                 _, _, exc_tb = sys.exc_info()
@@ -369,29 +373,32 @@ class modbusport():
                     v)
                 self.aw.addserial(ser_str)
 
+    # first result signals an error
+    # second result signals a server error which requires a disconnect/reconnect
     @staticmethod
     def invalidResult(res,count):
         from pymodbus.pdu import ExceptionResponse
         if res is None:
             _log.info('invalidResult(%d) => None', count)
-            return True
-        elif res.isError():
-            _log.info('invalidResult(%d) => pymodbus error', count)
-            return True
+            return True, False
         elif isinstance(res, ExceptionResponse):
             _log.info('invalidResult(%d) => received exception from device', count)
-            return True
+            return True, False
+        elif res.isError():
+            _log.info('invalidResult(%d) => pymodbus error: %s', count, res)
+            return True, True
         elif res.registers is None:
             _log.info('invalidResult(%d) => res.registers is None', count)
-            return True
+            return True,False
         elif len(res.registers) != count:
             _log.info('invalidResult(%d) => len(res.registers)=%d', count, len(res.registers))
-            return True
-        return False
+            return True, False
+        return False, False
 
     def readActiveRegisters(self):
         if not self.optimizer:
             return
+        error_disconnect = False # set to True if a serious error requiring a disconnect was detected
         try:
             _log.debug('readActiveRegisters()')
             #### lock shared resources #####
@@ -432,7 +439,9 @@ class modbusport():
                                         _log.info('readActive(%d,%d,%d,%d)', slave, code, register, count)
                                         _log.debug(e)
                                         res = None
-                                    if self.invalidResult(res,count):
+                                    error, disconnect = self.invalidResult(res,count)
+                                    if error:
+                                        error_disconnect = error_disconnect or disconnect
                                         if retry > 0:
                                             retry = retry - 1
                                             time.sleep(0.020)
@@ -478,13 +487,13 @@ class modbusport():
 
         except Exception as ex: # pylint: disable=broad-except
             _log.debug(ex)
-#            self.disconnect()
+            self.disconnectOnError()
 #            import traceback
 #            traceback.print_exc(file=sys.stdout)
 #            _, _, exc_tb = sys.exc_info()
 #            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " readSingleRegister() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             self.aw.qmc.adderror(QApplication.translate('Error Message','Modbus Communication Error'))
-            self.commError = True
+            self.commError = error_disconnect
         finally:
             if self.COMsemaphore.available() < 1:
                 self.COMsemaphore.release(1)
@@ -503,7 +512,7 @@ class modbusport():
         except Exception as ex: # pylint: disable=broad-except
             _log.info('writeCoils(%d,%d,%s)', slave, register, values)
             _log.debug(ex)
-#            self.disconnect()
+            self.disconnectOnError()
 #            import traceback
 #            traceback.print_exc(file=sys.stdout)
             _, _, exc_tb = sys.exc_info()
@@ -525,7 +534,7 @@ class modbusport():
         except Exception as ex: # pylint: disable=broad-except
             _log.info('writeCoil(%d,%d,%s) failed', slave, register, value)
             _log.debug(ex)
-#            self.disconnect()
+            self.disconnectOnError()
             _, _, exc_tb = sys.exc_info()
             if self.aw.qmc.flagon:
                 self.aw.qmc.adderror((QApplication.translate('Error Message','Modbus Error:') + ' writeCoil() {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
@@ -562,7 +571,7 @@ class modbusport():
 #            _logger.debug("writeSingleRegister exception: %s" % str(ex))
 #            import traceback
 #            traceback.print_exc(file=sys.stdout)
-#            self.disconnect()
+            self.disconnectOnError()
             _, _, exc_tb = sys.exc_info()
             if self.aw.qmc.flagon:
                 self.aw.qmc.adderror((QApplication.translate('Error Message','Modbus Error:') + ' writeSingleRegister() {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
@@ -587,7 +596,7 @@ class modbusport():
                 _log.debug(ex)
 #            import traceback
 #            traceback.print_exc(file=sys.stdout)
-#            self.disconnect()
+            self.disconnectOnError()
             _, _, exc_tb = sys.exc_info()
             if self.aw.qmc.flagon:
                 self.aw.qmc.adderror((QApplication.translate('Error Message','Modbus Error:') + ' writeMask() {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
@@ -615,7 +624,7 @@ class modbusport():
         except Exception as ex: # pylint: disable=broad-except
             _log.info('writeRegisters(%d,%d,%s) failed', slave, register, values)
             _log.debug(ex)
-#            self.disconnect()
+            self.disconnectOnError()
             _, _, exc_tb = sys.exc_info()
             if self.aw.qmc.flagon:
                 self.aw.qmc.adderror((QApplication.translate('Error Message','Modbus Error:') + ' writeRegisters() {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
@@ -640,7 +649,7 @@ class modbusport():
         except Exception as ex: # pylint: disable=broad-except
             _log.info('writeWord(%d,%d,%s) failed', slave, register, value)
             _log.debug(ex)
-#            self.disconnect()
+            self.disconnectOnError()
             _, _, exc_tb = sys.exc_info()
             if self.aw.qmc.flagon:
                 self.aw.qmc.adderror((QApplication.translate('Error Message','Modbus Error:') + ' writeWord() {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
@@ -664,7 +673,7 @@ class modbusport():
         except Exception as ex: # pylint: disable=broad-except
             _log.info('writeBCD(%d,%d,%s) failed', slave, register, value)
             _log.debug(ex)
-#            self.disconnect()
+            self.disconnectOnError()
             _, _, exc_tb = sys.exc_info()
             if self.aw.qmc.flagon:
                 self.aw.qmc.adderror((QApplication.translate('Error Message','Modbus Error:') + ' writeWord() {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
@@ -689,7 +698,7 @@ class modbusport():
         except Exception as ex: # pylint: disable=broad-except
             _log.info('writeLong(%d,%d,%s) failed', slave, register, value)
             _log.debug(ex)
-#            self.disconnect()
+            self.disconnectOnError()
             _, _, exc_tb = sys.exc_info()
             if self.aw.qmc.flagon:
                 self.aw.qmc.adderror((QApplication.translate('Error Message','Modbus Error:') + ' writeLong() {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
@@ -707,11 +716,12 @@ class modbusport():
         retry = self.readRetries
         if self.aw.seriallogflag:
             tx = time.time()
+        error_disconnect = False # set to True if a serious error requiring a disconnect was detected
         try:
             #### lock shared resources #####
             self.COMsemaphore.acquire(1)
-            if self.optimizer:
-                if not force and code in self.readingsCache and slave in self.readingsCache[code] and register in self.readingsCache[code][slave] \
+            if self.optimizer and not force:
+                if code in self.readingsCache and slave in self.readingsCache[code] and register in self.readingsCache[code][slave] \
                     and register+1 in self.readingsCache[code][slave]:
                     # cache hit
                     res = [self.readingsCache[code][slave][register],self.readingsCache[code][slave][register+1]]
@@ -729,7 +739,9 @@ class modbusport():
                         res = self.master.read_holding_registers(int(register),2,slave=int(slave))
                     else:
                         res = self.master.read_input_registers(int(register),2,slave=int(slave))
-                    if self.invalidResult(res,2):
+                    error, disconnect = self.invalidResult(res,2)
+                    if error:
+                        error_disconnect = error_disconnect or disconnect
                         if retry > 0:
                             retry = retry - 1
                             #time.sleep(0.020)  # no retry delay as timeout time should already be large enough
@@ -751,11 +763,12 @@ class modbusport():
             _log.debug(ex)
 #            import traceback
 #            traceback.print_exc(file=sys.stdout)
-#            self.disconnect()
+            self.disconnectOnError()
 #            _, _, exc_tb = sys.exc_info()
 #            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " readFloat() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             if self.aw.qmc.flagon:
                 self.aw.qmc.adderror(QApplication.translate('Error Message','Modbus Communication Error'))
+            self.commError = error_disconnect
             return None
         finally:
             if self.COMsemaphore.available() < 1:
@@ -799,11 +812,12 @@ class modbusport():
         retry = self.readRetries
         if self.aw.seriallogflag:
             tx = time.time()
+        error_disconnect = False # set to True if a serious error requiring a disconnect was detected
         try:
             #### lock shared resources #####
             self.COMsemaphore.acquire(1)
-            if self.optimizer:
-                if not force and code in self.readingsCache and slave in self.readingsCache[code] and register in self.readingsCache[code][slave] \
+            if self.optimizer and not force:
+                if code in self.readingsCache and slave in self.readingsCache[code] and register in self.readingsCache[code][slave] \
                     and register+1 in self.readingsCache[code][slave]:
                     # cache hit
                     res = [self.readingsCache[code][slave][register],self.readingsCache[code][slave][register+1]]
@@ -821,7 +835,9 @@ class modbusport():
                         res = self.master.read_holding_registers(int(register),2,slave=int(slave))
                     else:
                         res = self.master.read_input_registers(int(register),2,slave=int(slave))
-                    if self.invalidResult(res,2):
+                    error, disconnect = self.invalidResult(res,2)
+                    if error:
+                        error_disconnect = error_disconnect or disconnect
                         if retry > 0:
                             retry = retry - 1
                             #time.sleep(0.020)  # no retry delay as timeout time should already be larger enough
@@ -844,12 +860,12 @@ class modbusport():
             _log.debug(ex)
 #            import traceback
 #            traceback.print_exc(file=sys.stdout)
-#            self.disconnect()
+            self.disconnectOnError()
 #            _, _, exc_tb = sys.exc_info()
 #            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " readBCD() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             if self.aw.qmc.flagon:
                 self.aw.qmc.adderror(QApplication.translate('Error Message','Modbus Communication Error'))
-            self.commError = True
+            self.commError = error_disconnect
             return None
         finally:
             if self.COMsemaphore.available() < 1:
@@ -906,7 +922,6 @@ class modbusport():
                 if res is not None and res.bits[0]:
                     return 1
                 return 0
-            _log.info('RES %s',res)
             decoder = getBinaryPayloadDecoderFromRegisters(res.registers, self.byteorderLittle, self.wordorderLittle)
             r = decoder.decode_16bit_uint()
             _log.debug('  res.registers => %s', res.registers)
@@ -928,11 +943,12 @@ class modbusport():
         retry = self.readRetries
         if self.aw.seriallogflag:
             tx = time.time()
+        error_disconnect = False # set to True if a serious error requiring a disconnect was detected
         try:
             #### lock shared resources #####
             self.COMsemaphore.acquire(1)
-            if self.optimizer:
-                if not force and code in self.readingsCache and slave in self.readingsCache[code] and register in self.readingsCache[code][slave]:
+            if self.optimizer and not force:
+                if code in self.readingsCache and slave in self.readingsCache[code] and register in self.readingsCache[code][slave]:
                     # cache hit
                     res = self.readingsCache[code][slave][register]
                     decoder = getBinaryPayloadDecoderFromRegisters([res], self.byteorderLittle, self.wordorderLittle)
@@ -960,7 +976,9 @@ class modbusport():
                     except Exception as ex: # pylint: disable=broad-except
                         _log.debug(ex)
                         res = None
-                    if self.invalidResult(res,1):
+                    error, disconnect = self.invalidResult(res,1)
+                    if error:
+                        error_disconnect = error_disconnect or disconnect
                         if retry > 0:
                             retry = retry - 1
                             #time.sleep(0.020)  # no retry delay as timeout time should already be larger enough
@@ -992,14 +1010,14 @@ class modbusport():
         except Exception as ex: # pylint: disable=broad-except
             _log.info('readSingleRegister(%d,%d,%d,%s) failed', slave, register, code, force)
             _log.debug(ex)
-#            self.disconnect()
+            self.disconnectOnError()
 #            import traceback
 #            traceback.print_exc(file=sys.stdout)
 #            _, _, exc_tb = sys.exc_info()
 #            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " readSingleRegister() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             if self.aw.qmc.flagon:
                 self.aw.qmc.adderror(QApplication.translate('Error Message','Modbus Communication Error'))
-            self.commError = True
+            self.commError = error_disconnect
             return None
         finally:
             if self.COMsemaphore.available() < 1:
@@ -1042,11 +1060,12 @@ class modbusport():
         retry = self.readRetries
         if self.aw.seriallogflag:
             tx = time.time()
+        error_disconnect = False # set to True if a serious error requiring a disconnect was detected
         try:
             #### lock shared resources #####
             self.COMsemaphore.acquire(1)
-            if self.optimizer:
-                if not force and code in self.readingsCache and slave in self.readingsCache[code] and register in self.readingsCache[code][slave] \
+            if self.optimizer and not force:
+                if code in self.readingsCache and slave in self.readingsCache[code] and register in self.readingsCache[code][slave] \
                     and register+1 in self.readingsCache[code][slave]:
                     # cache hit
                     res = [self.readingsCache[code][slave][register],self.readingsCache[code][slave][register+1]]
@@ -1067,7 +1086,9 @@ class modbusport():
                         res = self.master.read_holding_registers(int(register),2,slave=int(slave))
                     else:
                         res = self.master.read_input_registers(int(register),2,slave=int(slave))
-                    if self.invalidResult(res,2):
+                    error, disconnect = self.invalidResult(res,2)
+                    if error:
+                        error_disconnect = error_disconnect or disconnect
                         if retry > 0:
                             retry = retry - 1
                             #time.sleep(0.020)  # no retry delay as timeout time should already be larger enough
@@ -1092,11 +1113,12 @@ class modbusport():
             _log.debug(ex)
 #            import traceback
 #            traceback.print_exc(file=sys.stdout)
-#            self.disconnect()
+            self.disconnectOnError()
 #            _, _, exc_tb = sys.exc_info()
 #            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " readFloat() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             if self.aw.qmc.flagon:
                 self.aw.qmc.adderror(QApplication.translate('Error Message','Modbus Communication Error'))
+            self.commError = error_disconnect
             return None
         finally:
             if self.COMsemaphore.available() < 1:
@@ -1135,21 +1157,18 @@ class modbusport():
     # if force the readings cache is ignored and fresh readings are requested
     def readBCDint(self,slave,register,code=3,force=False):
         _log.debug('readBCDint(%d,%d,%d,%s)', slave, register, code, force)
-#        import logging
-#        logging.basicConfig()
-#        log = logging.getLogger()
-#        log.setLevel(logging.DEBUG)
         if slave == 0:
             return None
         r = None
         retry = self.readRetries
         if self.aw.seriallogflag:
             tx = time.time()
+        error_disconnect = False # set to True if a serious error requiring a disconnect was detected
         try:
             #### lock shared resources #####
             self.COMsemaphore.acquire(1)
-            if self.optimizer:
-                if not force and code in self.readingsCache and slave in self.readingsCache[code] and register in self.readingsCache[code][slave]:
+            if self.optimizer and not force:
+                if code in self.readingsCache and slave in self.readingsCache[code] and register in self.readingsCache[code][slave]:
                     # cache hit
                     res = self.readingsCache[code][slave][register]
                     decoder = getBinaryPayloadDecoderFromRegisters([res], self.byteorderLittle, self.wordorderLittle)
@@ -1169,7 +1188,9 @@ class modbusport():
                             res = self.master.read_input_registers(int(register),1,slave=int(slave))
                     except Exception: # pylint: disable=broad-except
                         res = None
-                    if self.invalidResult(res,1):
+                    error, disconnect = self.invalidResult(res,1)
+                    if error:
+                        error_disconnect = error_disconnect or disconnect
                         if retry > 0:
                             retry = retry - 1
                             # time.sleep(0.020)  # no retry delay as timeout time should already be larger enough
@@ -1190,14 +1211,14 @@ class modbusport():
         except Exception as ex: # pylint: disable=broad-except
             _log.info('readBCDint(%d,%d,%d,%s) failed', slave, register, code, force)
             _log.debug(ex)
-#            self.disconnect()
+            self.disconnectOnError()
 #            import traceback
 #            traceback.print_exc(file=sys.stdout)
 #            _, _, exc_tb = sys.exc_info()
 #            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " readBCDint() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             if self.aw.qmc.flagon:
                 self.aw.qmc.adderror(QApplication.translate('Error Message','Modbus Communication Error'))
-            self.commError = True
+            self.commError = error_disconnect
             return None
         finally:
             if self.COMsemaphore.available() < 1:

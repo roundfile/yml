@@ -20,11 +20,7 @@ import time as libtime
 import re
 import platform
 import logging
-try:
-    from typing import Final
-except ImportError:
-    # for Python 3.7:
-    from typing_extensions import Final
+from typing import Final
 
 from artisanlib.util import deltaLabelUTF8, setDeviceDebugLogLevel
 from artisanlib.dialogs import ArtisanResizeablDialog
@@ -551,7 +547,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         phidget1046VBox = QVBoxLayout()
         phidget1046VBox.addLayout(phidget1046HBox)
         phidget1046VBox.addStretch()
-        phidget1046GroupBox = QGroupBox('1046 RTD')
+        phidget1046GroupBox = QGroupBox('1046 RTD / DAQ1500')
         phidget1046GroupBox.setLayout(phidget1046VBox)
         phidget1046GroupBox.setContentsMargins(0,10,0,0)
         phidget1046HBox.setContentsMargins(0,0,0,0)
@@ -928,10 +924,12 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         self.phidgetBoxRemoteFlag.setChecked(self.aw.qmc.phidgetRemoteFlag)
         phidgetServerIdLabel = QLabel(QApplication.translate('Label','Host'))
         self.phidgetServerId = QLineEdit(self.aw.qmc.phidgetServerID)
+        self.phidgetServerId.textChanged.connect(self.phidgetHostChanged)
         self.phidgetServerId.setMinimumWidth(200)
         phidgetPasswordLabel = QLabel(QApplication.translate('Label','Password'))
         self.phidgetPassword = QLineEdit(self.aw.qmc.phidgetPassword)
         self.phidgetPassword.setEchoMode(QLineEdit.EchoMode.PasswordEchoOnEdit)
+        self.phidgetPassword.setEnabled(self.aw.qmc.phidgetServerID != '')
         self.phidgetPassword.setMinimumWidth(100)
         phidgetPortLabel = QLabel(QApplication.translate('Label','Port'))
         self.phidgetPort = QLineEdit(str(self.aw.qmc.phidgetPort))
@@ -1098,6 +1096,33 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         ambientVBox.addLayout(ambientHBox)
         ambientVBox.addStretch()
         ambientVBox.setContentsMargins(0,0,0,0)
+
+        santokerHostLabel = QLabel(QApplication.translate('Label','Host'))
+        self.santokerHost = QLineEdit(self.aw.santokerHost)
+        self.santokerHost.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.santokerHost.setFixedWidth(150)
+        santokerPortLabel = QLabel(QApplication.translate('Label','Port'))
+        self.santokerPort = QLineEdit(str(self.aw.santokerPort))
+        self.santokerPort.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.santokerPort.setFixedWidth(150)
+        santokerNetworkGrid = QGridLayout()
+        santokerNetworkGrid.addWidget(santokerHostLabel,0,0)
+        santokerNetworkGrid.addWidget(self.santokerHost,0,1)
+        santokerNetworkGrid.addWidget(santokerPortLabel,1,0)
+        santokerNetworkGrid.addWidget(self.santokerPort,1,1)
+        santokerNetworkGrid.setSpacing(20)
+        santokerNetworkGroupBox = QGroupBox(QApplication.translate('GroupBox','Network'))
+        santokerNetworkGroupBox.setLayout(santokerNetworkGrid)
+        santokerHBox = QHBoxLayout()
+        santokerHBox.addStretch()
+        santokerHBox.addWidget(santokerNetworkGroupBox)
+        santokerHBox.addStretch()
+        santokerVBox = QVBoxLayout()
+        santokerVBox.addLayout(santokerHBox)
+        santokerVBox.addStretch()
+        santokerVBox.setSpacing(5)
+        santokerVBox.setContentsMargins(0,0,0,0)
+
         # create pid box
         PIDgrid = QGridLayout()
         PIDgrid.addWidget(label1,0,1)
@@ -1244,6 +1269,10 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         tab6Layout = QVBoxLayout()
         tab6Layout.addLayout(ambientVBox)
         tab6Layout.setContentsMargins(2,10,2,5)
+        #LAYOUT TAB 7 (Santoker)
+        tab7Layout = QVBoxLayout()
+        tab7Layout.addLayout(santokerVBox)
+        tab7Layout.setContentsMargins(2,10,2,5)
         #main tab widget
         self.TabWidget = QTabWidget()
         C1Widget = QWidget()
@@ -1264,6 +1293,9 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         C6Widget = QWidget()
         C6Widget.setLayout(tab6Layout)
         self.TabWidget.addTab(C6Widget,QApplication.translate('Tab','Ambient'))
+        C7Widget = QWidget()
+        C7Widget.setLayout(tab7Layout)
+        self.TabWidget.addTab(C7Widget,QApplication.translate('Tab','Santoker'))
         self.TabWidget.currentChanged.connect(self.tabSwitched)
         #incorporate layouts
         Mlayout = QVBoxLayout()
@@ -1280,6 +1312,11 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         if settings.contains('DeviceAssignmentGeometry'):
             self.restoreGeometry(settings.value('DeviceAssignmentGeometry'))
         self.TabWidget.setCurrentIndex(activeTab)
+
+
+    @pyqtSlot(str)
+    def phidgetHostChanged(self,s):
+        self.phidgetPassword.setEnabled(s != '')
 
     @pyqtSlot(int)
     def changeOutprogramFlag(self,_):
@@ -1410,7 +1447,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 for i in range(nddevices):
                     try:
                         typeComboBox =  MyQComboBox()
-#                        typeComboBox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+                        typeComboBox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
 #                        typeComboBox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
                         typeComboBox.addItems(devices[:])
                         try:
@@ -2609,7 +2646,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                     self.aw.qmc.device = 107
                     message = QApplication.translate('Message','Device set to {0}').format(meter)
                 ##########################
-                elif meter == 'Yocto 4-20ma Rx':
+                elif meter == 'Yocto 4-20mA Rx':
                     self.aw.qmc.device = 108
                     message = QApplication.translate('Message','Device set to {0}').format(meter)
                 ##########################
@@ -2702,6 +2739,55 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ##########################
                 ##########################
                 ####  DEVICE 128 is +ARC AT (points to "+HB AT")
+                ##########################
+                ##########################
+                ####  DEVICE 129 is Yocto Power
+                elif meter == 'Yocto Power':
+                    self.aw.qmc.device = 129
+                    message = QApplication.translate('Message','Device set to {0}').format(meter)
+                ##########################
+                ##########################
+                ####  DEVICE 130 is Yocto Energy
+                elif meter == 'Yocto Energy':
+                    self.aw.qmc.device = 130
+                    message = QApplication.translate('Message','Device set to {0}').format(meter)
+                ##########################
+                ##########################
+                ####  DEVICE 131 is Yocto Voltage
+                elif meter == 'Yocto Voltage':
+                    self.aw.qmc.device = 131
+                    message = QApplication.translate('Message','Device set to {0}').format(meter)
+                ##########################
+                ##########################
+                ####  DEVICE 132 is Yocto Current
+                elif meter == 'Yocto Current':
+                    self.aw.qmc.device = 132
+                    message = QApplication.translate('Message','Device set to {0}').format(meter)
+                ##########################
+                ##########################
+                ####  DEVICE 133 is Yocto Sensor
+                elif meter == 'Yocto Sensor':
+                    self.aw.qmc.device = 133
+                    message = QApplication.translate('Message','Device set to {0}').format(meter)
+                ##########################
+                ##########################
+                ####  DEVICE 134 is Santoker BT/ET
+                elif meter == 'Santoker BT/ET':
+                    self.aw.qmc.device = 134
+                    message = QApplication.translate('Message','Device set to {0}').format(meter)
+                ##########################
+                ##########################
+                ####  DEVICE 135 is +Santoker Power/Fan but +DEVICE cannot be set as main device
+                ##########################
+                ##########################
+                ####  DEVICE 136 is +Santoker Drum but +DEVICE cannot be set as main device
+                ##########################
+                ##########################
+                ####  DEVICE 137 is Phidget DAQ1500
+                elif meter == 'Phidget DAQ1500':
+                    self.aw.qmc.device = 137
+                    message = QApplication.translate('Message','Device set to {0}').format(meter)
+                ##########################
 
 
                 # ADD DEVICE:
@@ -2850,7 +2936,16 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 1, # 125
                 8, # 126
                 8, # 127
-                8  # 128
+                8, # 128
+                1, # 129
+                1, # 130
+                1, # 131
+                1, # 132
+                1, # 133
+                1, # 134
+                1, # 135
+                1, # 136
+                1  # 137
                 ]
             #init serial settings of extra devices
             for i in range(len(self.aw.qmc.extradevices)):
@@ -2960,6 +3055,11 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
             self.aw.qmc.phidgetRemoteOnlyFlag = self.phidgetBoxRemoteOnlyFlag.isChecked()
             try:
                 self.aw.qmc.phidgetPort = int(self.phidgetPort.text())
+            except Exception: # pylint: disable=broad-except
+                pass
+            self.aw.santokerHost = self.santokerHost.text().strip()
+            try:
+                self.aw.santokerPort = int(self.santokerPort.text())
             except Exception: # pylint: disable=broad-except
                 pass
             for i in range(8):

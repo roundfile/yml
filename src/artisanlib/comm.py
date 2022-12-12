@@ -25,11 +25,7 @@ import shlex
 import threading
 import platform
 import logging
-try:
-    from typing import Final
-except ImportError:
-    # for Python 3.7:
-    from typing_extensions import Final
+from typing import Optional, Final
 
 from artisanlib.util import cmd2str, RoRfromCtoF, fromCtoF, fromFtoC, hex2int, str2cmd, toFloat
 
@@ -348,7 +344,7 @@ class serialport():
         # device 1 (with index 1 below) is Omega HH806
         # device 2 (with index 2 below) is omega HH506
         # etc
-        # ADD DEVICE: to add a device you have to modify several places. Search for the tag "ADD DEVICE:"in the code
+        # ADD DEVICE: to add a device you have to modify several places. Search for the tag "ADD DEVICE:" in the code (main.py, comm.py, devices.py)
         # - add to self.devicefunctionlist
         self.devicefunctionlist = [self.fujitemperature,    #0
                                    self.HH806AU,            #1
@@ -458,7 +454,7 @@ class serialport():
                                    self.BEHMOR_78,            #105
                                    self.PHIDGET_HUB0000_0,    #106
                                    self.PHIDGET_HUB0000_D_0,  #107
-                                   self.YOCTO_generic,        #108 # Yocto-4-20mA-Rx
+                                   self.Yocto_4_20mA_Rx,      #108
                                    self.MODBUS_78,            #109
                                    self.S7_910,               #110
                                    self.WS,     # self.probat_sample,        #111
@@ -470,15 +466,24 @@ class serialport():
                                    self.HB_AT,                #117
                                    self.WS_78,  # self.probat_sample_inlet_ambient, # 118
                                    self.WS_910,  # self.probat_sample_cooling # 119
-                                   self.YOCTO_generic,        #120 # Yocto-0-10V-Rx
-                                   self.YOCTO_generic,        #121 # Yocto-milliVolt-Rx
-                                   self.YOCTO_generic,        #122 # Yocto-Serial
+                                   self.Yocto_0_10V_Rx,       #120
+                                   self.Yocto_milliVolt_Rx,   #121
+                                   self.Yocto_Serial,         #122
                                    self.PHIDGET_VCP1000,      #123 Phidget VCP1000
                                    self.PHIDGET_VCP1001,      #124 Phidget VCP1001
                                    self.PHIDGET_VCP1002,      #125 Phidget VCP1002
                                    self.ARC_BTET,             #126
                                    self.ARC_METIT,            #127
-                                   self.HB_AT                 #128 # labeled "ARC AT"
+                                   self.HB_AT,                #128 # labeled "ARC AT"
+                                   self.Yocto_Power,          #129
+                                   self.Yocto_Energy,         #130
+                                   self.Yocto_Voltage,        #131
+                                   self.Yocto_Current,        #132
+                                   self.Yocto_Sensor,         #133
+                                   self.Santoker_BTET,        #134
+                                   self.Santoker_PF,          #135
+                                   self.Santoker_D,           #136
+                                   self.PHIDGET_DAQ1500       #137
                                    ]
         #string with the name of the program for device #27
         self.externalprogram = 'test.py'
@@ -862,6 +867,11 @@ class serialport():
     def PHIDGET1046_34(self):
         tx = self.aw.qmc.timeclock.elapsedMilli()
         t2,t1 = self.PHIDGET1046temperature(1)
+        return tx,t1,t2
+
+    def PHIDGET_DAQ1500(self):
+        tx = self.aw.qmc.timeclock.elapsedMilli()
+        t2,t1 = self.PHIDGET1046temperature(0,device_type=1)
         return tx,t1,t2
 
     def PHIDGET1051(self):
@@ -1405,9 +1415,49 @@ class serialport():
         v2,v1 = self.YOCTOtemperatures(0)
         return tx,v1,v2
 
-    def YOCTO_generic(self):
+    def Yocto_4_20mA_Rx(self):
         tx = self.aw.qmc.timeclock.elapsedMilli()
-        v2,v1 = self.YOCTOtemperatures(4)
+        v2,v1 = self.YOCTOtemperatures(4,'Yocto-4-20mA-Rx')
+        return tx,v1,v2
+
+    def Yocto_0_10V_Rx(self):
+        tx = self.aw.qmc.timeclock.elapsedMilli()
+        v2,v1 = self.YOCTOtemperatures(4,'Yocto-0-10V-Rx')
+        return tx,v1,v2
+
+    def Yocto_milliVolt_Rx(self):
+        tx = self.aw.qmc.timeclock.elapsedMilli()
+        v2,v1 = self.YOCTOtemperatures(4,'Yocto-milliVolt-Rx')
+        return tx,v1,v2
+
+    def Yocto_Serial(self):
+        tx = self.aw.qmc.timeclock.elapsedMilli()
+        v2,v1 = self.YOCTOtemperatures(4,'Yocto-Serial')
+        return tx,v1,v2
+
+    def Yocto_Power(self):
+        tx = self.aw.qmc.timeclock.elapsedMilli()
+        v2,v1 = self.YOCTOtemperatures(5)
+        return tx,v1,v2
+
+    def Yocto_Energy(self):
+        tx = self.aw.qmc.timeclock.elapsedMilli()
+        v2,v1 = self.YOCTOtemperatures(6)
+        return tx,v1,v2
+
+    def Yocto_Voltage(self):
+        tx = self.aw.qmc.timeclock.elapsedMilli()
+        v2,v1 = self.YOCTOtemperatures(7)
+        return tx,v1,v2
+
+    def Yocto_Current(self):
+        tx = self.aw.qmc.timeclock.elapsedMilli()
+        v2,v1 = self.YOCTOtemperatures(8)
+        return tx,v1,v2
+
+    def Yocto_Sensor(self):
+        tx = self.aw.qmc.timeclock.elapsedMilli()
+        v2,v1 = self.YOCTOtemperatures(9)
         return tx,v1,v2
 
     def YOCTO_pt100(self):
@@ -1419,6 +1469,33 @@ class serialport():
         tx = self.aw.qmc.timeclock.elapsedMilli()
         v2,v1 = self.YOCTOtemperatures(2)
         return tx,v2,v1
+
+    def Santoker_BTET(self):
+        tx = self.aw.qmc.timeclock.elapsedMilli()
+        if self.aw.santoker is not None:
+            t1 = self.aw.santoker.getBT()
+            t2 = self.aw.santoker.getET()
+        else:
+            t1 = t2 = -1
+        return tx,t1,t2 # time, ET (chan2), BT (chan1)
+
+    def Santoker_PF(self):
+        tx = self.aw.qmc.timeclock.elapsedMilli()
+        if self.aw.santoker is not None:
+            t1 = self.aw.santoker.getPower()
+            t2 = self.aw.santoker.getAir()
+        else:
+            t1 = t2 = -1
+        return tx,t1,t2 # time, Air (chan2), Power (chan1)
+
+    def Santoker_D(self):
+        tx = self.aw.qmc.timeclock.elapsedMilli()
+        if self.aw.santoker is not None:
+            t1 = -1
+            t2 = self.aw.santoker.getDrum()
+        else:
+            t1 = t2 = -1
+        return tx,t1,t2 # time, -1 (chan2), Drum (chan1)
 
     def TEVA18B(self):
         tx = self.aw.qmc.timeclock.elapsedMilli()
@@ -3424,12 +3501,12 @@ class serialport():
                     _log.exception(e)
                 # set voltage ratio change trigger to 0 (fire every DataInterval)
                 try:
-                    self.PhidgetBridgeSensor[idx].setVoltageChangeTrigger(0)
+                    self.PhidgetBridgeSensor[idx].setVoltageRatioChangeTrigger(0)
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
                 # enable channel
                 try:
-                    self.PhidgetBridgeSensor[idx].setBridgeEnabled(channel, True)
+                    self.PhidgetBridgeSensor[idx].setBridgeEnabled(True)
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
                 if self.aw.qmc.phidget1046_async[channel]:
@@ -3448,7 +3525,10 @@ class serialport():
                 channel = self.PhidgetBridgeSensor[idx].getChannel()
                 self.aw.qmc.phidgetManager.reserveSerialPort(serial,port,channel,'PhidgetVoltageRatioInput',deviceType,remote=self.aw.qmc.phidgetRemoteFlag,remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
                 if channel == 0:
-                    self.aw.sendmessage(QApplication.translate('Message','Phidget Bridge 4-input attached'))
+                    if deviceType == DeviceID.PHIDID_1046:
+                        self.aw.sendmessage(QApplication.translate('Message','Phidget 1046 attached'))
+                    else:
+                        self.aw.sendmessage(QApplication.translate('Message','Phidget DAQ1500 attached'))
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
 
@@ -3459,23 +3539,30 @@ class serialport():
                 channel = self.PhidgetBridgeSensor[idx].getChannel()
                 self.aw.qmc.phidgetManager.releaseSerialPort(serial,port,channel,'PhidgetVoltageRatioInput',deviceType,remote=self.aw.qmc.phidgetRemoteFlag,remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
                 if channel == 0:
-                    self.aw.sendmessage(QApplication.translate('Message','Phidget Bridge 4-input detached'))
+                    if deviceType == DeviceID.PHIDID_1046:
+                        self.aw.sendmessage(QApplication.translate('Message','Phidget 1046 detached'))
+                    else:
+                        self.aw.sendmessage(QApplication.translate('Message','Phidget DAQ1500 detached'))
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
 
     # mode = 0 for probe 1 and 2; mode = 1 for probe 3 and 4
-    def PHIDGET1046temperature(self,mode=0,retry=True):
+    # device_type = 0 for Phidget 1046, device_type = 1 for Phidget DAQ1500
+    def PHIDGET1046temperature(self,mode=0,retry=True,device_type=0):
+        deviceType = DeviceID.PHIDID_1046
+        if device_type == 1:
+            deviceType = DeviceID.PHIDID_DAQ1500
         try:
             if not self.PhidgetBridgeSensor and self.aw.qmc.phidgetManager is not None:
                 ser = None
                 port = None
                 if mode == 0:
                     # we scan for available main device
-                    ser,port = self.aw.qmc.phidgetManager.getFirstMatchingPhidget('PhidgetVoltageRatioInput',DeviceID.PHIDID_1046,0,
+                    ser,port = self.aw.qmc.phidgetManager.getFirstMatchingPhidget('PhidgetVoltageRatioInput',deviceType,0,
                         remote=self.aw.qmc.phidgetRemoteFlag,remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
                 # in all other cases, we check for existing serial/port pairs from attaching the main channels 1+2 of the device
                 elif mode == 1:
-                    ser,port = self.aw.qmc.phidgetManager.getFirstMatchingPhidget('PhidgetVoltageRatioInput',DeviceID.PHIDID_1046,2,
+                    ser,port = self.aw.qmc.phidgetManager.getFirstMatchingPhidget('PhidgetVoltageRatioInput',deviceType,2,
                         remote=self.aw.qmc.phidgetRemoteFlag,remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
                 if ser:
                     self.PhidgetBridgeSensor = [VoltageRatioInput(),VoltageRatioInput()]
@@ -3491,8 +3578,8 @@ class serialport():
                             if self.aw.qmc.phidgetRemoteFlag and self.aw.qmc.phidgetRemoteOnlyFlag:
                                 self.PhidgetBridgeSensor[i].setIsRemote(True)
                                 self.PhidgetBridgeSensor[i].setIsLocal(False)
-                            self.PhidgetBridgeSensor[i].setOnAttachHandler(lambda _,x=i:self.phidget1046attached(ser,port,DeviceID.PHIDID_1046,x))
-                            self.PhidgetBridgeSensor[i].setOnDetachHandler(lambda _,x=i:self.phidget1046detached(ser,port,DeviceID.PHIDID_1046,x))
+                            self.PhidgetBridgeSensor[i].setOnAttachHandler(lambda _,x=i:self.phidget1046attached(ser,port,deviceType,x))
+                            self.PhidgetBridgeSensor[i].setOnDetachHandler(lambda _,x=i:self.phidget1046detached(ser,port,deviceType,x))
                             libtime.sleep(.1)
                             try:
                                 self.PhidgetBridgeSensor[i].open() #.openWaitForAttachment(timeout)
@@ -4567,6 +4654,38 @@ class serialport():
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
 
+###
+
+    # module_id is a string that is either None, a module serial number or a module logical name
+    def getYoctoPOWER(self,module_id):
+        _log.debug('yoctoPOWERattach(%s)',module_id)
+        # the module/channel is not yet attached search for it
+        self.YOCTOimportLIB() # first import the lib
+        from yoctopuce.yocto_power import YPower
+        if module_id is None:
+            power = YPower.FirstPower()
+            if power is None:
+                return None
+            m = power.get_module()
+            target = m.get_serialNumber()
+        else:
+            target = module_id
+        YOCTOpower = YPower.FindPower(target + '.power')
+        module = YOCTOpower.get_module()
+        module.isOnline()
+        if YOCTOpower.isOnline():
+            return YOCTOpower
+        return None
+
+    def yoctoPowerReset(self,module_id=None):
+        _log.debug('yoctoPowerReset(%s)',module_id)
+        try:
+            m = self.getYoctoPOWER(module_id)
+            if m is not None and m.isOnline():
+                m.reset()
+                _log.debug('yoctoPowerReset suceeded')
+        except Exception as e: # pylint: disable=broad-except
+            _log.exception(e)
 
 #--- Yoctopuce Servo Output
 #  supporting
@@ -5201,25 +5320,41 @@ class serialport():
     #   mode=3 => Yocto-Meteo
     #   mode=4 => Yocto-4-20mA-Rx (works also for the Yocto-0-10V-Rx, the Yocto-milliVolt-Rx and the Yocto-Serial)
     # that is not in the list of already connected ones
-    def getNextYOCTOsensorOfType(self,mode,connected_yoctos,YOCTOsensor):
+    # if productName is given, the results are filtered by productName (has to be set with mode=4 to discriminate)
+    def getNextYOCTOsensorOfType(self,mode,connected_yoctos,YOCTOsensor,productNameFilter:Optional[str]=None):
         if mode == 4:
             from yoctopuce.yocto_genericsensor import YGenericSensor
+        elif mode in [5, 6]:
+            from yoctopuce.yocto_power import YPower
+        elif mode == 7:
+            from yoctopuce.yocto_voltage import YVoltage
+        elif mode == 8:
+            from yoctopuce.yocto_current import YCurrent
+        elif mode == 9:
+            from yoctopuce.yocto_api import YSensor
         else:
             from yoctopuce.yocto_temperature import YTemperature
         if YOCTOsensor:
             productName = YOCTOsensor.get_module().get_productName()
-            if not (YOCTOsensor.get_module().get_serialNumber() in connected_yoctos) and  \
+            if not (YOCTOsensor.get_hardwareId() in connected_yoctos) and  \
                 ((mode == 0 and productName == 'Yocto-Thermocouple') or (mode == 1 and productName == 'Yocto-PT100') or \
                  (mode == 2 and productName == 'Yocto-Temperature-IR') or \
                  (mode == 3 and productName.startswith('Yocto-Meteo')) or \
-                 (mode == 4 and productName.startswith('Yocto-4-20mA-Rx')) or \
-                 (mode == 4 and productName.startswith('Yocto-0-10V-Rx')) or \
-                 (mode == 4 and productName.startswith('Yocto-milliVolt-Rx')) or \
-                 (mode == 4 and productName.startswith('Yocto-Serial'))):
+                 (mode == 4 and productName is not None and productName.startswith(productNameFilter)) or \
+                 (mode in [5, 6, 7, 8] and productName.startswith('Yocto-Watt')) or \
+                 (mode == 9)):
                 return YOCTOsensor
             if mode == 4:
-                return self.getNextYOCTOsensorOfType(mode,connected_yoctos,YGenericSensor.nextGenericSensor(YOCTOsensor))
-            return self.getNextYOCTOsensorOfType(mode,connected_yoctos,YTemperature.nextTemperature(YOCTOsensor))
+                return self.getNextYOCTOsensorOfType(mode,connected_yoctos,YGenericSensor.nextGenericSensor(YOCTOsensor),productNameFilter)
+            elif mode in [5,6]:
+                return self.getNextYOCTOsensorOfType(mode,connected_yoctos,YPower.nextPower(YOCTOsensor),productNameFilter)
+            elif mode == 7:
+                return self.getNextYOCTOsensorOfType(mode,connected_yoctos,YVoltage.nextVoltage(YOCTOsensor),productNameFilter)
+            elif mode == 8:
+                return self.getNextYOCTOsensorOfType(mode,connected_yoctos,YCurrent.nextCurrent(YOCTOsensor),productNameFilter)
+            elif mode == 9:
+                return self.getNextYOCTOsensorOfType(mode,connected_yoctos,YSensor.nextSensor(YOCTOsensor),productNameFilter)
+            return self.getNextYOCTOsensorOfType(mode,connected_yoctos,YTemperature.nextTemperature(YOCTOsensor),productNameFilter)
         return None
 
     def YOCTOimportLIB(self):
@@ -5249,34 +5384,63 @@ class serialport():
             if self.YOCTOsemaphores[channel].available() < 1:
                 self.YOCTOsemaphores[channel].release(1)
 
-    # mode = 0 for 2x thermocouple model; mode = 1 for 1x PT100 type probe; mode = 2 for IR sensor; mode = 4 for the Yocto-4-20mA-Rx
-    #   (as well as the Yocto-0-10V-Rx, Yocto-milliVolt-Rx and Yocto-Serial)
-    def YOCTOtemperatures(self,mode=0):
+    # mode = 0 for 2x thermocouple model; mode = 1 for 1x PT100 type probe; mode = 2 for IR sensor; mode = 4 for supported Yocto-Generics,
+    #   (like Yocto-4-20mA-Rx, Yocto-0-10V-Rx, Yocto-milliVolt-Rx and Yocto-Serial)
+    #   productNameFilter if given is used to filter Yocto-Generic modules by product name
+    # mode = 5 for Yocto Watt Power; current value and meter
+    # mode = 6 for Yocto Watt Energy; deliveredEnergyMeter and receivedEnergyMeter
+    # mode = 7 for Yocto Watt Voltage; voltage1 and voltage2
+    # mode = 8 for Yocto Watt Current; current1 and current2
+    # mode = 9 for Yocto Sensor (any); connects to the first two free sensor channels
+    def YOCTOtemperatures(self,mode=0, productNameFilter=None):
         try:
             if not self.YOCTOsensor:
                 self.YOCTOimportLIB()
                 try:
                     if mode == 4:
                         from yoctopuce.yocto_genericsensor import YGenericSensor
+                    elif mode in [5, 6]:
+                        from yoctopuce.yocto_power import YPower
+                    elif mode == 7:
+                        from yoctopuce.yocto_voltage import YVoltage
+                    elif mode == 8:
+                        from yoctopuce.yocto_current import YCurrent
+                    elif mode == 9:
+                        from yoctopuce.yocto_api import YSensor
                     else:
                         from yoctopuce.yocto_temperature import YTemperature
                     YAPI.DisableExceptions()
-                    # already connected YOCTOsensors?
-                    if not self.aw.ser.YOCTOsensor:
-                        connected_yoctos = []
-                    else:
-                        connected_yoctos = [self.aw.ser.YOCTOsensor.get_module().get_serialNumber()]
+                    # already connected YOCTO sensor channels?
+                    connected_yoctos = []
+                    if self.aw.ser.YOCTOsensor is not None:
+                        if self.aw.ser.YOCTOchan1 is not None and self.aw.ser.YOCTOchan1.isOnline():
+                            connected_yoctos.append(self.aw.ser.YOCTOchan1.get_hardwareId())
+                        if self.aw.ser.YOCTOchan2 is not None and self.aw.ser.YOCTOchan2.isOnline():
+                            connected_yoctos.append(self.aw.ser.YOCTOchan2.get_hardwareId())
                     for s in self.aw.extraser:
                         if s.YOCTOsensor is not None:
-                            connected_yoctos.append(s.YOCTOsensor.get_module().get_serialNumber())
-
+                            if s.YOCTOchan1 is not None and s.YOCTOchan1.isOnline():
+                                connected_yoctos.append(s.YOCTOchan1.get_hardwareId())
+                            if s.YOCTOchan2 is not None and s.YOCTOchan2.isOnline():
+                                connected_yoctos.append(s.YOCTOchan2.get_hardwareId())
                     # search for the next one of the required type, but not yet connected
                     if mode == 4:
-                        self.YOCTOsensor = self.getNextYOCTOsensorOfType(mode,connected_yoctos,YGenericSensor.FirstGenericSensor())
+                        self.YOCTOsensor = self.getNextYOCTOsensorOfType(mode,connected_yoctos,YGenericSensor.FirstGenericSensor(),productNameFilter)
+                    elif mode == 5:
+                        self.YOCTOsensor = self.getNextYOCTOsensorOfType(mode,connected_yoctos,YPower.FirstPower())
+                    elif mode == 6:
+                        # NOTE: as we do not know which functions (mode 5 or 6) are used per power module, we restrict the "Energy" function to report always for the first connected unit only
+                        self.YOCTOsensor = self.getNextYOCTOsensorOfType(mode,[],YPower.FirstPower())
+                    elif mode == 7:
+                        self.YOCTOsensor = self.getNextYOCTOsensorOfType(mode,connected_yoctos,YVoltage.FirstVoltage())
+                    elif mode == 8:
+                        self.YOCTOsensor = self.getNextYOCTOsensorOfType(mode,connected_yoctos,YCurrent.FirstCurrent())
+                    elif mode == 9:
+                        self.YOCTOsensor = self.getNextYOCTOsensorOfType(mode,connected_yoctos,YSensor.FirstSensor())
                     else:
                         self.YOCTOsensor = self.getNextYOCTOsensorOfType(mode,connected_yoctos,YTemperature.FirstTemperature())
 
-                    yocto_res = 0.0001 # while 0.001 seems to be the maximum accepted, but just returning mostly 2 decimals!?
+                    yocto_res = 0.0001 # while 0.001 seems to be the maximum accepted (equal to raw resolution), but just returning mostly 2 decimals (as the regular reading is still rounded by that one decimal)!?
                     if mode in [0,2] and self.YOCTOsensor is not None and self.YOCTOsensor.isOnline():
                         serial=self.YOCTOsensor.get_module().get_serialNumber()
                         self.YOCTOchan1 = YTemperature.FindTemperature(serial + '.temperature1')
@@ -5359,7 +5523,56 @@ class serialport():
                         serial=self.YOCTOsensor.get_module().get_serialNumber()
                         self.YOCTOchan1 = YGenericSensor.FindGenericSensor(serial + '.genericSensor1')
                         self.YOCTOchan2 = YGenericSensor.FindGenericSensor(serial + '.genericSensor2')
-                        self.aw.sendmessage(QApplication.translate('Message','Yocto 4-20mA-Rx attached'))
+                        if productNameFilter is not None:
+                            self.aw.sendmessage(QApplication.translate('Message',f'{productNameFilter} attached'))
+                        else:
+                            self.aw.sendmessage(QApplication.translate('Message','Yocto Sensor attached'))
+                    elif mode == 5 and self.YOCTOsensor is not None and self.YOCTOsensor.isOnline():
+                        serial=self.YOCTOsensor.get_module().get_serialNumber()
+                        self.YOCTOchan1 = YPower.FindPower(serial + '.power')
+                        self.YOCTOchan2 = None
+                        self.aw.sendmessage(QApplication.translate('Message','Yocto Watt Power attached'))
+                    elif mode == 6 and self.YOCTOsensor is not None and self.YOCTOsensor.isOnline():
+                        serial=self.YOCTOsensor.get_module().get_serialNumber()
+                        self.YOCTOchan1 = YPower.FindPower(serial + '.power')
+                        self.YOCTOchan2 = None
+                        self.aw.sendmessage(QApplication.translate('Message','Yocto Watt Energy attached'))
+                    elif mode == 7 and self.YOCTOsensor is not None and self.YOCTOsensor.isOnline():
+                        serial=self.YOCTOsensor.get_module().get_serialNumber()
+                        self.YOCTOchan1 = YVoltage.FindVoltage(serial + '.voltage1')
+                        self.YOCTOchan2 = YVoltage.FindVoltage(serial + '.voltage2')
+                        # increase the resolution
+                        try:
+                            self.YOCTOchan1.set_resolution(yocto_res)
+                            self.YOCTOchan2.set_resolution(yocto_res)
+                        except Exception: # pylint: disable=broad-except
+                            pass
+                        self.aw.sendmessage(QApplication.translate('Message','Yocto Watt Voltage attached'))
+                    elif mode == 8 and self.YOCTOsensor is not None and self.YOCTOsensor.isOnline():
+                        serial=self.YOCTOsensor.get_module().get_serialNumber()
+                        self.YOCTOchan1 = YCurrent.FindCurrent(serial + '.current1')
+                        self.YOCTOchan2 = YCurrent.FindCurrent(serial + '.current2')
+                        # increase the resolution
+                        try:
+                            self.YOCTOchan1.set_resolution(yocto_res)
+                            self.YOCTOchan2.set_resolution(yocto_res)
+                        except Exception: # pylint: disable=broad-except
+                            pass
+                        self.aw.sendmessage(QApplication.translate('Message','Yocto Watt Current attached'))
+                    elif mode == 9 and self.YOCTOsensor is not None and self.YOCTOsensor.isOnline():
+                        serial=self.YOCTOsensor.get_module().get_serialNumber()
+                        self.YOCTOchan1 = self.YOCTOsensor
+                        self.YOCTOchan2 = YSensor.nextSensor(self.YOCTOsensor)
+                        # increase the resolution
+                        try:
+                            self.YOCTOchan1.set_resolution(yocto_res)
+                        except Exception: # pylint: disable=broad-except
+                            pass
+                        try:
+                            self.YOCTOchan2.set_resolution(yocto_res)
+                        except Exception: # pylint: disable=broad-except
+                            pass
+                        self.aw.sendmessage(QApplication.translate('Message','Yocto Sensor attached'))
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
                     if self.YOCTOthread is not None:
@@ -5491,7 +5704,21 @@ class serialport():
                             probe1 = fromFtoC(probe1)
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
-            elif mode == 4:
+            elif mode == 5:
+                try:
+                    if self.YOCTOchan1 and self.YOCTOchan1.isOnline():
+                        probe1 = self.YOCTOchan1.get_currentValue()
+                        probe2 = self.YOCTOchan1.get_meter()
+                except Exception as e: # pylint: disable=broad-except
+                    _log.exception(e)
+            elif mode == 6:
+                try:
+                    if self.YOCTOchan1 and self.YOCTOchan1.isOnline():
+                        probe1 = self.YOCTOchan1.get_deliveredEnergyMeter()
+                        probe2 = self.YOCTOchan1.get_receivedEnergyMeter()
+                except Exception as e: # pylint: disable=broad-except
+                    _log.exception(e)
+            elif mode in [4, 7, 8, 9]:
                 try:
                     if self.YOCTOchan1 and self.YOCTOchan1.isOnline():
                         probe1 = self.YOCTOchan1.get_currentValue()

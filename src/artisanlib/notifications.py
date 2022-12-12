@@ -32,11 +32,7 @@ import time
 import logging
 from datetime import datetime
 from typing import Optional
-try:
-    from typing import Final
-except ImportError:
-    # for Python 3.7:
-    from typing_extensions import Final
+from typing import Final
 from enum import Enum
 from artisanlib.util import getResourcePath
 import plus.util
@@ -341,5 +337,9 @@ class NotificationManager(QObject):
                 else:
                     # we delay the presentation of this new notification one time
                     QTimer.singleShot(self.notification_timeout, lambda : self.setNotification(n))
+            elif not self.notifications_available:
+                _log.debug('notifications not available')
+            elif not self.notifications_enabled:
+                _log.debug('notifications disabled')
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)

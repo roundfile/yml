@@ -89,6 +89,36 @@
         </tr>
         <tr>
             <td>&#160;</td>
+            <td>readSigned(slaveId,register)</td>
+            <td>reads 1 16bit register from slave slaveID using function 3 (Read Multiple Holding Registers) interpreted as signed integer. The result is bound to the placeholder `_` and thus can be accessed in later commands.</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>readBCD(slaveID,register)</td>
+            <td>reads 1 16bit register from slave slaveID using function 3 (Read Multiple Holding Registers) interpreted as BCD. The result is bound to the placeholder `_` and thus can be accessed in later commands.</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>read32(slaveID,register)</td>
+            <td>reads 2 16bit registers from slave slaveID using function 3 (Read Multiple Holding Registers) interpreted as unsigned integer. The result is bound to the placeholder `_` and thus can be accessed in later commands.</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>read32Signed(slaveID,register)</td>
+            <td>reads 2 16bit registers from slave slaveID using function 3 (Read Multiple Holding Registers) interpreted as signed integer. The result is bound to the placeholder `_` and thus can be accessed in later commands.</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>read32BCD(slaveID,register)</td>
+            <td>reads 2 16bit register from slave slaveID using function 3 (Read Multiple Holding Registers) interpreted as BCD. The result is bound to the placeholder `_` and thus can be accessed in later commands.</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>readFloat(slaveID,register)</td>
+            <td>reads 2 16bit registers from slave slaveID using function 3 (Read Multiple Holding Registers) interpreted as float. The result is bound to the placeholder `_` and thus can be accessed in later commands.</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
             <td>write(slaveId,register,value) or write([slaveId,register,value],..,[slaveId,register,value])</td>
             <td>write register: MODBUS function 6 (int) or function 16 (float)</td>
         </tr>
@@ -294,6 +324,11 @@
         </tr>
         <tr>
             <td>&#160;</td>
+            <td>powerReset([sn])</td>
+            <td>YOCTOPUCE resets the power counter of the Yocto-Watt module</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
             <td>slider(c,v)</td>
             <td>move slider c to value v</td>
         </tr>
@@ -306,6 +341,11 @@
             <td>&#160;</td>
             <td>sleep(&lt;float&gt;)</td>
             <td>sleep: add a delay of &lt;float&gt; seconds</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>santoker(&lt;target&gt;,&lt;value&gt;)</td>
+            <td>sends integer &lt;value&gt; to &lt;target&gt; register specified by as byte in hex notation like “fa” via the Santoker Network protocol</td>
         </tr>
         <tr>
             <td>S7 Command</td>
