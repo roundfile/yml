@@ -40,7 +40,8 @@ if /i "%APPVEYOR%" NEQ "True" (
 for /r %%a IN (ui\*.ui) DO (
     echo %%~na
     rem %PYUIC% -o uic\%%~na.py --from-imports ui\%%~na.ui
-    %PYUIC% -o uic\%%~na.py ui\%%~na.ui
+    rem %PYUIC% -o uic\%%~na.py ui\%%~na.ui
+    %PYTHON_PATH%\scripts\%PYUIC% -o uic\%%~na.py ui\%%~na.ui
 )
 
 ::
