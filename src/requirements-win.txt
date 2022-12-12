@@ -26,5 +26,6 @@ PyQt6==6.4.0 #6.3.1
 PyQt6-WebEngine==6.4.0 #6.3.1
 openpyxl==3.0.10 #3.0.9
 keyring==23.11.0 #23.9.3 # builds with 19.3.0 and 20.0.0 fail with py2app/pyinstaller
-lxml==4.9.1 #4.7.1
+# temporarily removed until a wheel for Python 3.11 is available lxml==4.9.1 #4.7.1
+..\.ci\lxml-4.9.0-cp311-cp311-win_amd64.whl
 prettytable==3.5.0 #3.4.1 # >1.0.0 fail to be packed by py2app, but a monkey patch in main.py helps
