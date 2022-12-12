@@ -1,82 +1,4 @@
-;
-; .nsi command line options:
-;    /DPRODUCT_VERSION=ww.xx.yy.zz  -explicitly set the product version, default is 0.0.0.0
-;    /DLEGACY=True|False            -True is a build for legacy Windows, default is False
-;    /DSIGN=True|False              -True if the build is part of the process to sign files, default is False (SignArtisan is not a part of CI)
-;
-; installer command line options
-;    /S                             -silent operation
-
 RequestExecutionLevel admin
-
-!include LogicLib.nsh
-!include FileFunc.nsh
-!include WinVer.nsh
-!include x64.nsh
-!include "MUI.nsh"
-Var PARAMS
-Var REMOVE_SETTINGS
-
-SetCompressor lzma
-
-; HM NIS Edit Wizard helper defines
-!define pyinstallerOutputDir 'dist/artisan'
-!define PRODUCT_NAME "Artisan"
-!define PRODUCT_PUBLISHER "The Artisan Team"
-!define PRODUCT_WEB_SITE "https://github.com/artisan-roaster-scope/artisan/blob/master/README.md"
-;Note for the next two keys, do not use their true address explicitly.  The 64bit Windows API will auto redirect them to
-;   Software\Wow6432Node\Microsoft\Windows\CurrentVersion\...
-!define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\artisan.exe"
-!define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
-!define PRODUCT_UNINST_ROOT_KEY "HKLM"
-
-;Special commandline options
-;Product version should be defined on the command line '/DPRODUCT_VERSION=ww.xx.yy.zz'
-!define /ifndef PRODUCT_VERSION "0.0.0.0"
-!define /ifndef SIGN "False"
-!define /ifndef LEGACY "False"
-
-Caption "${PRODUCT_NAME} Installer"
-VIProductVersion ${PRODUCT_VERSION}
-VIAddVersionKey ProductName "${PRODUCT_NAME}"
-VIAddVersionKey Comments "Installer for Artisan"
-VIAddVersionKey CompanyName ""
-VIAddVersionKey LegalCopyright "Copyright 2010-2022, Artisan developers. GNU General Public License"
-VIAddVersionKey FileVersion "${PRODUCT_VERSION}"
-VIAddVersionKey FileDescription "${PRODUCT_NAME} Installer"
-VIAddVersionKey ProductVersion "${PRODUCT_VERSION}"
-
-; MUI Settings
-!define MUI_ABORTWARNING
-!define MUI_ICON "artisan.ico"
-!define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
-
-; Welcome page
-!insertmacro MUI_PAGE_WELCOME
-; Directory page
-!insertmacro MUI_PAGE_DIRECTORY
-; Instfiles page
-!insertmacro MUI_PAGE_INSTFILES
-; Finish page
-!insertmacro MUI_PAGE_FINISH
-
-; Uninstaller pages
-!insertmacro MUI_UNPAGE_INSTFILES
-
-; Language files
-!insertmacro MUI_LANGUAGE "English"
-
-; Reserve files
-!insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
-
-; MUI end ------
-
-Name "${PRODUCT_NAME}"
-OutFile "Setup-${PRODUCT_NAME}-${PRODUCT_VERSION}.exe"
-InstallDir "C:\Program Files\Artisan"
-InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
-ShowInstDetails show
-ShowUnInstDetails show
 
 !macro APP_ASSOCIATE_URL FILECLASS DESCRIPTION COMMANDTEXT COMMAND
   WriteRegStr HKCR "${FILECLASS}" "" `${DESCRIPTION}`
@@ -129,23 +51,132 @@ ShowUnInstDetails show
 !macroEnd
 
 
+;Unused macros ------
+!macro APP_ASSOCIATE_EX EXT FILECLASS DESCRIPTION ICON VERB DEFAULTVERB SHELLNEW COMMANDTEXT COMMAND
+  ; Backup the previously associated file class
+  ReadRegStr $R0 HKCR ".${EXT}" ""
+  WriteRegStr HKCR ".${EXT}" "${FILECLASS}_backup" "$R0"
+  WriteRegStr HKCR ".${EXT}" "" "${FILECLASS}"
+  StrCmp "${SHELLNEW}" "0" +2
+  WriteRegStr HKCR ".${EXT}\ShellNew" "NullFile" ""
+  WriteRegStr HKCR "${FILECLASS}" "" `${DESCRIPTION}`
+  WriteRegStr HKCR "${FILECLASS}\DefaultIcon" "" `${ICON}`
+  WriteRegStr HKCR "${FILECLASS}\shell" "" `${DEFAULTVERB}`
+  WriteRegStr HKCR "${FILECLASS}\shell\${VERB}" "" `${COMMANDTEXT}`
+  WriteRegStr HKCR "${FILECLASS}\shell\${VERB}\command" "" `${COMMAND}`
+!macroend
+
+!macro APP_ASSOCIATE_ADDVERB FILECLASS VERB COMMANDTEXT COMMAND
+  WriteRegStr HKCR "${FILECLASS}\shell\${VERB}" "" `${COMMANDTEXT}`
+  WriteRegStr HKCR "${FILECLASS}\shell\${VERB}\command" "" `${COMMAND}`
+!macroend
+
+!macro APP_ASSOCIATE_REMOVEVERB FILECLASS VERB
+  DeleteRegKey HKCR `${FILECLASS}\shell\${VERB}`
+!macroend
+
+!macro APP_ASSOCIATE_GETFILECLASS OUTPUT EXT
+  ReadRegStr ${OUTPUT} HKCR ".${EXT}" ""
+!macroend
+
+; !defines for use with SHChangeNotify
+!ifdef SHCNE_ASSOCCHANGED
+!undef SHCNE_ASSOCCHANGED
+!endif
+!define SHCNE_ASSOCCHANGED 0x08000000
+!ifdef SHCNF_FLUSH
+!undef SHCNF_FLUSH
+!endif
+!define SHCNF_FLUSH        0x1000
+
+!macro UPDATEFILEASSOC
+; Using the system.dll plugin to call the SHChangeNotify Win32 API function so we
+; can update the shell.
+  System::Call "shell32::SHChangeNotify(i,i,i,i) (${SHCNE_ASSOCCHANGED}, ${SHCNF_FLUSH}, 0, 0)"
+!macroend
+;End Unused macros ------
+
+
+; HM NIS Edit Wizard helper defines
+!define pyinstallerOutputDir 'dist/artisan'
+!define PRODUCT_NAME "Artisan"
+!define PRODUCT_PUBLISHER "The Artisan Team"
+!define PRODUCT_WEB_SITE "https://github.com/artisan-roaster-scope/artisan/blob/master/README.md"
+!define PRODUCT_DIR_REGKEY "Software\Microsoft\Windows\CurrentVersion\App Paths\artisan.exe"
+!define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
+!define PRODUCT_UNINST_ROOT_KEY "HKLM"
+
+;Special commandline options
+;Product version can be defined on the command line '/DPRODUCT_VERSION=ww.xx.yy.zz'
+;  and will override the version explicitly set below.
+!define /ifndef PRODUCT_VERSION "0.0.0.0"
+!define /ifndef SIGN "False"
+!define /ifndef LEGACY "False"
+
+Caption "${PRODUCT_NAME} Installer"
+VIProductVersion ${PRODUCT_VERSION}
+VIAddVersionKey ProductName "${PRODUCT_NAME}"
+VIAddVersionKey Comments "Installer for Artisan"
+VIAddVersionKey CompanyName ""
+VIAddVersionKey LegalCopyright "Copyright 2010-2022, Artisan developers. GNU General Public License"
+VIAddVersionKey FileVersion "${PRODUCT_VERSION}"
+VIAddVersionKey FileDescription "${PRODUCT_NAME} Installer"
+VIAddVersionKey ProductVersion "${PRODUCT_VERSION}"
+
+SetCompressor lzma
+
+!include x64.nsh
+
+; MUI 1.67 compatible ------
+!include "MUI.nsh"
+
+; MUI Settings
+!define MUI_ABORTWARNING
+!define MUI_ICON "artisan.ico"
+!define MUI_UNICON "${NSISDIR}\Contrib\Graphics\Icons\modern-uninstall.ico"
+
+; Welcome page
+!insertmacro MUI_PAGE_WELCOME
+; Directory page
+!insertmacro MUI_PAGE_DIRECTORY
+; Instfiles page
+!insertmacro MUI_PAGE_INSTFILES
+; Finish page
+!insertmacro MUI_PAGE_FINISH
+
+; Uninstaller pages
+!insertmacro MUI_UNPAGE_INSTFILES
+
+; Language files
+!insertmacro MUI_LANGUAGE "English"
+
+; Reserve files
+!insertmacro MUI_RESERVEFILE_INSTALLOPTIONS
+
+; MUI end ------
+
+Name "${PRODUCT_NAME}"
+OutFile "Setup-${PRODUCT_NAME}-${PRODUCT_VERSION}.exe"
+InstallDir "C:\Program Files\Artisan"
+InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
+ShowInstDetails show
+ShowUnInstDetails show
+
+!include WinVer.nsh
 
 Function .onInit
-  ; Warn and abort if Win install and <Windows 10
   ${If} ${LEGACY} == "False"
   ${AndIfNot} ${AtLeastWin10}
     MessageBox mb_iconStop "Artisan requires Windows 10 or later to install and run."
     Abort
   ${EndIf}
 
-  ; Warn and abort if Win Legacy install and >Windows 8
   ${If} ${LEGACY} == "True"
   ${AndIf} ${AtLeastWin10}
     MessageBox mb_iconStop "Artisan Legacy builds require 64 bit Windows 7 or Windows 8 to install and run."
     Abort
   ${EndIf}
 
-  ; Warn and abort if Win Legacy install and 32bit Windows
   ${If} ${LEGACY} == "True"
   ${AndIfNot} ${AtLeastWin7}
     MessageBox mb_iconStop "Artisan Legacy builds require 64 bit Windows 7 or Windows 8 to install and run."
@@ -153,19 +184,18 @@ Function .onInit
   ${EndIf}
   !insertmacro IsRunning
 
-  ; Check for 64bit Windows
-  ${IfNot} ${RunningX64}
-    MessageBox MB_OK "You are not using a 64bit system.\nSorry, we can not install Artisan on your system."
-    Abort
-  ${EndIf}
+  ${If} ${RunningX64}
+    ReadRegStr $R0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" \
+    "UninstallString"
+    StrCmp $R0 "" done
 
-  ; Check for Artisan already installed
-  ReadRegStr $R0 ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString"
-  ${IfNot} $R0 == ""
     MessageBox MB_OKCANCEL|MB_ICONEXCLAMATION \
     "${PRODUCT_NAME} is already installed. $\n$\nClick `OK` to remove the \
     previous version or `Cancel` to cancel this upgrade." /SD IDOK \
     IDOK uninst
+    Abort
+  ${Else}
+    MessageBox MB_OK "You are not using a 64bit system.\nSorry, we can not install Artisan on your system."
     Abort
   ${EndIf}
 
@@ -175,11 +205,11 @@ Function .onInit
     IfSilent mysilent nosilent
 
   mysilent:
-    ExecWait '$R0 /S --keepsettings _?=$INSTDIR' ;Do not copy the uninstaller to a temp file
+    ExecWait '$R0 /S _?=$INSTDIR' ;Do not copy the uninstaller to a temp file
     IfErrors no_remove_uninstaller done
 
   nosilent:
-    ExecWait '$R0 --keepsettings _?=$INSTDIR' ;Do not copy the uninstaller to a temp file
+    ExecWait '$R0 _?=$INSTDIR' ;Do not copy the uninstaller to a temp file
     IfErrors no_remove_uninstaller done
 
   no_remove_uninstaller:
@@ -190,6 +220,7 @@ Function .onInit
 
   done:
 FunctionEnd
+
 
 
 Section "MainSection" SEC01
@@ -256,48 +287,18 @@ SectionEnd
 
 
 Function un.onUninstSuccess
-  ; new stuff still testing
-    SetOutPath "$PROGRAMFILES"
-    ${If} $INSTDIR == "C:\Program Files\Artisan"
-      MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories MATCH" /SD IDOK
-    ${Else}
-      MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories DO NOT MATCH" /SD IDOK
-    ${EndIf}
-  ClearErrors
-  RMDir /REBOOTOK "$INSTDIR"
-    ${If} ${Errors}
-      MessageBox MB_OK|MB_ICONEXCLAMATION "INSTDIR made an error" /SD IDOK
-    ${Else}
-      MessageBox MB_OK|MB_ICONEXCLAMATION "INSTDIR no error" /SD IDOK
-    ${EndIf}
-HideWindow
-  IfSilent +2
+  HideWindow
+  IfSilent +2 0
     MessageBox MB_ICONINFORMATION|MB_OK "$(^Name) was successfully removed from your computer." /SD IDOK
 FunctionEnd
 
 Function un.onInit
     !insertmacro IsRunning
-    
-    IfSilent skip_whensilent
-        MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Are you sure you want to remove $(^Name)?" IDYES +2
-        Abort
-    
-        ;look for option on the command line when uninstall is exec'd from this installer
-        ${GetParameters} $PARAMS
-        ClearErrors
-        ${GetOptions} $PARAMS "--keepsettings" $2
-        ${IfNot} ${Errors}
-            MessageBox mb_ok "Got KeepSettings"
-            StrCpy $REMOVE_SETTINGS "False"
-        ${Else}
-            MessageBox mb_ok "Did not get KeepSettings"
-            MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Do you want to permanently remove all saved $(^Name) settings?" IDNO +2
-            StrCpy $REMOVE_SETTINGS "True"
-        ${EndIf}
-    
-        skip_whensilent:
-    HideWindow
 
+    IfSilent +3
+        MessageBox MB_ICONQUESTION|MB_YESNO|MB_TOPMOST "Are you sure you want to completely remove $(^Name) and all of its components?" IDYES +2
+        Abort
+    HideWindow
 
 FunctionEnd
 
@@ -327,7 +328,6 @@ Section Uninstall
   RMDir /r "$INSTDIR\numpy"
   RMDir /r "$INSTDIR\openpyxl"
   RMDir /r "$INSTDIR\PIL"
-  RMDir /r "$INSTDIR\psutil"
   RMDir /r "$INSTDIR\pyinstaller"
   RMDir /r "$INSTDIR\pytz"
   RMDir /r "$INSTDIR\pywin32_system32"
@@ -408,14 +408,7 @@ Section Uninstall
   Delete "$SMPROGRAMS\Artisan\Artisan.lnk"
 
   RMDir "$SMPROGRAMS\Artisan"
-;  ; new stuff still testing
-;    SetOutPath "$PROGRAMFILES"
-;    ${If} $INSTDIR == "C:\Program Files\Artisan"
-;      MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories MATCH" /SD IDOK
-;    ${Else}
-;      MessageBox MB_OK|MB_ICONEXCLAMATION "The install directories DO NOT MATCH" /SD IDOK
-;    ${EndIf}
-;  RMDir "$INSTDIR"
+  RMDir "$INSTDIR"
 
   DeleteRegKey ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}"
   DeleteRegKey HKLM "${PRODUCT_DIR_REGKEY}"
@@ -435,10 +428,6 @@ Section Uninstall
   DeleteRegKey HKCR "artisan\shell"
   DeleteRegKey HKCR "artisan\shell\open\command"
   DeleteRegKey HKCR "artisan"
-  
-;  ${If} $REMOVE_SETTINGS == "True"
-;  ${EndIf}
-  
 
   SetAutoClose true
 SectionEnd

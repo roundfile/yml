@@ -40,14 +40,13 @@ if /i "%APPVEYOR%" NEQ "True" (
 for /r %%a IN (ui\*.ui) DO (
     echo %%~na
     rem %PYUIC% -o uic\%%~na.py --from-imports ui\%%~na.ui
-    rem %PYUIC% -o uic\%%~na.py ui\%%~na.ui
-    %PYTHON_PATH%scripts\%PYUIC% -o uic\%%~na.py ui\%%~na.ui
+    %PYUIC% -o uic\%%~na.py ui\%%~na.ui
 )
 
 ::
 :: convert help files from .xlsx to .py
 ::
-%PYTHON_PATH%python.exe ..\doc\help_dialogs\Script\xlsx_to_artisan_help.py all
+%PYTHON_PATH%\python.exe ..\doc\help_dialogs\Script\xlsx_to_artisan_help.py all
 
 ::
 :: Process translation files
