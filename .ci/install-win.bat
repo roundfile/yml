@@ -39,19 +39,19 @@ if /i "%APPVEYOR%" NEQ "True" (
 :: ----------------------------------------------------------------------
 
 echo Python Version
-%PYTHON_PATH%\python -V
+%PYTHON_PATH%python -V
 
 ::
 :: get pip up to date
 ::
-%PYTHON_PATH%\python.exe -m pip install --upgrade pip
-%PYTHON_PATH%\python.exe -m pip install wheel
+%PYTHON_PATH%python.exe -m pip install --upgrade pip
+%PYTHON_PATH%python.exe -m pip install wheel
 
 ::
 :: install Artisan required libraries from pip
 ::
-%PYTHON_PATH%\python.exe -m pip install -r src\requirements.txt
-%PYTHON_PATH%\python.exe -m pip install -r src\requirements-%ARTISAN_SPEC%.txt
+%PYTHON_PATH%python.exe -m pip install -r src\requirements.txt
+%PYTHON_PATH%python.exe -m pip install -r src\requirements-%ARTISAN_SPEC%.txt
 
 ::
 :: custom build the pyinstaller bootloader or install a prebuilt
@@ -70,21 +70,21 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     ::
     :: build the bootlaoder and wheel
     echo ***** Running WAF
-    %PYTHON_PATH%\python.exe ./waf all --target-arch=64bit
+    %PYTHON_PATH%python.exe ./waf all --target-arch=64bit
     cd ..
     echo ***** Building Wheel
-    %PYTHON_PATH%\python.exe setup.py -q bdist_wheel
+    %PYTHON_PATH%python.exe setup.py -q bdist_wheel
     if not exist dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 102)
     echo ***** Finished build pyinstaller v%PYINSTALLER_VER%
     ::
     :: install pyinstaller
     echo ***** Start install pyinstaller v%PYINSTALLER_VER%
-    %PYTHON_PATH%\python.exe -m pip install -q dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
+    %PYTHON_PATH%python.exe -m pip install -q dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
     cd ..
 ) else (
     if not exist .ci\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 103)
     echo ***** Start install pyinstaller v%PYINSTALLER_VER%
-    %PYTHON_PATH%\\python.exe -m pip install -q .ci\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
+    %PYTHON_PATH%python.exe -m pip install -q .ci\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
 )
 echo ***** Finished installing pyinstaller v%PYINSTALLER_VER%
 
@@ -104,7 +104,7 @@ if not exist vc_redist.x64.exe (exit /b 104)
 ::
 :: copy the snap7 binary
 ::
-copy %PYTHON_PATH%\Lib\site-packages\snap7\lib\snap7.dll C:\Windows
+copy %PYTHON_PATH%Lib\site-packages\snap7\lib\snap7.dll C:\Windows
 
 ::
 :: download and copy the libusb-win32 dll. NOTE-the version number for libusb is set in the requirements-win*.txt file.
