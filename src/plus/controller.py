@@ -33,7 +33,11 @@ except Exception: # pylint: disable=broad-except
 import platform
 import threading
 import logging
-from typing import Final
+try:
+    from typing import Final
+except ImportError:
+    # for Python 3.7:
+    from typing_extensions import Final
 
 
 

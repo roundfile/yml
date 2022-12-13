@@ -34,7 +34,11 @@ except Exception: # pylint: disable=broad-except
 from artisanlib.util import getDirectory
 from plus import config, util, roast, connection, sync, controller
 from typing import Any, List, Dict  #for Python >= 3.9: can remove 'List' and 'Dict' since type hints can use the generic 'list' and 'dict'
-from typing import Final
+try:
+    from typing import Final
+except ImportError:
+    # for Python 3.7:
+    from typing_extensions import Final
 import threading
 import time
 import logging

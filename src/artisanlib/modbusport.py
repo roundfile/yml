@@ -18,7 +18,11 @@
 import sys
 import time
 import logging
-from typing import Final
+try:
+    from typing import Final
+except ImportError:
+    # for Python 3.7:
+    from typing_extensions import Final
 
 try:
     #ylint: disable = E, W, R, C
@@ -156,7 +160,7 @@ class modbusport():
         self.fail_on_cache_miss = True # if False and request cannot be resolved from optimizer cache while optimizer is active,
             # send individual reading request; if set to True, never send individual data requests while optimizer is on
             # NOTE: if TRUE read requests with force=False (default) will fail
-        self.disconnect_on_error = True # if True we explicitly disconnect the MODBUS connection on IO errors if on MODBUS serial and restart it on next request
+        self.disconnect_on_error = True # if True we explicitly disconnect the MODBUS connection on errors and restart it on next request
 
         self.reset_socket = False # reset socket connection on error (True by default in pymodbus>v2.5.2, False by default in pymodbus v2.3)
 
@@ -216,11 +220,9 @@ class modbusport():
             _log.exception(e)
         self.master = None
         self.clearReadingsCache()
-        self.aw.sendmessage(QApplication.translate('Message', 'MODBUS disconnected'))
 
     def disconnectOnError(self):
-        # we only disconnect on error if mechanism is active, we are no longer connected or there is a IO commError, and we are on serial MODBUS (IP MODBUS reconnects automtically)
-        if self.disconnect_on_error and (self.commError or not self.isConnected()) and self.type < 3:
+        if self.disconnect_on_error and (self.commError or not self.isConnected()):
             self.disconnect()
 
     # t a duration between start and end time in seconds to be formatted in a string as ms
@@ -373,32 +375,29 @@ class modbusport():
                     v)
                 self.aw.addserial(ser_str)
 
-    # first result signals an error
-    # second result signals a server error which requires a disconnect/reconnect
     @staticmethod
     def invalidResult(res,count):
         from pymodbus.pdu import ExceptionResponse
         if res is None:
             _log.info('invalidResult(%d) => None', count)
-            return True, False
+            return True
         elif isinstance(res, ExceptionResponse):
             _log.info('invalidResult(%d) => received exception from device', count)
-            return True, False
+            return True
         elif res.isError():
             _log.info('invalidResult(%d) => pymodbus error: %s', count, res)
-            return True, True
+            return True
         elif res.registers is None:
             _log.info('invalidResult(%d) => res.registers is None', count)
-            return True,False
+            return True
         elif len(res.registers) != count:
             _log.info('invalidResult(%d) => len(res.registers)=%d', count, len(res.registers))
-            return True, False
-        return False, False
+            return True
+        return False
 
     def readActiveRegisters(self):
         if not self.optimizer:
             return
-        error_disconnect = False # set to True if a serious error requiring a disconnect was detected
         try:
             _log.debug('readActiveRegisters()')
             #### lock shared resources #####
@@ -439,9 +438,7 @@ class modbusport():
                                         _log.info('readActive(%d,%d,%d,%d)', slave, code, register, count)
                                         _log.debug(e)
                                         res = None
-                                    error, disconnect = self.invalidResult(res,count)
-                                    if error:
-                                        error_disconnect = error_disconnect or disconnect
+                                    if self.invalidResult(res,count):
                                         if retry > 0:
                                             retry = retry - 1
                                             time.sleep(0.020)
@@ -493,7 +490,7 @@ class modbusport():
 #            _, _, exc_tb = sys.exc_info()
 #            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " readSingleRegister() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             self.aw.qmc.adderror(QApplication.translate('Error Message','Modbus Communication Error'))
-            self.commError = error_disconnect
+            self.commError = True
         finally:
             if self.COMsemaphore.available() < 1:
                 self.COMsemaphore.release(1)
@@ -716,7 +713,6 @@ class modbusport():
         retry = self.readRetries
         if self.aw.seriallogflag:
             tx = time.time()
-        error_disconnect = False # set to True if a serious error requiring a disconnect was detected
         try:
             #### lock shared resources #####
             self.COMsemaphore.acquire(1)
@@ -739,9 +735,7 @@ class modbusport():
                         res = self.master.read_holding_registers(int(register),2,slave=int(slave))
                     else:
                         res = self.master.read_input_registers(int(register),2,slave=int(slave))
-                    error, disconnect = self.invalidResult(res,2)
-                    if error:
-                        error_disconnect = error_disconnect or disconnect
+                    if self.invalidResult(res,2):
                         if retry > 0:
                             retry = retry - 1
                             #time.sleep(0.020)  # no retry delay as timeout time should already be large enough
@@ -768,7 +762,7 @@ class modbusport():
 #            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " readFloat() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             if self.aw.qmc.flagon:
                 self.aw.qmc.adderror(QApplication.translate('Error Message','Modbus Communication Error'))
-            self.commError = error_disconnect
+            self.commError = True
             return None
         finally:
             if self.COMsemaphore.available() < 1:
@@ -812,7 +806,6 @@ class modbusport():
         retry = self.readRetries
         if self.aw.seriallogflag:
             tx = time.time()
-        error_disconnect = False # set to True if a serious error requiring a disconnect was detected
         try:
             #### lock shared resources #####
             self.COMsemaphore.acquire(1)
@@ -835,9 +828,7 @@ class modbusport():
                         res = self.master.read_holding_registers(int(register),2,slave=int(slave))
                     else:
                         res = self.master.read_input_registers(int(register),2,slave=int(slave))
-                    error, disconnect = self.invalidResult(res,2)
-                    if error:
-                        error_disconnect = error_disconnect or disconnect
+                    if self.invalidResult(res,2):
                         if retry > 0:
                             retry = retry - 1
                             #time.sleep(0.020)  # no retry delay as timeout time should already be larger enough
@@ -865,7 +856,7 @@ class modbusport():
 #            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " readBCD() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             if self.aw.qmc.flagon:
                 self.aw.qmc.adderror(QApplication.translate('Error Message','Modbus Communication Error'))
-            self.commError = error_disconnect
+            self.commError = True
             return None
         finally:
             if self.COMsemaphore.available() < 1:
@@ -922,6 +913,7 @@ class modbusport():
                 if res is not None and res.bits[0]:
                     return 1
                 return 0
+            _log.info('RES %s',res)
             decoder = getBinaryPayloadDecoderFromRegisters(res.registers, self.byteorderLittle, self.wordorderLittle)
             r = decoder.decode_16bit_uint()
             _log.debug('  res.registers => %s', res.registers)
@@ -943,7 +935,6 @@ class modbusport():
         retry = self.readRetries
         if self.aw.seriallogflag:
             tx = time.time()
-        error_disconnect = False # set to True if a serious error requiring a disconnect was detected
         try:
             #### lock shared resources #####
             self.COMsemaphore.acquire(1)
@@ -976,9 +967,7 @@ class modbusport():
                     except Exception as ex: # pylint: disable=broad-except
                         _log.debug(ex)
                         res = None
-                    error, disconnect = self.invalidResult(res,1)
-                    if error:
-                        error_disconnect = error_disconnect or disconnect
+                    if self.invalidResult(res,1):
                         if retry > 0:
                             retry = retry - 1
                             #time.sleep(0.020)  # no retry delay as timeout time should already be larger enough
@@ -1017,7 +1006,7 @@ class modbusport():
 #            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " readSingleRegister() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             if self.aw.qmc.flagon:
                 self.aw.qmc.adderror(QApplication.translate('Error Message','Modbus Communication Error'))
-            self.commError = error_disconnect
+            self.commError = True
             return None
         finally:
             if self.COMsemaphore.available() < 1:
@@ -1060,7 +1049,6 @@ class modbusport():
         retry = self.readRetries
         if self.aw.seriallogflag:
             tx = time.time()
-        error_disconnect = False # set to True if a serious error requiring a disconnect was detected
         try:
             #### lock shared resources #####
             self.COMsemaphore.acquire(1)
@@ -1086,9 +1074,7 @@ class modbusport():
                         res = self.master.read_holding_registers(int(register),2,slave=int(slave))
                     else:
                         res = self.master.read_input_registers(int(register),2,slave=int(slave))
-                    error, disconnect = self.invalidResult(res,2)
-                    if error:
-                        error_disconnect = error_disconnect or disconnect
+                    if self.invalidResult(res,2):
                         if retry > 0:
                             retry = retry - 1
                             #time.sleep(0.020)  # no retry delay as timeout time should already be larger enough
@@ -1118,7 +1104,7 @@ class modbusport():
 #            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " readFloat() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             if self.aw.qmc.flagon:
                 self.aw.qmc.adderror(QApplication.translate('Error Message','Modbus Communication Error'))
-            self.commError = error_disconnect
+            self.commError = True
             return None
         finally:
             if self.COMsemaphore.available() < 1:
@@ -1157,13 +1143,16 @@ class modbusport():
     # if force the readings cache is ignored and fresh readings are requested
     def readBCDint(self,slave,register,code=3,force=False):
         _log.debug('readBCDint(%d,%d,%d,%s)', slave, register, code, force)
+#        import logging
+#        logging.basicConfig()
+#        log = logging.getLogger()
+#        log.setLevel(logging.DEBUG)
         if slave == 0:
             return None
         r = None
         retry = self.readRetries
         if self.aw.seriallogflag:
             tx = time.time()
-        error_disconnect = False # set to True if a serious error requiring a disconnect was detected
         try:
             #### lock shared resources #####
             self.COMsemaphore.acquire(1)
@@ -1188,9 +1177,7 @@ class modbusport():
                             res = self.master.read_input_registers(int(register),1,slave=int(slave))
                     except Exception: # pylint: disable=broad-except
                         res = None
-                    error, disconnect = self.invalidResult(res,1)
-                    if error:
-                        error_disconnect = error_disconnect or disconnect
+                    if self.invalidResult(res,1):
                         if retry > 0:
                             retry = retry - 1
                             # time.sleep(0.020)  # no retry delay as timeout time should already be larger enough
@@ -1218,7 +1205,7 @@ class modbusport():
 #            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " readBCDint() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             if self.aw.qmc.flagon:
                 self.aw.qmc.adderror(QApplication.translate('Error Message','Modbus Communication Error'))
-            self.commError = error_disconnect
+            self.commError = True
             return None
         finally:
             if self.COMsemaphore.available() < 1:

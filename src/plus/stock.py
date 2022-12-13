@@ -32,7 +32,11 @@ except Exception: # pylint: disable=broad-except
 
 from artisanlib.util import decodeLocal, encodeLocal, getDirectory
 from plus import config, connection, controller, util
-from typing import Final
+try:
+    from typing import Final
+except ImportError:
+    # for Python 3.7:
+    from typing_extensions import Final
 import copy
 import json
 import time

@@ -20,7 +20,12 @@ from multiprocessing.sharedctypes import Value
 from ctypes import c_bool, c_double
 import serial
 import logging
-from typing import Final
+try:
+    from typing import Final
+except ImportError:
+    # for Python 3.7:
+    from typing_extensions import Final
+
 import time
 
 _log: Final = logging.getLogger(__name__)

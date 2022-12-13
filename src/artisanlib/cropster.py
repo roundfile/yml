@@ -5,7 +5,11 @@
 import time as libtime
 import xlrd
 import logging
-from typing import Final
+try:
+    from typing import Final
+except ImportError:
+    # for Python 3.7:
+    from typing_extensions import Final
 
 try:
     #ylint: disable = E, W, R, C

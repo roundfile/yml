@@ -30,7 +30,11 @@ except Exception: # pylint: disable=broad-except
 
 from artisanlib import __version__
 from typing import Any, Optional, Dict  #for Python >= 3.9: can remove 'Dict' since type hints can now use the generic 'dict'
-from typing import Final
+try:
+    from typing import Final
+except ImportError:
+    # for Python 3.7:
+    from typing_extensions import Final
 
 import datetime
 import gzip

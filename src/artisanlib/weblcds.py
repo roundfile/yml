@@ -29,7 +29,7 @@ from geventwebsocket.handler import WebSocketHandler
 from platform import system as psystem
 
 if psystem() != 'Windows':
-    from signal import SIGQUIT
+    from signal import SIGQUIT  # pylint: disable=no-name-in-module  #dave windows only
 
 import multiprocessing as mp
 
