@@ -17239,13 +17239,7 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
             )
         elif modifiers == Qt.KeyboardModifier.AltModifier:
             # ALT-click (OPTION on macOS) sends the log file by email
-            #dave start
-            import zipfile
-            with zipfile.ZipFile(os.path.join(getDataDirectory(),"hello.zip"), mode="w") as archive:
-                archive.write(os.path.join(getDataDirectory(),"artisan.log"))
-            foo = aw.ArtisanOpenFileDialog(path=getDataDirectory(),ext='*.log')
-            #dave end
-            #dave aw.sendLog()
+            aw.sendLog()
         else:
             plus.controller.toggle(aw)
 
@@ -27647,67 +27641,53 @@ class ApplicationWindow(QMainWindow):
 
 
 
-                #####
-                ##### START of autoCHARGE/autoDROP debug
-                ##
-                ## uncomment this section to run BTbreak() to re-calc CHARGE and DROP for debugging
-                ##
-                _log.info("PRINT #########")
-                _log.info("PRINT autoCHARGE/autoDROP debug")
-                chargetime = 0
-                if self.qmc.timeindex[0] > -1:
-                    chargetime = self.qmc.timex[self.qmc.timeindex[0]]
-                    _log.info("PRINT CHARGE Idx: %s (%s@%s)",self.qmc.timeindex[0],stringfromseconds(self.qmc.timex[self.qmc.timeindex[0]]-chargetime),self.qmc.temp2[self.qmc.timeindex[0]])
-                if aw.qmc.timeindex[6]:
-                    _log.info("PRINT DROP Idx: %s (%s@%s)",self.qmc.timeindex[6],stringfromseconds(self.qmc.timex[self.qmc.timeindex[6]]-chargetime),self.qmc.temp2[self.qmc.timeindex[6]])
-                if aw.qmc.mode == 'C':
-                    o = 0.5
-                else:
-                    o = 0.5 * 1.8
-                if aw.qmc.mode == 'C':
-                    oo = 0.2
-                else:
-                    oo = 0.2 * 1.8
-                autoChargeIdx = 0
-                autoDropIdx = 0
-                for i in range(len(self.qmc.temp2)):
-                    if i>=5 and self.qmc.temp2 is not None and self.qmc.temp2 != -1:
-                        # autoCharge:
-                        if not autoChargeIdx and ((self.qmc.mode == 'C' and self.qmc.temp2[i] > 77) or (self.qmc.mode == 'F' and self.qmc.temp2[-1] > 170)):
-                            b = self.BTbreak(i,o)
-                            if b > 0:
-                                autoChargeIdx = i - b + 1
-                                _log.info("PRINT autoChargeIdx: %s (%s@%s)",autoChargeIdx,stringfromseconds(self.qmc.timex[autoChargeIdx]-chargetime),self.qmc.temp2[autoChargeIdx])
-                                # add event marker
-                                self.qmc.specialevents.append(autoChargeIdx)
-                                self.qmc.specialeventstype.append(4)
-                                self.qmc.specialeventsStrings.append("CHARGE")
-                                self.qmc.specialeventsvalue.append(0)
-                        if autoChargeIdx and not autoDropIdx and ((self.qmc.timex[i] - chargetime) > 420) and  ((self.qmc.mode == 'C' and self.qmc.temp2[i] > 160) or (self.qmc.mode == 'F' and self.qmc.temp2[i] > 320)):
-                            b = self.BTbreak(i,oo)
-                            if b > 0:
-                                autoDropIdx = i - b + 1
-                                _log.info("PRINT autoDropIdx: %s (%s@%s)",autoDropIdx,stringfromseconds(self.qmc.timex[autoDropIdx]-chargetime),self.qmc.temp2[autoDropIdx])
-                                # add event marker
-                                self.qmc.specialevents.append(autoDropIdx)
-                                self.qmc.specialeventstype.append(4)
-                                self.qmc.specialeventsStrings.append("DROP")
-                                self.qmc.specialeventsvalue.append(0)
-                #dave start
-                try:
-                    if log_adt:
-                        pass
-                except:
-                    from log2d import Log
-                    log_adt = Log("adt", path="c:\\temp\\autodroptest", to_file=True, fmt='%(message)s')
-                Log.adt.info(" ")
-                Log.adt.info(filename.replace("/","\\"))  #windows path requires backslashes
-                if self.qmc.timeindex[0] != autoChargeIdx:
-                    Log.adt.info(f'autoCharge {autoChargeIdx - self.qmc.timeindex[0]}')
-                if self.qmc.timeindex[6] != autoDropIdx:
-                    Log.adt.info(f'autoDrop {autoDropIdx - self.qmc.timeindex[6]}')
-                #dave end
-                ##### END of autoCHARGE/autoDROP debug
+#                #####
+#                ##### START of autoCHARGE/autoDROP debug
+#                ##
+#                ## uncomment this section to run BTbreak() to re-calc CHARGE and DROP for debugging
+#                ##
+#                _log.info("PRINT #########")
+#                _log.info("PRINT autoCHARGE/autoDROP debug")
+#                chargetime = 0
+#                if self.qmc.timeindex[0] > -1:
+#                    chargetime = self.qmc.timex[self.qmc.timeindex[0]]
+#                    _log.info("PRINT CHARGE Idx: %s (%s@%s)",self.qmc.timeindex[0],stringfromseconds(self.qmc.timex[self.qmc.timeindex[0]]-chargetime),self.qmc.temp2[self.qmc.timeindex[0]])
+#                if aw.qmc.timeindex[6]:
+#                    _log.info("PRINT DROP Idx: %s (%s@%s)",self.qmc.timeindex[6],stringfromseconds(self.qmc.timex[self.qmc.timeindex[6]]-chargetime),self.qmc.temp2[self.qmc.timeindex[6]])
+#                if aw.qmc.mode == 'C':
+#                    o = 0.5
+#                else:
+#                    o = 0.5 * 1.8
+#                if aw.qmc.mode == 'C':
+#                    oo = 0.2
+#                else:
+#                    oo = 0.2 * 1.8
+#                autoChargeIdx = 0
+#                autoDropIdx = 0
+#                for i in range(len(self.qmc.temp2)):
+#                    if i>=5 and self.qmc.temp2 is not None and self.qmc.temp2 != -1:
+#                        # autoCharge:
+#                        if not autoChargeIdx and ((self.qmc.mode == 'C' and self.qmc.temp2[i] > 77) or (self.qmc.mode == 'F' and self.qmc.temp2[-1] > 170)):
+#                            b = self.BTbreak(i,o)
+#                            if b > 0:
+#                                autoChargeIdx = i - b + 1
+#                                _log.info("PRINT autoChargeIdx: %s (%s@%s)",autoChargeIdx,stringfromseconds(self.qmc.timex[autoChargeIdx]-chargetime),self.qmc.temp2[autoChargeIdx])
+#                                # add event marker
+#                                self.qmc.specialevents.append(autoChargeIdx)
+#                                self.qmc.specialeventstype.append(4)
+#                                self.qmc.specialeventsStrings.append("CHARGE")
+#                                self.qmc.specialeventsvalue.append(0)
+#                        if autoChargeIdx and not autoDropIdx and ((self.qmc.timex[i] - chargetime) > 420) and ((self.qmc.mode == 'C' and self.qmc.temp2[i] > 160) or (self.qmc.mode == 'F' and self.qmc.temp2[i] > 320)):
+#                            b = self.BTbreak(i,oo)
+#                            if b > 0:
+#                                autoDropIdx = i - b + 1
+#                                _log.info("PRINT autoDropIdx: %s (%s@%s)",autoDropIdx,stringfromseconds(self.qmc.timex[autoDropIdx]-chargetime),self.qmc.temp2[autoDropIdx])
+#                                # add event marker
+#                                self.qmc.specialevents.append(autoDropIdx)
+#                                self.qmc.specialeventstype.append(4)
+#                                self.qmc.specialeventsStrings.append("DROP")
+#                                self.qmc.specialeventsvalue.append(0)
+#                ##### END of autoCHARGE/autoDROP debug
 
 
                 #Plot everything
@@ -33448,8 +33428,8 @@ class ApplicationWindow(QMainWindow):
             if platform.system().startswith('Windows'):
                 return 'Windows', platform.release(), platform.machine()
             # we assume Linux
-            if os.uname()[4][:3] == 'arm': # pylint: disable=no-member  #dave  windows only
-                return 'RPi',platform.release(),os.uname()[4]  # pylint: disable=no-member  #dave  windows only
+            if os.uname()[4][:3] == 'arm':
+                return 'RPi',platform.release(),os.uname()[4]
             try:
                 lib,version = platform.libc_ver()
                 return 'Linux',f'{lib} {version}', platform.machine()
