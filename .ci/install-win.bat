@@ -84,8 +84,9 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
 ) else (
     if not exist .ci\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 103)
     echo ***** Start install pyinstaller v%PYINSTALLER_VER%
-    :: %PYTHON_PATH%\\python.exe -m pip install -q .ci\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
-)
+)    
+::    %PYTHON_PATH%\\python.exe -m pip install -q .ci\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
+::)
 echo ***** Finished installing pyinstaller v%PYINSTALLER_VER%
 
 ::
