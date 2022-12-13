@@ -4,7 +4,7 @@ BTlcd=true
 Delay=2000
 ETcurve=true
 ETlcd=true
-ExtraEventSamplingDelay=5000
+ExtraEventSamplingDelay=0
 Oversampling=true
 roastertype_setup=Probatone
 

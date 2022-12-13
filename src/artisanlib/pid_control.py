@@ -1145,7 +1145,7 @@ class PIDcontrol():
         self.pOnE = True # True for Proposional on Error mode, False for Proposional on Measurement Mode
         # pidSource
         #   either the TC4 input channel from [1,..,4] if self.qmc.device == 19 (Arduino/TC4)
-        #   in all other cases (HOTTOP, MODBUS,..), 1 is interpreted as BT and 2 as ET, 3 as 0xT1, 4 as 0xT2, 5 as 1xT1, ...
+        #   in all other cases (HOTTOP, MODBUS,..), 1 is interpreted as BT and 2 as ET
         self.pidSource = 1
         self.pidCycle = 1000
         # the positive target should increase with positive PID duty
@@ -1481,19 +1481,20 @@ class PIDcontrol():
             return self.svRampSoak(tx - self.time_pidON)
         if self.svMode == 2 and self.aw.qmc.background:
             # Follow Background mode
+            followBT = True # if false, follow ET
             if self.aw.qmc.device == 19 and self.aw.pidcontrol.externalPIDControl(): # in case we run TC4 with the PIDfirmware
                 if int(self.aw.ser.arduinoETChannel) == self.pidSource: # we observe the ET
-                    followCurveNr = 1
+                    followBT = False
                 elif int(self.aw.ser.arduinoBTChannel) == self.pidSource: # we observe the BT
-                    followCurveNr = 2
+                    followBT = True
                 else:
-                    # we do not know which extra background device curve holds the selcted PID source temperatures
                     return None
             else:
-                followCurveNr = self.pidSource
-            # followCurveNr indicates which curve the PID should follow (take the SV from)
-            #  1: BT, 2: ET, 3: as 0xT1, 4: as 0xT2, 5: as 1xT1, ...
+                followBT = bool(self.pidSource == 1)
 
+#            if self.aw.qmc.timeindex[0] < 0 or self.aw.qmc.timeindex[6] > 0:
+#                # before and after DROP the SV configured in the dialog is returned (min/maxed)
+#                return max(self.aw.pidcontrol.svSliderMin,(min(self.aw.pidcontrol.svSliderMax,self.aw.pidcontrol.svValue)))
             if self.aw.qmc.timeindex[6] > 0: # after DROP, the SV configured in the dialog is returned (min/maxed)
                 return max(self.aw.pidcontrol.svSliderMin, min(self.aw.pidcontrol.svSliderMax, self.aw.pidcontrol.svValue))
             if self.aw.qmc.timeindex[0] < 0: # before CHARGE, the CHARGE temp of the background profile is returned
@@ -1501,30 +1502,27 @@ class PIDcontrol():
                     # no CHARGE in background, return manual SV
                     return max(self.aw.pidcontrol.svSliderMin,(min(self.aw.pidcontrol.svSliderMax,self.aw.pidcontrol.svValue)))
                 # if background contains a CHARGE event
-                if followCurveNr == 1: # we observe the BT
-                    res = self.aw.qmc.backgroundBTat(self.aw.qmc.timeB[self.aw.qmc.timeindexB[0]]) # approximated background
-                elif followCurveNr == 2: # we observe the ET
-                    res = self.aw.qmc.backgroundETat(self.aw.qmc.timeB[self.aw.qmc.timeindexB[0]]) # approximated background
-                elif followCurveNr>2: # we observe an extra curve
-                    res = self.aw.qmc.backgroundXTat(followCurveNr-3, self.aw.qmc.timeB[self.aw.qmc.timeindexB[0]])
-                else:
-                    return None
-                if res == -1:
-                    return None # no background value for that time point
+                if followBT:
+                    res = self.aw.qmc.backgroundBTat(self.aw.qmc.timeB[self.aw.qmc.timeindexB[0]]) # smoothed and approximated background
+                else: # in all other cases we observe the ET
+                    res = self.aw.qmc.backgroundETat(self.aw.qmc.timeB[self.aw.qmc.timeindexB[0]]) # smoothed and approximated background
                 return self.smooth_sv(res)
             if ((not self.aw.qmc.timeB or tx+self.svLookahead > self.aw.qmc.timeB[-1]) or (self.aw.qmc.timeindexB[6] > 0 and tx+self.svLookahead > self.aw.qmc.timeB[self.aw.qmc.timeindexB[6]])):
                 # if tx+self.svLookahead > last background data or background has a DROP and tx+self.svLookahead index is beyond that DROP index
                 return None # "deactivate" background follow mode
-            if followCurveNr == 1: # we observe the BT
+            if followBT:
                 res = self.aw.qmc.backgroundSmoothedBTat(tx + self.svLookahead) # smoothed and approximated background
-            elif followCurveNr == 2: # we observe the ET
-                res = self.aw.qmc.backgroundSmoothedETat(tx + self.svLookahead) # smoothed and approximated background
-            elif followCurveNr>2: # we observe an extra curve
-                res = self.aw.qmc.backgroundXTat(followCurveNr-3, tx + self.svLookahead, smoothed=True)
-            else:
-                return None
+                if res == -1:
+                    return None # no background value for that time point
+#                j = self.aw.qmc.backgroundtime2index(tx + self.svLookahead)
+#                res = self.aw.qmc.stemp2B[j] # smoothed background
+                return self.smooth_sv(res)
+            # in all other cases we observe the ET
+            res = self.aw.qmc.backgroundSmoothedETat(tx + self.svLookahead) # smoothed and approximated background
             if res == -1:
                 return None
+#                 j = self.aw.qmc.backgroundtime2index(tx + self.svLookahead)
+#                 res = self.aw.qmc.stemp1B[j] # smoothed background
             return self.smooth_sv(res)
         # return None in manual mode
         return None
@@ -1673,12 +1671,6 @@ class PIDcontrol():
             self.pidKd = kd
             self.aw.sendmessage(QApplication.translate('Message','p-i-d values updated'))
         elif self.aw.qmc.device == 19 and self.aw.pidcontrol.externalPIDControl(): # ArduinoTC4 firmware PID
-            self.pidKp = kp
-            self.pidKi = ki
-            self.pidKd = kd
-            self.pOnE = pOnE
-            if source is not None and source in [1,2,3,4]:
-                self.pidSource = source
             if self.aw.ser.ArduinoIsInitialized:
                 try:
                     #### lock shared resources #####
@@ -1690,7 +1682,10 @@ class PIDcontrol():
                             self.aw.ser.SP.write(str2cmd('PID;T;' + str(kp) + ';' + str(ki) + ';' + str(kd) + '\n'))
                         else:
                             self.aw.ser.SP.write(str2cmd('PID;T_POM;' + str(kp) + ';' + str(ki) + ';' + str(kd) + '\n'))
-                        if source is not None and source in [1,2,3,4]:
+                        self.pidKp = kp
+                        self.pidKi = ki
+                        self.pidKd = kd
+                        if source is not None:
                             libtime.sleep(.03)
                             self.aw.ser.SP.write(str2cmd('PID;CHAN;' + str(source) + '\n'))
                         if cycle is not None:
@@ -1707,8 +1702,6 @@ class PIDcontrol():
             self.pidKd = kd
             self.pOnE = pOnE
             self.aw.qmc.pid.setLimits((-100 if self.aw.pidcontrol.pidNegativeTarget else 0),(100 if self.aw.pidcontrol.pidPositiveTarget else 0))
-            if source is not None and source>0:
-                self.pidSource = source
             self.aw.sendmessage(QApplication.translate('Message','p-i-d values updated'))
 
 ###################################################################################

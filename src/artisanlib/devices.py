@@ -928,12 +928,10 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         self.phidgetBoxRemoteFlag.setChecked(self.aw.qmc.phidgetRemoteFlag)
         phidgetServerIdLabel = QLabel(QApplication.translate('Label','Host'))
         self.phidgetServerId = QLineEdit(self.aw.qmc.phidgetServerID)
-        self.phidgetServerId.textChanged.connect(self.phidgetHostChanged)
         self.phidgetServerId.setMinimumWidth(200)
         phidgetPasswordLabel = QLabel(QApplication.translate('Label','Password'))
         self.phidgetPassword = QLineEdit(self.aw.qmc.phidgetPassword)
         self.phidgetPassword.setEchoMode(QLineEdit.EchoMode.PasswordEchoOnEdit)
-        self.phidgetPassword.setEnabled(self.aw.qmc.phidgetServerID != '')
         self.phidgetPassword.setMinimumWidth(100)
         phidgetPortLabel = QLabel(QApplication.translate('Label','Port'))
         self.phidgetPort = QLineEdit(str(self.aw.qmc.phidgetPort))
@@ -1282,11 +1280,6 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         if settings.contains('DeviceAssignmentGeometry'):
             self.restoreGeometry(settings.value('DeviceAssignmentGeometry'))
         self.TabWidget.setCurrentIndex(activeTab)
-
-
-    @pyqtSlot(str)
-    def phidgetHostChanged(self,s):
-        self.phidgetPassword.setEnabled(s != '')
 
     @pyqtSlot(int)
     def changeOutprogramFlag(self,_):
@@ -2616,7 +2609,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                     self.aw.qmc.device = 107
                     message = QApplication.translate('Message','Device set to {0}').format(meter)
                 ##########################
-                elif meter == 'Yocto 4-20mA Rx':
+                elif meter == 'Yocto 4-20ma Rx':
                     self.aw.qmc.device = 108
                     message = QApplication.translate('Message','Device set to {0}').format(meter)
                 ##########################
@@ -2709,37 +2702,6 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ##########################
                 ##########################
                 ####  DEVICE 128 is +ARC AT (points to "+HB AT")
-                ##########################
-                ##########################
-                ####  DEVICE 129 is Yocto Power
-                elif meter == 'Yocto Power':
-                    self.aw.qmc.device = 129
-                    message = QApplication.translate('Message','Device set to {0}').format(meter)
-                ##########################
-                ##########################
-                ####  DEVICE 130 is Yocto Energy
-                elif meter == 'Yocto Energy':
-                    self.aw.qmc.device = 130
-                    message = QApplication.translate('Message','Device set to {0}').format(meter)
-                ##########################
-                ##########################
-                ####  DEVICE 131 is Yocto Voltage
-                elif meter == 'Yocto Voltage':
-                    self.aw.qmc.device = 131
-                    message = QApplication.translate('Message','Device set to {0}').format(meter)
-                ##########################
-                ##########################
-                ####  DEVICE 132 is Yocto Current
-                elif meter == 'Yocto Current':
-                    self.aw.qmc.device = 132
-                    message = QApplication.translate('Message','Device set to {0}').format(meter)
-                ##########################
-                ##########################
-                ####  DEVICE 133 is Yocto Sensor
-                elif meter == 'Yocto Sensor':
-                    self.aw.qmc.device = 133
-                    message = QApplication.translate('Message','Device set to {0}').format(meter)
-                ##########################
 
 
                 # ADD DEVICE:
@@ -2888,12 +2850,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 1, # 125
                 8, # 126
                 8, # 127
-                8, # 128
-                1, # 129
-                1, # 130
-                1, # 131
-                1, # 132
-                1  # 133
+                8  # 128
                 ]
             #init serial settings of extra devices
             for i in range(len(self.aw.qmc.extradevices)):
