@@ -21,11 +21,7 @@ import os
 import sys
 import struct
 import logging
-try:
-    from typing import Final
-except ImportError:
-    # for Python 3.7:
-    from typing_extensions import Final
+from typing import Final
 
 # imports avoided to speed up startup for non-S7 users
 #from snap7.types import Areas
@@ -236,6 +232,7 @@ class s7port():
         self.fetch_max_blocks = False # if set, the optimizer fetches only one sequence per area from the minimum to the maximum register ignoring gaps
         self.fail_on_cache_miss = True # if False and request cannot be resolved from optimizer cache while optimizer is active,
             # send individual reading request; if set to True, never send individual data requests while optimizer is on
+            # NOTE: if TRUE read requests with force=False (default) will fail
 
         # S7 areas associated to dicts associating S7 DB numbers to start registers in use
         # for optimized read of full register segments with single requests
@@ -667,8 +664,8 @@ class s7port():
         try:
             #### lock shared resources #####
             self.COMsemaphore.acquire(1)
-            if self.optimizer:
-                if not force and area in self.readingsCache and dbnumber in self.readingsCache[area] and start in self.readingsCache[area][dbnumber] \
+            if self.optimizer and not force:
+                if area in self.readingsCache and dbnumber in self.readingsCache[area] and start in self.readingsCache[area][dbnumber] \
                     and start+1 in self.readingsCache[area][dbnumber] and start+2 in self.readingsCache[area][dbnumber] \
                     and start+3 in self.readingsCache[area][dbnumber]:
                     # cache hit
@@ -758,8 +755,8 @@ class s7port():
         try:
             #### lock shared resources #####
             self.COMsemaphore.acquire(1)
-            if self.optimizer:
-                if not force and area in self.readingsCache and dbnumber in self.readingsCache[area] and start in self.readingsCache[area][dbnumber] \
+            if self.optimizer and not force:
+                if area in self.readingsCache and dbnumber in self.readingsCache[area] and start in self.readingsCache[area][dbnumber] \
                     and start+1 in self.readingsCache[area][dbnumber]:
                     # cache hit
                     res = bytearray([
@@ -850,8 +847,8 @@ class s7port():
         try:
             #### lock shared resources #####
             self.COMsemaphore.acquire(1)
-            if self.optimizer:
-                if not force and area in self.readingsCache and dbnumber in self.readingsCache[area] and start in self.readingsCache[area][dbnumber]:
+            if self.optimizer and not force:
+                if area in self.readingsCache and dbnumber in self.readingsCache[area] and start in self.readingsCache[area][dbnumber]:
                     # cache hit
                     res = bytearray([
                         self.readingsCache[area][dbnumber][start]])

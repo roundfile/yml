@@ -23,11 +23,7 @@
 
 from plus import config, util
 from typing import Any, Optional, Dict, List, Tuple  #for Python >= 3.9: can remove 'List', 'Dict' and 'Tuple' since type hints can use the generic 'list', 'dict' and 'tuple'
-try:
-    from typing import Final
-except ImportError:
-    # for Python 3.7:
-    from typing_extensions import Final
+from typing import Final
 import hashlib
 import logging
 
@@ -45,13 +41,12 @@ def getTemplate(bp: Dict[str, Any],background=False) -> Dict[str, Any]:  #for Py
             util.addNum2dict(
                 bp, 'roastbatchnr', d, 'batch_number', 0, 65534, 0
             )
-            if 'batch_number' in d and d['batch_number']:
-                util.addString2dict(
-                    bp, 'roastbatchprefix', d, 'batch_prefix', 50
-                )
-                util.addNum2dict(
-                    bp, 'roastbatchpos', d, 'batch_pos', 0, 255, 0
-                )
+            util.addString2dict(
+                bp, 'roastbatchprefix', d, 'batch_prefix', 50
+            )
+            util.addNum2dict(
+                bp, 'roastbatchpos', d, 'batch_pos', 0, 255, 0
+            )
         except Exception as e:  # pylint: disable=broad-except
             _log.exception(e)
 
