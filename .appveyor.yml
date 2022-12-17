@@ -123,6 +123,8 @@ for:
 #    - cmd: dir "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133"
 #    - cmd: dir "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC"
 #    - cmd: dir "C:\Program Files (x86)\Microsoft Visual Studio"    
+    - cmd: set PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\bin\HostX64\x64;%PATH%
+    - cmd: set PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\;%PATH%
     
     # run the install script
     - cmd: .ci\DBG-install-win.bat
