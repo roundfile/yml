@@ -122,7 +122,7 @@ for:
     - cmd: dir c:\
     - cmd: dir c:\Qt
     - cmd: path
-    - cmd: dir C:\qt\msvc2022_64
+    - cmd: dir C:\qt\6.4
 #    - cmd: dir "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\bin\HostX64\x64"
 #    - cmd: dir "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133"
 #    - cmd: dir "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC"
