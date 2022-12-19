@@ -119,6 +119,7 @@ for:
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 
     # debug
+    - cmd: dir "C:\qt"
     - cmd: dir "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\bin\HostX64\x64"
 #    - cmd: dir "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133"
 #    - cmd: dir "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC"
