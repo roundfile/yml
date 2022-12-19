@@ -9,14 +9,14 @@ environment:
   PYTHON_V: 3.11
 
   matrix:
-#  - job_name: windows_legacy
-#    appveyor_build_worker_image: Visual Studio 2019
+  - job_name: windows_legacy
+    appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
     appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: macos
-#    appveyor_build_worker_image: macos
-#  - job_name: linux
-#    appveyor_build_worker_image: Ubuntu2004
+  - job_name: macos
+    appveyor_build_worker_image: macos
+  - job_name: linux
+    appveyor_build_worker_image: Ubuntu2004
 
 
 # Generic build number, later set to commit hash by init
@@ -98,7 +98,7 @@ for:
     fast_finish: false
 
   environment:
-    QT_PATH: "C:\\qt\\6.4\\msvc2019_64"
+    QT_PATH: "C:\\qt\\6.2\\msvc2019_64"
     PYUIC: "pyuic6.exe"
     BUILD_PYINSTALLER: "False"
     ARTISAN_LEGACY: "False"
@@ -118,23 +118,10 @@ for:
     # update path env var
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 
-    # debug
-    - cmd: dir c:\
-    - cmd: dir c:\Qt
-    - cmd: path
-    - cmd: dir C:\qt\6.4
-#    - cmd: dir "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\bin\HostX64\x64"
-#    - cmd: dir "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133"
-#    - cmd: dir "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC"
-#    - cmd: dir "C:\Program Files (x86)\Microsoft Visual Studio"    
-#    - cmd: set PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\MSVC\14.29.30133\bin\HostX64\x64;%PATH%
-#    - cmd: set PATH=C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Tools\;%PATH%
-#    - cmd: .ci\DBG-install-win.bat
-    
     # run the install script
     - cmd: .ci\install-win.bat
 
-#  build_script:
+  build_script:
     - cmd: echo Windows Build
     - cmd: cd src
 
