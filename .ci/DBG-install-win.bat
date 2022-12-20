@@ -19,6 +19,9 @@ set PYINSTALLER_VER=5.7.0
 :: custom build the pyinstaller bootloader or install a prebuilt
 ::
 
+:: MSVC
+:: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.34.31933\bin\HostX64\x64\CL.exe 
+
 echo ***** Start build pyinstaller v%PYINSTALLER_VER%
 if not exist pyinstaller-%PYINSTALLER_VER%\bootloader\ (exit /b 101)
 cd pyinstaller-%PYINSTALLER_VER%\bootloader
