@@ -32,7 +32,7 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     ::
     :: build the bootlaoder and wheel
     echo ***** Running WAF
-    %PYTHON_PATH%\python.exe ./waf all --target-arch=64bit --check-c-compiler=msvc -vvv
+    %PYTHON_PATH%\python.exe ./waf all --target-arch=x64 --check-c-compiler=msvc -vvv
     type C:\projects\yml\pyinstaller-5.7.0\bootloader\build\config.log
     cd ..
     echo ***** Building Wheel
