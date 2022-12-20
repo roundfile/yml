@@ -18,32 +18,57 @@ set PYINSTALLER_VER=5.7.0
 ::
 :: custom build the pyinstaller bootloader or install a prebuilt
 ::
-if /i "%BUILD_PYINSTALLER%"=="True" (
-    echo ***** Start build pyinstaller v%PYINSTALLER_VER%
-    ::
-    :: download pyinstaller source
-    echo ***** curl pyinstaller v%PYINSTALLER_VER%
-    curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
-    if not exist v%PYINSTALLER_VER%.zip (exit /b 100)
-    7z x v%PYINSTALLER_VER%.zip
-    del v%PYINSTALLER_VER%.zip
-    if not exist pyinstaller-%PYINSTALLER_VER%\bootloader\ (exit /b 101)
-    cd pyinstaller-%PYINSTALLER_VER%\bootloader
-    ::
-    :: build the bootlaoder and wheel
-    echo ***** Running WAF
-    %PYTHON_PATH%\python.exe ./waf all --target-arch=64bit  :: --check-c-compiler=msvc -vvv
-    type C:\projects\yml\pyinstaller-5.7.0\bootloader\build\config.log
-    cd ..
-    echo ***** Building Wheel
-    %PYTHON_PATH%\python.exe setup.py -q bdist_wheel
-    if not exist dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 102)
-    echo ***** Finished build pyinstaller v%PYINSTALLER_VER%
-    ::
-    :: install pyinstaller
-    echo ***** Start install pyinstaller v%PYINSTALLER_VER%
-    %PYTHON_PATH%\python.exe -m pip install -q dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
-    cd ..
-)
+
+echo ***** Start build pyinstaller v%PYINSTALLER_VER%
+if not exist pyinstaller-%PYINSTALLER_VER%\bootloader\ (exit /b 101)
+cd pyinstaller-%PYINSTALLER_VER%\bootloader
+
+echo ***** Running WAF
+%PYTHON_PATH%\python.exe ./waf all --target-arch=64bit  :: --check-c-compiler=msvc -vvv
+type C:\projects\yml\pyinstaller-5.7.0\bootloader\build\config.log
+cd ..
+
+echo ***** Building Wheel
+%PYTHON_PATH%\python.exe setup.py -q bdist_wheel
+if not exist dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 102)
+
+echo ***** Finished build pyinstaller v%PYINSTALLER_VER%
+
+echo ***** Start install pyinstaller v%PYINSTALLER_VER%
+%PYTHON_PATH%\python.exe -m pip install -q dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
+cd ..
 
 echo ***** Finished installing pyinstaller v%PYINSTALLER_VER%
+
+
+
+rem 
+rem if /i "%BUILD_PYINSTALLER%"=="True" (
+rem     echo ***** Start build pyinstaller v%PYINSTALLER_VER%
+rem     ::
+rem     :: download pyinstaller source
+rem     echo ***** curl pyinstaller v%PYINSTALLER_VER%
+rem     curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
+rem     if not exist v%PYINSTALLER_VER%.zip (exit /b 100)
+rem     7z x v%PYINSTALLER_VER%.zip
+rem     del v%PYINSTALLER_VER%.zip
+rem     if not exist pyinstaller-%PYINSTALLER_VER%\bootloader\ (exit /b 101)
+rem     cd pyinstaller-%PYINSTALLER_VER%\bootloader
+rem     ::
+rem     :: build the bootlaoder and wheel
+rem     echo ***** Running WAF
+rem     %PYTHON_PATH%\python.exe ./waf all --target-arch=64bit  :: --check-c-compiler=msvc -vvv
+rem     type C:\projects\yml\pyinstaller-5.7.0\bootloader\build\config.log
+rem     cd ..
+rem     echo ***** Building Wheel
+rem     %PYTHON_PATH%\python.exe setup.py -q bdist_wheel
+rem     if not exist dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 102)
+rem     echo ***** Finished build pyinstaller v%PYINSTALLER_VER%
+rem     ::
+rem     :: install pyinstaller
+rem     echo ***** Start install pyinstaller v%PYINSTALLER_VER%
+rem     %PYTHON_PATH%\python.exe -m pip install -q dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
+rem     cd ..
+rem )
+rem 
+rem echo ***** Finished installing pyinstaller v%PYINSTALLER_VER%
