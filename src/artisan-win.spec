@@ -8,7 +8,7 @@ if os.environ.get('APPVEYOR'):
   PYTHON = os.environ.get('PYTHON_PATH')
 else:
   ARTISAN_SRC = r'C:\Users\roast\Documents\artisan-roaster-scope\src'
-  PYTHON = r'C:\Program Files\Python310-x64'
+  PYTHON = r'C:\Program Files\Python311-x64'
 NAME = 'artisan'
 
 ##

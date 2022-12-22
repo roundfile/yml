@@ -118,7 +118,10 @@ for:
     # update path env var
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 
-    # run the install script
+#dabug
+#    - cmd: .ci\DBG-install-win.bat
+
+   # run the install script
     - cmd: .ci\install-win.bat
 
   build_script:
