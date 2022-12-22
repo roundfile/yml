@@ -21,6 +21,13 @@ set PYINSTALLER_VER=5.7.0
 
 :: MSVC
 :: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.34.31933\bin\HostX64\x64\CL.exe 
+set
+dir "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.34.31933\bin\HostX64\x64"
+:: ['C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe', '-products', '*', '-legacy', '-format', 'json']
+dir "C:\Program Files (x86)"
+dir "C:\Program Files (x86)\Microsoft Visual Studio\Installer"
+
+exit /b 99
 
 echo ***** Start build pyinstaller v%PYINSTALLER_VER%
 if not exist pyinstaller-%PYINSTALLER_VER%\bootloader\ (exit /b 101)
