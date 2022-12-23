@@ -83,7 +83,7 @@ for %%x in (%NSIS_EXE%) do set NSIS_DATE=%%~tx
 echo NSIS makensis.exe file date %NSIS_DATE%
 ::
 :: run NSIS to build the install .exe file
-%NSIS_EXE% /DPRODUCT_VERSION=%ARTISAN_VERSION%.%ARTISAN_BUILD% /DLEGACY=%ARTISAN_LEGACY% setup-install3-pi.nsi
+%NSIS_EXE% /DPRODUCT_VERSION=%ARTISAN_VERSION%.%ARTISAN_BUILD% /DLEGACY=%ARTISAN_LEGACY% setup-standalone3-pi.nsi
 if ERRORLEVEL 1 (exit /b 1)
 
 ::

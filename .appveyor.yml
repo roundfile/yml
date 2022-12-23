@@ -80,7 +80,8 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the build script
-    - cmd: build-win3-pi.bat LEGACY
+#    - cmd: build-win3-pi.bat LEGACY
+    - cmd: build-win3-standalone-pi.bat LEGACY
 
 #  test_script:
 #    - cmd: python -m unittest discover
@@ -89,7 +90,8 @@ for:
 #    - path: 'src\artisan-*.zip'
 
   deploy_script:
-    - cmd: bash ../.ci/upload.sh artisan-*.zip
+#    - cmd: bash ../.ci/upload.sh artisan-*.zip
+    - path: 'src\artisan*.exe'
 
 -
   matrix:
@@ -136,7 +138,8 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the build script
-    - cmd: build-win3-pi.bat
+#    - cmd: build-win3-pi.bat
+    - cmd: build-win3-standalone-pi.bat
 
 #  test_script:
 #    - cmd: python -m unittest discover
@@ -145,7 +148,8 @@ for:
 #    - path: 'src\artisan-*.zip'
 
   deploy_script:
-    - cmd: bash ../.ci/upload.sh artisan-*.zip
+#    - cmd: bash ../.ci/upload.sh artisan-*.zip
+    - path: 'src\artisan*.exe'
 
 
 -
