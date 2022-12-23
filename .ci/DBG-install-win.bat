@@ -18,10 +18,12 @@ set PYINSTALLER_VER=5.7.0
 ::
 :: custom build the pyinstaller bootloader or install a prebuilt
 ::
+echo VSWhere
 "C:\Program Files (x86)\Microsoft Visual Studio\Installer\vswhere.exe"
 :: MSVC
 :: C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.34.31933\bin\HostX64\x64\CL.exe 
 
+echo set
 set
 rem dir "C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.34.31933\bin\HostX64\x64"
 :: ['C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe', '-products', '*', '-legacy', '-format', 'json']
