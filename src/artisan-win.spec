@@ -163,3 +163,4 @@ os.system(r'xcopy includes\Themes ' + TARGET + 'Themes /y /S')
 
 os.system(r'mkdir ' +  TARGET + 'Icons')
 os.system(r'xcopy includes\Icons ' + TARGET + 'Icons /y /S')
+
