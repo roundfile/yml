@@ -14,7 +14,7 @@ setlocal enabledelayedexpansion
 echo Python Version
 %PYTHON_PATH%\python -V
 
-set PYINSTALLER_VER=5.7.0
+set PYINSTALLER_VER=5.6.2
 ::
 :: custom build the pyinstaller bootloader or install a prebuilt
 ::
