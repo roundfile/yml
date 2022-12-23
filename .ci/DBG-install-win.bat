@@ -40,7 +40,8 @@ echo ***** Running WAF
 %PYTHON_PATH%\python.exe ./waf all --target-arch=64bit  
 rem :: --check-c-compiler=msvc -vvv
 echo ***** Echo Log
-type C:\projects\yml\pyinstaller-5.7.0\bootloader\build\config.log
+dir C:\projects\yml\pyinstaller-%PYINSTALLER_VER%\bootloader\build
+type C:\projects\yml\pyinstaller-%PYINSTALLER_VER%\bootloader\build\config.log
 cd ..
 
 echo ***** Building Wheel
