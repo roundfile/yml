@@ -33,6 +33,14 @@ rem dir "C:\Program Files (x86)\Microsoft Visual Studio\Installer"
 
 rem exit /b 99
 
+rem :: download pyinstaller source
+rem echo ***** curl pyinstaller v%PYINSTALLER_VER%
+rem curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
+rem if not exist v%PYINSTALLER_VER%.zip (exit /b 100)
+rem 7z x v%PYINSTALLER_VER%.zip
+rem del v%PYINSTALLER_VER%.zip
+
+
 echo ***** Start build pyinstaller v%PYINSTALLER_VER%
 if not exist pyinstaller-%PYINSTALLER_VER%\bootloader\ (exit /b 101)
 cd pyinstaller-%PYINSTALLER_VER%\bootloader

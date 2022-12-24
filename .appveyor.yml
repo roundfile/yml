@@ -119,36 +119,36 @@ for:
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 
 #dabug
-    - cmd: .ci\DBG-install-win.bat
+#    - cmd: .ci\DBG-install-win.bat
 
-#   # run the install script
-#    - cmd: .ci\install-win.bat
-#
-#  build_script:
-#    - cmd: echo Windows Build
-#    - cmd: cd src
-#
-#    #update the copyright year used by pyinstaller to set exe properties for Windows
-#    - ps: $YEAR=(Get-Date).year
-#    - ps: gc version-metadata.yml | %{ $_ -replace "yyyy", "$YEAR" } | out-file newfile -encoding ascii
-#    - ps: move -force newfile version-metadata.yml
-#
-#    # update the __revision__ field with the left seven of the GIT commit hash
-#    - ps: $GIT_VERSION=git rev-parse --verify --short HEAD
-#    - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '0'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
-#    - ps: move -force newfile artisanlib/__init__.py
-#
-#    # run the build script
-#    - cmd: build-win3-pi.bat
-#
-##  test_script:
-##    - cmd: python -m unittest discover
-#
-##  artifacts:
-##    - path: 'src\artisan-*.zip'
-#
-#  deploy_script:
-#    - cmd: bash ../.ci/upload.sh artisan-*.zip
+   # run the install script
+    - cmd: .ci\install-win.bat
+
+  build_script:
+    - cmd: echo Windows Build
+    - cmd: cd src
+
+    #update the copyright year used by pyinstaller to set exe properties for Windows
+    - ps: $YEAR=(Get-Date).year
+    - ps: gc version-metadata.yml | %{ $_ -replace "yyyy", "$YEAR" } | out-file newfile -encoding ascii
+    - ps: move -force newfile version-metadata.yml
+
+    # update the __revision__ field with the left seven of the GIT commit hash
+    - ps: $GIT_VERSION=git rev-parse --verify --short HEAD
+    - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '0'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
+    - ps: move -force newfile artisanlib/__init__.py
+
+    # run the build script
+    - cmd: build-win3-pi.bat
+
+#  test_script:
+#    - cmd: python -m unittest discover
+
+#  artifacts:
+#    - path: 'src\artisan-*.zip'
+
+  deploy_script:
+    - cmd: bash ../.ci/upload.sh artisan-*.zip
 
 
 -
