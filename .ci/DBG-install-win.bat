@@ -46,7 +46,8 @@ if not exist pyinstaller-%PYINSTALLER_VER%\bootloader\ (exit /b 101)
 cd pyinstaller-%PYINSTALLER_VER%\bootloader
 
 echo ***** Running WAF
-%PYTHON_PATH%\python.exe ./waf all set_arch_flage=64-bit --target-arch=64bit  --check-c-compiler=msvc -vvv
+%PYTHON_PATH%\python.exe ./waf all
+rem set_arch_flage=64-bit --target-arch=64bit  --check-c-compiler=msvc -vvv
 echo ***** build dir
 dir C:\projects\yml\pyinstaller-%PYINSTALLER_VER%\bootloader\build
 echo ***** Echo Log
