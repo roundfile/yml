@@ -213,6 +213,7 @@ class modbusport():
             if self.master is not None:
                 self.master.close()
                 self.aw.sendmessage(QApplication.translate('Message', 'MODBUS disconnected'))
+                del self.master
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
         self.master = None
@@ -448,7 +449,7 @@ class modbusport():
                                             _log.debug('retry')
                                         else:
                                             res = None
-                                            raise Exception('Exception response')
+                                            raise Exception('Exception response') # pylint: disable=broad-exception-raised
                                     else:
                                         break
 
@@ -747,7 +748,7 @@ class modbusport():
                             #time.sleep(0.020)  # no retry delay as timeout time should already be large enough
                             _log.debug('retry')
                         else:
-                            raise Exception('Exception response')
+                            raise Exception('Exception response')  # pylint: disable=broad-exception-raised
                     else:
                         break
                 decoder = getBinaryPayloadDecoderFromRegisters(res.registers, self.byteorderLittle, self.wordorderLittle)
@@ -843,7 +844,7 @@ class modbusport():
                             #time.sleep(0.020)  # no retry delay as timeout time should already be larger enough
                             _log.debug('retry')
                         else:
-                            raise Exception('Exception response')
+                            raise Exception('Exception response') # pylint: disable=broad-exception-raised
                     else:
                         break
                 decoder = getBinaryPayloadDecoderFromRegisters(res.registers, self.byteorderLittle, self.wordorderLittle)
@@ -917,7 +918,8 @@ class modbusport():
             _log.info('peekSingleRegister(%d,%d,%d) failed', slave, register, code)
             _log.debug(ex)
             res = None
-        if not self.invalidResult(res,1):
+        error, _ = self.invalidResult(res,1)
+        if not error:
             if code in [1,2]:
                 if res is not None and res.bits[0]:
                     return 1
@@ -984,7 +986,7 @@ class modbusport():
                             #time.sleep(0.020)  # no retry delay as timeout time should already be larger enough
                             _log.debug('retry')
                         else:
-                            raise Exception(f'readSingleRegister({slave},{register},{code},{force},{signed}) failed')
+                            raise Exception(f'readSingleRegister({slave},{register},{code},{force},{signed}) failed')  # pylint: disable=broad-exception-raised
                     else:
                         break
                 if code in [1,2]:
@@ -1094,7 +1096,7 @@ class modbusport():
                             #time.sleep(0.020)  # no retry delay as timeout time should already be larger enough
                             _log.debug('retry')
                         else:
-                            raise Exception('Exception response')
+                            raise Exception('Exception response')  # pylint: disable=broad-exception-raised
                     else:
                         break
                 decoder = getBinaryPayloadDecoderFromRegisters(res.registers, self.byteorderLittle, self.wordorderLittle)
@@ -1196,7 +1198,7 @@ class modbusport():
                             # time.sleep(0.020)  # no retry delay as timeout time should already be larger enough
                             _log.debug('retry')
                         else:
-                            raise Exception('Exception response')
+                            raise Exception('Exception response') # pylint: disable=broad-exception-raised
                     else:
                         break
                 decoder = getBinaryPayloadDecoderFromRegisters(res.registers, self.byteorderLittle, self.wordorderLittle)

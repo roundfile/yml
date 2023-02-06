@@ -150,7 +150,7 @@ OPTIONS = {
     'iconfile': 'artisan.icns',
     'arch': 'x86_64',
     'matplotlib_backends': '-', # '-' for imported or explicit "Qt5Agg, PDF, PS, SVG"
-    'includes': ['serial'],
+    'includes': ['serial', 'charset_normalizer.md__mypyc'],
     'excludes' :  ['tkinter','curses',
                 'PyQt5', # standard builds are now running on PyQt6. If PyQt5 is not excluded here it will be included in Resources/lib/python310.zip
                 # 'sqlite3',
@@ -224,11 +224,11 @@ try:
 except:
     try:
         subprocess.check_call(r'cp /usr/local/Cellar/libusb/1.0.25/lib/libusb-1.0.0.dylib Artisan.app/Contents/Frameworks/libusb-1.0.dylib',shell = True)
-    except Exception as e:
+    except Exception:
         try:
             subprocess.check_call(r'cp /usr/local/Cellar/libusb/1.0.24/lib/libusb-1.0.0.dylib Artisan.app/Contents/Frameworks/libusb-1.0.dylib',shell = True)
-        except Exception as e:
-            subprocess.check_call(r'cp /usr/local/Cellar/libusb/1.0.23/lib/libusb-1.0.0.dylib Artisan.app/Contents/Frameworks/libusb-1.0.dylib',shell = True)
+        except Exception:
+            pass
 
 
 
@@ -385,6 +385,10 @@ except:
     pass
 try:
     subprocess.check_call('rm -rf ./Artisan.app/Contents/Resources/lib/python3.10/matplotlib/mpl-data/sample_data',shell = True)
+except:
+    pass
+try:
+    subprocess.check_call('rm -rf ./Artisan.app/Contents/Resources/lib/python3.11/matplotlib/mpl-data/sample_data',shell = True)
 except:
     pass
 

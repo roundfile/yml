@@ -859,15 +859,19 @@ class EventsDlg(ArtisanResizeablDialog):
         self.E1quantifieraction = QCheckBox()
         self.E1quantifieraction.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E1quantifieraction.setChecked(bool(self.aw.eventquantifieraction[0]))
+        self.E1quantifieraction.setToolTip(QApplication.translate('Tooltip', 'fire slider action'))
         self.E2quantifieraction = QCheckBox()
         self.E2quantifieraction.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E2quantifieraction.setChecked(bool(self.aw.eventquantifieraction[1]))
+        self.E2quantifieraction.setToolTip(QApplication.translate('Tooltip', 'fire slider action'))
         self.E3quantifieraction = QCheckBox()
         self.E3quantifieraction.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E3quantifieraction.setChecked(bool(self.aw.eventquantifieraction[2]))
+        self.E3quantifieraction.setToolTip(QApplication.translate('Tooltip', 'fire slider action'))
         self.E4quantifieraction = QCheckBox()
         self.E4quantifieraction.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E4quantifieraction.setChecked(bool(self.aw.eventquantifieraction[3]))
+        self.E4quantifieraction.setToolTip(QApplication.translate('Tooltip', 'fire slider action'))
         self.E1quantifierSV = QCheckBox()
         self.E1quantifierSV.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E1quantifierSV.setChecked(bool(self.aw.eventquantifierSV[0]))
@@ -1568,7 +1572,7 @@ class EventsDlg(ArtisanResizeablDialog):
                     for ii in range(len(temp)):
                         t = temp[ii]
                         if t != -1: # -1 is an error value
-                            d = self.aw.digitize(t,linespace,self.aw.eventquantifiercoarse[i],self.aw.eventslidermin[i])
+                            d = self.aw.digitize(t,linespace,self.aw.eventquantifiercoarse[i],i)
                             if d is not None and (ld is None or ld != d):
                                 # take only changes
                                 # and only if significantly different than previous to avoid fluktuation

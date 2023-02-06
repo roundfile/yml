@@ -70,7 +70,7 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     ::
     :: build the bootlaoder and wheel
     echo ***** Running WAF
-    %PYTHON_PATH%\python.exe ./waf all
+    %PYTHON_PATH%\python.exe ./waf all --target-arch=64bit
     cd ..
     echo ***** Building Wheel
     %PYTHON_PATH%\python.exe setup.py -q bdist_wheel
