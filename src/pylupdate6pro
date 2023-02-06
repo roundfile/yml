@@ -1,6 +1,6 @@
 #!/bin/sh
 
-pylupdate6 artisanlib plus help \
+pylupdate6 --verbose artisanlib plus help \
       -ts translations/artisan_ar.ts \
       -ts translations/artisan_da.ts \
       -ts translations/artisan_de.ts \
