@@ -1,5 +1,5 @@
 #!/bin/sh
 
 pylupdate6 --verbose artisanlib plus help \
-      -ts translations/artisan_zh_TW.ts
+      -ts translations/artisan_vi.ts
  
