@@ -64,6 +64,7 @@ if [ -f "$PYLUPDATE" ]; then
     which pylupdate6
     cat /Users/appveyor/venv3.11.0/lib/python3.11/site-packages/PyQt6/lupdate/pylupdate.py
     cat /Users/appveyor/venv3.11.0/lib/python3.11/site-packages/PyQt6/lupdate/lupdate.py
+    ls -l ./translations
     echo "*************"
     $PYLUPDATE artisan.pro
 fi
