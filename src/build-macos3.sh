@@ -60,6 +60,7 @@ echo "************* 1 **************"
 
 if [ -f "$PYLUPDATE" ]; then
     which pylupdate6
+    ls -l /Users/appveyor/venv3.11.0/bin/pylupdate6
     echo "*************"
     $PYLUPDATE artisan.pro
 fi
