@@ -59,6 +59,8 @@ fi
 echo "************* 1 **************"
 
 if [ -f "$PYLUPDATE" ]; then
+    which $PYLUPDATE
+    echo "*************"
     $PYLUPDATE artisan.pro
 fi
 
