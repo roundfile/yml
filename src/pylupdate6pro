@@ -29,5 +29,4 @@ pylupdate6 --verbose artisanlib plus help \
       -ts translations/artisan_tr.ts \
       -ts translations/artisan_uk.ts \
       -ts translations/artisan_vi.ts \
-      -ts translations/artisan_zh_CN.ts \
-      -ts translations/artisan_zh_TW.ts
+      -ts translations/artisan_zh_CN.ts 
