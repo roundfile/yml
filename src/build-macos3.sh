@@ -59,7 +59,9 @@ fi
 echo "************* 1 **************"
 
 if [ -f "$PYLUPDATE" ]; then
-    $PYLUPDATE artisan.pro
+    $PYLUPDATE -version  #dave
+    $PYLUPDATE -verbose artisan.pro
+    #dave $PYLUPDATE artisan.pro
 fi
 
 # there is no full Qt installation on Travis, thus don't run  lrelease
