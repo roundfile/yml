@@ -59,7 +59,7 @@ fi
 echo "************* 1 **************"
 
 if [ -f "$PYLUPDATE" ]; then
-    which pylupdat6
+    which pylupdate6
     echo "*************"
     $PYLUPDATE artisan.pro
 fi
