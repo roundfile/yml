@@ -59,8 +59,9 @@ fi
 echo "************* 1 **************"
 
 if [ -f "$PYLUPDATE" ]; then
-    $PYLUPDATE -version  #dave
-    $PYLUPDATE -verbose artisan.pro
+    ls -l 
+    $PYLUPDATE -version
+    #$PYLUPDATE -verbose artisan.pro
     #dave $PYLUPDATE artisan.pro
 fi
 
