@@ -207,7 +207,7 @@ for:
 #
   install:
 #    - echo "Linux Install"
-#    - chmod +x .ci/*.sh
+    - chmod +x .ci/*.sh
 #
 #    # pull library versions from requirments file
 #    - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements-linux.txt 'libusb==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value}
