@@ -9,14 +9,14 @@ environment:
   PYTHON_V: 3.11
 
   matrix:
-#  - job_name: windows_legacy
-#    appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: windows
-#    appveyor_build_worker_image: Visual Studio 2022
-#  - job_name: macos
-#    appveyor_build_worker_image: macos
+  - job_name: windows_legacy
+    appveyor_build_worker_image: Visual Studio 2019
+  - job_name: windows
+    appveyor_build_worker_image: Visual Studio 2022
+  - job_name: macos
+    appveyor_build_worker_image: macos
   - job_name: linux
-    appveyor_build_worker_image: Previous Ubuntu2004
+    appveyor_build_worker_image: Ubuntu2004
 
 
 # Generic build number, later set to commit hash by init
@@ -200,21 +200,21 @@ for:
       - job_name: linux
     fast_finish: false
 
-#  environment:
-#    ARTISAN_OS: linux
-#    PYTHON_PATH: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
-#    QT_PATH: $PYTHON_PATH/PyQt6/Qt6
-#
+  environment:
+    ARTISAN_OS: linux
+    PYTHON_PATH: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
+    QT_PATH: $PYTHON_PATH/PyQt6/Qt6
+
   install:
-#    - echo "Linux Install"
+    - echo "Linux Install"
     - chmod +x .ci/*.sh
-#
-#    # pull library versions from requirments file
-#    - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements-linux.txt 'libusb==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value}
-#
-#    # update the __revision__ field with the left seven of the GIT commit hash
-#    - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
-#    - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
+
+    # pull library versions from requirments file
+    - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements-linux.txt 'libusb==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value}
+
+    # update the __revision__ field with the left seven of the GIT commit hash
+    - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
+    - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
 
     # run the install script
     - .ci/install-linux.sh
