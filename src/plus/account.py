@@ -51,7 +51,7 @@ account_cache_semaphore:QSemaphore = QSemaphore(1)
 # shared resource between the Artisan and ArtisanViewer app protected
 # by a file lock
 account_cache_path:str = getDirectory(config.account_cache, share=True)
-account_cache_lock_path = getDirectory(
+account_cache_lock_path:str = getDirectory(
     f'{config.account_cache}_lock', share=True
 )
 
@@ -66,10 +66,13 @@ def setAccountShelve(account_id: str, fh) -> Optional[int]:
                 return db[account_id]
             new_nr = len(db)
             db[account_id] = new_nr
+            try:
+                _log.debug(
+                    'DB type: %s', str(dbm.whichdb(account_cache_path))
+                )
+            except Exception:  # pylint: disable=broad-except
+                pass
             return new_nr
-        _log.debug(
-            'DB type: %s', str(dbm.whichdb(account_cache_path))
-        )
     except Exception as ex:  # pylint: disable=broad-except
         _log.exception(ex)
         try:
@@ -95,11 +98,14 @@ def setAccountShelve(account_id: str, fh) -> Optional[int]:
                     return db[account_id]
                 new_nr = len(db)
                 db[account_id] = new_nr
+                try:
+                    _log.info(
+                        'Generated db type: %s',
+                        str(dbm.whichdb(account_cache_path)),
+                    )
+                except Exception:  # pylint: disable=broad-except
+                    pass
                 return new_nr
-            _log.info(
-                'Generated db type: %s',
-                str(dbm.whichdb(account_cache_path)),
-            )
         except Exception as e:  # pylint: disable=broad-except
             _log.exception(e)
             return None

@@ -546,7 +546,7 @@ class FujiPID():
             if reg is not None:
                 v = self.aw.modbus.readSingleRegister(self.aw.ser.controlETpid[1],reg,4)
             else:
-                val = -1
+                return -1
         else:
             command = ''
             #if control pid is fuji PXG4
@@ -561,16 +561,14 @@ class FujiPID():
             elif self.aw.ser.controlETpid[0] == 4:
                 command = self.message2send(self.aw.ser.controlETpid[1],4,self.PXF['mv1'][1],1)
                 v = self.readoneword(command)
-        if v is None:
-            val = -1
-        elif v >= 65236: # -3% to 0%
-            val = 0
-        elif v <= 10300: # <= 103%
-            val = v/100.
-        else: # value out of range (possible a communication error)
-            val = -1
-        #val range -3 to 103%. Check for possible decimal digit user settings
-        return val
+        # value out of range (possible a communication error)
+        #return val range -3 to 103%. Check for possible decimal digit user settings
+        if v is not None:
+            if v >= 65236: # -3% to 0%
+                return 0
+            if v <= 10300: # <= 103%
+                return v/100.
+        return -1
 
     def getrampsoakmode(self):
         if self.aw.ser.controlETpid[0] == 0: #Fuji PXG
@@ -1149,16 +1147,16 @@ class PIDcontrol():
         self.svSlider:bool = False
         self.svButtons:bool = False
         self.svMode:int = 0 # 0: manual, 1: Ramp/Soak, 2: Follow (background profile)
-        self.svLookahead = 0
-        self.dutySteps = 1
-        self.svSliderMin = 0
-        self.svSliderMax = 230
-        self.svValue = 180 # the value in the setSV textinput box of the PID dialog
-        self.dutyMin = -100
-        self.dutyMax = 100
-        self.pidKp = 15.0
-        self.pidKi = 0.01
-        self.pidKd = 20.0
+        self.svLookahead:int = 0
+        self.dutySteps:int = 1
+        self.svSliderMin:int = 0
+        self.svSliderMax:int = 230
+        self.svValue:float = 180 # the value in the setSV textinput box of the PID dialog
+        self.dutyMin:int = -100
+        self.dutyMax:int = 100
+        self.pidKp:float = 15.0
+        self.pidKi:float = 0.01
+        self.pidKd:float = 20.0
         # Proposional on Measurement mode see: http://brettbeauregard.com/blog/2017/06/introducing-proportional-on-measurement/
         self.pOnE:bool = True # True for Proposional on Error mode, False for Proposional on Measurement Mode
         # pidSource
@@ -1253,8 +1251,8 @@ class PIDcontrol():
         try:
             self.aw.qmc.rampSoakSemaphore.acquire(1)
             self.svValue = fromCtoF(self.svValue)
-            self.svSliderMin = fromCtoF(self.svSliderMin)
-            self.svSliderMax = fromCtoF(self.svSliderMax)
+            self.svSliderMin = int(round(fromCtoF(self.svSliderMin)))
+            self.svSliderMax = int(round(fromCtoF(self.svSliderMax)))
             # establish ne limits on sliders
             self.aw.sliderSV.setMinimum(int(round(self.svSliderMin)))
             self.aw.sliderSV.setMaximum(int(round(self.svSliderMax)))
@@ -1476,12 +1474,9 @@ class PIDcontrol():
             # throw away superfluous values
             self.previous_svs = self.previous_svs[-self.sv_smoothing_factor:]
             # compute smoothed output
-            if len(self.previous_svs) < self.sv_smoothing_factor:
-                res = sv # no smoothing yet
-            else:
-                res = numpy.average(self.previous_svs,weights=self.sv_decay_weights)
-            return res
-        return sv
+            if len(self.previous_svs) >= self.sv_smoothing_factor:
+                return numpy.average(self.previous_svs,weights=self.sv_decay_weights)
+        return sv # no smoothing yet
 
     # returns None if in manual mode or no other sv (via ramp/soak or follow mode) defined
     def calcSV(self,tx):
@@ -1788,5 +1783,5 @@ class DtaPID():
         h2comp = twoscomp(h_bs)
         rval = int(h2comp,2)
         if (val & 0x80) == 0:
-            rval = rval | 0x80
+            return rval | 0x80
         return rval

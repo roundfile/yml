@@ -22,7 +22,7 @@ import threading
 import json
 import random
 
-from typing import List, Dict, Optional, TYPE_CHECKING
+from typing import List, Dict, Optional, Any, TYPE_CHECKING
 from typing_extensions import Final  # Python <=3.7
 
 if TYPE_CHECKING:
@@ -45,12 +45,12 @@ class wsport():
         self.path:str = 'WebSocket' # the ws path
         self.machineID:int = 0
 
-        self.lastReadResult:int = 0 # this is set by eventaction following some custom button/slider Modbus actions with "read" command
+        self.lastReadResult:Optional[Dict] = {} # this is set by eventaction following some custom button/slider Modbus actions with "read" command
 
         self.channels:Final[int] = 10 # maximal number of WebSocket channels
 
         # WebSocket data
-        self.readings = [-1]*self.channels
+        self.readings:List[float] = [-1]*self.channels
 
         self.channel_requests:List[str] = ['']*self.channels
         self.channel_nodes:List[str] = ['']*self.channels
@@ -91,7 +91,7 @@ class wsport():
         self.OFFonDROP:bool = False
 
         self.open_event:Optional[threading.Event] = None # an event set on connecting
-        self.pending_events:Dict[int, threading.Event] = {}
+        self.pending_events:Dict[int, Any] = {} # message ids associated with pending threading.Event object or result
 
         self.active:bool = False
         self.ws:Optional['websocket.WebSocketApp'] = None  # the WebService client object
@@ -246,14 +246,14 @@ class wsport():
                 self.aw.addserial('wsport connect()')
             self.active = True
             self.wst = threading.Thread(target=self.create)
-            if self.wst is not None:
-                self.open_event = threading.Event()
-                if self.open_event is not None:
-                    self.wst.start()
-                    success = self.open_event.wait(timeout=self.connect_timeout + 0.3)
-                    self.open_event = None
-                    return success
-            return False
+#            if self.wst is not None:
+            self.open_event = threading.Event()
+            if self.open_event is not None:
+                self.wst.start()
+                success = self.open_event.wait(timeout=self.connect_timeout + 0.3)
+                self.open_event = None
+                return success
+#            return False
         return True
 
     def is_connected(self):
@@ -292,20 +292,18 @@ class wsport():
                 self.pending_events[message_id] = v
 
     # returns the response received for request with id or None
-    def getRequestResponse(self,message_id):
-        res = None
+    def getRequestResponse(self, message_id):
         if message_id in self.pending_events:
             v = self.pending_events[message_id]
             del self.pending_events[message_id]
-            if not isinstance(v,threading.Event):
+            if not isinstance(v, threading.Event):
                 return v
-            return None
-        return res
+        return None
 
     # takes a request as dict to be send as JSON
     # and returns a dict generated from the JSON response
     # or None on exception or if block=False
-    def send(self,request,block=True):
+    def send(self, request:Dict, block=True) -> Optional[Dict]:
         try:
             connected = self.connect()
             if connected and self.ws is not None:

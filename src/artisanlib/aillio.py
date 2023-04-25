@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     try:
         from multiprocessing.connection import PipeConnection as Connection # type: ignore # pylint: disable=unused-import
     except Exception:  # pylint: disable=broad-except
-        from multiprocessing.connection import Connection # pylint: disable=unused-import
+        from multiprocessing.connection import Connection # type:ignore # pylint: disable=unused-import
     from artisanlib.types import ProfileData # pylint: disable=unused-import
 
 
@@ -541,8 +541,8 @@ def extractProfileBulletDict(data,aw):
         try:
             eventtypes = ['blowerSetting','drumSpeedSetting','--','inductionPowerSetting']
             for j, eventname in enumerate(eventtypes):
-                if eventname != '--':
-                    last = None
+                if eventname != '--' and eventname in data:
+                    last:Optional[float] = None
                     ip = data[eventname]
                     for i, _ in enumerate(ip):
                         v = ip[i]+1

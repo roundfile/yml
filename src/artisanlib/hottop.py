@@ -26,8 +26,8 @@ from typing_extensions import Final  # Python <=3.7
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
 
-process = None
-control = False # Hottop under control?
+process:Optional[mp.Process] = None
+control:bool = False # Hottop under control?
 
 # serial port configurations
 SP = None
@@ -135,31 +135,31 @@ def doWork(interval:float, comport, baudrate, bytesize, parity, stopbits, timeou
     while True:
         # logging part
         BT, ET, HEATER, FAN, MAIN_FAN, SOLENOID, DRUM_MOTOR, COOLING_MOTOR, CHAFF_TRAY = gettemperatures(SP)
-        if BT != -1:
+        if -1 != BT:
             if aBT.value == -1:
                 aBT.value = float(BT)
             else:
                 # we compute a running average to compensate for the low precisions
                 aBT.value = (aBT.value + float(BT)) / 2.0
-        if ET != -1:
+        if -1 != ET:
             if aET.value == -1:
                 aET.value = ET
             else:
                 # we compute a running average to compensate for the low precisions
                 aET.value = (aET.value + float(ET)) / 2.0
-        if HEATER != -1:
+        if -1 != HEATER:
             aHEATER.value = HEATER
-        if FAN != -1:
+        if -1 != FAN:
             aFAN.value = FAN
-        if MAIN_FAN != -1:
+        if -1 != MAIN_FAN:
             aMAIN_FAN.value = MAIN_FAN
-        if SOLENOID != -1:
+        if -1 != SOLENOID:
             aSOLENOID.value = SOLENOID
-        if DRUM_MOTOR != -1:
+        if -1 != DRUM_MOTOR:
             aDRUM_MOTOR.value = DRUM_MOTOR
-        if COOLING_MOTOR != -1:
+        if -1 != COOLING_MOTOR:
             aCOOLING_MOTOR.value = COOLING_MOTOR
-        if CHAFF_TRAY != -1:
+        if -1 != CHAFF_TRAY:
             aCHAFF_TRAY.value = xCHAFF_TRAY
 
         # control part
@@ -276,7 +276,7 @@ def startHottop(interval:float=1.0,comport='COM4',baudrate=115200,bytesize=8,par
     global process, xCONTROL, xBT, xET, xHEATER, xFAN, xMAIN_FAN, xSOLENOID, xDRUM_MOTOR, xCOOLING_MOTOR, xCHAFF_TRAY, \
         xSET_HEATER, xSET_FAN, xSET_MAIN_FAN, xSET_SOLENOID, xSET_DRUM_MOTOR, xSET_COOLING_MOTOR # pylint: disable=global-statement
     try:
-        if process:
+        if process is not None:
             return False
         stopHottop() # we stop an already running process to ensure that only one is running
         lock = mp.Lock()

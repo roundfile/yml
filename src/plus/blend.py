@@ -60,8 +60,11 @@ from artisanlib.util import comma2dot
 from artisanlib.dialogs import ArtisanDialog
 from artisanlib.widgets import MyQComboBox
 from uic import BlendDialog
-from typing import Optional, List
+from typing import Optional, List, Dict, Tuple, Any, TYPE_CHECKING
 from typing_extensions import Final  # Python <=3.7
+
+if TYPE_CHECKING:
+    from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
 
@@ -77,19 +80,19 @@ class Component():
         self._ratio = ratio
 
     @property
-    def coffee(self):
+    def coffee(self) -> str:
         return self._coffee
 
     @coffee.setter
-    def coffee(self, value):
+    def coffee(self, value:str) -> None:
         self._coffee = value
 
     @property
-    def ratio(self):
+    def ratio(self) -> float:
         return self._ratio
 
     @ratio.setter
-    def ratio(self, value):
+    def ratio(self, value:float) -> None:
         self._ratio = value
 
 
@@ -97,24 +100,24 @@ class Component():
 #######################  CustomBlend  ##################################################
 
 class CustomBlend():
-    def __init__(self, name: str, components: List) -> None:
-        self._name = name
-        self._components = components
+    def __init__(self, name: str, components: List[Component]) -> None:
+        self._name:str = name
+        self._components:List[Component] = components
 
     @property
-    def name(self):
+    def name(self) -> str:
         return self._name
 
     @name.setter
-    def name(self, value):
+    def name(self, value:str):
         self._name = value
 
     @property
-    def components(self):
+    def components(self) -> List[Component]:
         return self._components
 
     @components.setter
-    def components(self, value):
+    def components(self, value:List[Component]) -> None:
         self._components = value
 
     # a blend is valid if it
@@ -122,10 +125,8 @@ class CustomBlend():
     #  - the component ratios of all ingredients sum up to 1,
     #  - there are no duplicates in the list of component coffees, and,
     #  - all component coffees are contained in the list of available_coffees (list of hr_ids as strings), if given
-    def isValid(self, available_coffees: Optional[List] = None):
-        if self.components is None:
-            return False
-        component_coffees = [c.coffee for c in self.components]
+    def isValid(self, available_coffees: Optional[List] = None) -> bool:
+        component_coffees = [c.coffee for c in self._components]
         return (
             len(component_coffees)>1 and
             len(component_coffees) == len(set(component_coffees)) and
@@ -136,22 +137,22 @@ class CustomBlend():
 #####################  Custom CustomBlend Dialog  ######################################
 
 class CustomBlendDialog(ArtisanDialog):
-    def __init__(self, parent, aw, inWeight, weightUnit, coffees, blend) -> None:
+    def __init__(self, parent, aw:'ApplicationWindow', inWeight:float, weightUnit:str, coffees:Dict[str, str], blend:CustomBlend) -> None:
         super().__init__(parent, aw)
-        self.initialTotalWeight = inWeight
-        self.inWeight = inWeight
-        self.weightUnit = weightUnit
-        self.coffees = coffees # dict associating coffee names to their hr_id
-        self.coffee_ids = {v: k for k, v in self.coffees.items()} # dict associating coffee hr_ids to their names
-        self.sorted_coffees = sorted(coffees.items(), key=lambda x: x[0]) # list of coffee name and hr_id tuples sorted by coffee name
-        self.blend = CustomBlend( # we create a new copy not to alter the original one
+        self.initialTotalWeight:float = inWeight
+        self.inWeight:float = inWeight
+        self.weightUnit:str = weightUnit
+        self.coffees:Dict[str, str] = coffees # dict associating coffee names to their hr_id
+        self.coffee_ids:Dict[str, str] = {v: k for k, v in self.coffees.items()} # dict associating coffee hr_ids to their names
+        self.sorted_coffees:List[Tuple[str, str]] = sorted(coffees.items(), key=lambda x: x[0]) # list of coffee name and hr_id tuples sorted by coffee name
+        self.blend:CustomBlend = CustomBlend( # we create a new copy not to alter the original one
             blend.name.strip(),
             [Component(c.coffee, c.ratio) for c in blend.components])
 
         # configure UI
         self.ui = BlendDialog.Ui_customBlendDialog()
         self.ui.setupUi(self)
-        self.setWindowTitle(QApplication.translate('Form Caption','Custom CustomBlend'))
+        self.setWindowTitle(QApplication.translate('Form Caption','Custom Blend'))
         self.ui.buttonBox.setStandardButtons(QDialogButtonBox.StandardButton.Cancel|QDialogButtonBox.StandardButton.Apply)
         # hack to assign the Apply button the AcceptRole without losing default system translations
         applyButton = self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Apply)
@@ -172,48 +173,58 @@ class CustomBlendDialog(ArtisanDialog):
         self.ui.lineEdit_name.editingFinished.connect(self.nameChanged)
         self.ui.pushButton_add.clicked.connect(self.addComponent)
         self.ui.lineEdit_weight.editingFinished.connect(self.weighteditChanged)
+        self.ui.lineEdit_weight.textChanged.connect(self.textChanged)
 
         settings = QSettings()
         if settings.contains('BlendGeometry'):
             self.restoreGeometry(settings.value('BlendGeometry'))
 
+    @pyqtSlot(str)
+    def textChanged(self,s:str) -> None:
+        if s == '': # content got cleared
+            self.ui.lineEdit_weight.setText('0')
+            self.ui.lineEdit_weight.repaint()
+            self.weighteditChanged()
 
     @pyqtSlot()
-    def nameChanged(self):
+    def nameChanged(self) -> None:
         self.blend.name = self.ui.lineEdit_name.text().strip()
 
     # as the total weight was explicitly updated by the user, we set the initialTotalWeight here
     @pyqtSlot()
-    def weighteditChanged(self):
-        weight = float(comma2dot(self.ui.lineEdit_weight.text()))
-        inw = f'{self.aw.float2floatWeightVolume(weight)}:g''%g'
-        self.ui.lineEdit_weight.setText(inw)
-        self.ui.lineEdit_weight.repaint()
-        self.initialTotalWeight = float(self.ui.lineEdit_weight.text())
-        self.inWeight = self.initialTotalWeight
-        self.updateComponentTable()
+    def weighteditChanged(self) -> None:
+        try:
+            weight = float(comma2dot(self.ui.lineEdit_weight.text())) # text could be a non-float!
+            inw = f'{self.aw.float2floatWeightVolume(weight):g}'
+            self.ui.lineEdit_weight.setText(inw)
+            self.ui.lineEdit_weight.repaint()
+            self.initialTotalWeight = float(self.ui.lineEdit_weight.text())
+            self.inWeight = self.initialTotalWeight
+            self.updateComponentTable()
+        except Exception as e: # pylint: disable=broad-except
+            _log.error(e)
 
     @pyqtSlot()
-    def ratioChanged(self):
+    def ratioChanged(self) -> None:
         i = self.aw.findWidgetsRow(self.ui.tableWidget,self.sender(), 0)
         if i is not None:
             ratioLineEdit = self.ui.tableWidget.cellWidget(i,0)
             assert isinstance(ratioLineEdit, QLineEdit)
-            ratio = float(ratioLineEdit.text()) / 100
-            self.blend.components[i].ratio = ratio
+            ratio = max(0,float(ratioLineEdit.text()) / 100)
+            self.blend.components[i].ratio = max(0,min(1,ratio))
             # if there are exactly two components, we calculate the ratio of the second component to 1
-            if len(self.blend.components) == 2:
-                self.blend.components[(i+1) % 2].ratio = 1 - ratio
+            if len(self.blend.components) == 2 and ratio < 1:
+                self.blend.components[(i+1) % 2].ratio = max(0,min(1,1 - ratio))
             self.updateComponentTable()
 
     @pyqtSlot()
-    def weightChanged(self):
+    def weightChanged(self) -> None:
         i = self.aw.findWidgetsRow(self.ui.tableWidget,self.sender(), 1)
         if i is not None:
             weightLineEdit = self.ui.tableWidget.cellWidget(i,1)
             assert isinstance(weightLineEdit, QLineEdit)
             weight = float(comma2dot(weightLineEdit.text()))
-            inw = f'{self.aw.float2floatWeightVolume(weight)}:g'
+            inw = f'{self.aw.float2floatWeightVolume(weight):g}'
             weightLineEdit.setText(inw)
             if self.initialTotalWeight == 0:
                 # we update the total weight
@@ -225,27 +236,29 @@ class CustomBlendDialog(ArtisanDialog):
                     assert isinstance(cw, QLineEdit)
                     inWeight_sum += float(cw.text())
                 self.inWeight = inWeight_sum
-                inw = f'{self.aw.float2floatWeightVolume(self.inWeight)}:g'
+                inw = f'{self.aw.float2floatWeightVolume(self.inWeight):g}'
                 self.ui.lineEdit_weight.setText(inw)
-            # we update the ratio
-            ratio = weight / self.inWeight
-            self.blend.components[i].ratio = ratio
-            # if there are exactly two components, we calculate the ratio of the second component to 1
-            if len(self.blend.components) == 2:
-                self.blend.components[(i+1) % 2].ratio = 1 - ratio
-            elif self.initialTotalWeight == 0:
-                # we calculate the ratio of all other components from their individual weight too
-                for j in range(self.ui.tableWidget.rowCount()):
-                    if j != i: # for component i we already calculated the ratio
-                        wLineEdit = self.ui.tableWidget.cellWidget(j,1)
-                        assert isinstance(wLineEdit, QLineEdit)
-                        weight = float(wLineEdit.text())
-                        ratio = weight / self.inWeight
-                        self.blend.components[j].ratio = ratio
+                self.ui.lineEdit_weight.repaint()
+            if self.inWeight != 0:
+                # we update the ratio
+                ratio = max(0,min(1,weight / self.inWeight))
+                self.blend.components[i].ratio = ratio
+                # if there are exactly two components, we calculate the ratio of the second component to 1
+                if len(self.blend.components) == 2 and ratio < 1:
+                    self.blend.components[(i+1) % 2].ratio = max(0,min(1,1 - ratio))
+                elif self.initialTotalWeight == 0:
+                    # we calculate the ratio of all other components from their individual weight too
+                    for j in range(self.ui.tableWidget.rowCount()):
+                        if j != i: # for component i we already calculated the ratio
+                            wLineEdit = self.ui.tableWidget.cellWidget(j,1)
+                            assert isinstance(wLineEdit, QLineEdit)
+                            weight = float(wLineEdit.text())
+                            ratio = max(0,min(1,weight / self.inWeight))
+                            self.blend.components[j].ratio = ratio
             self.updateComponentTable()
 
     @pyqtSlot(int)
-    def componentCoffeeChanged(self,_):
+    def componentCoffeeChanged(self,_:int) -> None:
         i = self.aw.findWidgetsRow(self.ui.tableWidget,self.sender(), 2)
         if i is not None:
             coffeecombobox = self.ui.tableWidget.cellWidget(i,2)
@@ -256,7 +269,7 @@ class CustomBlendDialog(ArtisanDialog):
     ###
 
     @pyqtSlot(bool)
-    def addComponent(self,_):
+    def addComponent(self,_:bool) -> None:
         ratio = min(100,max(0,1 - sum(c.ratio for c in self.blend.components)))
         blend_coffees = [c.coffee for c in self.blend.components]
         coffee = [hr_id for (c,hr_id) in self.sorted_coffees if hr_id not in blend_coffees][0]
@@ -265,44 +278,44 @@ class CustomBlendDialog(ArtisanDialog):
         self.updateComponentTable()
 
     @pyqtSlot(bool)
-    def deleteComponent(self,_):
+    def deleteComponent(self,_:bool) -> None:
         i = self.aw.findWidgetsRow(self.ui.tableWidget,self.sender(), 3)
         if i is not None:
             self.blend.components = self.blend.components[:i] + self.blend.components[i+1:]
             self.updateAddButton()
             self.updateComponentTable()
 
-    def saveSettings(self):
+    def saveSettings(self) -> None:
         settings = QSettings()
         #save window geometry
         settings.setValue('BlendGeometry',self.saveGeometry())
 
-    def closeEvent(self,_):
+    def closeEvent(self,_:Optional[Any]) -> None:
         self.saveSettings()
 
     @pyqtSlot()
-    def accept(self):
+    def accept(self) -> None:
         self.saveSettings()
         super().accept()
 
     @pyqtSlot()
-    def reject(self):
+    def reject(self) -> None:
         self.saveSettings()
         super().reject()
 
     @pyqtSlot()
-    def close(self):
+    def close(self) -> None:
         self.closeEvent(None)
 
-    def updateAddButton(self):
+    def updateAddButton(self) -> None:
         self.ui.pushButton_add.setEnabled(len(self.coffees)>len(self.blend.components))
 
-    # returns True if all component rations sum up to 1 and all individual ratios are above 0 and below 100
-    def checkRatio(self):
+    # returns True if all component ratios sum up to (about) 1 and all individual ratios are above 0 and below 100
+    def checkRatio(self) -> bool:
         ratios = [c.ratio for c in self.blend.components]
-        return all(0 < r < 100 for r in ratios) and ((1 - sum(ratios)) < 0.001)
+        return all(0 < r < 100 for r in ratios) and (-0.0009 < (1 - sum(ratios)) < 0.001)
 
-    def updateComponentTable(self):
+    def updateComponentTable(self) -> None:
         try:
             self.ui.tableWidget.clear()
             self.ui.tableWidget.setTabKeyNavigation(False)
@@ -341,7 +354,7 @@ class CustomBlendDialog(ArtisanDialog):
 
                 #weight
                 component_weight = c.ratio * self.inWeight
-                weightedit = QLineEdit(f'{self.aw.float2floatWeightVolume(component_weight)}:g')
+                weightedit = QLineEdit(f'{self.aw.float2floatWeightVolume(component_weight):g}')
                 weightedit.setAlignment(Qt.AlignmentFlag.AlignRight)
                 weightedit.setMinimumWidth(70)
                 weightedit.setMaximumWidth(70)
@@ -380,14 +393,15 @@ class CustomBlendDialog(ArtisanDialog):
             _log.exception(e)
 
 
-def openCustomBlendDialog(window, aw, inWeight, weightUnit, coffees, blend):
+def openCustomBlendDialog(window, aw:'ApplicationWindow', inWeight:float, weightUnit:str, coffees:Dict[str, str], blend:CustomBlend) -> Tuple[Optional[CustomBlend], float]:
     dialog = CustomBlendDialog(window, aw, inWeight, weightUnit, coffees, blend)
     res = dialog.exec()
+    blend_res:Optional[CustomBlend]
     if res:
-        blend = dialog.blend
+        blend_res = dialog.blend
         total_weight = dialog.inWeight
     else:
-        blend = None
+        blend_res = None
         total_weight = inWeight
 
     #deleteLater() will not work here as the dialog is still bound via the parent
@@ -399,4 +413,4 @@ def openCustomBlendDialog(window, aw, inWeight, weightUnit, coffees, blend):
         #print(sip.isdeleted(dialog))
     except Exception: # pylint: disable=broad-except
         pass
-    return blend, total_weight
+    return blend_res, total_weight

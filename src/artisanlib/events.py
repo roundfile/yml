@@ -18,7 +18,7 @@
 import sys
 import platform
 import logging
-from typing import List, cast, TYPE_CHECKING
+from typing import List, Optional, cast, TYPE_CHECKING
 from typing_extensions import Final  # Python <=3.7
 
 if TYPE_CHECKING:
@@ -77,7 +77,7 @@ class EventsDlg(ArtisanResizeablDialog):
         self.eventslidervisibilities:List[int] = [0,0,0,0]
         self.eventslideractions:List[int] = [0,0,0,0]
         self.eventslidercommands:List[str] = ['','','','']
-        self.eventslideroffsets:List[int] = [0,0,0,0]
+        self.eventslideroffsets:List[float] = [0.,0.,0.,0.]
         self.eventsliderfactors:List[float] = [1.0,1.0,1.0,1.0]
         self.eventslidermin:List[int] = [0,0,0,0]
         self.eventslidermax:List[int] = [100,100,100,100]
@@ -493,7 +493,7 @@ class EventsDlg(ArtisanResizeablDialog):
         self.autoCharge.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         if self.app.artisanviewerMode:
             self.autoCharge.setEnabled(False)
-        self.chargeTimer = QCheckBox(QApplication.translate('CheckBox','CHARGE timer'))
+        self.chargeTimer = QCheckBox(QApplication.translate('CheckBox','CHARGE Timer'))
         self.chargeTimer.setChecked(self.aw.qmc.chargeTimerFlag)
         self.chargeTimer.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         if self.app.artisanviewerMode:
@@ -530,14 +530,14 @@ class EventsDlg(ArtisanResizeablDialog):
 
         ###  TAB 2
         #number of buttons per row
-        self.nbuttonslabel = QLabel(QApplication.translate('Label','Max buttons per row'))
+        self.nbuttonslabel = QLabel(QApplication.translate('Label','Max Buttons Per Row'))
         self.nbuttonsSpinBox = QSpinBox()
         self.nbuttonsSpinBox.setMaximumWidth(100)
         self.nbuttonsSpinBox.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.nbuttonsSpinBox.setRange(2,30)
         self.nbuttonsSpinBox.setValue(int(self.aw.buttonlistmaxlen))
         self.nbuttonsSpinBox.valueChanged.connect(self.setbuttonlistmaxlen)
-        nbuttonsSizeLabel = QLabel(QApplication.translate('Label','Button size'))
+        nbuttonsSizeLabel = QLabel(QApplication.translate('Label','Button Size'))
         self.nbuttonsSizeBox = MyQComboBox()
         size_items = [
                     QApplication.translate('ComboBox', 'tiny'),
@@ -546,6 +546,14 @@ class EventsDlg(ArtisanResizeablDialog):
                 ]
         self.nbuttonsSizeBox.addItems(size_items)
         self.nbuttonsSizeBox.setCurrentIndex(self.aw.buttonsize)
+        self.markLastButtonPressed = QCheckBox(QApplication.translate('CheckBox','Mark last pressed'))
+        self.markLastButtonPressed.setToolTip(QApplication.translate('Tooltip', 'Invert color of last button pressed'))
+        self.markLastButtonPressed.setChecked(self.aw.mark_last_button_pressed)
+        self.markLastButtonPressed.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.showExtraButtonTooltips = QCheckBox(QApplication.translate('CheckBox','Tooltips'))
+        self.showExtraButtonTooltips.setToolTip(QApplication.translate('Tooltip', 'Show custom event button specification as button tooltip'))
+        self.showExtraButtonTooltips.setChecked(self.aw.show_extrabutton_tooltips)
+        self.showExtraButtonTooltips.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         #table for showing events
         self.eventbuttontable = QTableWidget()
         self.eventbuttontable.setTabKeyNavigation(True)
@@ -1290,6 +1298,10 @@ class EventsDlg(ArtisanResizeablDialog):
         nbuttonslayout.addSpacing(10)
         nbuttonslayout.addWidget(colorpatternlabel)
         nbuttonslayout.addWidget(self.colorSpinBox)
+        nbuttonslayout.addSpacing(10)
+        nbuttonslayout.addWidget(self.markLastButtonPressed)
+        nbuttonslayout.addSpacing(10)
+        nbuttonslayout.addWidget(self.showExtraButtonTooltips)
         nbuttonslayout.addStretch()
         tab2buttonlayout = QHBoxLayout()
         tab2buttonlayout.addWidget(addButton)
@@ -1617,8 +1629,8 @@ class EventsDlg(ArtisanResizeablDialog):
                     else:
                         linespacethreshold = abs(linespace[1] - linespace[0]) * self.aw.eventquantifierthresholdfine
                     # loop over that data and classify each value
-                    ld = None # last digitized value
-                    lt = None # last digitized temp value
+                    ld:Optional[float] = None # last digitized value
+                    lt:Optional[float] = None # last digitized temp value
                     for ii, _ in enumerate(temp):
                         t = temp[ii]
                         if t != -1: # -1 is an error value
@@ -2020,9 +2032,9 @@ class EventsDlg(ArtisanResizeablDialog):
             else:
                 self.aw.eventslidercommands = ['','','','']
             if len(copy)>12 and len(copy[12]) == 4:
-                self.aw.eventslideroffsets = cast(List[int], copy[12][:])
+                self.aw.eventslideroffsets = cast(List[float], copy[12][:])
             else:
-                self.aw.eventslideroffsets = [0,0,0,0]
+                self.aw.eventslideroffsets = [0., 0., 0., 0.]
             if len(copy)>13 and len(copy[13]) == 4:
                 self.aw.eventsliderfactors = cast(List[float], copy[13][:])
             else:
@@ -2271,6 +2283,8 @@ class EventsDlg(ArtisanResizeablDialog):
         self.eventbuttontable.setDragEnabled(False) # content not draggable, only vertical header!
         self.eventbuttontable.verticalHeader().setSectionsMovable(True)
         self.eventbuttontable.verticalHeader().setDragDropMode(QTableWidget.DragDropMode.InternalMove)
+        self.eventbuttontable.setAutoScroll(False)
+        self.eventbuttontable.verticalHeader().setAutoScroll(False)
 
         visibility = [QApplication.translate('ComboBox','OFF'),
                       QApplication.translate('ComboBox','ON')]
@@ -3132,6 +3146,8 @@ class EventsDlg(ArtisanResizeablDialog):
         try:
             self.closeHelp()
             self.aw.buttonsize = self.nbuttonsSizeBox.currentIndex()
+            self.aw.mark_last_button_pressed = self.markLastButtonPressed.isChecked()
+            self.aw.show_extrabutton_tooltips = self.showExtraButtonTooltips.isChecked()
             self.aw.buttonpalette_label = self.transferpalettecurrentLabelEdit.text()
             self.savetableextraeventbutton()
             # save column widths
