@@ -20300,11 +20300,9 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore # Argument to class mus
             if self.pdf_page_layout is None:
                 # lazy imports
                 try:
-                    #pylint: disable = E, W, R, C
                     from PyQt6.QtCore import QMarginsF  # @UnusedImport @Reimport  @UnresolvedImport
                     from PyQt6.QtGui import QPageLayout, QPageSize  # @UnusedImport @Reimport  @UnresolvedImport
-                except Exception:  # pylint: disable=broad-except
-                    #pylint: disable = E, W, R, C
+                except ImportError:
                     from PyQt5.QtCore import QMarginsF # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
                     from PyQt5.QtGui import QPageLayout, QPageSize  # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
                 if QPrinter().pageLayout().pageSize().id() == QPageSize.PageSizeId.Letter:
