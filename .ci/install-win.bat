@@ -64,16 +64,12 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
     if not exist v%PYINSTALLER_VER%.zip (exit /b 100)
     7z x v%PYINSTALLER_VER%.zip
-    echo ***** About to delete the zip file
     del v%PYINSTALLER_VER%.zip
-    echo ***** Calling vcvarsall
-    call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
     if not exist pyinstaller-%PYINSTALLER_VER%\bootloader\ (exit /b 101)
     cd pyinstaller-%PYINSTALLER_VER%\bootloader
     ::
     :: build the bootlaoder and wheel
     echo ***** Running WAF
-    ::%PYTHON_PATH%\python.exe ./waf all --target-arch=64bit
     %PYTHON_PATH%\python.exe ./waf all --msvc_targets=x64
     cd ..
     echo ***** Building Wheel
