@@ -11,8 +11,8 @@ environment:
   matrix:
   - job_name: windows_legacy
     appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: windows
-#    appveyor_build_worker_image: Visual Studio 2022
+  - job_name: windows
+    appveyor_build_worker_image: Visual Studio 2022
 #  - job_name: macos
 #    appveyor_build_worker_image: macos
 #  - job_name: linux
@@ -48,7 +48,7 @@ for:
     PYTHON_PATH: "C:\\Python38-x64"
     QT_PATH: "c:\\qt\\5.15\\msvc2019_64"
     PYUIC: "pyuic5.exe"
-    BUILD_PYINSTALLER: "True"
+    BUILD_PYINSTALLER: "False"
     ARTISAN_LEGACY: "True"
     VC_REDIST: "https://aka.ms/vs/16/release/vc_redist.x64.exe"
 
@@ -100,7 +100,7 @@ for:
   environment:
     QT_PATH: "C:\\qt\\6.4\\msvc2022_64"
     PYUIC: "pyuic6.exe"
-    BUILD_PYINSTALLER: "True"
+    BUILD_PYINSTALLER: "False"
     ARTISAN_LEGACY: "False"
     VC_REDIST: "https://aka.ms/vs/17/release/vc_redist.x64.exe"  #redistributable for VS 2015-2022
 
