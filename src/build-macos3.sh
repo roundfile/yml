@@ -45,20 +45,12 @@ if [ -z $APPVEYOR ]; then
             $PYUIC -o uic/${fn}.py -x ui/${fn}.ui
         fi
     done
-
-#    # qrc
-#    find qrc -iname "*.qrc" | while read f
-#    do
-#        fullfilename=$(basename $f)
-#        fn=${fullfilename%.*}
-#        $PYRCC -o uic/${fn}_rc.py qrc/${fn}.qrc
-#    done
 fi
 
 # translations
-echo "************* 1 **************"
 
 if [ -f "$PYLUPDATE" ]; then
+echo "************* 1 **************"
     $PYLUPDATE artisan.pro
 fi
 
@@ -72,6 +64,11 @@ if [ -z $APPVEYOR ]; then
         $QT_SRC_PATH/bin/lrelease -verbose $f || true
     done
 fi
+
+# convert help files from .xlsx to .py
+if [ -z $APPVEYOR ]; then
+    echo "************* 3 **************"
+    python3 ..\doc\help_dialogs\Script\xlsx_to_artisan_help.py all
 
 # distribution
 rm -rf build dist
