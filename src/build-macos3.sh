@@ -73,7 +73,7 @@ done
 
 # convert help files from .xlsx to .py
 echo "************* 3 **************"
-python3 ..\doc\help_dialogs\Script\xlsx_to_artisan_help.py all
+python3 ../doc/help_dialogs/Script/xlsx_to_artisan_help.py all
 
 # distribution
 rm -rf build dist
