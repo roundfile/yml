@@ -31,6 +31,9 @@ else
 
 fi
 
+echo "ls uic before PYUIC"
+ls ./uic
+
 # ui / qrc
 echo "************* 0 **************"
 # ui
@@ -44,23 +47,30 @@ do
         $PYUIC -o uic/${fn}.py -x ui/${fn}.ui
     fi
 done
+echo "ls uic before PYUIC"
+ls ./uic
+
 
 # translations
+echo "ls translations before pylupdate"
+ls translations
 
 if [ -f "$PYLUPDATE" ]; then
 echo "************* 1 **************"
     $PYLUPDATE artisan.pro
 fi
 
-pwd
-echo "ls $QT_SRC_PATH"
-ls $QT_SRC_PATH
-#ls /Users/appveyor/Qt/6.4.0/macos/bin/lrelease
-#ls /Users/appveyor/Qt/6.4/macos/bin/lrelease
-#ls ~
-#ls ~/Qt/6.4/macos/bin/lrelease
-#echo "~/Qt/6.4/macos/bin/lrelease"
-#ls ~/Qt/6.4/macos/bin/lrelease
+echo "ls translations after pylupdate"
+ls translations
+#pwd
+#echo "ls $QT_SRC_PATH"
+#ls $QT_SRC_PATH
+##ls /Users/appveyor/Qt/6.4.0/macos/bin/lrelease
+##ls /Users/appveyor/Qt/6.4/macos/bin/lrelease
+##ls ~
+##ls ~/Qt/6.4/macos/bin/lrelease
+##echo "~/Qt/6.4/macos/bin/lrelease"
+##ls ~/Qt/6.4/macos/bin/lrelease
 
 # there is no full Qt installation on Travis, thus don't run  lrelease
 echo "************* 2 **************"
@@ -71,9 +81,19 @@ do
     $QT_SRC_PATH/bin/lrelease -verbose $f
 done
 
+echo "ls translations after lrelease"
+ls translations
+
+echo "ls uic before Help"
+ls ./uic
+
 # convert help files from .xlsx to .py
 echo "************* 3 **************"
 python3 ../doc/help_dialogs/Script/xlsx_to_artisan_help.py all
+
+echo "ls uic after Help"
+ls ./uic
+
 
 # distribution
 rm -rf build dist
