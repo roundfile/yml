@@ -178,6 +178,7 @@ for:
     # debug
     - pwd
     - ls ~/Qt/6.4
+    - ls ~/Qt/6.4/macos
 
 #  build_script:
 #    - echo "MacOS Build"
