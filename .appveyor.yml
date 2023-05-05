@@ -159,7 +159,7 @@ for:
     MACOSX_DEPLOYMENT_TARGET: 11.0
     PYTHONSITEPKGS: /Users/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
     QT_PATH: ${PYTHONSITEPKGS}/PyQt6/Qt6
-    QT_SRC_PATH: $HOME/Qt/6.4
+    QT_SRC_PATH: ~/Qt/6.4
     PYUIC: pyuic6
     PYRCC: pyrcc6
     PYLUPDATE: ./pylupdate6pro  #the dot slash is necessary
