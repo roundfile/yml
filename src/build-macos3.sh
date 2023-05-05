@@ -69,6 +69,7 @@ fi
 if [ -z $APPVEYOR ]; then
     echo "************* 3 **************"
     python3 ..\doc\help_dialogs\Script\xlsx_to_artisan_help.py all
+fi
 
 # distribution
 rm -rf build dist
