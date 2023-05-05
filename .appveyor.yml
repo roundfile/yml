@@ -173,26 +173,30 @@ for:
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
 
     # run the install script
-    - .ci/install-macos.sh
+#    - .ci/install-macos.sh
 
-  build_script:
-    - echo "MacOS Build"
-    - chmod +x src/*.sh
-    - chmod +x src/pylupdate6pro
+    # debug
+    - pwd
+    - ls ~/Qt/6.4
 
-    # run the build script
-    - cd src
-    - ./build-macos3.sh
-
-# unit test fails as it runs on Py3.9 while the build installs under brew installed Py3.10 (see build-mac3.py)
-#  test_script:
-#    - python -m unittest discover -s src
-
-#  artifacts:
-#    - path: 'src/artisan-*.dmg'
-
-  deploy_script:
-    - ../.ci/upload.sh artisan-*.dmg
+#  build_script:
+#    - echo "MacOS Build"
+#    - chmod +x src/*.sh
+#    - chmod +x src/pylupdate6pro
+#
+#    # run the build script
+#    - cd src
+#    - ./build-macos3.sh
+#
+## unit test fails as it runs on Py3.9 while the build installs under brew installed Py3.10 (see build-mac3.py)
+##  test_script:
+##    - python -m unittest discover -s src
+#
+##  artifacts:
+##    - path: 'src/artisan-*.dmg'
+#
+#  deploy_script:
+#    - ../.ci/upload.sh artisan-*.dmg
 
 
 -
