@@ -52,6 +52,10 @@ echo "************* 1 **************"
     $PYLUPDATE artisan.pro
 fi
 
+pwd
+ls ~/Qt/6.4.2/macos/bin
+ls ~/Qt/6.4/macos/bin
+
 # there is no full Qt installation on Travis, thus don't run  lrelease
 echo "************* 2 **************"
 $QT_SRC_PATH/bin/lrelease -verbose artisan.pro
