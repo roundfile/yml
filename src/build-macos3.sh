@@ -53,11 +53,14 @@ echo "************* 1 **************"
 fi
 
 pwd
-ls /Users/appveyor/Qt/6.4.0/macos/bin/lrelease
-ls /Users/appveyor/Qt/6.4/macos/bin/lrelease
-ls ~
-ls ~/Qt/6.4/macos/bin/lrelease
-ls $HOME/macos/bin/lrelease
+echo "ls $QT_SRC_PATH"
+ls $QT_SRC_PATH
+#ls /Users/appveyor/Qt/6.4.0/macos/bin/lrelease
+#ls /Users/appveyor/Qt/6.4/macos/bin/lrelease
+#ls ~
+#ls ~/Qt/6.4/macos/bin/lrelease
+echo "$HOME/Qt/6.4/macos/bin/lrelease"
+ls $HOME/Qt/6.4/macos/bin/lrelease
 
 # there is no full Qt installation on Travis, thus don't run  lrelease
 echo "************* 2 **************"
