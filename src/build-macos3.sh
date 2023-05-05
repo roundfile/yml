@@ -54,11 +54,11 @@ fi
 
 # there is no full Qt installation on Travis, thus don't run  lrelease
 echo "************* 2 **************"
-$QT_SRC_PATH/bin/lrelease -verbose artisan.pro || true
+$QT_SRC_PATH/bin/lrelease -verbose artisan.pro
 for f in translations/qtbase_*.ts
 do
     echo "Processing $f file..."
-    $QT_SRC_PATH/bin/lrelease -verbose $f || true
+    $QT_SRC_PATH/bin/lrelease -verbose $f
 done
 
 # convert help files from .xlsx to .py
