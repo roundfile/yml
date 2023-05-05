@@ -59,8 +59,8 @@ ls $QT_SRC_PATH
 #ls /Users/appveyor/Qt/6.4/macos/bin/lrelease
 #ls ~
 #ls ~/Qt/6.4/macos/bin/lrelease
-echo "$HOME/Qt/6.4/macos/bin/lrelease"
-ls $HOME/Qt/6.4/macos/bin/lrelease
+#echo "~/Qt/6.4/macos/bin/lrelease"
+#ls ~/Qt/6.4/macos/bin/lrelease
 
 # there is no full Qt installation on Travis, thus don't run  lrelease
 echo "************* 2 **************"
