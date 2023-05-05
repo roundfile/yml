@@ -32,20 +32,18 @@ else
 fi
 
 # ui / qrc
-if [ -z $APPVEYOR ]; then
-    echo "************* 0 **************"
-    # ui
-    find ui -iname "*.ui" | while read f
-    do
-        fullfilename=$(basename $f)
-        fn=${fullfilename%.*}
-        if [ "$PYUIC" == "pyuic5" ]; then
-            $PYUIC -o uic/${fn}.py --from-imports ui/${fn}.ui
-        else
-            $PYUIC -o uic/${fn}.py -x ui/${fn}.ui
-        fi
-    done
-fi
+echo "************* 0 **************"
+# ui
+find ui -iname "*.ui" | while read f
+do
+    fullfilename=$(basename $f)
+    fn=${fullfilename%.*}
+    if [ "$PYUIC" == "pyuic5" ]; then
+        $PYUIC -o uic/${fn}.py --from-imports ui/${fn}.ui
+    else
+        $PYUIC -o uic/${fn}.py -x ui/${fn}.ui
+    fi
+done
 
 # translations
 
@@ -55,24 +53,20 @@ echo "************* 1 **************"
 fi
 
 # there is no full Qt installation on Travis, thus don't run  lrelease
-if [ -z $APPVEYOR ]; then
-    echo "************* 2 **************"
-    $QT_SRC_PATH/bin/lrelease -verbose artisan.pro || true
-    for f in translations/qtbase_*.ts
-    do
-        echo "Processing $f file..."
-        $QT_SRC_PATH/bin/lrelease -verbose $f || true
-    done
-fi
+echo "************* 2 **************"
+$QT_SRC_PATH/bin/lrelease -verbose artisan.pro || true
+for f in translations/qtbase_*.ts
+do
+    echo "Processing $f file..."
+    $QT_SRC_PATH/bin/lrelease -verbose $f || true
+done
 
 # convert help files from .xlsx to .py
-if [ -z $APPVEYOR ]; then
-    echo "************* 3 **************"
-    python3 ..\doc\help_dialogs\Script\xlsx_to_artisan_help.py all
-fi
+echo "************* 3 **************"
+python3 ..\doc\help_dialogs\Script\xlsx_to_artisan_help.py all
 
 # distribution
 rm -rf build dist
 sleep .3 # sometimes it takes a little for dist to get really empty
-echo "************* 3 **************"
+echo "************* 4 **************"
 python3 setup-macos3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'
