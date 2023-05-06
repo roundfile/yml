@@ -96,6 +96,10 @@ python3 ../doc/help_dialogs/Script/xlsx_to_artisan_help.py all
 echo "ls uic after Help"
 ls ./help
 
+# create a zip with the generated files
+zip ../generated-macos.zip -i ../doc/help_dialogs/Output_html/\*.html
+zip ../generated-macos.zip -i uic/\*.py
+zip ../generated-macos.zip -i translations
 
 # distribution
 rm -rf build dist

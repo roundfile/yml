@@ -192,8 +192,9 @@ for:
 #  test_script:
 #    - python -m unittest discover -s src
 
-#  artifacts:
+  artifacts:
 #    - path: 'src/artisan-*.dmg'
+    - path: 'generated-macos.zip'
 
   deploy_script:
     - ../.ci/upload.sh artisan-*.dmg
