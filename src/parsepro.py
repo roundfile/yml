@@ -21,7 +21,7 @@ try:
     # grab content from TRANSLATIONS to a blank line
     print("Looking for translations")
     start = file_content.find("TRANSLATIONS = ")+len("TRANSLATIONS = ") +3  #get past the backslash
-    end = file_content.index("\n\n", start)
+    end = file_content.find("\n\n", start)
     if end == -1:
         end = len(file_content)
     translations = [s.rstrip("\\").strip() for s in file_content[start:end].split("\n")]
