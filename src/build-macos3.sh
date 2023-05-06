@@ -86,20 +86,23 @@ done
 echo "ls translations after lrelease"
 ls translations
 
-echo "ls uic before Help"
+echo "ls help before Help"
 ls ./help
 
 # convert help files from .xlsx to .py
 echo "************* help **************"
 python3 ../doc/help_dialogs/Script/xlsx_to_artisan_help.py all
 
-echo "ls uic after Help"
+echo "ls help after Help"
 ls ./help
+echo "ls help html after Help"
+ls ../doc/help_dialogs/Output_html
 
 # create a zip with the generated files
-zip ../generated-macos.zip -i ../doc/help_dialogs/Output_html/\*.html
-zip ../generated-macos.zip -i uic/\*.py
-zip ../generated-macos.zip -i translations
+echo "************* generated zip **************"
+zip ../generated-macos.zip ../doc/help_dialogs/Output_html/
+zip ../generated-macos.zip translations/
+zip ../generated-macos.zip uic/ *.py
 
 # distribution
 rm -rf build dist
