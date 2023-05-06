@@ -162,7 +162,7 @@ for:
     QT_SRC_PATH: /Users/appveyor/Qt/6.4/macos
     PYUIC: pyuic6
     PYRCC: pyrcc6
-    PYLUPDATE: ./pylupdate6pro  #the dot slash is necessary
+    #PYLUPDATE: ./pylupdate6pro  #the dot slash is necessary
 
   install:
     - echo "MacOS Install"
