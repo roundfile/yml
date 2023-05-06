@@ -31,76 +31,76 @@ else
 
 fi
 
-echo "ls uic before PYUIC"
-ls ./uic
-
-# ui / qrc
-echo "************* ui/uic **************"
-# ui
-find ui -iname "*.ui" | while read f
-do
-    fullfilename=$(basename $f)
-    fn=${fullfilename%.*}
-    if [ "$PYUIC" == "pyuic5" ]; then
-        $PYUIC -o uic/${fn}.py --from-imports ui/${fn}.ui
-    else
-        $PYUIC -o uic/${fn}.py -x ui/${fn}.ui
-    fi
-done
-echo "ls uic after PYUIC"
-ls ./uic
-
-
-# translations
-echo "ls translations before pylupdate"
-ls translations
-
-if [ -f "$PYLUPDATE" ]; then
-    echo "************* pylupdate **************"
-    $PYLUPDATE artisan.pro
-else
-    echo "************* skip pylupdate **************"
-fi
-
-echo "ls translations after pylupdate"
-ls translations
-#pwd
-#echo "ls $QT_SRC_PATH"
-#ls $QT_SRC_PATH
-##ls /Users/appveyor/Qt/6.4.0/macos/bin/lrelease
-##ls /Users/appveyor/Qt/6.4/macos/bin/lrelease
-##ls ~
-##ls ~/Qt/6.4/macos/bin/lrelease
-##echo "~/Qt/6.4/macos/bin/lrelease"
-##ls ~/Qt/6.4/macos/bin/lrelease
-
-# there is no full Qt installation on Travis, thus don't run  lrelease
-echo "************* lrelease **************"
-$QT_SRC_PATH/bin/lrelease -verbose artisan.pro
-for f in translations/qtbase_*.ts
-do
-    echo "Processing $f file..."
-    $QT_SRC_PATH/bin/lrelease -verbose $f
-done
-
-echo "ls translations after lrelease"
-ls translations
-
-echo "ls help before Help"
-ls ./help
-
-# convert help files from .xlsx to .py
-echo "************* help **************"
-python3 ../doc/help_dialogs/Script/xlsx_to_artisan_help.py all
-
-echo "ls help after Help"
-ls ./help
-echo "ls help html after Help"
-ls ../doc/help_dialogs/Output_html
+#echo "ls uic before PYUIC"
+#ls ./uic
+#
+## ui / qrc
+#echo "************* ui/uic **************"
+## ui
+#find ui -iname "*.ui" | while read f
+#do
+#    fullfilename=$(basename $f)
+#    fn=${fullfilename%.*}
+#    if [ "$PYUIC" == "pyuic5" ]; then
+#        $PYUIC -o uic/${fn}.py --from-imports ui/${fn}.ui
+#    else
+#        $PYUIC -o uic/${fn}.py -x ui/${fn}.ui
+#    fi
+#done
+#echo "ls uic after PYUIC"
+#ls ./uic
+#
+#
+## translations
+#echo "ls translations before pylupdate"
+#ls translations
+#
+#if [ -f "$PYLUPDATE" ]; then
+#    echo "************* pylupdate **************"
+#    $PYLUPDATE artisan.pro
+#else
+#    echo "************* skip pylupdate **************"
+#fi
+#
+#echo "ls translations after pylupdate"
+#ls translations
+##pwd
+##echo "ls $QT_SRC_PATH"
+##ls $QT_SRC_PATH
+###ls /Users/appveyor/Qt/6.4.0/macos/bin/lrelease
+###ls /Users/appveyor/Qt/6.4/macos/bin/lrelease
+###ls ~
+###ls ~/Qt/6.4/macos/bin/lrelease
+###echo "~/Qt/6.4/macos/bin/lrelease"
+###ls ~/Qt/6.4/macos/bin/lrelease
+#
+## there is no full Qt installation on Travis, thus don't run  lrelease
+#echo "************* lrelease **************"
+#$QT_SRC_PATH/bin/lrelease -verbose artisan.pro
+#for f in translations/qtbase_*.ts
+#do
+#    echo "Processing $f file..."
+#    $QT_SRC_PATH/bin/lrelease -verbose $f
+#done
+#
+#echo "ls translations after lrelease"
+#ls translations
+#
+#echo "ls help before Help"
+#ls ./help
+#
+## convert help files from .xlsx to .py
+#echo "************* help **************"
+#python3 ../doc/help_dialogs/Script/xlsx_to_artisan_help.py all
+#
+#echo "ls help after Help"
+#ls ./help
+#echo "ls help html after Help"
+#ls ../doc/help_dialogs/Output_html
 
 # create a zip with the generated files
 echo "************* generated zip **************"
-zip -r ../generated-macos.zip -i ../doc/help_dialogs/Output_html/
+zip -r ../generated-macos.zip ../doc/help_dialogs/Output_html/
 zip -r ../generated-macos.zip translations/
 zip -r ../generated-macos.zip uic/
 
