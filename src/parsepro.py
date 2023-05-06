@@ -1,6 +1,7 @@
 import re
 import os
 import subprocess
+import sys
 
 try:
     # read the artisan.pro project file
@@ -8,6 +9,7 @@ try:
         file_content = f.read()
 
     # grab content from SOURCES to a blank line
+    print("Looking for sources")
     start = file_content.index(r"SOURCES = ") +len("SOURCES = ") +3  #get past the backslash
     end = file_content.index("\n\n", start)
     if end == -1:
@@ -17,6 +19,7 @@ try:
     unique_top_dirs = set([os.path.split(source)[0] for source in sources])
 
     # grab content from TRANSLATIONS to a blank line
+    print("Looking for translations")
     start = file_content.find("TRANSLATIONS = ")+len("TRANSLATIONS = ") +3  #get past the backslash
     end = file_content.index("\n\n", start)
     if end == -1:
@@ -38,5 +41,6 @@ try:
 except Exception as e:  # pylint: disable=broad-except
     print("*** parsepro.py got an exception")
     print(e)
-    print(cmdline)
+    _, _, exc_tb = sys.exc_info()
+    print(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
     exit(1)
