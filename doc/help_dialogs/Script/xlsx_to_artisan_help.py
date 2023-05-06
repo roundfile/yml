@@ -261,6 +261,8 @@ def writehtmlFile(_fname_in, filename_out, filename_htm):
     del _fname_in
     importfile = splitext(split(filename_out)[1])[0]
     importpath = abspath(split(filename_out)[0])
+    print("** importfile: %s",importfile)
+    print("** importpath: %s",importpath)
     sys.path.append(importpath)
     var = importlib.import_module(importfile)
 
