@@ -42,5 +42,5 @@ except Exception as e:  # pylint: disable=broad-except
     print("*** parsepro.py got an exception")
     print(e)
     _, _, exc_tb = sys.exc_info()
-    print(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+    print(str(e),getattr(exc_tb, 'tb_lineno', '?'))
     exit(1)
