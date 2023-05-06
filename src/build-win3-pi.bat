@@ -73,10 +73,10 @@ for /r %%a IN (translations\qtbase_*.ts) DO (
 ::
 :: Zip the generated files
 ::
-7z aq ..\generated-%ARTISAN_SPEC%.zip ..\doc\help_dialogs\Output_html\*.*
-7z aq ..\generated-%ARTISAN_SPEC%.zip help\*.*
-7z aq ..\generated-%ARTISAN_SPEC%.zip translations\*.*
-7z aq ..\generated-%ARTISAN_SPEC%.zip uic\*.*
+7z a ..\generated-%ARTISAN_SPEC%.zip ..\doc\help_dialogs\Output_html\*.*
+7z a ..\generated-%ARTISAN_SPEC%.zip help\*.*
+7z a ..\generated-%ARTISAN_SPEC%.zip translations\*.*
+7z a ..\generated-%ARTISAN_SPEC%.zip uic\*.*
 
 ::
 :: run pyinstaller and NSIS to gnerate the install .exe
