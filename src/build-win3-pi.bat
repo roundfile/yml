@@ -61,8 +61,8 @@ if /i "%ARTISAN_LEGACY%" == "True" (
     echo Processing translation files defined in artisan.pro with pylupdate5.py
     %PYTHON_PATH%\Scripts\pylupdate5.exe artisan.pro
 ) else (
-    echo Processing translation files with pylupdate6pro
-    start /wait c:\cygwin\cygwin pylupdate6pro
+    echo Processing translation files with pylupdate6pro (parsepro)
+    %PYTHON_PATH%\python.exe parsepro.py
 )
 echo ************* lrelease **************
 %QT_PATH%\bin\lrelease -verbose artisan.pro
