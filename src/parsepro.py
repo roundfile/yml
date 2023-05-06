@@ -38,4 +38,5 @@ try:
 except Exception as e:  # pylint: disable=broad-except
     print("*** parsepro.py got an exception")
     print(e)
+    print(cmdline)
     exit(1)
