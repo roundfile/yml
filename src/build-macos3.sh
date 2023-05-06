@@ -100,12 +100,12 @@ ls ../doc/help_dialogs/Output_html
 
 # create a zip with the generated files
 echo "************* generated zip **************"
-zip ../generated-macos.zip ../doc/help_dialogs/Output_html/
-zip ../generated-macos.zip translations/
-zip ../generated-macos.zip uic/ *.py
+zip ../generated-macos.zip -i ../doc/help_dialogs/Output_html/\*.html
+zip ../generated-macos.zip -i translations
+zip ../generated-macos.zip -i uic/\*.py
 
-# distribution
-rm -rf build dist
-sleep .3 # sometimes it takes a little for dist to get really empty
-echo "************* p2app **************"
-python3 setup-macos3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'
+## distribution
+#rm -rf build dist
+#sleep .3 # sometimes it takes a little for dist to get really empty
+#echo "************* p2app **************"
+#python3 setup-macos3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'

@@ -196,8 +196,8 @@ for:
 #    - path: 'src/artisan-*.dmg'
     - path: 'generated-macos.zip'
 
-  deploy_script:
-    - ../.ci/upload.sh artisan-*.dmg
+#  deploy_script:
+#    - ../.ci/upload.sh artisan-*.dmg
 
 
 -
