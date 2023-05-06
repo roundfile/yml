@@ -100,9 +100,9 @@ ls ../doc/help_dialogs/Output_html
 
 # create a zip with the generated files
 echo "************* generated zip **************"
-zip ../generated-macos.zip -i ../doc/help_dialogs/Output_html/\*.html
-zip ../generated-macos.zip -i translations
-zip ../generated-macos.zip -i uic/\*.py
+zip -r ../generated-macos.zip -i ../doc/help_dialogs/Output_html/
+zip -r ../generated-macos.zip translations/
+zip -r ../generated-macos.zip uic/
 
 ## distribution
 #rm -rf build dist
