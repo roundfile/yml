@@ -28,7 +28,7 @@ try:
 
     # Build a pylupdate6 command line
     cmdline = f'pylupdate6 {" ".join(unique_top_dirs)} -ts {" -ts ".join(translations)[:-5]}'
-#    print(cmdline)
+    print("*** cmdline:  ",cmdline)
 
     # run the pylupdate6 command line
     completed_process = subprocess.run(cmdline, capture_output=True, text=True)
