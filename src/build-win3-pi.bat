@@ -55,7 +55,7 @@ dir c:\cygwin
 :: Process translation files
 ::
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
-if /i "%ARTISAN_LEGACY%" EQ "True" (
+if /i "%ARTISAN_LEGACY%" == "True" (
     echo Processing translation files defined in artisan.pro with pylupdate5.py
     %PYTHON_PATH%\Scripts\pylupdate5.exe artisan.pro
     %QT_PATH%\bin\lrelease -verbose artisan.pro
