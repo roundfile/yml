@@ -35,6 +35,7 @@ try:
     else:
         print(f"*** parsepro.py returned an error: {completed_process.stderr}")
         exit(1)
-except Exception:
+except Exception as e:  # pylint: disable=broad-except
     print("*** parsepro.py got an exception")
+    print(e)
     exit(1)
