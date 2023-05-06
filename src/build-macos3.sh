@@ -35,7 +35,7 @@ echo "ls help before Help"
 ls ./help
 
 # convert help files from .xlsx to .py
-echo "************* help **************"
+echo "************* help files **************"
 python3 ../doc/help_dialogs/Script/xlsx_to_artisan_help.py all
 
 echo "ls help after Help"
