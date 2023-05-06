@@ -256,7 +256,7 @@ def writepyFile(filename_in, filename_out):
     # write outstr (py code) to the specified filename
     with open(filename_out,'w', encoding='utf-8') as file_object:
         file_object.write(outstr)
-    sleep(0.01)  #allow the previous write to settle
+    sleep(0.01)  #allow the previous write to settle, resolves appveyor file read fail
 
 
 def writehtmlFile(_fname_in, filename_out, filename_htm):
