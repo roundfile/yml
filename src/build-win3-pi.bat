@@ -50,9 +50,6 @@ for /r %%a IN (ui\*.ui) DO (
     %PYUIC% -o uic\%%~na.py ui\%%~na.ui
 )
 
-echo "Dir Cygwin"
-dir c:\cygwin
-
 ::
 :: Process translation files
 ::
@@ -64,12 +61,12 @@ if /i "%ARTISAN_LEGACY%" == "True" (
     echo Processing translation files with pylupdate6pro parsepro
     %PYTHON_PATH%\python.exe parsepro.py
 )
-echo *** dir translations  
-dir translations
-echo *** dir 
-dir
-echo *** dir qr_path\bin
-dir %QT_PATH%\bin
+echo QT Path
+echo %QT_PATH%
+dir C:\qt
+dir C:\qt\6.4
+dir C:\qt\6.4\msvc2022_64
+
 
 echo ************* lrelease **************
 %QT_PATH%\bin\lrelease -verbose artisan.pro
