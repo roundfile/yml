@@ -20,6 +20,7 @@
 import os
 import subprocess
 import sys
+from typing import List, Set, cast, Any, TYPE_CHECKING  #for Python >= 3.9: can remove 'List' since type hints can now use the generic 'list'
 
 try:
     # read the artisan.pro project file
@@ -32,10 +33,10 @@ try:
     end:int = file_content.index("\n\n", start)
     if end == -1:
         end = len(file_content)
-    sources:str = [s.strip().rstrip("\\") for s in file_content[start:end].split("\n")]
+    sources:List[str] = [s.strip().rstrip("\\") for s in file_content[start:end].split("\n")]
     # distill to the unique top directories
     #unique_top_dirs:list = set([os.path.split(source)[0] for source in sources])
-    unique_top_dirs:list = {os.path.split(source)[0] for source in sources}
+    unique_top_dirs:Set[str] = {os.path.split(source)[0] for source in sources}
 
     # grab content from TRANSLATIONS to a blank line
     print("Looking for translations")
@@ -43,7 +44,7 @@ try:
     end = file_content.find("\n\n", start)
     if end == -1:
         end = len(file_content)
-    translations:str = [s.rstrip("\\").strip() for s in file_content[start:end].split("\n")]
+    translations:List[str] = [s.rstrip("\\").strip() for s in file_content[start:end].split("\n")]
 
     # Build a pylupdate6 command line
     cmdline:str = f'pylupdate6 {" ".join(unique_top_dirs)} -ts {" -ts ".join(translations)[:-5]}'
@@ -51,6 +52,7 @@ try:
 
     # run the pylupdate6 command line
     completed_process = subprocess.run(cmdline, capture_output=True, text=True, check=False)
+
     if completed_process.returncode == 0:
         print("*** pylupdate6pro.py completed successfully!")
     else:
@@ -58,4 +60,4 @@ try:
 except Exception as e:  # pylint: disable=broad-except
     print("*** pylupdate6pro.py got an exception")
     _, _, exc_tb = sys.exc_info()
-    print(str(e),getattr(exc_tb, 'tb_lineno', '?'))
+    print(f"{e} {getattr(exc_tb, 'tb_lineno', '?')}")

@@ -51,9 +51,6 @@ done
 
 
 # translations
-echo "ls translations before pylupdate"
-ls translations
-
 if [ -f "$PYLUPDATE" ]; then
     echo "************* pylupdate **************"
     python3 $PYLUPDATE
