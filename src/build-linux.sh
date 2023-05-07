@@ -14,11 +14,61 @@ elif [ -d /usr/lib/python3/dist-packages/PyQt5 ]; then
     # ARM builds
     export PYTHON_PATH=`python3 -m site --user-site`
     export QT_PATH=/usr/share/qt5
+    export QT_SRC_PATH=/usr/share/Qt/6.4/gcc_64
+    export PYLUPDATE=./pylupdate6pro.py
 else
     # Other builds
     export PYTHON_PATH=`python3 -m site --user-site`
     export QT_PATH=$PYTHON_PATH/PyQt5/Qt
+    export QT_SRC_PATH=/usr/share/Qt/6.4/gcc_64
+    export PYLUPDATE=./pylupdate6pro.py
+
 fi
+
+# convert help files from .xlsx to .py
+echo "************* help files **************"
+python3 ../doc/help_dialogs/Script/xlsx_to_artisan_help.py all
+
+# ui / uix
+echo "************* ui/uic **************"
+find ui -iname "*.ui" | while read f
+do
+    fullfilename=$(basename $f)
+    fn=${fullfilename%.*}
+    if [ "$PYUIC" == "pyuic5" ]; then
+        $PYUIC -o uic/${fn}.py --from-imports ui/${fn}.ui
+    else
+        $PYUIC -o uic/${fn}.py -x ui/${fn}.ui
+    fi
+done
+
+# translations
+if [ -f "$PYLUPDATE" ]; then
+    echo "************* pylupdate **************"
+    python3 $PYLUPDATE
+else
+    echo "************* skip pylupdate **************"
+fi
+
+echo "************* lrelease **************"
+$QT_SRC_PATH/bin/lrelease -verbose artisan.pro
+for f in translations/qtbase_*.ts
+do
+    echo "Processing $f file..."
+    $QT_SRC_PATH/bin/lrelease -verbose $f
+done
+
+
+# create a zip with the generated files
+echo "************* generated zip **************"
+zip -rq ../generated-macos.zip ../doc/help_dialogs/Output_html/
+zip -rq ../generated-macos.zip translations/
+zip -rq ../generated-macos.zip uic/
+
+
+
+
+
 
 rm -rf build
 rm -rf dist

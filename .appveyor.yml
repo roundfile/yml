@@ -162,9 +162,11 @@ for:
   environment:
     ARTISAN_OS: macos
     MACOSX_DEPLOYMENT_TARGET: 11.0
-    PYTHONSITEPKGS: /Users/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
+    #PYTHONSITEPKGS: /Users/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
+    PYTHONSITEPKGS: ${HOME}/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
     QT_PATH: ${PYTHONSITEPKGS}/PyQt6/Qt6
-    QT_SRC_PATH: /Users/appveyor/Qt/6.4/macos
+    #QT_SRC_PATH: /Users/appveyor/Qt/6.4/macos
+    QT_SRC_PATH: ${HOME}/Qt/6.4/macos
     PYUIC: pyuic6
     #remove PYRCC: pyrcc6
     PYLUPDATE: ./pylupdate6pro.py  #the dot slash is necessary
@@ -214,8 +216,11 @@ for:
 
   environment:
     ARTISAN_OS: linux
-    PYTHON_PATH: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
+    #PYTHON_PATH: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
+    PYTHON_PATH: ${HOME}/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
     QT_PATH: $PYTHON_PATH/PyQt6/Qt6
+    QT_SRC_PATH: ${HOME}/Qt/6.4/gcc_64
+    PYLUPDATE: ./pylupdate6pro.py  #the dot slash is necessary
 
   install:
     - echo "Linux Install"
