@@ -22,6 +22,10 @@ import sys
 from typing import List, Set  #for Python >= 3.9: can remove 'List' since type hints can now use the generic 'list'
 
 try:
+    print("os.environ: %s",os.environ)
+    scriptdir = os.environ['PYTHON_PATH']
+    print("Script dir: %s",scriptdir)
+
     # read the artisan.pro project file
     with open('artisan.pro', encoding='utf-8') as f:
         file_content = f.read()
@@ -55,8 +59,11 @@ try:
     # prints to make entries in the Appveyor log (or on the console))
     if completed_process.returncode == 0:
         print("*** pylupdate6pro.py completed successfully!")
+        sys.exit(0)
     else:
         print(f"*** pylupdate6pro.py returned an error: {completed_process.stderr}")
+        sys.exit(1)
 except Exception as e:  # pylint: disable=broad-except
     print("*** pylupdate6pro.py got an exception")
     print(f"{e} line:{sys.exc_info()[2].tb_lineno}")
+    sys.exit(1)

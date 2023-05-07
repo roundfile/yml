@@ -53,7 +53,8 @@ done
 # translations
 echo "ls -l /home/appveyor/venv${PYTHON_V}"
 ls -l /home/appveyor/venv${PYTHON_V}
-echo "ls -l /home/appveyor/venv${PYTHON_V}"
+echo "ls -l /home/appveyor/venv${PYTHON_V}/scipts"
+ls -l /home/appveyor/venv${PYTHON_V}/scipts
 
 
 if [ -f "$PYLUPDATE" ]; then
