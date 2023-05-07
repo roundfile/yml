@@ -64,6 +64,13 @@ if /i "%ARTISAN_LEGACY%" == "True" (
     echo Processing translation files with pylupdate6pro parsepro
     %PYTHON_PATH%\python.exe parsepro.py
 )
+echo *** dir translations  
+dir translations
+echo *** dir 
+dir
+echo *** dir qr_path\bin
+dir %QT_PATH%\bin
+
 echo ************* lrelease **************
 %QT_PATH%\bin\lrelease -verbose artisan.pro
 
