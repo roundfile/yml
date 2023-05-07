@@ -28,7 +28,7 @@ fi
 # convert help files from .xlsx to .py
 echo "************* help files **************"
 echo "** ls - l /home/appveyor/projects/yml/doc/help_dialogs/"
-ls - l /home/appveyor/projects/yml/doc/help_dialogs/
+ls -l /home/appveyor/projects/yml/doc/help_dialogs/
 echo "** ls -l /home/appveyor/projects/yml/src/../doc/help_dialogs/"
 ls -l /home/appveyor/projects/yml/src/../doc/help_dialogs/
 echo "** ls -l /home/appveyor/projects/yml/src/../doc/help_dialogs/Input_files"
