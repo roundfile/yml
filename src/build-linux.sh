@@ -43,16 +43,16 @@ find ui -iname "*.ui" | while read f
 do
     fullfilename=$(basename $f)
     fn=${fullfilename%.*}
-    if [ "$PYUIC" == "pyuic5" ]; then
-        $PYUIC -o uic/${fn}.py --from-imports ui/${fn}.ui
-    else
+#    if [ "$PYUIC" == "pyuic5" ]; then
+#        $PYUIC -o uic/${fn}.py --from-imports ui/${fn}.ui
+#    else
         $PYUIC -o uic/${fn}.py -x ui/${fn}.ui
-    fi
+#    fi
 done
 
 # translations
 echo "ls -l /home/appveyor/venv3.11.2"
-ls -l /home/appveyor/venv3.11.2"
+ls -l /home/appveyor/venv3.11.2
 ls -l /home/appveyor/venv${PYTHON_V}
 echo "ls -l /home/appveyor/venv${PYTHON_V}/scipts"
 ls -l /home/appveyor/venv${PYTHON_V}/scipts
