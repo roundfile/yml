@@ -1,7 +1,10 @@
 #!/bin/sh
 
+pip install PyQt6==6.5.0
 ls ${PYTHON_PATH}
 ls ${QT_PATH}
+ls .
+ls ${HOME}/Qt/6.4.2/gcc_64/bin
 exit 1
 
 set -ex
