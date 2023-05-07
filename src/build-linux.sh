@@ -49,9 +49,17 @@ do
 done
 
 # translations
+ls -l 
 if [ -f "$PYLUPDATE" ]; then
     echo "************* pylupdate **************"
     python3 $PYLUPDATE
+    if [ $? -eq 0 ]
+      then
+          echo "** good"
+      else
+          echo "** bad"
+    fi
+    exit 1    
 else
     echo "************* skip pylupdate **************"
 fi
