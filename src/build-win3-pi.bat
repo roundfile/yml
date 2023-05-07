@@ -1,4 +1,20 @@
 @echo off
+:: ABOUT
+:: Windows build file for Artisan
+::
+:: LICENSE
+:: This program or module is free software: you can redistribute it and/or
+:: modify it under the terms of the GNU General Public License as published
+:: by the Free Software Foundation, either version 2 of the License, or
+:: version 3 of the License, or (at your option) any later versison. It is
+:: provided for educational purposes and is distributed in the hope that
+:: it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+:: warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+:: the GNU General Public License for more details.
+::
+:: AUTHOR
+:: Dave Baxter, Marko Luther 2023
+
 :: on entry to this script the current path must be the src folder
 ::
 :: script comandline option LEGACY used to flag a legacy build
@@ -59,7 +75,7 @@ if /i "%ARTISAN_LEGACY%" == "True" (
     %PYTHON_PATH%\Scripts\pylupdate5.exe artisan.pro
 ) else (
     echo *** Processing translation files with pylupdate6pro parsepro
-    %PYTHON_PATH%\python.exe parsepro.py
+    %PYTHON_PATH%\python.exe pylupdate6pro.py
     if ERRORLEVEL 1 (exit /b 1)
 )
 
