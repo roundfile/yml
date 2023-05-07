@@ -22,9 +22,9 @@ import sys
 from typing import List, Set  #for Python >= 3.9: can remove 'List' since type hints can now use the generic 'list'
 
 try:
-    print("os.environ: %s",os.environ)
+    print("os.environ: ",os.environ)
     scriptdir = os.environ['PYTHON_PATH']
-    print("Script dir: %s",scriptdir)
+    print("Script dir: ",scriptdir)
 
     # read the artisan.pro project file
     with open('artisan.pro', encoding='utf-8') as f:
@@ -50,7 +50,7 @@ try:
     translations:List[str] = [s.rstrip("\\").strip() for s in file_content[start:end].split("\n")]
 
     # Build a pylupdate6 command line
-    cmdline:str = f'pylupdate6 {" ".join(unique_top_dirs)} -ts {" -ts ".join(translations)[:-5]}'
+    cmdline:str = f'{scriptdir}/bin/pylupdate6 {" ".join(unique_top_dirs)} -ts {" -ts ".join(translations)[:-5]}'
     #print("*** cmdline:  ",cmdline)
 
     # run the pylupdate6 command line
