@@ -55,23 +55,19 @@ for /r %%a IN (ui\*.ui) DO (
 ::
 call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
 if /i "%ARTISAN_LEGACY%" == "True" (
-    echo Processing translation files defined in artisan.pro with pylupdate5.py
+    echo *** Processing translation files defined in artisan.pro with pylupdate5.py
     %PYTHON_PATH%\Scripts\pylupdate5.exe artisan.pro
 ) else (
-    echo Processing translation files with pylupdate6pro parsepro
+    echo *** Processing translation files with pylupdate6pro parsepro
     %PYTHON_PATH%\python.exe parsepro.py
+    if ERRORLEVEL (exit 1)
 )
-echo QT Path
-echo %QT_PATH%
-rem dir C:\qt
-dir C:\qt\6.5
-rem dir C:\qt\6.4\msvc2022_64
-
 
 echo ************* lrelease **************
+echo *** Processing artisan.pro
 %QT_PATH%\bin\lrelease -verbose artisan.pro
 
-echo Processing translation qtbase_*.ts files
+echo *** Processing translation qtbase_*.ts files
 for /r %%a IN (translations\qtbase_*.ts) DO (
     %QT_PATH%\bin\lrelease -verbose %%~a
 )

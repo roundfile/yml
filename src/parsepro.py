@@ -28,7 +28,7 @@ try:
 
     # Build a pylupdate6 command line
     cmdline = f'pylupdate6 {" ".join(unique_top_dirs)} -ts {" -ts ".join(translations)[:-5]}'
-    print("*** cmdline:  ",cmdline)
+    #print("*** cmdline:  ",cmdline)
 
     # run the pylupdate6 command line
     completed_process = subprocess.run(cmdline, capture_output=True, text=True)
@@ -40,7 +40,6 @@ try:
         exit(1)
 except Exception as e:  # pylint: disable=broad-except
     print("*** parsepro.py got an exception")
-    print(e)
     _, _, exc_tb = sys.exc_info()
     print(str(e),getattr(exc_tb, 'tb_lineno', '?'))
     exit(1)
