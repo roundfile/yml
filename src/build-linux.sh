@@ -49,13 +49,27 @@ do
         $PYUIC -o uic/${fn}.py -x ui/${fn}.ui
 #    fi
 done
+echo "ls -l uic"
+ls -l uic
 
 # translations
+echo "--------"
 echo "ls -l /home/appveyor/venv3.11.2"
 ls -l /home/appveyor/venv3.11.2
 ls -l /home/appveyor/venv${PYTHON_V}
-echo "ls -l /home/appveyor/venv${PYTHON_V}/scipts"
-ls -l /home/appveyor/venv${PYTHON_V}/scipts
+echo "ls -l /home/appveyor/venv${PYTHON_V}/bin"
+ls -l /home/appveyor/venv${PYTHON_V}/bin
+echo "ls -l /home/appveyor/venv${PYTHON_V}/include"
+ls -l /home/appveyor/venv${PYTHON_V}/include
+echo "ls -l /home/appveyor/venv${PYTHON_V}/lib"
+ls -l /home/appveyor/venv${PYTHON_V}/lib
+echo "ls -l /home/appveyor/venv${PYTHON_V}/share"
+ls -l /home/appveyor/venv${PYTHON_V}/share
+
+echo "ls -l /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages/PyQt6"
+ls -l /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages/PyQt6
+echo "ls -l /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages/PyQt6/Qt6"
+ls -l /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages/PyQt6/Qt6
 
 
 if [ -f "$PYLUPDATE" ]; then
