@@ -13,12 +13,14 @@ if [ ! -z $APPVEYOR ]; then
 elif [ -d /usr/lib/python3/dist-packages/PyQt5 ]; then
     # ARM builds
     export PYTHON_PATH=`python3 -m site --user-site`
+    export PYTHONSITEPKGS=`python3 -m site --user-site`
     export QT_PATH=/usr/share/qt5
     export QT_SRC_PATH=/usr/share/Qt/6.4/gcc_64
     export PYLUPDATE=./pylupdate6pro.py
 else
     # Other builds
     export PYTHON_PATH=`python3 -m site --user-site`
+    export PYTHONSITEPKGS=`python3 -m site --user-site`
     export QT_PATH=$PYTHON_PATH/PyQt5/Qt
     export QT_SRC_PATH=/usr/share/Qt/6.4/gcc_64
     export PYLUPDATE=./pylupdate6pro.py
@@ -49,7 +51,11 @@ do
 done
 
 # translations
-ls -l 
+echo "ls -l /home/appveyor/venv${PYTHON_V}"
+ls -l /home/appveyor/venv${PYTHON_V}
+echo "ls -l /home/appveyor/venv${PYTHON_V}"
+
+
 if [ -f "$PYLUPDATE" ]; then
     echo "************* pylupdate **************"
     python3 $PYLUPDATE
@@ -171,7 +177,7 @@ cp -R includes/Icons/* dist/Icons
 
 mkdir dist/yoctopuce
 mkdir dist/yoctopuce/cdll
-cp $PYTHON_PATH/yoctopuce/cdll/*64.so dist/yoctopuce/cdll
+cp $PYTHONSITEPKGS/yoctopuce/cdll/*64.so dist/yoctopuce/cdll
 
 cp /usr/lib/libsnap7.so dist
 

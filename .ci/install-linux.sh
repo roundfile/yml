@@ -28,6 +28,6 @@ pip install -r src/requirements.txt
 pip install -r src/requirements-${ARTISAN_OS}.txt
 
 # copy the snap7 binary installed by pip
-sudo cp -f ${PYTHON_PATH}/snap7/lib/libsnap7.so /usr/lib
+sudo cp -f ${PYTHONSITEPKGS}/snap7/lib/libsnap7.so /usr/lib
 
 .ci/install-libusb.sh
