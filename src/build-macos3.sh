@@ -56,7 +56,7 @@ ls translations
 
 if [ -f "$PYLUPDATE" ]; then
     echo "************* pylupdate **************"
-    $PYLUPDATE artisan.pro
+    python3 $PYLUPDATE
 else
     echo "************* skip pylupdate **************"
 fi

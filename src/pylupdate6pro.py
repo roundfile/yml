@@ -17,25 +17,25 @@
 # Parses artisan.pro file.  Format of the .pro file:  Must have SOURCES and TRANSLATION files
 # each on its own line.  
 
-import re
 import os
 import subprocess
 import sys
 
 try:
     # read the artisan.pro project file
-    with open('artisan.pro') as f:
+    with open('artisan.pro', encoding='utf-8') as f:
         file_content = f.read()
 
     # grab content from SOURCES to a blank line
     print("Looking for sources")
-    start = file_content.index(r"SOURCES = ") +len("SOURCES = ") +3  #get past the backslash
-    end = file_content.index("\n\n", start)
+    start:int = file_content.index(r"SOURCES = ") +len("SOURCES = ") +3  #get past the backslash
+    end:int = file_content.index("\n\n", start)
     if end == -1:
         end = len(file_content)
-    sources = [s.strip().rstrip("\\") for s in file_content[start:end].split("\n")]
+    sources:str = [s.strip().rstrip("\\") for s in file_content[start:end].split("\n")]
     # distill to the unique top directories
-    unique_top_dirs = set([os.path.split(source)[0] for source in sources])
+    #unique_top_dirs:list = set([os.path.split(source)[0] for source in sources])
+    unique_top_dirs:list = {os.path.split(source)[0] for source in sources}
 
     # grab content from TRANSLATIONS to a blank line
     print("Looking for translations")
@@ -43,14 +43,14 @@ try:
     end = file_content.find("\n\n", start)
     if end == -1:
         end = len(file_content)
-    translations = [s.rstrip("\\").strip() for s in file_content[start:end].split("\n")]
+    translations:str = [s.rstrip("\\").strip() for s in file_content[start:end].split("\n")]
 
     # Build a pylupdate6 command line
-    cmdline = f'pylupdate6 {" ".join(unique_top_dirs)} -ts {" -ts ".join(translations)[:-5]}'
+    cmdline:str = f'pylupdate6 {" ".join(unique_top_dirs)} -ts {" -ts ".join(translations)[:-5]}'
     #print("*** cmdline:  ",cmdline)
 
     # run the pylupdate6 command line
-    completed_process = subprocess.run(cmdline, capture_output=True, text=True)
+    completed_process = subprocess.run(cmdline, capture_output=True, text=True, check=False)
     if completed_process.returncode == 0:
         print("*** pylupdate6pro.py completed successfully!")
     else:
