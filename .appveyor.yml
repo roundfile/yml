@@ -9,12 +9,12 @@ environment:
   PYTHON_V: 3.11
 
   matrix:
-#  - job_name: windows_legacy
-#    appveyor_build_worker_image: Visual Studio 2019
+  - job_name: windows_legacy
+    appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
     appveyor_build_worker_image: Visual Studio 2019  #2022
-#  - job_name: macos
-#    appveyor_build_worker_image: macos
+  - job_name: macos
+    appveyor_build_worker_image: macos
 #  - job_name: linux
 #    appveyor_build_worker_image: Ubuntu2004
 
@@ -86,8 +86,9 @@ for:
 #  test_script:
 #    - cmd: python -m unittest discover
 
-#  artifacts:
+  artifacts:
 #    - path: 'src\artisan-*.zip'
+    - path: 'generated-win-legacy.zip'
 
 #  deploy_script:
 #    - cmd: bash ../.ci/upload.sh artisan-*.zip
@@ -139,6 +140,7 @@ for:
 
     # run the build script
     - cmd: build-win3-pi.bat
+    - path: 'generated-win.zip'
 
 #  test_script:
 #    - cmd: python -m unittest discover
