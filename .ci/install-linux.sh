@@ -1,5 +1,9 @@
 #!/bin/sh
 
+ls ${PYTHON_PATH}
+ls ${QT_PATH}
+exit 1
+
 set -ex
 sudo apt-get update -y -q
 sudo apt-get install -y -q ruby-dev build-essential p7zip-full rpm gdb libudev-dev qt5-default

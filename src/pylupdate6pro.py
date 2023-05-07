@@ -1,5 +1,7 @@
 # ABOUT
 # Qt Translation processing for Artisan
+# Parses artisan.pro file.  Format of the .pro file:  Must have SOURCES and TRANSLATION files
+# each on its own line.  
 #
 # LICENSE
 # This program or module is free software: you can redistribute it and/or
@@ -14,13 +16,10 @@
 # AUTHOR
 # Dave Baxter, Marko Luther 2023
 
-# Parses artisan.pro file.  Format of the .pro file:  Must have SOURCES and TRANSLATION files
-# each on its own line.  
-
 import os
 import subprocess
 import sys
-from typing import List, Set, cast, Any, TYPE_CHECKING  #for Python >= 3.9: can remove 'List' since type hints can now use the generic 'list'
+from typing import List, Set  #for Python >= 3.9: can remove 'List' since type hints can now use the generic 'list'
 
 try:
     # read the artisan.pro project file
@@ -30,7 +29,7 @@ try:
     # grab content from SOURCES to a blank line
     print("Looking for sources")
     start:int = file_content.index(r"SOURCES = ") +len("SOURCES = ") +3  #get past the backslash
-    end:int = file_content.index("\n\n", start)
+    end:int = file_content.find("\n\n", start)  #find will not raise an exception if it runs to the end of the file
     if end == -1:
         end = len(file_content)
     sources:List[str] = [s.strip().rstrip("\\") for s in file_content[start:end].split("\n")]
@@ -40,8 +39,8 @@ try:
 
     # grab content from TRANSLATIONS to a blank line
     print("Looking for translations")
-    start = file_content.find("TRANSLATIONS = ")+len("TRANSLATIONS = ") +3  #get past the backslash
-    end = file_content.find("\n\n", start)
+    start = file_content.index("TRANSLATIONS = ")+len("TRANSLATIONS = ") +3  #get past the backslash
+    end = file_content.find("\n\n", start)  #find will not raise an exception if it runs to the end of the file
     if end == -1:
         end = len(file_content)
     translations:List[str] = [s.rstrip("\\").strip() for s in file_content[start:end].split("\n")]
@@ -53,11 +52,11 @@ try:
     # run the pylupdate6 command line
     completed_process = subprocess.run(cmdline, capture_output=True, text=True, check=False)
 
+    # prints to make entries in the Appveyor log (or on the console))
     if completed_process.returncode == 0:
         print("*** pylupdate6pro.py completed successfully!")
     else:
         print(f"*** pylupdate6pro.py returned an error: {completed_process.stderr}")
 except Exception as e:  # pylint: disable=broad-except
     print("*** pylupdate6pro.py got an exception")
-    _, _, exc_tb = sys.exc_info()
-    print(f"{e} {getattr(exc_tb, 'tb_lineno', '?')}")
+    print(f"{e} line:{sys.exc_info()[2].tb_lineno}")
