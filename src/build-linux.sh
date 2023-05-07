@@ -28,13 +28,13 @@ else
 fi
 
 # convert help files from .xlsx to .py
-echo "************* help files **************"
-echo "** ls - l /home/appveyor/projects/yml/doc/help_dialogs/"
-ls -l /home/appveyor/projects/yml/doc/help_dialogs/
-echo "** ls -l /home/appveyor/projects/yml/src/../doc/help_dialogs/"
-ls -l /home/appveyor/projects/yml/src/../doc/help_dialogs/
-echo "** ls -l /home/appveyor/projects/yml/src/../doc/help_dialogs/Input_files"
-ls -l /home/appveyor/projects/yml/src/../doc/help_dialogs/Input_files
+#echo "************* help files **************"
+#echo "** ls - l /home/appveyor/projects/yml/doc/help_dialogs/"
+#ls -l /home/appveyor/projects/yml/doc/help_dialogs/
+#echo "** ls -l /home/appveyor/projects/yml/src/../doc/help_dialogs/"
+#ls -l /home/appveyor/projects/yml/src/../doc/help_dialogs/
+#echo "** ls -l /home/appveyor/projects/yml/src/../doc/help_dialogs/Input_files"
+#ls -l /home/appveyor/projects/yml/src/../doc/help_dialogs/Input_files
 python3 ../doc/help_dialogs/Script/xlsx_to_artisan_help.py all
 
 # ui / uix
@@ -51,7 +51,8 @@ do
 done
 
 # translations
-echo "ls -l /home/appveyor/venv${PYTHON_V}"
+echo "ls -l /home/appveyor/venv3.11.2"
+ls -l /home/appveyor/venv3.11.2"
 ls -l /home/appveyor/venv${PYTHON_V}
 echo "ls -l /home/appveyor/venv${PYTHON_V}/scipts"
 ls -l /home/appveyor/venv${PYTHON_V}/scipts
