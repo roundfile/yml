@@ -60,7 +60,7 @@ if /i "%ARTISAN_LEGACY%" == "True" (
 ) else (
     echo *** Processing translation files with pylupdate6pro parsepro
     %PYTHON_PATH%\python.exe parsepro.py
-    if ERRORLEVEL (exit 1)
+    if ERRORLEVEL 1 (exit /b 1)
 )
 
 echo ************* lrelease **************

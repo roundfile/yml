@@ -34,12 +34,9 @@ try:
     completed_process = subprocess.run(cmdline, capture_output=True, text=True)
     if completed_process.returncode == 0:
         print("*** parsepro.py completed successfully!")
-        exit(0)
     else:
         print(f"*** parsepro.py returned an error: {completed_process.stderr}")
-        exit(1)
 except Exception as e:  # pylint: disable=broad-except
     print("*** parsepro.py got an exception")
     _, _, exc_tb = sys.exc_info()
     print(str(e),getattr(exc_tb, 'tb_lineno', '?'))
-    exit(1)
