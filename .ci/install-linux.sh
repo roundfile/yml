@@ -1,10 +1,17 @@
 #!/bin/sh
 
 pip install PyQt6==6.5.0
-ls ${PYTHON_PATH}
-ls ${QT_PATH}
-ls .
-ls ${HOME}/Qt/6.4.2/gcc_64/bin
+
+echo ${PYTHON_PATH}
+ls -l ${PYTHON_PATH}
+echo ${QT_PATH}
+ls -l ${QT_PATH}
+echo .
+ls -l .
+echo ${HOME}/Qt/6.4.2/gcc_64/bin
+ls -l ${HOME}/Qt/6.4.2/gcc_64/bin
+echo whereis lrelease
+whereis lrelease
 exit 1
 
 set -ex
