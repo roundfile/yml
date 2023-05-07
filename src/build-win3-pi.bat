@@ -63,9 +63,9 @@ if /i "%ARTISAN_LEGACY%" == "True" (
 )
 echo QT Path
 echo %QT_PATH%
-dir C:\qt
-dir C:\qt\6.4
-dir C:\qt\6.4\msvc2022_64
+rem dir C:\qt
+dir C:\qt\6.5
+rem dir C:\qt\6.4\msvc2022_64
 
 
 echo ************* lrelease **************
