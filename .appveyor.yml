@@ -218,7 +218,7 @@ for:
     ARTISAN_OS: linux
     PYTHON_PATH: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
     #PYTHON_PATH: ${HOME}/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
-    PYTHONSITEPKGS: /Users/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
+    PYTHONSITEPKGS: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
     QT_PATH: $PYTHON_PATH/PyQt6/Qt6
     QT_SRC_PATH: /home/appveyor/Qt/6.4/gcc_64
     #QT_SRC_PATH: ${HOME}/Qt/6.4/gcc_64
