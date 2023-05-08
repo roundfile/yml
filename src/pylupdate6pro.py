@@ -54,7 +54,8 @@ try:
     #print("*** cmdline:  ",cmdline)
 
 
-    cmdline = [f'{scriptdir}/bin/pylupdate6', 'artisanlib', '--ts', 'translations/artisan_ar.ts']
+    #cmdline = [f'{scriptdir}/bin/pylupdate6', 'artisanlib', '--ts', 'translations/artisan_ar.ts']
+    cmdline = ['pylupdate6', 'artisanlib', '--ts', 'translations/artisan_ar.ts']
     completed_process = subprocess.run(cmdline, capture_output=True, text=True, check=False)
 
 
