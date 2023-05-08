@@ -84,3 +84,18 @@ ARCH=x86_64 ./pkg2appimage-*.AppImage artisan-AppImage.yml
 mv ./out/*.AppImage ${NAME}.AppImage
 
 ls -lh *.deb *.rpm
+
+# Check that the packaged files are above an expected size
+basename=${NAME} 
+suffixes=(".deb" ".rpm" ".AppImage") # array of suffixes to check
+min_size=270000000
+for suffix in "${suffixes[@]}"; do
+    filename="$basename$suffix"
+    size=$(stat -c %s "$filename")
+    echo "$filename size: $size bytes"
+    if [ "$size" -lt "$min_size" ]; then
+        echo "$filename is smaller than $min_size bytes"
+    else
+        echo "$filename is larger than $min_size bytes"
+    fi
+done

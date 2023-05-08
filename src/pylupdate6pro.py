@@ -31,7 +31,7 @@ try:
         file_content = f.read()
 
     # grab content from SOURCES to a blank line
-    print("Looking for sources")
+    #print("Looking for sources")
     start:int = file_content.index(r"SOURCES = ") +len("SOURCES = ") +3  #get past the backslash
     end:int = file_content.find("\n\n", start)  #find will not raise an exception if it runs to the end of the file
     if end == -1:
@@ -42,7 +42,7 @@ try:
     unique_top_dirs:Set[str] = {os.path.split(source)[0] for source in sources}
 
     # grab content from TRANSLATIONS to a blank line
-    print("Looking for translations")
+    #print("Looking for translations")
     start = file_content.index("TRANSLATIONS = ")+len("TRANSLATIONS = ") +3  #get past the backslash
     end = file_content.find("\n\n", start)  #find will not raise an exception if it runs to the end of the file
     if end == -1:
@@ -61,7 +61,7 @@ try:
 
     # prints used to make entries in the Appveyor log (or on the console))
     if completed_process.returncode == 0:
-        print("*** pylupdate6pro.py completed successfully!")
+        print("*** pylupdate6pro.py completed successfully")
         sys.exit(0)
     else:
         print(f"*** pylupdate6pro.py returned an error: {completed_process.stderr}")

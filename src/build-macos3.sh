@@ -31,12 +31,13 @@ else
 fi
 
 
+#
+# Generate translation, ui, and help files dependent on repository sources
+#
 # convert help files from .xlsx to .py
 echo "************* help files **************"
 python3 ../doc/help_dialogs/Script/xlsx_to_artisan_help.py all
 if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
-echo "ls -l help"
-ls -l help
 
 # ui / uix
 echo "************* ui/uic **************"
@@ -49,33 +50,34 @@ do
     else
         $PYUIC -o uic/${fn}.py -x ui/${fn}.ui
     fi
-    if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
+    if [ $? -ne 0 ]; then exit $?; fi
 done
-
+echo "** Success"
 
 # translations
 echo "************* pylupdate **************"
 python3 $PYLUPDATE
 if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
-
 echo "************* lrelease **************"
+echo "*** artisan.pro"
 $QT_SRC_PATH/bin/lrelease -verbose artisan.pro
 if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
+echo "*** translations/qtbase_*.ts"
 for f in translations/qtbase_*.ts
 do
     echo "Processing $f file..."
     $QT_SRC_PATH/bin/lrelease -verbose $f
-    if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
+    if [ $? -ne 0 ]; then exit $?; fi
 done
-
+echo "** Success"
 
 # create a zip with the generated files
-echo "************* generated zip **************"
+echo "************* zip generated files **************"
 zip -rq ../generated-macos.zip ../doc/help_dialogs/Output_html/ help/ translations/ uic/
 if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
-#zip -rq ../generated-macos.zip help/
-#zip -rq ../generated-macos.zip translations/
-#zip -rq ../generated-macos.zip uic/
+#
+#  End of generating dependent files
+#
 
 
 # distribution
@@ -83,3 +85,22 @@ rm -rf build dist
 sleep .3 # sometimes it takes a little for dist to get really empty
 echo "************* p2app **************"
 python3 setup-macos3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'
+
+
+# Check that the packaged files are above an expected size
+basename="artisan-mac-${}.dmg"
+echo "basename:"
+echo "$basename"
+suffixes=(".dmg") # array of suffixes to check
+min_size=260000000
+for suffix in "${suffixes[@]}"; do
+    filename="$basename$suffix"
+    size=$(stat -c %s "$filename")
+    echo "$filename size: $size bytes"
+    if [ "$size" -lt "$min_size" ]; then
+        echo "$filename is smaller than $min_size bytes"
+    else
+        echo "$filename is larger than $min_size bytes"
+    fi
+done
+

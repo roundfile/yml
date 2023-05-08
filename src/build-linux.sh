@@ -27,19 +27,13 @@ else
 
 fi
 
+#
+# Generate translation, ui, and help files dependent on repository sources
+#
 # convert help files from .xlsx to .py
 echo "************* help files **************"
-#echo "** ls - l /home/appveyor/projects/yml/doc/help_dialogs/"
-#ls -l /home/appveyor/projects/yml/doc/help_dialogs/
-#echo "** ls -l /home/appveyor/projects/yml/src/../doc/help_dialogs/"
-#ls -l /home/appveyor/projects/yml/src/../doc/help_dialogs/
-#echo "** ls -l /home/appveyor/projects/yml/src/../doc/help_dialogs/Input_files"
-#ls -l /home/appveyor/projects/yml/src/../doc/help_dialogs/Input_files
 python3 ../doc/help_dialogs/Script/xlsx_to_artisan_help.py all
 if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
-echo "ls -l help"
-ls -l help
-
 
 # ui / uix
 echo "************* ui/uic **************"
@@ -51,61 +45,36 @@ do
 #        $PYUIC -o uic/${fn}.py --from-imports ui/${fn}.ui
 #    else
     $PYUIC -o uic/${fn}.py -x ui/${fn}.ui
-    if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
+    if [ $? -ne 0 ]; then exit $?; fi
 #    fi
 done
-echo "ls -l uic"
-ls -l uic
+echo "** Success"
 
 # translations
-echo "--------"
-#echo "ls -l /home/appveyor/venv3.11.2"
-#ls -l /home/appveyor/venv3.11.2
-#ls -l /home/appveyor/venv${PYTHON_V}
-#echo "ls -l /home/appveyor/venv${PYTHON_V}/bin"
-#ls -l /home/appveyor/venv${PYTHON_V}/bin
-#echo "ls -l /home/appveyor/venv${PYTHON_V}/include"
-#ls -l /home/appveyor/venv${PYTHON_V}/include
-#echo "ls -l /home/appveyor/venv${PYTHON_V}/lib"
-#ls -l /home/appveyor/venv${PYTHON_V}/lib
-#echo "ls -l /home/appveyor/venv${PYTHON_V}/share"
-#ls -l /home/appveyor/venv${PYTHON_V}/share
-#
-#echo "ls -l /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages/PyQt6"
-#ls -l /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages/PyQt6
-#echo "ls -l /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages/PyQt6/Qt6"
-#ls -l /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages/PyQt6/Qt6
-
-#echo "BEFORE ls -l translations/artisan_ar.ts"
-#ls - l translations/artisan_ar.ts
-
 echo "************* pylupdate **************"
 python3 $PYLUPDATE
 if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 
-#    echo "AFTER ls -l translations/artisan_ar.ts"
-#    ls -l translations/artisan_ar.ts
-
 echo "************* lrelease **************"
+echo "*** artisan.pro"
 $QT_SRC_PATH/bin/lrelease -verbose artisan.pro
 if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
+echo "*** translations/qtbase_*.ts"
 for f in translations/qtbase_*.ts
 do
     echo "Processing $f file..."
     $QT_SRC_PATH/bin/lrelease -verbose $f
-    if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
+    if [ $? -ne 0 ]; then exit $?; fi
 done
-
+echo "** Success"
 
 # create a zip with the generated files
-echo "************* generated zip **************"
+echo "************* zip generated files **************"
 zip -rq ../generated-linux.zip ../doc/help_dialogs/Output_html/ help/ translations/ uic/
 if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
- 
-
-
-
-
+#
+#  End of generating dependent files
+#
 
 rm -rf build
 rm -rf dist
