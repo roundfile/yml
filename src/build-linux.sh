@@ -71,7 +71,7 @@ echo "--------"
 #echo "ls -l /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages/PyQt6/Qt6"
 #ls -l /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages/PyQt6/Qt6
 
-echo "BEFORE ls - l translations/artisan_ar.ts"
+echo "BEFORE ls -l translations/artisan_ar.ts"
 ls - l translations/artisan_ar.ts
 
 if [ -f "$PYLUPDATE" ]; then
@@ -83,8 +83,8 @@ if [ -f "$PYLUPDATE" ]; then
       else
           echo "** bad"
     fi
-    echo "AFTER ls - l translations/artisan_ar.ts"
-    ls - l translations/artisan_ar.ts
+    echo "AFTER ls -l translations/artisan_ar.ts"
+    ls -l translations/artisan_ar.ts
     exit 1    
 else
     echo "************* skip pylupdate **************"
