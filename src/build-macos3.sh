@@ -88,9 +88,9 @@ python3 setup-macos3.py py2app | egrep -v '^(creating|copying file|byte-compilin
 
 
 # Check that the packaged files are above an expected size
-basename="artisan-mac-${}.dmg"
-echo "basename:"
-echo "$basename"
+version=$(python3 -c "import artisanlib; print(artisanlib.__version__)")
+basename="artisan-mac-$version"
+echo "basename: $basename"
 suffixes=(".dmg") # array of suffixes to check
 min_size=260000000
 for suffix in "${suffixes[@]}"; do
