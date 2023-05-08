@@ -22,9 +22,9 @@ import sys
 from typing import List, Set  #for Python >= 3.9: can remove 'List' since type hints can now use the generic 'list'
 
 try:
-    print("os.environ: ",os.environ)
-    scriptdir = os.environ['PYTHON_PATH']
-    print("Script dir: ",scriptdir)
+#    print("os.environ: ",os.environ)
+#    scriptdir = os.environ['PYTHON_PATH']
+#    print("Script dir: ",scriptdir)
 
     # read the artisan.pro project file
     with open('artisan.pro', encoding='utf-8') as f:
@@ -47,21 +47,31 @@ try:
     end = file_content.find("\n\n", start)  #find will not raise an exception if it runs to the end of the file
     if end == -1:
         end = len(file_content)
-    translations:List[str] = [s.rstrip("\\").strip() for s in file_content[start:end].split("\n")]
+    translations: List[str] = [s.rstrip("\\").strip() for s in file_content[start:end].split("\n")[:-1]]
+#    translated_strings: List[str] = []
+#    for t in translations:
+#        translated_strings.extend(['--ts', t])
+#    print("translated_strings: ",translated_strings)
 
+    cmdline:List[str] = ['pylupdate6']
+    cmdline.extend(unique_top_dirs)
+    #combined_list.extend(translations)
+    for t in translations:
+        cmdline.extend(['--ts', t])
+    
     # Build a pylupdate6 command line
 #    cmdline:str = f'{scriptdir}/bin/pylupdate6 {" ".join(unique_top_dirs)} -ts {" -ts ".join(translations)[:-5]}'
-    #print("*** cmdline:  ",cmdline)
+    print("*** cmdline:  ",cmdline)
 
 
-    #cmdline = [f'{scriptdir}/bin/pylupdate6', 'artisanlib', '--ts', 'translations/artisan_ar.ts']
-    cmdline = ['pylupdate6', 'artisanlib', '--ts', 'translations/artisan_ar.ts']
+#    #cmdline = [f'{scriptdir}/bin/pylupdate6', 'artisanlib', '--ts', 'translations/artisan_ar.ts']
+#    cmdline = ['pylupdate6', 'artisanlib', '--ts', 'translations/artisan_ar.ts']
     completed_process = subprocess.run(cmdline, capture_output=True, text=True, check=False)
 
 
 
-#    # run the pylupdate6 command line
-#    completed_process = subprocess.run(cmdline, capture_output=True, text=True, check=False)
+    # run the pylupdate6 command line
+    completed_process = subprocess.run(cmdline, capture_output=True, text=True, check=False)
 
     # prints to make entries in the Appveyor log (or on the console))
     if completed_process.returncode == 0:
@@ -70,7 +80,7 @@ try:
     else:
         print(f"*** pylupdate6pro.py returned an error: {completed_process.stderr}")
         sys.exit(1)
-except Exception as e:  # pylint: disable=broad-except
+except Exception as e:   #pylint: disable=broad-except
     print("*** pylupdate6pro.py got an exception")
-    print(f"{e} line:{sys.exc_info()[2].tb_lineno}")
+    print(f"{e} line:{sys.exc_info()[2].tb_lineno}") #type: ignore
     sys.exit(1)
