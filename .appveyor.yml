@@ -229,7 +229,7 @@ for:
   install:
     - chmod +x src/*.sh
     - cd src
-    - ./atest.sh linux
+    - ./btest.sh
   
     - echo "Linux Install"
     - chmod +x .ci/*.sh
