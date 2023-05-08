@@ -53,19 +53,14 @@ try:
 #    cmdline:str = f'{scriptdir}/bin/pylupdate6 {" ".join(unique_top_dirs)} -ts {" -ts ".join(translations)[:-5]}'
     #print("*** cmdline:  ",cmdline)
 
-    print("*** Just pylupdate6")
-    cmdline = [f'{scriptdir}/bin/pylupdate6', '--verbose']
-    completed_process = subprocess.run(cmdline, capture_output=True, text=True, check=False)
-    print("*** pylupdate6 uic")
-    cmdline = [f'{scriptdir}/bin/pylupdate6', 'uic','--verbose']
-    completed_process = subprocess.run(cmdline, capture_output=True, text=True, check=False)
-    print("*** pylupdate6 -ts translations/artisan_de.ts")
-    cmdline = [f'{scriptdir}/bin/pylupdate6', '--ts', 'translations/artisan_de.ts','--verbose']
+
+    cmdline = [f'{scriptdir}/bin/pylupdate6', 'artisanlib', '--ts', 'translations/artisan_ar.ts']
     completed_process = subprocess.run(cmdline, capture_output=True, text=True, check=False)
 
 
-    # run the pylupdate6 command line
-    completed_process = subprocess.run(cmdline, capture_output=True, text=True, check=False)
+
+#    # run the pylupdate6 command line
+#    completed_process = subprocess.run(cmdline, capture_output=True, text=True, check=False)
 
     # prints to make entries in the Appveyor log (or on the console))
     if completed_process.returncode == 0:
