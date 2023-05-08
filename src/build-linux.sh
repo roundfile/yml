@@ -28,7 +28,7 @@ else
 fi
 
 echo "************* build dependent files **************"
-.\build-dependent.sh linux  #generate the dependent files
+./build-dependent.sh linux  #generate the dependent files
 if [ $? -ne 0 ]; then exit $?; else (echo "** Success"); fi
     
 ##
