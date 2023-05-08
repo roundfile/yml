@@ -58,6 +58,9 @@ python -V
 echo ************* help files **************
 python ..\doc\help_dialogs\Script\xlsx_to_artisan_help.py all
 if ERRORLEVEL 1 (exit /b 1)
+echo ** dir help
+dir help
+
 
 ::
 :: convert .ui files to .py files
