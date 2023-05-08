@@ -23,7 +23,14 @@ fi
 echo "Argument: $arg"
 
 # Extract the version number from the __version__ string
-version=$(grep -oP "__version__ = \K[0-9]+\.[0-9]+\.[0-9]+" "artisanlib/__init__.py")
+version=$(grep -oP "__version__ = '\K[0-9]+\.[0-9]+\.[0-9]+'" "artisanlib/__init__.py"  | tr -d "'")
+echo "Version: $version"
+echo "artisan-mac-$version.dmg"
+
+
+echo " Now we'll do it by running python"
+# Import the module and extract the version number
+version=$(python3 -c "import artisanlib; print(artisanlib.__version__)")
 echo "Version: $version"
 echo "artisan-mac-$version.dmg"
 
