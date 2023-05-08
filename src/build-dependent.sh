@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # List of accepted arguments
 accepted_args=("macos" "linux")
