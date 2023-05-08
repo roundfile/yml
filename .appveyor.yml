@@ -227,9 +227,9 @@ for:
     PYLUPDATE: ./pylupdate6pro.py  #the dot slash is necessary
 
   install:
-    - chmod +x src/*.sh
-    - cd src
-    - ./btest.sh
+#    - chmod +x src/*.sh
+#    - cd src
+#    - ./btest.sh
   
     - echo "Linux Install"
     - chmod +x .ci/*.sh
