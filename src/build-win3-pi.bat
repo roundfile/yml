@@ -52,7 +52,7 @@ if /i "%APPVEYOR%" NEQ "True" (
 
 python -V
 
-call build-dependant-win.bat
+call build-dependent-win.bat
 if ERRORLEVEL 1 (exit /b 1) else (echo ** Success)
 rem ::
 rem :: Generate translation, ui, and help files dependent on repository sources
