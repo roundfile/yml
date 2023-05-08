@@ -37,6 +37,7 @@ echo "artisan-mac-$version.dmg"
 
 echo " do the zip"
 zip -rq ../generated-$arg.zip ../doc/help_dialogs/Output_html/ help/ translations/ uic/
+ls -l ../*.zip
 
 exit 1
 
