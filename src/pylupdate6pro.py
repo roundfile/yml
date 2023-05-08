@@ -60,7 +60,7 @@ try:
     cmdline = [f'{scriptdir}/bin/pylupdate6', 'uic']
     completed_process = subprocess.run(cmdline, capture_output=True, text=True, check=False)
     print("*** pylupdate6 -ts translations/artisan_de.ts")
-    cmdline = [f'{scriptdir}/bin/pylupdate6', '-ts translations/artisan_de.ts']
+    cmdline = [f'{scriptdir}/bin/pylupdate6', '-ts', 'translations/artisan_de.ts']
     completed_process = subprocess.run(cmdline, capture_output=True, text=True, check=False)
 
 
