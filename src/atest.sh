@@ -23,7 +23,7 @@ fi
 echo "Argument: $arg"
 
 # Extract the version number from the __version__ string
-version=$(grep -oP "__version__ = '\K[0-9]+\.[0-9]+\.[0-9]+'" "artisanlib/__init__.py")
+version=$(grep -oP "__version__ = \K[0-9]+\.[0-9]+\.[0-9]+" "artisanlib/__init__.py")
 echo "Version: $version"
 echo "artisan-mac-$version.dmg"
 
