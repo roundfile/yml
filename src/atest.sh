@@ -1,7 +1,3 @@
-echo "---------------------------------"
-echo "We are in atest.sh"
-
-
 # List of accepted arguments
 accepted_args=("macos" "linux")
 
