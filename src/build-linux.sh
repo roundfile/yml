@@ -85,7 +85,6 @@ if [ -f "$PYLUPDATE" ]; then
     fi
     echo "AFTER ls -l translations/artisan_ar.ts"
     ls -l translations/artisan_ar.ts
-    exit 1    
 else
     echo "************* skip pylupdate **************"
 fi

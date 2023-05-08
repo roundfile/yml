@@ -9,12 +9,12 @@ environment:
   PYTHON_V: 3.11
 
   matrix:
-#  - job_name: windows_legacy
-#    appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: windows
-#    appveyor_build_worker_image: Visual Studio 2019  #2022
-#  - job_name: macos
-#    appveyor_build_worker_image: macos
+  - job_name: windows_legacy
+    appveyor_build_worker_image: Visual Studio 2019
+  - job_name: windows
+    appveyor_build_worker_image: Visual Studio 2019  #2022
+  - job_name: macos
+    appveyor_build_worker_image: macos
   - job_name: linux
     appveyor_build_worker_image: Ubuntu2004
 
@@ -87,8 +87,8 @@ for:
 #    - cmd: python -m unittest discover
 
   artifacts:
-#    - path: 'src\artisan-*.zip'
     - path: 'generated-win-legacy.zip'
+#    - path: 'src\artisan-*.zip'
 
 #  deploy_script:
 #    - cmd: bash ../.ci/upload.sh artisan-*.zip
@@ -146,8 +146,8 @@ for:
 #    - cmd: python -m unittest discover
 
   artifacts:
-#    - path: 'src\artisan-*.zip'
     - path: 'generated-win.zip'
+#    - path: 'src\artisan-*.zip'
 
   deploy_script:
     - cmd: bash ../.ci/upload.sh artisan-*.zip
@@ -201,8 +201,8 @@ for:
 #    - python -m unittest discover -s src
 
   artifacts:
-#    - path: 'src/artisan-*.dmg'
     - path: 'generated-macos.zip'
+#    - path: 'src/artisan-*.dmg'
 
   deploy_script:
     - ../.ci/upload.sh artisan-*.dmg
@@ -252,7 +252,8 @@ for:
 #  test_script:
 #    - QT_QPA_PLATFORM=offscreen python -m unittest discover -s src
 
-#  artifacts:
+  artifacts:
+    - path: 'generated-linux.zip'
 #    - path: 'src/artisan-*.deb'
 #    - path: 'src/artisan-*.rpm'
 #    - path: 'src/artisan-*.AppImage'
