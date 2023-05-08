@@ -40,6 +40,9 @@ if /i "%APPVEYOR%" NEQ "True" (
 
 echo Python Version
 %PYTHON_PATH%\python -V
+python3 -V
+python -V
+exit 1
 
 ::
 :: get pip up to date

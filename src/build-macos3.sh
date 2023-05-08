@@ -34,6 +34,7 @@ fi
 # convert help files from .xlsx to .py
 echo "************* help files **************"
 python3 ../doc/help_dialogs/Script/xlsx_to_artisan_help.py all
+if [ $? -ne 0 ]; then exit $? fi
 
 
 # ui / uix
@@ -47,16 +48,14 @@ do
     else
         $PYUIC -o uic/${fn}.py -x ui/${fn}.ui
     fi
+    if [ $? -ne 0 ]; then exit $? fi
 done
 
 
 # translations
-if [ -f "$PYLUPDATE" ]; then
-    echo "************* pylupdate **************"
-    python3 $PYLUPDATE
-else
-    echo "************* skip pylupdate **************"
-fi
+echo "************* pylupdate **************"
+python3 $PYLUPDATE
+if [ $? -ne 0 ]; then exit $? fi
 
 echo "************* lrelease **************"
 $QT_SRC_PATH/bin/lrelease -verbose artisan.pro
@@ -69,9 +68,11 @@ done
 
 # create a zip with the generated files
 echo "************* generated zip **************"
-zip -rq ../generated-macos.zip ../doc/help_dialogs/Output_html/
-zip -rq ../generated-macos.zip translations/
-zip -rq ../generated-macos.zip uic/
+zip -rq ../generated-macos.zip ../doc/help_dialogs/Output_html/ help/ translations/ uic/
+if [ $? -ne 0 ]; then exit $? fi
+#zip -rq ../generated-macos.zip help/
+#zip -rq ../generated-macos.zip translations/
+#zip -rq ../generated-macos.zip uic/
 
 
 # distribution

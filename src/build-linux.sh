@@ -28,7 +28,7 @@ else
 fi
 
 # convert help files from .xlsx to .py
-#echo "************* help files **************"
+echo "************* help files **************"
 #echo "** ls - l /home/appveyor/projects/yml/doc/help_dialogs/"
 #ls -l /home/appveyor/projects/yml/doc/help_dialogs/
 #echo "** ls -l /home/appveyor/projects/yml/src/../doc/help_dialogs/"
@@ -36,6 +36,7 @@ fi
 #echo "** ls -l /home/appveyor/projects/yml/src/../doc/help_dialogs/Input_files"
 #ls -l /home/appveyor/projects/yml/src/../doc/help_dialogs/Input_files
 python3 ../doc/help_dialogs/Script/xlsx_to_artisan_help.py all
+if [ $? -ne 0 ]; then exit $? fi
 
 # ui / uix
 echo "************* ui/uic **************"
@@ -46,7 +47,8 @@ do
 #    if [ "$PYUIC" == "pyuic5" ]; then
 #        $PYUIC -o uic/${fn}.py --from-imports ui/${fn}.ui
 #    else
-        $PYUIC -o uic/${fn}.py -x ui/${fn}.ui
+    $PYUIC -o uic/${fn}.py -x ui/${fn}.ui
+    if [ $? -ne 0 ]; then exit $? fi
 #    fi
 done
 echo "ls -l uic"
@@ -74,20 +76,12 @@ echo "--------"
 #echo "BEFORE ls -l translations/artisan_ar.ts"
 #ls - l translations/artisan_ar.ts
 
-if [ -f "$PYLUPDATE" ]; then
-    echo "************* pylupdate **************"
-    python3 $PYLUPDATE
-    if [ $? -eq 0 ]
-      then
-          echo "** good"
-      else
-          echo "** bad"
-    fi
-    echo "AFTER ls -l translations/artisan_ar.ts"
-    ls -l translations/artisan_ar.ts
-else
-    echo "************* skip pylupdate **************"
-fi
+echo "************* pylupdate **************"
+python3 $PYLUPDATE
+if [ $? -ne 0 ]; then exit $? fi
+
+#    echo "AFTER ls -l translations/artisan_ar.ts"
+#    ls -l translations/artisan_ar.ts
 
 echo "************* lrelease **************"
 $QT_SRC_PATH/bin/lrelease -verbose artisan.pro
@@ -95,15 +89,15 @@ for f in translations/qtbase_*.ts
 do
     echo "Processing $f file..."
     $QT_SRC_PATH/bin/lrelease -verbose $f
+    if [ $? -ne 0 ]; then exit $? fi
 done
 
 
 # create a zip with the generated files
 echo "************* generated zip **************"
-zip -rq ../generated-macos.zip ../doc/help_dialogs/Output_html/
-zip -rq ../generated-macos.zip translations/
-zip -rq ../generated-macos.zip uic/
-
+zip -rq ../generated-linux.zip ../doc/help_dialogs/Output_html/ help/ translations/ uic/
+if [ $? -ne 0 ]; then exit $? fi
+ 
 
 
 
