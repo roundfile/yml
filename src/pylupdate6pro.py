@@ -54,13 +54,13 @@ try:
     #print("*** cmdline:  ",cmdline)
 
     print("*** Just pylupdate6")
-    cmdline = [f'{scriptdir}/bin/pylupdate6']
+    cmdline = [f'{scriptdir}/bin/pylupdate6', '--verbose']
     completed_process = subprocess.run(cmdline, capture_output=True, text=True, check=False)
     print("*** pylupdate6 uic")
-    cmdline = [f'{scriptdir}/bin/pylupdate6', 'uic']
+    cmdline = [f'{scriptdir}/bin/pylupdate6', 'uic','--verbose']
     completed_process = subprocess.run(cmdline, capture_output=True, text=True, check=False)
     print("*** pylupdate6 -ts translations/artisan_de.ts")
-    cmdline = [f'{scriptdir}/bin/pylupdate6', '-ts', 'translations/artisan_de.ts']
+    cmdline = [f'{scriptdir}/bin/pylupdate6', '--ts', 'translations/artisan_de.ts','--verbose']
     completed_process = subprocess.run(cmdline, capture_output=True, text=True, check=False)
 
 
