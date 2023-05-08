@@ -39,8 +39,8 @@ if /i "%APPVEYOR%" NEQ "True" (
 :: ----------------------------------------------------------------------
 
 echo Python Version
-echo %PYTHON_PATH%
-%PYTHON_PATH%\python -V
+echo %PYTHONPATH%
+%PYTHONPATH%\python -V
 python3 -V
 python -V
 exit 1
