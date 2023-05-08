@@ -85,6 +85,7 @@ if [ $? -ne 0 ]; then exit $? fi
 
 echo "************* lrelease **************"
 $QT_SRC_PATH/bin/lrelease -verbose artisan.pro
+if [ $? -ne 0 ]; then exit $? fi
 for f in translations/qtbase_*.ts
 do
     echo "Processing $f file..."

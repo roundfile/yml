@@ -50,11 +50,14 @@ if /i "%APPVEYOR%" NEQ "True" (
 )
 :: ----------------------------------------------------------------------
 
+python -V
+
 ::
 :: convert help files from .xlsx to .py
 ::
 echo ************* help files **************
-%PYTHON_PATH%\python.exe ..\doc\help_dialogs\Script\xlsx_to_artisan_help.py all
+python ..\doc\help_dialogs\Script\xlsx_to_artisan_help.py all
+if ERRORLEVEL 1 (exit /b 1)
 
 ::
 :: convert .ui files to .py files
@@ -64,6 +67,7 @@ for /r %%a IN (ui\*.ui) DO (
     echo %%~na
     rem %PYUIC% -o uic\%%~na.py --from-imports ui\%%~na.ui
     %PYUIC% -o uic\%%~na.py ui\%%~na.ui
+    if ERRORLEVEL 1 (exit /b 1)
 )
 
 ::
@@ -73,28 +77,29 @@ call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary
 if /i "%ARTISAN_LEGACY%" == "True" (
     echo *** Processing translation files defined in artisan.pro with pylupdate5.py
     %PYTHON_PATH%\Scripts\pylupdate5.exe artisan.pro
+    if ERRORLEVEL 1 (exit /b 1)
 ) else (
     echo *** Processing translation files with pylupdate6pro parsepro
-    %PYTHON_PATH%\python.exe pylupdate6pro.py
+    python pylupdate6pro.py
     if ERRORLEVEL 1 (exit /b 1)
 )
 
 echo ************* lrelease **************
 echo *** Processing artisan.pro
 %QT_PATH%\bin\lrelease -verbose artisan.pro
+if ERRORLEVEL 1 (exit /b 1)
 
 echo *** Processing translation qtbase_*.ts files
 for /r %%a IN (translations\qtbase_*.ts) DO (
     %QT_PATH%\bin\lrelease -verbose %%~a
+    if ERRORLEVEL 1 (exit /b 1)
 )
 
 ::
 :: Zip the generated files
 ::
-7z a ..\generated-%ARTISAN_SPEC%.zip ..\doc\help_dialogs\Output_html\*.*
-7z a ..\generated-%ARTISAN_SPEC%.zip help\*.*
-7z a ..\generated-%ARTISAN_SPEC%.zip translations\*.*
-7z a ..\generated-%ARTISAN_SPEC%.zip uic\*.*
+7z a ..\generated-%ARTISAN_SPEC%.zip ..\doc\help_dialogs\Output_html\ help\ translations\ uic\
+if ERRORLEVEL 1 (exit /b 1)
 
 ::
 :: run pyinstaller and NSIS to gnerate the install .exe
