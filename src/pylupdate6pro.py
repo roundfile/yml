@@ -23,8 +23,6 @@ from typing import List, Set  #for Python >= 3.9: can remove 'List' since type h
 
 try:
 #    print("os.environ: ",os.environ)
-#    scriptdir = os.environ['PYTHON_PATH']
-#    print("Script dir: ",scriptdir)
 
     # read the artisan.pro project file
     with open('artisan.pro', encoding='utf-8') as f:
@@ -59,7 +57,7 @@ try:
     # run pylupdate6
     completed_process = subprocess.run(cmdline, capture_output=True, text=True, check=False)
 
-    # prints used to make entries in the Appveyor log (or on the console))
+    # prints are used to make entries in the Appveyor log (or on the console))
     if completed_process.returncode == 0:
         print("*** pylupdate6pro.py completed successfully")
         sys.exit(0)
