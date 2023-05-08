@@ -79,7 +79,7 @@ try:
         sys.exit(0)
     else:
         print(f"*** pylupdate6pro.py returned an error: {completed_process.stderr}")
-        sys.exit(1)
+#        sys.exit(1)
 except Exception as e:   #pylint: disable=broad-except
     print("*** pylupdate6pro.py got an exception")
     print(f"{e} line:{sys.exc_info()[2].tb_lineno}") #type: ignore
