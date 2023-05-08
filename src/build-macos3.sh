@@ -34,7 +34,7 @@ fi
 # convert help files from .xlsx to .py
 echo "************* help files **************"
 python3 ../doc/help_dialogs/Script/xlsx_to_artisan_help.py all
-if [ $? -ne 0 ]; then exit $?; fi
+if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 echo "ls -l help"
 ls -l help
 
@@ -49,30 +49,30 @@ do
     else
         $PYUIC -o uic/${fn}.py -x ui/${fn}.ui
     fi
-    if [ $? -ne 0 ]; then exit $?; fi
+    if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 done
 
 
 # translations
 echo "************* pylupdate **************"
 python3 $PYLUPDATE
-if [ $? -ne 0 ]; then exit $?; fi
+if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 
 echo "************* lrelease **************"
 $QT_SRC_PATH/bin/lrelease -verbose artisan.pro
-if [ $? -ne 0 ]; then exit $?; fi
+if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 for f in translations/qtbase_*.ts
 do
     echo "Processing $f file..."
     $QT_SRC_PATH/bin/lrelease -verbose $f
-    if [ $? -ne 0 ]; then exit $?; fi
+    if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 done
 
 
 # create a zip with the generated files
 echo "************* generated zip **************"
 zip -rq ../generated-macos.zip ../doc/help_dialogs/Output_html/ help/ translations/ uic/
-if [ $? -ne 0 ]; then exit $?; fi
+if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 #zip -rq ../generated-macos.zip help/
 #zip -rq ../generated-macos.zip translations/
 #zip -rq ../generated-macos.zip uic/

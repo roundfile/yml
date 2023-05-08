@@ -36,7 +36,7 @@ echo "************* help files **************"
 #echo "** ls -l /home/appveyor/projects/yml/src/../doc/help_dialogs/Input_files"
 #ls -l /home/appveyor/projects/yml/src/../doc/help_dialogs/Input_files
 python3 ../doc/help_dialogs/Script/xlsx_to_artisan_help.py all
-if [ $? -ne 0 ]; then exit $?; fi
+if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 echo "ls -l help"
 ls -l help
 
@@ -51,7 +51,7 @@ do
 #        $PYUIC -o uic/${fn}.py --from-imports ui/${fn}.ui
 #    else
     $PYUIC -o uic/${fn}.py -x ui/${fn}.ui
-    if [ $? -ne 0 ]; then exit $?; fi
+    if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 #    fi
 done
 echo "ls -l uic"
@@ -81,26 +81,26 @@ echo "--------"
 
 echo "************* pylupdate **************"
 python3 $PYLUPDATE
-if [ $? -ne 0 ]; then exit $?; fi
+if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 
 #    echo "AFTER ls -l translations/artisan_ar.ts"
 #    ls -l translations/artisan_ar.ts
 
 echo "************* lrelease **************"
 $QT_SRC_PATH/bin/lrelease -verbose artisan.pro
-if [ $? -ne 0 ]; then exit $?; fi
+if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 for f in translations/qtbase_*.ts
 do
     echo "Processing $f file..."
     $QT_SRC_PATH/bin/lrelease -verbose $f
-    if [ $? -ne 0 ]; then exit $?; fi
+    if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 done
 
 
 # create a zip with the generated files
 echo "************* generated zip **************"
 zip -rq ../generated-linux.zip ../doc/help_dialogs/Output_html/ help/ translations/ uic/
-if [ $? -ne 0 ]; then exit $?; fi
+if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
  
 
 

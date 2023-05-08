@@ -54,7 +54,7 @@ try:
     cmdline.extend(unique_top_dirs)
     for t in translations:
         cmdline.extend(['--ts', t])
-    print("*** cmdline:  ",cmdline)
+    #print("*** cmdline:  ",cmdline)
 
     # run pylupdate6
     completed_process = subprocess.run(cmdline, capture_output=True, text=True, check=False)

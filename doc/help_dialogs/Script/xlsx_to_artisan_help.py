@@ -65,9 +65,10 @@ Must be replaced with three periods "..." in the Excel file.
 from os.path import dirname, abspath, split, splitext
 from os import listdir
 import importlib
-import sys
 import re
 from time import sleep
+import sys
+sys.dont_write_bytecode = True  #prevents __pycache__ folder written to help/ 
 
 try:
     from PyQt6.QtWidgets import QApplication  
