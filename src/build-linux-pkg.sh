@@ -85,14 +85,15 @@ mv ./out/*.AppImage ${NAME}.AppImage
 
 ls -lh *.deb *.rpm
 
+#!/bin/sh
+
 # Check that the packaged files are above an expected size
-basename=${NAME} 
-suffixes=(".deb" ".rpm" ".AppImage") # array of suffixes to check
+basename=${NAME}
+suffixes=".deb .rpm .AppImage" # separate statements for suffixes to check
 min_size=270000000
-for suffix in "${suffixes[@]}"; do
+for suffix in $suffixes; do
     filename="$basename$suffix"
-#    size=$(stat -c %s "$filename")
-    size=$(($(du -k "$filename" | cut -f1) * 1024))  #returns kB so multiply by 1024 (du works on macOS)
+    size=$(($(du -k "$filename" | cut -f1) * 1024)) # returns kB so multiply by 1024 (du works on macOS)
     echo "$filename size: $size bytes"
     if [ "$size" -lt "$min_size" ]; then
         echo "$filename is smaller than $min_size bytes"

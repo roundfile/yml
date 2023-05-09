@@ -91,12 +91,11 @@ python3 setup-macos3.py py2app | egrep -v '^(creating|copying file|byte-compilin
 version=$(python3 -c "import artisanlib; print(artisanlib.__version__)")
 basename="artisan-mac-$version"
 echo "basename: $basename"
-suffixes=(".dmg") # array of suffixes to check
+suffixes=".dmg" # array of suffixes to check
 min_size=260000000
-for suffix in "${suffixes[@]}"; do
+for suffix in $suffixes; do
     filename="$basename$suffix"
-    #size=$(stat -c %s "$filename")
-    size=$(($(du -k "$filename" | cut -f1) * 1024))  #returns kB so multiply by 1024 (du works on macOS)
+    size=$(($(du -k "$filename" | cut -f1) * 1024)) # returns kB so multiply by 1024 (du works on macOS)
     echo "$filename size: $size bytes"
     if [ "$size" -lt "$min_size" ]; then
         echo "$filename is smaller than $min_size bytes"
@@ -105,3 +104,16 @@ for suffix in "${suffixes[@]}"; do
     fi
 done
 
+#suffixes=(".dmg") # array of suffixes to check
+#for suffix in "${suffixes[@]}"; do
+#    filename="$basename$suffix"
+#    #size=$(stat -c %s "$filename")
+#    size=$(($(du -k "$filename" | cut -f1) * 1024))  #returns kB so multiply by 1024 (du works on macOS)
+#    echo "$filename size: $size bytes"
+#    if [ "$size" -lt "$min_size" ]; then
+#        echo "$filename is smaller than $min_size bytes"
+#    else
+#        echo "$filename is larger than $min_size bytes"
+#    fi
+#done
+#
