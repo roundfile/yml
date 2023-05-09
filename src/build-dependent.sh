@@ -11,13 +11,41 @@ if [ $# -eq 0 ]; then
 fi
 
 # Check if the argument matches one of the accepted strings
-accepted_args=("macos" "linux")
-arg="$1"
-if [[ ! " ${accepted_args[@]} " =~ " ${arg} " ]]; then
-  echo "Error: invalid argument \"$arg\""
-  echo "Accepted arguments are: ${accepted_args[@]}"
-  exit 1
-fi
+case "$1" in
+    macos|linux)
+        # the argument is valid
+        ;;
+    *)
+        echo "Error: invalid argument \"$arg\""
+        echo "Argument is invalid: $1. Must be 'macos' or 'linux'"
+        exit 1
+        ;;
+esac
+
+
+#accepted_args="macos" "linux"
+#found_match=false
+#for arg in $accepted_args; do
+#    if [ "$1" = "$arg" ]; then
+#        # Argument is valid
+#        echo "Argument is valid: $1"
+#        found_match=true
+#        break
+#    fi
+#done
+#
+#if [ "$found_match" = false ]; then
+#    # Argument is invalid
+#    echo "Argument is invalid: $1"
+#    exit 1
+#fi
+
+#arg="$1"
+#if [[ ! " ${accepted_args[@]} " =~ " ${arg} " ]]; then
+#  echo "Error: invalid argument \"$arg\""
+#  echo "Accepted arguments are: ${accepted_args[@]}"
+#  exit 1
+#fi
 
 
 #
