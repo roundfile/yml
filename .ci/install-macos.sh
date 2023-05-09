@@ -35,12 +35,9 @@ set -e # reduced logging
 #export PATH="/usr/local/opt/python@$3.10/bin:$PATH"
 
 hash -r
-uname -a
 uname -srv
 which python3
 python3 --version
-exit 1
-
 
 # to work around a wget open ssl issue: dyld: Library not loaded: /usr/local/opt/openssl/lib/libssl.1.0.0.dylib
 # however for now we settled to use curl instead to download the upload script

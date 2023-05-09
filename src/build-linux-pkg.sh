@@ -91,7 +91,8 @@ suffixes=(".deb" ".rpm" ".AppImage") # array of suffixes to check
 min_size=270000000
 for suffix in "${suffixes[@]}"; do
     filename="$basename$suffix"
-    size=$(stat -c %s "$filename")
+#    size=$(stat -c %s "$filename")
+    size=$(($(du -k "$filename" | cut -f1) * 1024))  #returns kB so multiply by 1024 (du works on macOS)
     echo "$filename size: $size bytes"
     if [ "$size" -lt "$min_size" ]; then
         echo "$filename is smaller than $min_size bytes"
