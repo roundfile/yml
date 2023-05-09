@@ -53,7 +53,7 @@ if /i "%APPVEYOR%" NEQ "True" (
 python -V
 
 call build-dependent-win.bat
-if ERRORLEVEL 1 ((echo ** Failure in build-dependent-win.bat); exit /b 1) else (echo ** Finished build-dependant-win.bat)
+if ERRORLEVEL 1 (echo ** Failed in build-dependent-win.bat & exit /b 1) else (echo ** Finished build-dependant-win.bat)
 rem ::
 rem :: Generate translation, ui, and help files dependent on repository sources
 rem ::
