@@ -35,6 +35,8 @@ set -e # reduced logging
 #export PATH="/usr/local/opt/python@$3.10/bin:$PATH"
 
 hash -r
+uname -a
+uname -srv
 which python3
 python3 --version
 exit 1
