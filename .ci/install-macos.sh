@@ -37,6 +37,7 @@ set -e # reduced logging
 hash -r
 which python3
 python3 --version
+exit 1
 
 
 # to work around a wget open ssl issue: dyld: Library not loaded: /usr/local/opt/openssl/lib/libssl.1.0.0.dylib
