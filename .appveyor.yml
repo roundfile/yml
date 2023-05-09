@@ -54,7 +54,7 @@ for:
     VC_REDIST: "https://aka.ms/vs/16/release/vc_redist.x64.exe"
 
   install:
-    - cmd: echo Windows Legacy Install
+    - echo "Windows Legacy Install"
 
     # pull library versions from requirments file
     - ps: $env:PYINSTALLER_VER = Select-String -Path ./src/requirements-win-legacy.txt 'pyinstaller==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value}
