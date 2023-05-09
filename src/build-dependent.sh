@@ -1,7 +1,8 @@
 #!/bin/sh
 
+# requires environment variables...
+
 # List of accepted arguments
-accepted_args=("macos" "linux")
 
 # Check if an argument was passed
 if [ $# -eq 0 ]; then
@@ -10,6 +11,7 @@ if [ $# -eq 0 ]; then
 fi
 
 # Check if the argument matches one of the accepted strings
+accepted_args=("macos" "linux")
 arg="$1"
 if [[ ! " ${accepted_args[@]} " =~ " ${arg} " ]]; then
   echo "Error: invalid argument \"$arg\""

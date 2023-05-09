@@ -1,3 +1,58 @@
+:: ABOUT
+:: Windows batch file to generate translation, ui and help files dependent 
+:: on sources in the Artisan repository.
+::
+:: LICENSE
+:: This program or module is free software: you can redistribute it and/or
+:: modify it under the terms of the GNU General Public License as published
+:: by the Free Software Foundation, either version 2 of the License, or
+:: version 3 of the License, or (at your option) any later versison. It is
+:: provided for educational purposes and is distributed in the hope that
+:: it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+:: warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+:: the GNU General Public License for more details.
+::
+:: AUTHOR
+:: Dave Baxter, Marko Luther 2023
+
+:: on entry to this script the current path must be the src folder
+::
+:: script comandline option LEGACY used to flag a legacy build
+::
+
+@echo off
+:: test for existance of required environment variables
+setlocal enabledelayedexpansion
+if not defined QT_PATH (
+    echo QT_PATH not set, be sure Qt 6.x is installed.  
+    echo Set QT_PATH appropriately, something like C:\Qt\6.4\msvc2019_64.  Exiting...
+    exit /b 1
+)
+if not defined PYTHON_PATH (
+    if defined PYTHONPATH (
+        set PYTHON_PATH=%PYTHONPATH%
+        echo PYTHON_PATH not set, defaulting to %PYTHONPATH%
+    ) else (
+        echo PYTHON_PATH not set, set it manually.  Exiting...
+        exit /b 1
+    )
+)
+if not defined ARTISAN_LEGACY (
+    echo ARTISAN_LEGACY not set, defaulting to False
+    set ARTISAN_LEGACY=False
+    set ARTISAN_SPEC=win
+)
+if not defined ARTISAN_SPEC (
+    echo ARTISAN_SPEC not set.  
+    echo Set it manually to win or win-legacy.  Exiting...
+    exit /b 1
+)
+if not defined PYUIC (
+    echo PYUIC not set, defaulting to pyuic6.exe
+    set PYUIC=pyuic6.exe
+)
+exit /b 1
+
 ::
 :: Generate translation, ui, and help files dependent on repository sources
 ::
@@ -10,7 +65,7 @@ if ERRORLEVEL 1 (exit /b 1) else (echo ** Success)
 :: convert .ui files to .py files
 echo ************* ui/uic **************
 for /r %%a IN (ui\*.ui) DO (
-    #echo %%~na
+    echo %%~na
     %PYUIC% -o uic\%%~na.py ui\%%~na.ui
     if ERRORLEVEL 1 (exit /b 1)
 )
