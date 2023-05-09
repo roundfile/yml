@@ -33,8 +33,8 @@ set -e # reduced logging
 #brew link --force python@3.10
 #export PATH="/usr/local/opt/python@$3.10/bin:$PATH"
 
-brew update && brew upgrade python
-brew link --force --overwrite python@3.11
+#brew update && brew upgrade python
+#brew link --force --overwrite python@3.11
 
 hash -r
 uname -srv
