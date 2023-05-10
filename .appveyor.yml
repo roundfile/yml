@@ -195,30 +195,31 @@ for:
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
 
 
-    ## upgrade Python
-    # first deactivate current venv
-    - sh: source ${VIRTUAL_ENV}/bin/activate
-    - sh: deactivate
-    # brew update Python
-    - sh: brew update && brew upgrade python
-    # relink Python
-    - sh: brew unlink python@${PYTHON_V} && brew link --force python@${PYTHON_V}
-    # add path
-    - sh: export PATH="$(brew --prefix)/Cellar/python@${PYUPGRADE_V}/${PYUPGRADE_V}/bin:${PATH}"
-    # create new venv
-    - sh: python3 -m venv /Users/appveyor/venv${PYUPGRADE_V}
-    - sh: source /Users/appveyor/venv${PYUPGRADE_V}/bin/activate
-    # update symbolic link venv3.11 to point to our new venv3.11.3
-    - sh: ln -vfns /Users/appveyor/venv${PYUPGRADE_V} /Users/appveyor/venv${PYUPGRADE_V}
-    - sh: export PATH=/Users/appveyor/venv${PYUPGRADE_V}/bin:${PATH} # not exported? 
+#    ## upgrade Python
+#    # first deactivate current venv
+#    - sh: source ${VIRTUAL_ENV}/bin/activate
+#    - sh: deactivate
+#    # brew update Python
+#    - sh: brew update && brew upgrade python
+#    # relink Python
+#    - sh: brew unlink python@${PYTHON_V} && brew link --force python@${PYTHON_V}
+#    # add path
+#    - sh: export PATH="$(brew --prefix)/Cellar/python@${PYUPGRADE_V}/${PYUPGRADE_V}/bin:${PATH}"
+#    # create new venv
+#    - sh: python3 -m venv /Users/appveyor/venv${PYUPGRADE_V}
+#    - sh: source /Users/appveyor/venv${PYUPGRADE_V}/bin/activate
+#    # update symbolic link venv3.11 to point to our new venv3.11.3
+#    - sh: ln -vfns /Users/appveyor/venv${PYUPGRADE_V} /Users/appveyor/venv${PYUPGRADE_V}
+#    - sh: export PATH=/Users/appveyor/venv${PYUPGRADE_V}/bin:${PATH} # not exported? 
 
     # run the install script
     - .ci/install-macos.sh
+    - export PATH=/Users/appveyor/venv${PYTHON_V}/bin:$PATH # required after updating Python in venv
+    - echo "** PATH ${PATH}"
         
   build_script:
     - echo "MacOS Build"
     - chmod +x src/*.sh
-#    - chmod +x src/pylupdate6pro
     - chmod +x src/pylupdate6pro.py
 
     # run the build script
