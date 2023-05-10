@@ -104,7 +104,7 @@ for:
     - path: 'generated-win-legacy.zip'
 #    - path: 'src\artisan-*.zip'
 
-#  deploy_script:
+  deploy_script:
     - cmd: bash ../.ci/upload.sh artisan-*.zip
 
 -
