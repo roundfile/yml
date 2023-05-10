@@ -1,7 +1,6 @@
-###################################################################
+# ABOUT
 # Appveyor CI configuration to build Artisan install packages
 #     for Windows, Windows legacy, macOS, and Linux
-###################################################################
 #
 # LICENSE
 # This program or module is free software: you can redistribute it and/or
@@ -215,6 +214,8 @@ for:
     # run the install script
     - .ci/install-macos.sh
     - export PATH=/Users/appveyor/venv${PYTHON_V}/bin:$PATH # required after updating Python in venv
+
+    #debug
     - echo "** PATH ${PATH}"
         
   build_script:

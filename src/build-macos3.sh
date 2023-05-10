@@ -18,6 +18,7 @@
 
 #set -ex
 set -e  # reduced logging
+python3 -V
 
 if [ ! -z $APPVEYOR ]; then
     # Appveyor CI builds
