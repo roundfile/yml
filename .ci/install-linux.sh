@@ -21,6 +21,9 @@ hash -r
 uname -srv
 which python3
 python3 --version
+echo "PYTHON_PATH:    ${PYTHON_PATH}"
+echo "PYTHONSITEPKGS: ${PYTHONSITEPKGS}"
+exit 1
 
 sudo apt-get update -y -q
 sudo apt-get install -y -q ruby-dev build-essential p7zip-full rpm gdb libudev-dev qt5-default
@@ -35,6 +38,7 @@ pip install -r src/requirements.txt
 pip install -r src/requirements-${ARTISAN_OS}.txt
 
 # copy the snap7 binary installed by pip
-sudo cp -f ${PYTHONSITEPKGS}/snap7/lib/libsnap7.so /usr/lib
+#sudo cp -f ${PYTHONSITEPKGS}/snap7/lib/libsnap7.so /usr/lib
+sudo cp -f ${PYTHON_PATH}/snap7/lib/libsnap7.so /usr/lib
 
 .ci/install-libusb.sh
