@@ -220,6 +220,7 @@ for:
     # debug
     - echo "${TEST_ONE}"
     - echo "${TEST_TWO}"
+    - sh: exit 1
 
         
   build_script:

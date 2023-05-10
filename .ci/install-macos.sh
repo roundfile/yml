@@ -62,6 +62,9 @@ echo "** Running install-macos.sh"
 echo $TEST_ONE
 export TEST_TWO=DEF
 export TEST_ONE=DEF
+echo $TEST_ONE
+echo $TEST_TWO
+echo "** Leaving install-macos.sh"
 exit 0
 
 hash -r
