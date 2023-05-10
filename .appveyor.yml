@@ -195,33 +195,25 @@ for:
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
 
 
-#    ## upgrade Python from 3.11.0 to 3.11.3
-#    # first deactivate current venv
-#    - sh: source ${VIRTUAL_ENV}/bin/activate
-#    - sh: deactivate
-#    # brew update Python
-#    - sh: brew update && brew upgrade python
-#    # relink Python
-#    - sh: brew unlink python@${PYTHON_V} && brew link --force python@${PYTHON_V}
-#    # add path
-#    - sh: export PATH="$(brew --prefix)/Cellar/python@${PYUPGRADE_V}/${PYUPGRADE_V}/bin:${PATH}"
-#    # create new venv
-#    - sh: python3 -m venv /Users/appveyor/venv${PYUPGRADE_V}
-#    - sh: source /Users/appveyor/venv${PYUPGRADE_V}/bin/activate
-#    # update symbolic link venv3.11 to point to our new venv3.11.3
-#    - sh: ln -vfns /Users/appveyor/venv${PYUPGRADE_V} /Users/appveyor/venv${PYUPGRADE_V}
-#    - sh: export PATH=/Users/appveyor/venv${PYUPGRADE_V}/bin:${PATH} # not exported? 
-
-    - sh: export TEST_ONE=ABC
+    ## upgrade Python
+    # first deactivate current venv
+    - sh: source ${VIRTUAL_ENV}/bin/activate
+    - sh: deactivate
+    # brew update Python
+    - sh: brew update && brew upgrade python
+    # relink Python
+    - sh: brew unlink python@${PYTHON_V} && brew link --force python@${PYTHON_V}
+    # add path
+    - sh: export PATH="$(brew --prefix)/Cellar/python@${PYUPGRADE_V}/${PYUPGRADE_V}/bin:${PATH}"
+    # create new venv
+    - sh: python3 -m venv /Users/appveyor/venv${PYUPGRADE_V}
+    - sh: source /Users/appveyor/venv${PYUPGRADE_V}/bin/activate
+    # update symbolic link venv3.11 to point to our new venv3.11.3
+    - sh: ln -vfns /Users/appveyor/venv${PYUPGRADE_V} /Users/appveyor/venv${PYUPGRADE_V}
+    - sh: export PATH=/Users/appveyor/venv${PYUPGRADE_V}/bin:${PATH} # not exported? 
 
     # run the install script
     - .ci/install-macos.sh
-
-    # debug
-    - echo "${TEST_ONE}"
-    - echo "${TEST_TWO}"
-    - sh: exit 1
-
         
   build_script:
     - echo "MacOS Build"
@@ -242,7 +234,7 @@ for:
 #    - path: 'src/artisan-*.dmg'
 
   deploy_script:
-#    - ../.ci/upload.sh artisan-*.dmg
+    - ../.ci/upload.sh artisan-*.dmg
 
 
 -
