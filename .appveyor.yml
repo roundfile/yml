@@ -193,6 +193,24 @@ for:
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
 
+
+    ## upgrade Python from 3.11.0 to 3.11.3
+    # first deactivate current venv
+    - sh: source ${VIRTUAL_ENV}/bin/activate
+    - sh: deactivate
+    # brew update Python
+    - sh: brew update && brew upgrade python
+    # relink Python
+    - sh: brew unlink python@3.11 && brew link --force python@3.11
+    # add path
+    - sh: export PATH="$(brew --prefix)/Cellar/python@3.11/3.11.3/bin:${PATH}"
+    # create new venv
+    - sh: python3 -m venv /Users/appveyor/venv3.11.3
+    - sh: source /Users/appveyor/venv3.11.3/bin/activate
+    # update symbolic link venv3.11 to point to our new venv3.11.3
+    - sh: ln -vfns /Users/appveyor/venv3.11.3 /Users/appveyor/venv3.11
+    - sh: export PATH=/Users/appveyor/venv3.11.3/bin:${PATH} # not exported? 
+
     # run the install script
     - .ci/install-macos.sh
 

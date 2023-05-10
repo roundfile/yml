@@ -17,6 +17,10 @@
 
 #set -ex # increased logging
 set -e # reduced logging
+echo "install-macos.sh"
+python -V
+echo $PATH
+exit 1
 
 #.ci/silence.sh brew update # this seems to help to work around some homebrew issues; and fails on others
 
