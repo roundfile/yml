@@ -21,7 +21,7 @@ case "$1" in
         exit 1
         ;;
 esac
-
+echo "** Argument supplied: $1"
 
 #accepted_args="macos" "linux"
 #found_match=false
@@ -91,7 +91,8 @@ echo "** Success"
 
 # create a zip with the generated files
 echo "************* zip generated files **************"
-zip -rq ../generated-$arg.zip ../doc/help_dialogs/Output_html/ help/ translations/ uic/
+echo "** Argument supplied: $1"
+zip -rq ../generated-$1.zip ../doc/help_dialogs/Output_html/ help/ translations/ uic/
 if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 #
 #  End of generating dependent files

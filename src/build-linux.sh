@@ -29,7 +29,7 @@ fi
 
 echo "************* build dependent files **************"
 ./build-dependent.sh linux  #generate the dependent files
-if [ $? -ne 0 ]; then exit $?; else (echo "** Success"); fi
+if [ $? -ne 0 ]; then echo "Failed in build-dependent.sh"; exit $?; else (echo "** Success"); fi
     
 ##
 ## Generate translation, ui, and help files dependent on repository sources
