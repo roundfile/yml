@@ -1,15 +1,16 @@
-#!/bin/bash
+#!/bin/sh
 
 # requires environment variables...
 
 # List of accepted arguments
+
+echo "build-dependent.sh"
 
 # Check if an argument was passed
 if [ $# -eq 0 ]; then
   echo "Error: no argument was passed"
   exit 1
 fi
-
 # Check if the argument matches one of the accepted strings
 case "$1" in
     macos|linux)
@@ -21,36 +22,12 @@ case "$1" in
         exit 1
         ;;
 esac
-echo "** Argument supplied: $1"
-
-#accepted_args="macos" "linux"
-#found_match=false
-#for arg in $accepted_args; do
-#    if [ "$1" = "$arg" ]; then
-#        # Argument is valid
-#        echo "Argument is valid: $1"
-#        found_match=true
-#        break
-#    fi
-#done
-#
-#if [ "$found_match" = false ]; then
-#    # Argument is invalid
-#    echo "Argument is invalid: $1"
-#    exit 1
-#fi
-
-#arg="$1"
-#if [[ ! " ${accepted_args[@]} " =~ " ${arg} " ]]; then
-#  echo "Error: invalid argument \"$arg\""
-#  echo "Accepted arguments are: ${accepted_args[@]}"
-#  exit 1
-#fi
 
 
 #
 # Generate translation, ui, and help files dependent on repository sources
 #
+
 # convert help files from .xlsx to .py
 echo "************* help files **************"
 python3 ../doc/help_dialogs/Script/xlsx_to_artisan_help.py all
