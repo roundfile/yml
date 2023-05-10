@@ -17,10 +17,6 @@
 
 #set -ex # increased logging
 set -e # reduced logging
-echo "install-macos.sh"
-python -V
-echo $PATH
-exit 1
 
 #.ci/silence.sh brew update # this seems to help to work around some homebrew issues; and fails on others
 
@@ -52,15 +48,17 @@ exit 1
 #brew link --force python@3.10
 #export PATH="/usr/local/opt/python@$3.10/bin:$PATH"
 
-brew update && brew upgrade python
-brew unlink python@3.11 && brew link --force python@3.11
-#export PATH="/usr/local/Cellar/python@3.11/3.11.3bin:$PATH"
-# upgrade venv
-python3 -m venv --upgrade /Users/appveyor/venv3.11.0
-# or create new
-#python3.11 -m venv /Users/appveyor/venv3.11.3
-echo $PATH
+##brew update && brew upgrade python
+##brew unlink python@3.11 && brew link --force python@3.11
+###export PATH="/usr/local/Cellar/python@3.11/3.11.3bin:$PATH"
+### upgrade venv
+##python3 -m venv --upgrade /Users/appveyor/venv3.11.0
+### or create new
+###python3.11 -m venv /Users/appveyor/venv3.11.3
+##echo $PATH
 
+echo "** Running install-macos.sh"
+echo $PATH
 
 hash -r
 uname -srv
