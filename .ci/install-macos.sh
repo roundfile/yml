@@ -22,32 +22,24 @@ echo "** Running install-macos.sh"
 
 #.ci/silence.sh brew update # this seems to help to work around some homebrew issues; and fails on others
 
-# Check if the PYUPGRADE_V exists and has a value
+# upgrade Python PYUPGRADE_V exists and has a value
 if [ -n "${PYUPGRADE_V:-}" ]; then
-    echo "PYUPGRADE_V has a value: ${PYUPGRADE_V}"
-elif [ -z "${PYUPGRADE_V+x}" ]; then
-    echo "PYUPGRADE_V does not exist"
-else
-    echo "PYUPGRADE_V is empty"
-fi
-exit 1
-
-## upgrade Python
-# first deactivate current venv
-source ${VIRTUAL_ENV}/bin/activate
-deactivate
-# brew update Python
-brew update && brew upgrade python
-# relink Python
-brew unlink python@${PYTHON_V} && brew link --force python@${PYTHON_V}
-# add path
-export PATH="$(brew --prefix)/Cellar/python@${PYTHON_V}/${PYUPGRADE_V}/bin:$PATH"
-# create new venv
-python3 -m venv /Users/appveyor/venv${PYUPGRADE_V}
-source /Users/appveyor/venv${PYUPGRADE_V}/bin/activate
-# update symbolic link venv3.11 to point to our new venv3.11.3
-ln -vfns /Users/appveyor/venv${PYUPGRADE_V} /Users/appveyor/venv${PYTHON_V}
-export PATH=/Users/appveyor/venv${PYUPGRADE_V}/bin:${PATH} # not exported?
+    # first deactivate current venv
+    source ${VIRTUAL_ENV}/bin/activate
+    deactivate
+    # brew update Python
+    brew update && brew upgrade python
+    # relink Python
+    brew unlink python@${PYTHON_V} && brew link --force python@${PYTHON_V}
+    # add path
+    export PATH="$(brew --prefix)/Cellar/python@${PYTHON_V}/${PYUPGRADE_V}/bin:${PATH}"
+    # create new venv
+    python3 -m venv /Users/appveyor/venv${PYUPGRADE_V}
+    source /Users/appveyor/venv${PYUPGRADE_V}/bin/activate
+    # update symbolic link to point to our new venv
+    ln -vfns /Users/appveyor/venv${PYUPGRADE_V} /Users/appveyor/venv${PYTHON_V}
+    export PATH=/Users/appveyor/venv${PYUPGRADE_V}/bin:${PATH} # not exported?
+fi 
 
 hash -r
 uname -srv
