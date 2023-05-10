@@ -23,10 +23,12 @@ echo "** Running install-macos.sh"
 #.ci/silence.sh brew update # this seems to help to work around some homebrew issues; and fails on others
 
 # Check if the PYUPGRADE_V exists and has a value
-if [ -n "${PYUPGRADE_V+set}" ]; then
+if [ -n "${PYUPGRADE_V:-}" ]; then
     echo "PYUPGRADE_V has a value: ${PYUPGRADE_V}"
+elif [ -z "${PYUPGRADE_V+x}" ]; then
+    echo "PYUPGRADE_V does not exist"
 else
-    echo "PYUPGRADE_V does not exist or is empty"
+    echo "PYUPGRADE_V is empty"
 fi
 exit 1
 
