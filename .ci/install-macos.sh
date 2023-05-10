@@ -23,7 +23,7 @@ echo "** Running install-macos.sh"
 #.ci/silence.sh brew update # this seems to help to work around some homebrew issues; and fails on others
 
 # Check if the PYUPGRADE_V exists and has a value
-if [ -n "${ENV_VAR+set}" ]; then
+if [ -n "${PYUPGRADE_V+set}" ]; then
     echo "PYUPGRADE_V has a value: ${ENV_VAR}"
 else
     echo "PYUPGRADE_V does not exist or is empty"
