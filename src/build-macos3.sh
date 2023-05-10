@@ -49,56 +49,7 @@ fi
 
 echo "************* build dependent files **************"
 ./build-dependent.sh macos  #generate the dependent files
-if [ $? -ne 0 ]; then echo "Failed in build-dependent.sh"; exit $?; else (echo "** Success"); fi
-
-
-##
-## Generate translation, ui, and help files dependent on repository sources
-##
-## convert help files from .xlsx to .py
-#echo "************* help files **************"
-#python3 ../doc/help_dialogs/Script/xlsx_to_artisan_help.py all
-#if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
-#
-## ui / uix
-#echo "************* ui/uic **************"
-#find ui -iname "*.ui" | while read f
-#do
-#    fullfilename=$(basename $f)
-#    fn=${fullfilename%.*}
-#    if [ "$PYUIC" == "pyuic5" ]; then
-#        $PYUIC -o uic/${fn}.py --from-imports ui/${fn}.ui
-#    else
-#        $PYUIC -o uic/${fn}.py -x ui/${fn}.ui
-#    fi
-#    if [ $? -ne 0 ]; then exit $?; fi
-#done
-#echo "** Success"
-#
-## translations
-#echo "************* pylupdate **************"
-#python3 $PYLUPDATE
-#if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
-#echo "************* lrelease **************"
-#echo "*** artisan.pro"
-#$QT_SRC_PATH/bin/lrelease -verbose artisan.pro
-#if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
-#echo "*** translations/qtbase_*.ts"
-#for f in translations/qtbase_*.ts
-#do
-#    echo "Processing $f file..."
-#    $QT_SRC_PATH/bin/lrelease -verbose $f
-#    if [ $? -ne 0 ]; then exit $?; fi
-#done
-#echo "** Success"
-#
-## create a zip with the generated files
-#echo "************* zip generated files **************"
-#zip -rq ../generated-macos.zip ../doc/help_dialogs/Output_html/ help/ translations/ uic/
-#if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
-##
-##  End of generating dependent files
-##
+if [ $? -ne 0 ]; then echo "Failed in build-dependent.sh"; exit $?; else (echo "** Finished build-dependent.sh"); fi
 
 
 # distribution
@@ -119,9 +70,10 @@ for suffix in $suffixes; do
     size=$(($(du -k "$filename" | cut -f1) * 1024)) # returns kB so multiply by 1024 (du works on macOS)
     echo "$filename size: $size bytes"
     if [ "$size" -lt "$min_size" ]; then
-        echo "$filename is smaller than $min_size bytes"
+        echo "$filename is smaller than minimum $min_size bytes"
+        exit 1
     else
-        echo "$filename is larger than $min_size bytes"
+        echo "Okay: $filename is larger than minimum $min_size bytes"
     fi
 done
 

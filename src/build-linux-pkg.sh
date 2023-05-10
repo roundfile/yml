@@ -111,8 +111,9 @@ for suffix in $suffixes; do
     size=$(($(du -k "$filename" | cut -f1) * 1024)) # returns kB so multiply by 1024 (du works on macOS)
     echo "$filename size: $size bytes"
     if [ "$size" -lt "$min_size" ]; then
-        echo "$filename is smaller than $min_size bytes"
+        echo "$filename is smaller than minimum $min_size bytes"
+        exit 1
     else
-        echo "$filename is larger than $min_size bytes"
+        echo "Okay: $filename is larger than minimum $min_size bytes"
     fi
 done
