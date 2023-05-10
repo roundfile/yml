@@ -58,7 +58,11 @@ set -e # reduced logging
 ##echo $PATH
 
 echo "** Running install-macos.sh"
-echo $PATH
+#echo $PATH
+echo $TEST_ONE
+export TEST_TWO=DEF
+export TEST_ONE=DEF
+exit 0
 
 hash -r
 uname -srv
