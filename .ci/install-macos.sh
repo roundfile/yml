@@ -24,7 +24,7 @@ echo "** Running install-macos.sh"
 
 # Check if the PYUPGRADE_V exists and has a value
 if [ -n "${PYUPGRADE_V+set}" ]; then
-    echo "PYUPGRADE_V has a value: ${ENV_VAR}"
+    echo "PYUPGRADE_V has a value: ${PYUPGRADE_V}"
 else
     echo "PYUPGRADE_V does not exist or is empty"
 fi
@@ -32,20 +32,20 @@ exit 1
 
 ## upgrade Python
 # first deactivate current venv
-source $VIRTUAL_ENV/bin/activate
+source ${VIRTUAL_ENV}/bin/activate
 deactivate
 # brew update Python
 brew update && brew upgrade python
 # relink Python
-brew unlink python@$PYTHON_V && brew link --force python@$PYTHON_V
+brew unlink python@${PYTHON_V} && brew link --force python@${PYTHON_V}
 # add path
-export PATH="$(brew --prefix)/Cellar/python@$PYTHON_V/$PYUPGRADE_V/bin:$PATH"
+export PATH="$(brew --prefix)/Cellar/python@${PYTHON_V}/${PYUPGRADE_V}/bin:$PATH"
 # create new venv
-python3 -m venv /Users/appveyor/venv$PYUPGRADE_V
-source /Users/appveyor/venv$PYUPGRADE_V/bin/activate
+python3 -m venv /Users/appveyor/venv${PYUPGRADE_V}
+source /Users/appveyor/venv${PYUPGRADE_V}/bin/activate
 # update symbolic link venv3.11 to point to our new venv3.11.3
-ln -vfns /Users/appveyor/venv$PYUPGRADE_V /Users/appveyor/venv$PYTHON_V
-export PATH=/Users/appveyor/venv$PYUPGRADE_V/bin:$PATH # not exported?
+ln -vfns /Users/appveyor/venv${PYUPGRADE_V} /Users/appveyor/venv${PYTHON_V}
+export PATH=/Users/appveyor/venv${PYUPGRADE_V}/bin:${PATH} # not exported?
 
 hash -r
 uname -srv
