@@ -2,6 +2,20 @@
 # Appveyor CI configuration to build Artisan install packages
 #     for Windows, Windows legacy, macOS, and Linux
 ###################################################################
+#
+# LICENSE
+# This program or module is free software: you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as published
+# by the Free Software Foundation, either version 2 of the License, or
+# version 3 of the License, or (at your option) any later versison. It is
+# provided for educational purposes and is distributed in the hope that
+# it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+# warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+# the GNU General Public License for more details.
+#
+# AUTHOR
+# Dave Baxter, Marko Luther 2023
+
 # Include "skip ci" in the commit message to prevent this build process from running
 
 environment:
@@ -9,14 +23,14 @@ environment:
   PYTHON_V: 3.11
 
   matrix:
-  - job_name: windows_legacy
-    appveyor_build_worker_image: Visual Studio 2019
-  - job_name: windows
-    appveyor_build_worker_image: Visual Studio 2019  #2022
+#  - job_name: windows_legacy
+#    appveyor_build_worker_image: Visual Studio 2019
+#  - job_name: windows
+#    appveyor_build_worker_image: Visual Studio 2019  #2022
   - job_name: macos
     appveyor_build_worker_image: macos-bigsur
-  - job_name: linux
-    appveyor_build_worker_image: Ubuntu2004
+#  - job_name: linux
+#    appveyor_build_worker_image: Ubuntu2004
 
 
 # Generic build number, later set to commit hash by init
