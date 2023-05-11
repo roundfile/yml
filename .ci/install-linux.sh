@@ -21,17 +21,6 @@ hash -r
 uname -srv
 which python3
 python3 --version
-echo "PYTHON_PATH:    ${PYTHON_PATH}"
-ls -l ${PYTHON_PATH}
-echo "PYTHONSITEPKGS: ${PYTHONSITEPKGS}"
-ls -l ${PYTHONSITEPKGS}
-
-echo "${PYTHON_PATH}/snap7/lib/"
-ls -l ${PYTHON_PATH}/snap7/lib/
-
-echo "${PYTHONSITEPKGS}/snap7/lib/"
-ls -l ${PYTHONSITEPKGS}/snap7/lib/
-exit 1
 
 sudo apt-get update -y -q
 sudo apt-get install -y -q ruby-dev build-essential p7zip-full rpm gdb libudev-dev qt5-default
@@ -44,6 +33,16 @@ gem install fpm -v 1.12.0 # Linux build fails using 1.13.0
 pip install --upgrade pip
 pip install -r src/requirements.txt
 pip install -r src/requirements-${ARTISAN_OS}.txt
+
+echo "PYTHON_PATH:    ${PYTHON_PATH}"
+ls -l ${PYTHON_PATH}
+echo "PYTHONSITEPKGS: ${PYTHONSITEPKGS}"
+ls -l ${PYTHONSITEPKGS}
+echo "${PYTHON_PATH}/snap7/lib/"
+ls -l ${PYTHON_PATH}/snap7/lib/
+echo "${PYTHONSITEPKGS}/snap7/lib/"
+ls -l ${PYTHONSITEPKGS}/snap7/lib/
+exit 1
 
 # copy the snap7 binary installed by pip
 #sudo cp -f ${PYTHONSITEPKGS}/snap7/lib/libsnap7.so /usr/lib
