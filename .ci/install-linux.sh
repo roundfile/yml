@@ -22,7 +22,15 @@ uname -srv
 which python3
 python3 --version
 echo "PYTHON_PATH:    ${PYTHON_PATH}"
+ls -l ${PYTHON_PATH}
 echo "PYTHONSITEPKGS: ${PYTHONSITEPKGS}"
+ls -l ${PYTHONSITEPKGS}
+
+echo "${PYTHON_PATH}/snap7/lib/"
+ls -l ${PYTHON_PATH}/snap7/lib/
+
+echo "${PYTHONSITEPKGS}/snap7/lib/"
+ls -l ${PYTHONSITEPKGS}/snap7/lib/
 exit 1
 
 sudo apt-get update -y -q
