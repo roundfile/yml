@@ -22,7 +22,7 @@ echo "** Running install-macos.sh"
 
 #.ci/silence.sh brew update # this seems to help to work around some homebrew issues; and fails on others
 
-# upgrade Python PYUPGRADE_V exists and has a value
+# upgrade Python version when PYUPGRADE_V exists and has a value
 if [ -n "${PYUPGRADE_V:-}" ]; then
     # first deactivate current venv
     source ${VIRTUAL_ENV}/bin/activate
@@ -45,9 +45,6 @@ hash -r
 uname -srv
 which python3
 python3 --version
-echo "PYTHON_PATH:    ${PYTHON_PATH}"
-echo "PYTHONSITEPKGS: ${PYTHONSITEPKGS}"
-exit 1
 
 # to work around a wget open ssl issue: dyld: Library not loaded: /usr/local/opt/openssl/lib/libssl.1.0.0.dylib
 # however for now we settled to use curl instead to download the upload script

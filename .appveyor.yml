@@ -21,15 +21,15 @@ environment:
   # Set the Appveyor Python version for windows, macos and linux here. Does not affect windows_legacy.
   PYTHON_V: 3.11
   # Upgrade to specific version (for platforms supporting upgrade). Upgrade skipped if missing or blank.
-  PYUPGRADE_V: 3.11.3
+#  PYUPGRADE_V: 3.11.3
 
   matrix:
 #  - job_name: windows_legacy
 #    appveyor_build_worker_image: Visual Studio 2019
 #  - job_name: windows
 #    appveyor_build_worker_image: Visual Studio 2019  #2022
-#  - job_name: macos
-#    appveyor_build_worker_image: macos-bigsur
+  - job_name: macos
+    appveyor_build_worker_image: macos-bigsur
   - job_name: linux
     appveyor_build_worker_image: Ubuntu2004
 
