@@ -34,14 +34,14 @@ pip install --upgrade pip
 pip install -r src/requirements.txt
 pip install -r src/requirements-${ARTISAN_OS}.txt
 
-echo "PYTHON_PATH:    ${PYTHON_PATH}"
-ls -l ${PYTHON_PATH}
-echo "PYTHONSITEPKGS: ${PYTHONSITEPKGS}"
-ls -l ${PYTHONSITEPKGS}
-echo  "PYTHON_PATH/snap7/lib/"
-ls -l ${PYTHON_PATH}/snap7/lib/
-echo "PYTHONSITEPKGS/snap7/lib/"
-ls -l ${PYTHONSITEPKGS}/snap7/lib/
+#echo "PYTHON_PATH:    ${PYTHON_PATH}"
+#ls -l ${PYTHON_PATH}
+#echo "PYTHONSITEPKGS: ${PYTHONSITEPKGS}"
+#ls -l ${PYTHONSITEPKGS}
+#echo  "PYTHON_PATH/snap7/lib/"
+#ls -l ${PYTHON_PATH}/snap7/lib/
+#echo "PYTHONSITEPKGS/snap7/lib/"
+#ls -l ${PYTHONSITEPKGS}/snap7/lib/
 
 # copy the snap7 binary installed by pip
 sudo cp -f ${PYTHONSITEPKGS}/snap7/lib/libsnap7.so /usr/lib
