@@ -1809,7 +1809,7 @@ class comportDlg(ArtisanResizeablDialog):
     @pyqtSlot(bool)
     def showModbusbuttonhelp(self,_=False):
         if self.TabWidget.currentIndex() == 2:
-            from help import modbus_help # pylint: disable=no-name-in-module # type: ignore [attr-defined]
+            from help import modbus_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
             self.helpdialog = self.aw.showHelpDialog(
                     self,            # this dialog as parent
                     self.helpdialog, # the existing help dialog

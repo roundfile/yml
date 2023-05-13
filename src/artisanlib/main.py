@@ -11358,7 +11358,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore # Argument to class mus
     @pyqtSlot()
     @pyqtSlot(bool)
     def viewKshortcuts(self,_=False):
-        from help import keyboardshortcuts_help # pylint: disable=no-name-in-module # type: ignore [attr-defined]
+        from help import keyboardshortcuts_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
         self.helpdialog = self.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog

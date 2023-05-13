@@ -40,9 +40,9 @@ from artisanlib.dialogs import ArtisanDialog, ArtisanResizeablDialog
 from artisanlib.widgets import MyQComboBox, ClickableQLabel, ClickableTextEdit, MyTableWidgetItemNumber
 
 
-from uic import EnergyWidget # pylint: disable=no-name-in-module # type: ignore [attr-defined]
-from uic import SetupWidget # pylint: disable=no-name-in-module # type: ignore [attr-defined]
-from uic import MeasureDialog # pylint: disable=no-name-in-module # type: ignore [attr-defined]
+from uic import EnergyWidget # type: ignore [attr-defined] # pylint: disable=no-name-in-module
+from uic import SetupWidget # type: ignore [attr-defined] # pylint: disable=no-name-in-module
+from uic import MeasureDialog # type: ignore [attr-defined] # pylint: disable=no-name-in-module
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
 
@@ -3709,7 +3709,7 @@ class editGraphDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def showenergyhelp(self,_=False):
-        from help import energy_help # pylint: disable=no-name-in-module # type: ignore [attr-defined]
+        from help import energy_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog

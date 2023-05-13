@@ -3345,7 +3345,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def showExtradevHelp(self):
-        from help import symbolic_help # pylint: disable=no-name-in-module # type: ignore [attr-defined]
+        from help import symbolic_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
@@ -3354,7 +3354,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def showSymbolicHelp(self):
-        from help import symbolic_help # pylint: disable=no-name-in-module # type: ignore [attr-defined]
+        from help import symbolic_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
@@ -3363,7 +3363,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def showhelpprogram(self,_=False):
-        from help import programs_help # pylint: disable=no-name-in-module # type: ignore [attr-defined]
+        from help import programs_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
