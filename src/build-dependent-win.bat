@@ -85,11 +85,11 @@ if /i "%ARTISAN_LEGACY%" == "True" (
 echo ************* lrelease **************
 echo *** Processing artisan.pro
 %QT_PATH%\bin\lrelease -verbose artisan.pro
-if ERRORLEVEL 1 (echo ** Failed in lrelease & exit /b 1) else (echo ** Success)
+if ERRORLEVEL 1 (echo ** Failed in lrelease step 1 & exit /b 1) else (echo ** Success)
 echo *** Processing translation qtbase_*.ts files
 for /r %%a IN (translations\qtbase_*.ts) DO (
     %QT_PATH%\bin\lrelease -verbose %%~a
-    if ERRORLEVEL 1 (echo ** Failed in lrelease & exit /b 1)
+    if ERRORLEVEL 1 (echo ** Failed in lrelease step 2 & exit /b 1)
 )
 echo ** Success
 
