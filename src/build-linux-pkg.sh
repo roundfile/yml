@@ -100,7 +100,6 @@ mv ./out/*.AppImage ${NAME}.AppImage
 
 ls -lh *.deb *.rpm
 
-#!/bin/sh
 
 # Check that the packaged files are above an expected size
 basename=${NAME}

@@ -499,7 +499,7 @@ class serialport():
                                    self.Santoker_D,           #136
                                    self.PHIDGET_DAQ1500,      #137
                                    self.Kaleido_BTET,         #138
-                                   self.Kaleido_SVDT,         #139
+                                   self.Kaleido_SVAT,         #139
                                    self.Kaleido_DrumAH,       #140
                                    self.Kaleido_HeaterFan     #141
                                    ]
@@ -1521,19 +1521,26 @@ class serialport():
             t1 = t2 = -1
         return tx,t2,t1 # time, ET (chan2), BT (chan1)
 
-    def Kaleido_SVDT(self) -> Tuple[float,float,float]:
+    def Kaleido_SVAT(self) -> Tuple[float,float,float]:
         tx = self.aw.qmc.timeclock.elapsedMilli()
         if self.aw.kaleido is not None:
-            t1,t2 = self.aw.kaleido.getSVDT()
+            t1,t2 = self.aw.kaleido.getSVAT()
+            # if in Kaleido PID mode, we turn adjust the SV if TS data changes to sync with the machine state
+            if self.aw.kaleidoPID:
+                try:
+                    ts = int(round(t1))
+                    self.aw.setSVSignal.emit(ts)
+                except Exception as e: # pylint: disable=broad-except
+                    _log.error(e)
         else:
             t1 = t2 = -1
-        return tx,t2,t1 # time, DT (chan2), SV (chan1)
+        return tx,t2,t1 # time, AT (chan2), SV (chan1)
 
     def Kaleido_DrumAH(self) -> Tuple[float,float,float]:
         tx = self.aw.qmc.timeclock.elapsedMilli()
         if self.aw.kaleido is not None:
             t1,t2 = self.aw.kaleido.getDrumAH()
-            # if in Kaleido PID mode, we turn ArtisanPID ON/OFF if AH signal changes
+            # if in Kaleido PID mode, we turn ArtisanPID ON/OFF if AH signal changes to sync with the machine state
             if self.aw.kaleidoPID:
                 try:
                     ah = bool(round(t2))

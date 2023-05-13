@@ -51,7 +51,6 @@ if not defined PYUIC (
     echo PYUIC not set, defaulting to pyuic6.exe
     set PYUIC=pyuic6.exe
 )
-::exit /b 1
 
 ::
 :: Generate translation, ui, and help files dependent on repository sources

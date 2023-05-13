@@ -1151,9 +1151,9 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         self.kaleidoSerialFlag = QCheckBox()
         self.kaleidoSerialFlag.setChecked(not self.aw.kaleidoSerial)
         self.kaleidoSerialFlag.stateChanged.connect(self.kaleidoSerialStateChanged)
-        kaleidoPIDLabel = QLabel('PID')
-        self.kaleidoPIDFlag = QCheckBox()
-        self.kaleidoPIDFlag.setChecked(self.aw.kaleidoPID)
+#        kaleidoPIDLabel = QLabel('PID')
+#        self.kaleidoPIDFlag = QCheckBox()
+#        self.kaleidoPIDFlag.setChecked(self.aw.kaleidoPID)
 
         santokerNetworkGrid = QGridLayout()
         santokerNetworkGrid.addWidget(self.santokerSerialFlag,0,0)
@@ -1180,8 +1180,8 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         kaleidoNetworkGrid.addWidget(self.kaleidoHost,0,2)
         kaleidoNetworkGrid.addWidget(kaleidoPortLabel,1,1)
         kaleidoNetworkGrid.addWidget(self.kaleidoPort,1,2)
-        kaleidoNetworkGrid.addWidget(self.kaleidoPIDFlag,2,0)
-        kaleidoNetworkGrid.addWidget(kaleidoPIDLabel,2,1)
+#        kaleidoNetworkGrid.addWidget(self.kaleidoPIDFlag,2,0)
+#        kaleidoNetworkGrid.addWidget(kaleidoPIDLabel,2,1)
         kaleidoNetworkGrid.setSpacing(20)
         kaleidoNetworkGroupBox = QGroupBox('Kaleido')
         kaleidoNetworkGroupBox.setLayout(kaleidoNetworkGrid)
@@ -3014,7 +3014,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                     message = QApplication.translate('Message','Device set to {0}').format(meter)
                 ##########################
                 ##########################
-                ####  DEVICE 139 is +Kaleido ST/DT but +DEVICE cannot be set as main device
+                ####  DEVICE 139 is +Kaleido ST/AT but +DEVICE cannot be set as main device
                 ##########################
                 ##########################
                 ####  DEVICE 140 is +Kaleido Drum/AH but +DEVICE cannot be set as main device
@@ -3305,7 +3305,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 self.aw.kaleidoPort = int(self.kaleidoPort.text())
             except Exception: # pylint: disable=broad-except
                 pass
-            self.aw.kaleidoPID = self.kaleidoPIDFlag.isChecked()
+#            self.aw.kaleidoPID = self.kaleidoPIDFlag.isChecked()
             for i in range(8):
                 self.aw.qmc.phidget1018_async[i] = self.asyncCheckBoxes[i].isChecked()
                 self.aw.qmc.phidget1018_ratio[i] = self.ratioCheckBoxes[i].isChecked()

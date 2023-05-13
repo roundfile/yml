@@ -15,6 +15,7 @@
 # AUTHOR
 # Dave Baxter, Marko Luther 2023
 
+echo $PATH
 
 #set -ex
 set -e  # reduced logging
