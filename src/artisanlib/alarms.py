@@ -1101,7 +1101,7 @@ class AlarmDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def showAlarmbuttonhelp(self,_=False):
-        from help import alarms_help
+        from help import alarms_help # pylint: disable=no-name-in-module # type: ignore [attr-defined]
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog

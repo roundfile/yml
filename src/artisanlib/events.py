@@ -29,7 +29,7 @@ from artisanlib.util import uchr, comma2dot
 from artisanlib.dialogs import ArtisanResizeablDialog, ArtisanDialog
 from artisanlib.widgets import MyQComboBox, MyQDoubleSpinBox
 
-from uic import SliderCalculatorDialog
+from uic import SliderCalculatorDialog # pylint: disable=no-name-in-module # type: ignore [attr-defined]
 
 
 try:
@@ -3323,7 +3323,7 @@ class EventsDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def showEventbuttonhelp(self,_=False):
-        from help import eventbuttons_help
+        from help import eventbuttons_help # pylint: disable=no-name-in-module # type: ignore [attr-defined]
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
@@ -3332,7 +3332,7 @@ class EventsDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def showSliderHelp(self,_=False):
-        from help import eventsliders_help
+        from help import eventsliders_help # pylint: disable=no-name-in-module # type: ignore [attr-defined]
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
@@ -3341,7 +3341,7 @@ class EventsDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def showEventannotationhelp(self,_=False):
-        from help import eventannotations_help
+        from help import eventannotations_help # pylint: disable=no-name-in-module # type: ignore [attr-defined]
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
