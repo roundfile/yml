@@ -52,6 +52,15 @@ echo "************* build dependent files **************"
 ./build-dependent.sh macos  #generate the dependent files
 if [ $? -ne 0 ]; then echo "Failed in build-dependent.sh"; exit $?; else (echo "** Finished build-dependent.sh"); fi
 
+# patch google packages to help out py2app
+touch $PYTHONSITEPKGS/google/__init__.py
+touch $PYTHONSITEPKGS/google/protobuf/__init__.py
+touch $PYTHONSITEPKGS/google/protobuf/internal/__init__.py
+
+ls $PYTHONSITEPKGS/google/
+ls $PYTHONSITEPKGS/google/protobuf/
+ls $PYTHONSITEPKGS/google/protobuf/internal/
+
 
 # distribution
 rm -rf build dist

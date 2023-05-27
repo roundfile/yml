@@ -1,7 +1,7 @@
 # ABOUT
 # Qt Translation processing for Artisan
-# Parses artisan.pro file.  Format of the .pro file:  Must have SOURCES and TRANSLATION files
-# each on its own line.  
+# Parses artisan.pro file.  Format of the .pro file:  Must have SOURCES and TRANSLATIONS files
+# each on its own line, no blank lines.  A blank line must separate SOURCES and TRANSLATIONS.
 #
 # LICENSE
 # This program or module is free software: you can redistribute it and/or
