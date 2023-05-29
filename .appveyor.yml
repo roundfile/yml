@@ -113,7 +113,7 @@ for:
     fast_finish: false
 
   environment:
-    QT_PATH: "C:\\qt\\6.4\\msvc2022_64"
+    QT_PATH: "C:\\qt\\6.4\\msvc2019_64"
     PYUIC: "pyuic6.exe"
     BUILD_PYINSTALLER: "True"
     ARTISAN_LEGACY: "False"
@@ -137,8 +137,8 @@ for:
     - cmd: .ci\install-win.bat
 
   build_script:
-    - dir /R c:\qt\6.5.0\
-    - dir /R c:\qt\6.4.3\
+    - dir /R c:\qt\6.5.0\msvc2019_64\
+    - dir /R c:\qt\6.4.3\msvc2019_64\
 
 #    - cmd: echo Windows Build
 #    - cmd: cd src
