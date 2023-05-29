@@ -137,10 +137,12 @@ for:
     - cmd: .ci\install-win.bat
 
   build_script:
-    - echo **QTPATH
-    - dir %QT_PATH%
-    - echo **QTPATH\bin
-    - dir %QT_PATH%\bin
+    - cmd: echo **c:\QT
+    - dir c:\qt
+    - cmd: echo **c:\qt\6.5
+    - dir c:\qt
+    - cmd: echo **c:\qt\6.5\bin
+    - dir c:\qt\6.5\bin
     - exit
 
     - cmd: echo Windows Build
