@@ -18,7 +18,6 @@
 #
 # AUTHOR
 # Dave Baxter, Rui Paulo, Marko Luther 2023
-
 # Notes:
 # only the file to upload is specified on the command line
 # all necessary information comes from Appveyor environment variables

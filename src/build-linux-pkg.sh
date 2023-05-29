@@ -99,8 +99,6 @@ ARCH=x86_64 ./pkg2appimage-*.AppImage artisan-AppImage.yml
 mv ./out/*.AppImage ${NAME}.AppImage
 
 ls -lh *.deb *.rpm
-
-
 # Check that the packaged files are above an expected size
 basename=${NAME}
 suffixes=".deb .rpm .AppImage" # separate statements for suffixes to check

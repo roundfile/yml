@@ -39,14 +39,12 @@ else
     export QT_PATH=$PYTHON_PATH/PyQt5/Qt
     export QT_SRC_PATH=/usr/share/Qt/6.4/gcc_64
     export PYLUPDATE=./pylupdate6pro.py
-
 fi
 
 echo "************* build dependent files **************"
 ./build-dependent.sh linux  #generate the dependent files
 if [ $? -ne 0 ]; then echo "Failed in build-dependent.sh"; exit $?; else (echo "** Finished build-dependent.sh"); fi
     
-
 rm -rf build
 rm -rf dist
 

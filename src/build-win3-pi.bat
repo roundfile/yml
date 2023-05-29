@@ -14,7 +14,6 @@
 ::
 :: AUTHOR
 :: Dave Baxter, Marko Luther 2023
-
 :: on entry to this script the current path must be the src folder
 ::
 :: script comandline option LEGACY used to flag a legacy build

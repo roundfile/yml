@@ -13,7 +13,6 @@
 ;
 ; AUTHOR
 ; Dave Baxter, Marko Luther 2023
-
 ;
 ; .nsi command line options:
 ;    /DPRODUCT_VERSION=ww.xx.yy.zz  -explicitly set the product version, default is 0.0.0.0
@@ -341,6 +340,7 @@ Section Uninstall
   RMDir /r "$INSTDIR\charset_normalizer"
   RMDir /r "$INSTDIR\contourpy"
   RMDir /r "$INSTDIR\gevent"
+  RMDir /r "$INSTDIR\google"
   RMDir /r "$INSTDIR\greenlet"
   RMDir /r "$INSTDIR\Icons"
   RMDir /r "$INSTDIR\Include"
@@ -369,6 +369,7 @@ Section Uninstall
   RMDir /r "$INSTDIR\tornado"
   RMDir /r "$INSTDIR\translations"
   RMDir /r "$INSTDIR\wcwidth"
+  RMDir /r "$INSTDIR\websockets"
   RMDir /r "$INSTDIR\Wheels"
   RMDir /r "$INSTDIR\win32com"
   RMDir /r "$INSTDIR\wx"
@@ -393,6 +394,7 @@ Section Uninstall
   !insertmacro Rmdir_Wildcard "$INSTDIR\pyinstaller*.dist-info" ${__LINE__}
   !insertmacro Rmdir_Wildcard "$INSTDIR\python_snap7*.dist-info" ${__LINE__}
   !insertmacro Rmdir_Wildcard "$INSTDIR\setuptools*.dist-info" ${__LINE__}
+  !insertmacro Rmdir_Wildcard "$INSTDIR\websockets*.dist-info" ${__LINE__}
   !insertmacro Rmdir_Wildcard "$INSTDIR\wheel*.dist-info" ${__LINE__}
   !insertmacro Rmdir_Wildcard "$INSTDIR\zope.event*.dist-info" ${__LINE__}
   !insertmacro Rmdir_Wildcard "$INSTDIR\zope.interface*.dist-info" ${__LINE__}

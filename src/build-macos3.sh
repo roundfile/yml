@@ -46,17 +46,21 @@ else
     export PATH=$QT_PATH/bin:$QT_PATH/lib:$PATH
 
     #export DYLD_FRAMEWORK_PATH=$QT_PATH/lib # with this line all Qt libs are copied into Contents/Frameworks. Why?
+
+
+
+
+
+
 fi
 
 echo "************* build dependent files **************"
 ./build-dependent.sh macos  #generate the dependent files
 if [ $? -ne 0 ]; then echo "Failed in build-dependent.sh"; exit $?; else (echo "** Finished build-dependent.sh"); fi
-
 # patch google packages to help out py2app
 touch $PYTHONSITEPKGS/google/__init__.py
 touch $PYTHONSITEPKGS/google/protobuf/__init__.py
 touch $PYTHONSITEPKGS/google/protobuf/internal/__init__.py
-
 ls $PYTHONSITEPKGS/google/
 ls $PYTHONSITEPKGS/google/protobuf/
 ls $PYTHONSITEPKGS/google/protobuf/internal/
@@ -67,8 +71,6 @@ rm -rf build dist
 sleep .3 # sometimes it takes a little for dist to get really empty
 echo "************* p2app **************"
 python3 setup-macos3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'
-
-
 # Check that the packaged files are above an expected size
 version=$(python3 -c "import artisanlib; print(artisanlib.__version__)")
 basename="artisan-mac-$version"
@@ -86,17 +88,3 @@ for suffix in $suffixes; do
         echo "Okay: $filename is larger than minimum $min_size bytes"
     fi
 done
-
-#suffixes=(".dmg") # array of suffixes to check
-#for suffix in "${suffixes[@]}"; do
-#    filename="$basename$suffix"
-#    #size=$(stat -c %s "$filename")
-#    size=$(($(du -k "$filename" | cut -f1) * 1024))  #returns kB so multiply by 1024 (du works on macOS)
-#    echo "$filename size: $size bytes"
-#    if [ "$size" -lt "$min_size" ]; then
-#        echo "$filename is smaller than $min_size bytes"
-#    else
-#        echo "$filename is larger than $min_size bytes"
-#    fi
-#done
-#

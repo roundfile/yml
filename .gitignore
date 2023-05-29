@@ -21,7 +21,6 @@ simple.log
 artisan_plus.log
 outbox/
 *flycheck_*.py
-
 #uncomment to keep dependent files out of the Artisan repository
 src/uic/[!_]*.py
 src/translations/*.qm

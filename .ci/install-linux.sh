@@ -16,12 +16,10 @@
 # Dave Baxter, Marko Luther 2023
 
 set -ex
-
 hash -r
 uname -srv
 which python3
 python3 --version
-
 sudo apt-get update -y -q
 sudo apt-get install -y -q ruby-dev build-essential p7zip-full rpm gdb libudev-dev qt5-default
 sudo apt-get install -y -q fakeroot
