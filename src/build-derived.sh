@@ -1,6 +1,6 @@
 #!/bin/sh
 # ABOUT
-# Generate translation, ui, and help files dependent on repository sources
+# Generate translation, ui, and help files derived from repository sources
 # for Artisan Linux and macOS builds
 #
 # LICENSE
@@ -20,7 +20,7 @@
 
 # List of accepted arguments
 
-echo "build-dependent.sh"
+echo "build-derived.sh"
 
 # Check if an argument was passed
 if [ $# -eq 0 ]; then
@@ -41,7 +41,7 @@ esac
 
 
 #
-# Generate translation, ui, and help files dependent on repository sources
+# Generate translation, ui, and help files derived from repository sources
 #
 
 # convert help files from .xlsx to .py
@@ -88,5 +88,5 @@ echo "** Argument supplied: $1"
 zip -rq ../generated-$1.zip ../doc/help_dialogs/Output_html/ help/ translations/ uic/
 if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 #
-#  End of generating dependent files
+#  End of generating derived files
 #

@@ -51,56 +51,12 @@ if /i "%APPVEYOR%" NEQ "True" (
 
 python -V
 
-call build-dependent-win.bat
-if ERRORLEVEL 1 (echo ** Failed in build-dependent-win.bat & exit /b 1) else (echo ** Finished build-dependant-win.bat)
-rem ::
-rem :: Generate translation, ui, and help files dependent on repository sources
-rem ::
-rem 
-rem :: convert help files from .xlsx to .py
-rem echo ************* help files **************
-rem python ..\doc\help_dialogs\Script\xlsx_to_artisan_help.py all
-rem if ERRORLEVEL 1 (exit /b 1) else (echo ** Success)
-rem 
-rem :: convert .ui files to .py files
-rem echo ************* ui/uic **************
-rem for /r %%a IN (ui\*.ui) DO (
-rem     #echo %%~na
-rem     %PYUIC% -o uic\%%~na.py ui\%%~na.ui
-rem     if ERRORLEVEL 1 (exit /b 1)
-rem )
-rem echo ** Success
-rem  
-rem :: Process translation files
-rem call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
-rem echo ************* pylupdate **************
-rem if /i "%ARTISAN_LEGACY%" == "True" (
-rem     echo *** Processing translation files defined in artisan.pro with pylupdate5.py
-rem     %PYTHON_PATH%\Scripts\pylupdate5.exe artisan.pro
-rem     if ERRORLEVEL 1 (exit /b 1) else (echo ** Success)
-rem ) else (
-rem     echo *** Processing translation files with pylupdate6pro.py
-rem     python pylupdate6pro.py
-rem     if ERRORLEVEL 1 (exit /b 1) else (echo ** Success)
-rem )
-rem echo ************* lrelease **************
-rem echo *** Processing artisan.pro
-rem %QT_PATH%\bin\lrelease -verbose artisan.pro
-rem if ERRORLEVEL 1 (exit /b 1) else (echo ** Success)
-rem echo *** Processing translation qtbase_*.ts files
-rem for /r %%a IN (translations\qtbase_*.ts) DO (
-rem     %QT_PATH%\bin\lrelease -verbose %%~a
-rem     if ERRORLEVEL 1 (exit /b 1)
-rem )
-rem echo ** Success
-rem 
-rem :: Zip the generated files
-rem 7z a ..\generated-%ARTISAN_SPEC%.zip ..\doc\help_dialogs\Output_html\ help\ translations\ uic\
-rem if ERRORLEVEL 1 (exit /b 1) else (echo ** Success)
-rem ::
-rem ::  End of generating dependent files
-rem ::
-
+::
+:: build derived files
+::
+echo ""************* build derived files **************"
+call build-derived-win.bat
+if ERRORLEVEL 1 (echo ** Failed in build-derived-win.bat & exit /b 1) else (echo ** Finished build-dependant-win.bat)
 
 ::
 :: run pyinstaller and NSIS to generate the install .exe

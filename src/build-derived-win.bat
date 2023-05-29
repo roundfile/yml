@@ -1,5 +1,5 @@
 :: ABOUT
-:: Windows batch file to generate translation, ui and help files dependent 
+:: Windows batch file to generate translation, ui and help files derived 
 :: on sources in the Artisan repository.
 ::
 :: LICENSE
@@ -53,7 +53,7 @@ if not defined PYUIC (
 )
 
 ::
-:: Generate translation, ui, and help files dependent on repository sources
+:: Generate translation, ui, and help files derived from repository sources
 ::
 
 :: convert help files from .xlsx to .py
@@ -97,5 +97,5 @@ echo ** Success
 7z a ..\generated-%ARTISAN_SPEC%.zip ..\doc\help_dialogs\Output_html\ help\ translations\ uic\
 if ERRORLEVEL 1 (echo ** Failed in 7z & exit /b 1) else (echo ** Success)
 ::
-::  End of generating dependent files
+::  End of generating derived files
 ::
