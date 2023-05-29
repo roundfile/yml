@@ -137,8 +137,8 @@ for:
     - cmd: .ci\install-win.bat
 
   build_script:
-    - dir /R c:\qt\6.5.0\msvc2019_64\
-    - dir /R c:\qt\6.4.3\msvc2019_64\
+    - dir /R c:\qt\6.5.0\msvc2019_64\bin\
+    - dir /R c:\qt\6.4.3\msvc2019_64\bin\
 
 #    - cmd: echo Windows Build
 #    - cmd: cd src
