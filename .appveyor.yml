@@ -137,12 +137,7 @@ for:
     - cmd: .ci\install-win.bat
 
   build_script:
-    - cmd: echo **c:\QT
-    - dir c:\qt
-    - cmd: echo **c:\qt\6.5
-    - dir c:\qt
-    - cmd: echo **c:\qt\6.5\bin
-    - dir c:\qt\6.5\bin
+    - dir /R c:\qt\6*
     - exit
 
     - cmd: echo Windows Build
