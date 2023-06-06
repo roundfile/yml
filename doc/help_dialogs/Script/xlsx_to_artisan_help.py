@@ -120,11 +120,11 @@ def generateRows(ws):
 def getTitle(all_rows,_,nsheet):
     del _
     if nsheet == 0:
-        title = nlind + 'strlist.append("<b>")'
+        title = nlind + "strlist.append('<b>')"
     else:
-        title = nlind + 'strlist.append("<br/><br/><b>")'
+        title = nlind + "strlist.append('<br/><br/><b>')"
     title +=  nlind + 'strlist.append(' + str(all_rows[0][0]) + ')'
-    title +=  nlind + 'strlist.append("</b>")'
+    title +=  nlind + "strlist.append('</b>')"
     return title
 
 def getNotes(all_rows,nrows,tbl_name,notetype='top'):
@@ -160,9 +160,8 @@ def getAddrows(all_rows,tbl_name):
     return addrows
 
 def buildpyCode(filename_in):
-
-    data_table_attributes = '"width":"100%","border":"1","padding":"1","border-collapse":"collapse"'
-    note_table_attributes = '"width":"100%","border":"1","padding":"1","border-collapse":"collapse"'
+    data_table_attributes = "'width':'100%','border':'1','padding':'1','border-collapse':'collapse'"
+    note_table_attributes = "'width':'100%','border':'1','padding':'1','border-collapse':'collapse'"
 
     outstr = ''
 
@@ -242,12 +241,13 @@ def buildpyCode(filename_in):
             outstr += nlind + 'strlist.append(' + tbl_name + 'bottom' + '.get_html_string(attributes={' + note_table_attributes + '}))'
 
     # finalize outstr - py code
-    outstr += nlind + 'strlist.append("</body>")'
+    outstr += nlind + "strlist.append('</body>')"
 
-    outstr += nlind + 'helpstr = "".join(strlist)'
+    outstr += nlind + "helpstr = ''.join(strlist)"
 
     # clean any html entities that get escaped by PrettyTable in its html output
-    outstr += nlind + 'return re.sub(r"&amp;", r"&",helpstr)'
+    outstr += nlind + "return re.sub(r'&amp;', r'&',helpstr)"
+    outstr += '\n'
 
     return outstr
 
@@ -255,10 +255,10 @@ def writepyFile(filename_in, filename_out):
     outstr = buildpyCode(filename_in)
 
     # write outstr (py code) to the specified filename
-    with open(filename_out,'w', encoding='utf-8') as file_object:
+    with open(filename_out,'w', encoding='utf-8', newline='\n') as file_object:
         file_object.write(outstr)
     sleep(0.01)  #allow the previous write to settle, resolves appveyor file read fail
-
+    return
 
 def writehtmlFile(_fname_in, filename_out, filename_htm):
     del _fname_in
@@ -270,8 +270,9 @@ def writehtmlFile(_fname_in, filename_out, filename_htm):
     htmstr = var.content()
 
     # write htmlstr (html) to the specified filename
-    with open(filename_htm,'w', encoding='utf-8') as file_object:
+    with open(filename_htm,'w', encoding='utf-8', newline='\n') as file_object:
         file_object.write(htmstr)
+    return
 
 if __name__ == '__main__':
     if len(sys.argv) > 1:
