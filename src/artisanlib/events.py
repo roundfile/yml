@@ -3194,6 +3194,7 @@ class EventsDlg(ArtisanResizeablDialog):
             self.aw.mark_last_button_pressed = self.markLastButtonPressed.isChecked()
             self.aw.show_extrabutton_tooltips = self.showExtraButtonTooltips.isChecked()
             self.aw.buttonpalette_label = self.transferpalettecurrentLabelEdit.text()
+            self.savetableextraeventbutton()  #dave
             # save column widths
             self.aw.eventbuttontablecolumnwidths = [self.eventbuttontable.columnWidth(c) for c in range(self.eventbuttontable.columnCount())]
             #save default buttons
@@ -3305,7 +3306,7 @@ class EventsDlg(ArtisanResizeablDialog):
                 self.aw.updateSlidersProperties() # set visibility and event names on slider widgets
             #save special event annotations
             self.saveAnnotationsSettings()
-            self.savetableextraeventbutton()
+#dave            self.savetableextraeventbutton()
 #            self.aw.closeEventSettings()
             # restart PhidgetManager
             try:
