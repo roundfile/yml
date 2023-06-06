@@ -139,7 +139,7 @@ class autosaveDlg(ArtisanDialog):
 
     @pyqtSlot(bool)
     def showautosavehelp(self,_=False):
-        from help import autosave_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
+        from help import autosave_help
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog

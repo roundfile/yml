@@ -33,6 +33,10 @@ class SamplingDlg(ArtisanDialog):
         self.setWindowTitle(QApplication.translate('Message','Sampling'))
         self.setModal(True)
 
+        self.org_delay = self.aw.qmc.delay
+        self.org_flagKeepON = self.aw.qmc.flagKeepON
+        self.org_flagOpenCompleted = self.aw.qmc.flagOpenCompleted
+
         self.keepOnFlag = QCheckBox(QApplication.translate('Label','Keep ON'))
         self.keepOnFlag.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.keepOnFlag.setChecked(bool(self.aw.qmc.flagKeepON))
@@ -92,6 +96,9 @@ class SamplingDlg(ArtisanDialog):
     #cancel button
     @pyqtSlot()
     def close(self):
+        self.aw.qmc.delay = self.org_delay
+        self.aw.qmc.flagKeepON = self.org_flagKeepON
+        self.aw.qmc.flagOpenCompleted = self.org_flagOpenCompleted
         self.storeSettings()
         self.reject()
 
@@ -105,7 +112,7 @@ class SamplingDlg(ArtisanDialog):
     def ok(self):
         self.aw.qmc.flagKeepON = bool(self.keepOnFlag.isChecked())
         self.aw.qmc.flagOpenCompleted = bool(self.openCompletedFlag.isChecked())
-        self.aw.setSamplingRate(int(self.interval.value()*1000.))
+        self.aw.qmc.delay = int(self.interval.value()*1000.)
         if self.aw.qmc.delay < self.aw.qmc.default_delay:
             QMessageBox.warning(self.aw,
                 QApplication.translate('Message', 'Warning', None),

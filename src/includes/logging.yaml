@@ -28,10 +28,6 @@ loggers:
     level: INFO
     handlers: [file]
     propagate: no
-  pymodbus.logging:
-    level: ERROR
-    handlers: [file]
-    propagate: no
 root:
   level: ERROR
   handlers: [file]

@@ -41,11 +41,10 @@ class State(TypedDict, total=False):
     FC:int     # fan speed
     RC:int     # drum speed
     AH:int     # auto heating mode (0: off, 1: on)
-    HS:int     # heating (0: off, 1: on)
 
 class KaleidoPort():
 
-    __slots__ = [ '_loop', '_thread', '_write_queue', '_default_data_stream', '_ping_timeout', '_open_timeout', '_init_timeout',
+    __slots__ = [ '_loop', '_thread', '_write_queue', '_RDreceived', '_default_data_stream', '_ping_timeout', '_open_timeout', '_init_timeout',
             '_send_timeout', '_read_timeout', '_ping_retry_delay', '_reconnect_delay', '_state', '_pending_requests', '_logging' ]
 
     def __init__(self) -> None:
@@ -53,6 +52,8 @@ class KaleidoPort():
         self._loop:        Optional[asyncio.AbstractEventLoop] = None # the asyncio loop
         self._thread:      Optional[Thread]                    = None # the thread running the asyncio loop
         self._write_queue: Optional['asyncio.Queue[str]']      = None # the write queue
+
+        self._RDreceived = asyncio.Event() # async state indicating that new data was received
 
         self._default_data_stream:Final[str] = 'A0'
         self._open_timeout:Final[float] = 5
@@ -77,19 +78,15 @@ class KaleidoPort():
         self._logging = b
 
     # getETBT triggers a 'Read Device Data' request to the machine also fetching data other than BT/ET
-    def getBTET(self) -> Tuple[float,float, int]:
+    def getBTET(self) -> Tuple[float,float]:
         if self.get_state('sid') is not None and self.get_state('TU') is not None:
             # only if initalization is complete (sid and TU received) we request data
             self.send_request('RD', self._default_data_stream, 'BT')
         bt = self.get_state('BT')
         et = self.get_state('ET')
-        sid = self.get_state('sid')
-        if sid is not None:
-            assert isinstance(bt, float)
-            assert isinstance(et, float)
-            assert isinstance(sid, int)
-            return bt, et, sid
-        return -1, -1, 0
+        assert isinstance(bt, float)
+        assert isinstance(et, float)
+        return bt, et
 
     def getSVAT(self) -> Tuple[float,float]:
         ts = self.get_state('TS')
@@ -116,15 +113,15 @@ class KaleidoPort():
         self._state = {}
 
     @staticmethod
-    def intVar(var:str) -> bool:
-        return var in ('sid', 'HP', 'FC', 'RC', 'AH', 'HS', 'EV', 'CS')
+    def intVar(var):
+        return var in ('sid', 'HP', 'FC', 'RC', 'AH', 'EV', 'CS')
 
     @staticmethod
-    def floatVar(var:str) -> bool:
+    def floatVar(var):
         return not KaleidoPort.intVar(var) and not KaleidoPort.strVar(var)
 
     @staticmethod
-    def strVar(var:str) -> bool:
+    def strVar(var):
         return var in ['TU', 'SC', 'CL', 'SN']
 
 # -- Kaleido PID control
@@ -153,7 +150,7 @@ class KaleidoPort():
     def get_state(self, var:str) -> Optional[Union[str,int,float]]:
         if var in self._state:
             return self._state[var] # type: ignore # TypedDict key must be a string literal
-        if var in ['sid', 'TU', 'SC', 'CL', 'SN']:
+        if var in ['sid', 'TU', 'SC', 'CL']:
             return None
         if self.intVar(var):
             return -1
@@ -186,8 +183,7 @@ class KaleidoPort():
         if len(message)>2 and message.startswith('{') and message.endswith('}'):
             elems = message[1:-1].split(',')
             try:
-                sid:int = int(round(float(elems[0])))
-                await self.set_state('sid',str(sid))
+                await self.set_state('sid',str(int(round(float(elems[0])))))
                 for el in elems[1:]:
                     comp = el.split(':')
                     if len(comp) > 1:
@@ -224,29 +220,24 @@ class KaleidoPort():
         await websocket.send(message)
 
     async def ws_handle_writes(self, websocket: websockets.client.WebSocketClientProtocol, queue: 'asyncio.Queue[str]') -> None:
+#        with suppress(asyncio.CancelledError):
+
         message = await queue.get()
         while message != '':
             await self.ws_write(websocket, message)
             message = await queue.get()
 
-    # write aside of the write queue and directly await response
-    async def ws_write_process(self, websocket: websockets.client.WebSocketClientProtocol, message: str) -> None:
-        if self._logging:
-            _log.info('ws_write_process(%s)',message)
-        await asyncio.wait_for(self.ws_write(websocket, message), self._send_timeout)
-        res:Union[str,bytes] = await asyncio.wait_for(websocket.recv(), self._ping_timeout)
-        response:str = (str(res, 'utf-8') if isinstance(res, bytes) else res)
-        # register response
-        await self.process_message(response.strip())
-
     # to initialize the connection we first successfully ping and then set the temperature mode
-    # during initialization we are not yet using the async write queue and the read handler
     async def ws_initialize(self, websocket: websockets.client.WebSocketClientProtocol, mode:str) -> None:
-        # ping first
+        message:str
         while True:
             try:
                 # send PING
-                await self.ws_write_process(websocket, self.create_msg('PI'))
+                await asyncio.wait_for(self.ws_write(websocket, self.create_msg('PI')), self._send_timeout)
+                res:Union[str,bytes] = await asyncio.wait_for(websocket.recv(), self._ping_timeout)
+                message = (str(res, 'utf-8') if isinstance(res, bytes) else res)
+                # register response
+                await self.process_message(message.strip())
             except asyncio.TimeoutError:
                 _log.debug('ping response timeout')
             # check if response is ok
@@ -254,22 +245,21 @@ class KaleidoPort():
                 break
             # otherwise repeat in one second
             await asyncio.sleep(self._ping_retry_delay)
-        # send TU (temperature unit)
         try:
             # ping was successfull, now we send the temperature mode via the queue
-            await self.ws_write_process(websocket, self.create_msg('TU', mode))
+            await asyncio.wait_for(self.ws_write(websocket, self.create_msg('TU', mode)), self._send_timeout)
+            # await response
+            res = await asyncio.wait_for(websocket.recv(), self._ping_timeout) # with timeout
+            message = (str(res, 'utf-8') if isinstance(res, bytes) else res)
+            # register response
+            await self.process_message(message.strip())
         except asyncio.TimeoutError:
             _log.debug('TU response timeout')
-        # send SC (start guard)
-        try:
-            # ping was successfull, now we send the temperature mode via the queue
-            await self.ws_write_process(websocket, self.create_msg('SC', 'AR'))
-        except asyncio.TimeoutError:
-            _log.debug('SC AR timeout')
 
     async def ws_connect(self, mode:str, host:str, port:int, path:str,
                 connected_handler:Optional[Callable[[], None]] = None,
                 disconnected_handler:Optional[Callable[[], None]] = None) -> None:
+
         websocket = None
         while True:
             try:
@@ -281,8 +271,7 @@ class KaleidoPort():
 
                 await asyncio.wait_for(self.ws_initialize(websocket, mode), timeout=self._init_timeout)
 
-                SN:Optional[Union[str,int,float]] = await self.get_state_async('SN')
-                _log.debug('connected (%s)', SN)
+                _log.debug('connected')
                 if connected_handler is not None:
                     try:
                         connected_handler()
@@ -346,23 +335,15 @@ class KaleidoPort():
             await self.serial_write(writer, message)
             message = await queue.get()
 
-    # write aside of the write queue and directly await response
-    async def serial_write_process(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter, message: str) -> None:
-        if self._logging:
-            _log.info('serial_write_process(%s)',message)
-        await asyncio.wait_for(self.serial_write(writer, message), self._send_timeout)
-        res:Union[str,bytes] = await asyncio.wait_for(reader.readline(), self._ping_timeout)
-        response:str = (str(res, 'utf-8') if isinstance(res, bytes) else res)
-        # register response
-        await self.process_message(response.strip())
-
     # to initialize the connection we first successfully ping and then set the temperature mode
-    # during initialization we are not yet using the async write queue and the read handler
     async def serial_initialize(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter, mode:str) -> None:
         while True:
             try:
                 # send PING
-                await self.serial_write_process(reader, writer, self.create_msg('PI'))
+                await asyncio.wait_for(self.serial_write(writer, self.create_msg('PI')), self._send_timeout)
+                res = await asyncio.wait_for(reader.readline(), self._ping_timeout)
+                # register response
+                await self.process_message(str(res, 'utf-8').strip())
             except asyncio.TimeoutError:
                 _log.debug('ping response timeout')
             # check if response is ok
@@ -372,15 +353,13 @@ class KaleidoPort():
             await asyncio.sleep(self._ping_retry_delay)
         try:
             # ping was successfull, now we send the temperature mode via the queue
-            await self.serial_write_process(reader, writer, self.create_msg('TU', mode))
+            await asyncio.wait_for(self.serial_write(writer, self.create_msg('TU', mode)), self._send_timeout)
+            # await response
+            res = await asyncio.wait_for(reader.readline(), self._ping_timeout) # with timeout
+            # register response
+            await self.process_message(str(res, 'utf-8').strip())
         except asyncio.TimeoutError:
             _log.debug('TU response timeout')
-        # send SC (start guard)
-        try:
-            # ping was successfull, now we send the temperature mode via the queue
-            await self.serial_write_process(reader, writer, self.create_msg('SC', 'AR'))
-        except asyncio.TimeoutError:
-            _log.debug('SC AR timeout')
 
     async def serial_connect(self, mode:str, serial:SerialSettings,
                 connected_handler:Optional[Callable[[], None]] = None,
@@ -536,9 +515,6 @@ class KaleidoPort():
                     _log.error(ex)
         return None
 
-    def markTP(self):
-        self.send_msg('EV', '2')
-
     # start/stop sample thread
 
     # mode: temperature mode; either C or F
@@ -566,8 +542,6 @@ class KaleidoPort():
 
     def stop(self) -> None:
         _log.debug('stop sampling')
-        # send end guard
-        self.send_request('CL','AR','SN')
         # self._loop.stop() needs to be called as follows as the event loop class is not thread safe
         if self._loop is not None:
             self._loop.call_soon_threadsafe(self._loop.stop)

@@ -19,7 +19,6 @@ load-plugins = [
 ignore-paths = [ "^uic/.*$",
                  "^build/.*$",
                  "^dist/.*$",
-                 "^proto/.*$",
                  "^test/.*$" ]
 
 # A comma-separated list of package or module names from where C extensions may
@@ -172,11 +171,11 @@ enable='''c-extension-no-member,'''
 ## mypy conf
 
 [tool.mypy]
-files = ["artisanlib/*.py", "plus/*.py"]
-##python_version = "3.7"
+#python_version = "3.7"
 check_untyped_defs = true
 
 plugins = ["numpy.typing.mypy_plugin"]
+exclude = ['uic']
 
 [[tool.mypy.overrides]]
 module = "matplotlib.*"
@@ -203,7 +202,7 @@ line-length = 80
 ignore = ["E402", "E501", "E741", "PLR0913", "PLR2004", "COM812", "PLR0912", "PLR0915", "PLW0603", "PLR0911", "SIM105", "SIM114"]
 
 # Exclude a variety of commonly ignored directories.
-exclude = ["dist", "build", "proto", ".pytype", ".mypy_cache", ".git"]
+exclude = ["dist", "build", ".pytype", ".mypy_cache", ".git"]
 
 # Assume Python 3.7.
 target-version = "py37"
@@ -217,7 +216,7 @@ target-version = "py37"
 
 [tool.pyright]
 include = ["artisanlib", "plus" ]
-#exclude = ["proto"]
+#exclude = []
 # ignore = ["src/oldstuff"]
 
 reportMissingImports = true
@@ -235,4 +234,3 @@ pythonPlatform = "All"
 #reportUnknownMemberType = false
 #reportUnknownArgumentType = false
 #reportGeneralTypeIssues = false
-useLibraryCodeForTypes = false

@@ -20,7 +20,7 @@
 import time
 import numpy
 import logging
-from typing import List, Optional, Callable
+from typing import List, Optional
 from typing_extensions import Final  # Python <=3.7
 
 try:
@@ -38,15 +38,15 @@ class PID():
             'lastDerr', 'target', 'active', 'derivative_on_error', 'output_smoothing_factor', 'output_decay_weights',
             'previous_outputs', 'input_smoothing_factor', 'input_decay_weights', 'previous_inputs', 'force_duty', 'iterations_since_duty' ]
 
-    def __init__(self, control:Callable[[float], None]=lambda _: None, p:float=2.0, i:float=0.03, d:float=0.0) -> None:
-        self.pidSemaphore:QSemaphore = QSemaphore(1)
+    def __init__(self, control=lambda _: _, p:float=2.0, i:float=0.03, d:float=0.0) -> None:
+        self.pidSemaphore = QSemaphore(1)
 
         self.outMin:int = 0 # minimum output value
         self.outMax:int = 100 # maximum output value
         self.dutySteps:int = 1 # change [1-10] between previous and new PID duty to trigger call of control function
         self.dutyMin:int = 0
         self.dutyMax:int = 100
-        self.control:Callable[[float], None] = control
+        self.control = control
         self.Kp:float = p
         self.Ki:float = i
         self.Kd:float = d
@@ -102,7 +102,7 @@ class PID():
 
     ### External API guarded by semaphore
 
-    def on(self) -> None:
+    def on(self):
         try:
             self.pidSemaphore.acquire(1)
 #            self.init() # we keep the PID running always, even if inactive, and do not disturb it with an init on switching it active
@@ -112,7 +112,7 @@ class PID():
             if self.pidSemaphore.available() < 1:
                 self.pidSemaphore.release(1)
 
-    def off(self) -> None:
+    def off(self):
         try:
             self.pidSemaphore.acquire(1)
             self.active = False
@@ -120,7 +120,7 @@ class PID():
             if self.pidSemaphore.available() < 1:
                 self.pidSemaphore.release(1)
 
-    def isActive(self) -> bool:
+    def isActive(self):
         try:
             self.pidSemaphore.acquire(1)
             return self.active
@@ -130,7 +130,7 @@ class PID():
 
 
     # update control value (the pid loop is running even if PID is inactive, just the control function is only called if active)
-    def update(self, i:float) -> None:
+    def update(self, i):
         try:
             if i == -1:
                 # reject error values
@@ -206,7 +206,7 @@ class PID():
                 self.pidSemaphore.release(1)
 
     # bring the PID to its initial state (to be called externally)
-    def reset(self) -> None:
+    def reset(self):
         try:
             self.pidSemaphore.acquire(1)
             self.init()
@@ -216,7 +216,7 @@ class PID():
                 self.pidSemaphore.release(1)
 
     # re-initalize the PID on restarting it after a temporary off state
-    def init(self) -> None:
+    def init(self):
         try:
             self.pidSemaphore.acquire(1)
             self.errSum = 0.0
@@ -242,7 +242,7 @@ class PID():
             if self.pidSemaphore.available() < 1:
                 self.pidSemaphore.release(1)
 
-    def setTarget(self, target:float, init:bool = True) -> None:
+    def setTarget(self, target, init=True):
         try:
             self.pidSemaphore.acquire(1)
             self.target = target
@@ -252,7 +252,7 @@ class PID():
             if self.pidSemaphore.available() < 1:
                 self.pidSemaphore.release(1)
 
-    def getTarget(self) -> float:
+    def getTarget(self):
         try:
             self.pidSemaphore.acquire(1)
             return self.target
@@ -260,7 +260,7 @@ class PID():
             if self.pidSemaphore.available() < 1:
                 self.pidSemaphore.release(1)
 
-    def setPID(self, p:float, i:float, d:float, pOnE:bool = True) -> None:
+    def setPID(self,p,i,d,pOnE=True):
         try:
             self.pidSemaphore.acquire(1)
             self.Kp = max(p,0)
@@ -271,7 +271,7 @@ class PID():
             if self.pidSemaphore.available() < 1:
                 self.pidSemaphore.release(1)
 
-    def setLimits(self, outMin:int, outMax:int) -> None:
+    def setLimits(self,outMin,outMax):
         try:
             self.pidSemaphore.acquire(1)
             self.outMin = outMin
@@ -280,7 +280,7 @@ class PID():
             if self.pidSemaphore.available() < 1:
                 self.pidSemaphore.release(1)
 
-    def setDutySteps(self, steps:int) -> None:
+    def setDutySteps(self,steps):
         try:
             self.pidSemaphore.acquire(1)
             self.dutySteps = steps
@@ -288,7 +288,7 @@ class PID():
             if self.pidSemaphore.available() < 1:
                 self.pidSemaphore.release(1)
 
-    def setDutyMin(self, m:int) -> None:
+    def setDutyMin(self,m):
         try:
             self.pidSemaphore.acquire(1)
             self.dutyMin = m
@@ -296,7 +296,7 @@ class PID():
             if self.pidSemaphore.available() < 1:
                 self.pidSemaphore.release(1)
 
-    def setDutyMax(self, m:int) -> None:
+    def setDutyMax(self,m):
         try:
             self.pidSemaphore.acquire(1)
             self.dutyMax = m
@@ -304,7 +304,7 @@ class PID():
             if self.pidSemaphore.available() < 1:
                 self.pidSemaphore.release(1)
 
-    def setControl(self, f:Callable[[float], None]) -> None:
+    def setControl(self,f):
         try:
             self.pidSemaphore.acquire(1)
             self.control = f
@@ -312,7 +312,7 @@ class PID():
             if self.pidSemaphore.available() < 1:
                 self.pidSemaphore.release(1)
 
-    def getDuty(self) -> Optional[float]:
+    def getDuty(self):
         try:
             self.pidSemaphore.acquire(1)
             return self.lastOutput
