@@ -1,14 +1,14 @@
 import prettytable
 import re
 try:
-    from PyQt6.QtWidgets import QApplication # @Reimport @UnresolvedImport @UnusedImport # pylint: disable=import-error
-except Exception: # pylint: disable=broad-except
-    from PyQt5.QtWidgets import QApplication # type: ignore # @Reimport @UnresolvedImport @UnusedImport
+  from PyQt6.QtWidgets import QApplication
+except Exception:
+  from PyQt5.QtWidgets import QApplication # type: ignore
 
 def content():
     strlist = []
-    helpstr = ''  # noqa: F841 #@UnusedVariable # pylint: disable=unused-variable
-    newline = '\n'  # noqa: F841 #@UnusedVariable  # pylint: disable=unused-variable
+    helpstr = ''  #@UnusedVariable
+    newline = '\n'  #@UnusedVariable
     strlist.append('<head><style> td, th {border: 1px solid #ddd;  padding: 6px;} th {padding-top: 6px;padding-bottom: 6px;text-align: left;background-color: #0C6AA6; color: white;} </style></head> <body>')
     strlist.append('<b>')
     strlist.append(QApplication.translate('HelpDlg','EVENT CUSTOM SLIDERS'))
@@ -36,7 +36,7 @@ def content():
     tbl_Commands = prettytable.PrettyTable()
     tbl_Commands.field_names = [QApplication.translate('HelpDlg','Action'),QApplication.translate('HelpDlg','Command'),QApplication.translate('HelpDlg','Description')]
     tbl_Commands.add_row([QApplication.translate('HelpDlg','Serial Command'),QApplication.translate('HelpDlg','ASCII serial command or binary a2b_uu(serial command)'),'&#160;'])
-    tbl_Commands.add_row([QApplication.translate('HelpDlg','Modbus Command'),'_',QApplication.translate('HelpDlg','variable holding the last value read via MODBUS')])
+    tbl_Commands.add_row([QApplication.translate('HelpDlg','Modbus Command'),QApplication.translate('HelpDlg','_'),QApplication.translate('HelpDlg','variable holding the last value read via MODBUS')])
     tbl_Commands.add_row(['&#160;','sleep(<float>)',QApplication.translate('HelpDlg','sleep: add a delay of <float> seconds')])
     tbl_Commands.add_row(['&#160;','button(<bool>)',QApplication.translate('HelpDlg','sets calling button to “pressed” if argument is 1 or True')])
     tbl_Commands.add_row(['&#160;','read(slaveID,register)',QApplication.translate('HelpDlg','reads register from slave slaveID using function 3 (Read Multiple Holding Registers). The result is bound to the placeholder `_` and thus can be accessed in later commands.')])
@@ -85,18 +85,13 @@ def content():
     tbl_Commands.add_row(['&#160;','limit(c,v[,sn])',QApplication.translate('HelpDlg','PHIDGET DCMotor: sets current limit of channel c to v (float)')])
     tbl_Commands.add_row(['&#160;','on(c[,sn])',QApplication.translate('HelpDlg','YOCTOPUCE Relay Output: turn channel c of the relay module on')])
     tbl_Commands.add_row(['&#160;','off(c[,sn])',QApplication.translate('HelpDlg','YOCTOPUCE Relay Output: turn channel c of the relay module off')])
-    tbl_Commands.add_row(['&#160;','yset(c,b[,sn])',QApplication.translate('HelpDlg','YOCTOPUCE Relay Output: switches channel c of the relay module off (b=0) and on (b=1)')])
     tbl_Commands.add_row(['&#160;','flip(c[,sn])',QApplication.translate('HelpDlg','YOCTOPUCE Relay Output: toggle the state of channel c')])
     tbl_Commands.add_row(['&#160;','pip(c,delay,duration[,sn])',QApplication.translate('HelpDlg','YOCTOPUCE Relay Output: pulse the channel c on after a delay of delay milliseconds for the duration of duration milliseconds')])
     tbl_Commands.add_row(['&#160;','powerReset([sn])',QApplication.translate('HelpDlg','YOCTOPUCE resets the power counter of the Yocto-Watt module')])
     tbl_Commands.add_row(['&#160;','slider(c,v)',QApplication.translate('HelpDlg','move slider c to value v')])
-    tbl_Commands.add_row(['&#160;','button(i,c,b[,sn])',QApplication.translate('HelpDlg','switches PHIDGET Binary Output channel c off (b=0) and on (b=1) and sets button i to pressed or normal depending on the value b')])
-    tbl_Commands.add_row(['&#160;','button(i,b)',QApplication.translate('HelpDlg','sets button i to pressed if value b is yes, true, t, or 1, otherwise to normal')])
-    tbl_Commands.add_row(['&#160;','button(b)',QApplication.translate('HelpDlg','sets button to pressed if value b is yes, true, t, or 1, otherwise to normal')])
-    tbl_Commands.add_row(['&#160;','button()',QApplication.translate('HelpDlg','toggles the state of the button')])
+    tbl_Commands.add_row(['&#160;','button(i,c,b[,sn])',QApplication.translate('HelpDlg','switches channel c off (b=0) and on (b=1) and sets button i to pressed or normal depending on the value b')])
     tbl_Commands.add_row(['&#160;','sleep(<float>)',QApplication.translate('HelpDlg','sleep: add a delay of <float> seconds')])
     tbl_Commands.add_row(['&#160;','santoker(<target>,<value>)',QApplication.translate('HelpDlg','sends integer <value> to <target> register specified by as byte in hex notation like “fa” via the Santoker Network protocol')])
-    tbl_Commands.add_row(['&#160;','kaleido(<target>,<value>)',QApplication.translate('HelpDlg','sends <value> to <target> via the Kaleido Serial or Network protocol')])
     tbl_Commands.add_row([QApplication.translate('HelpDlg','S7 Command'),'_',QApplication.translate('HelpDlg','variable holding the last value read via S7')])
     tbl_Commands.add_row(['&#160;','sleep(<float>)',QApplication.translate('HelpDlg','sleep: add a delay of <float> seconds')])
     tbl_Commands.add_row(['&#160;','button(<bool>)',QApplication.translate('HelpDlg','sets calling button to “pressed” if argument evaluates to 1 or True')])
@@ -163,4 +158,5 @@ def content():
     strlist.append(tbl_Commands.get_html_string(attributes={'width':'100%','border':'1','padding':'1','border-collapse':'collapse'}))
     strlist.append('</body>')
     helpstr = ''.join(strlist)
-    return re.sub(r'&amp;', r'&',helpstr)
+    helpstr = re.sub(r'&amp;', r'&',helpstr)
+    return helpstr

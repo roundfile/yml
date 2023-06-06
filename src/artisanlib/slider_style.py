@@ -39,18 +39,8 @@ artisan_slider_style = """
                 margin-right: -15px;
                 border-radius: 5px;
             }}
-            QSlider::handle:vertical:!hover:focus {{
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #ddd, stop:1 #888);
-                border: 1px solid #555;
-                border-radius: 5px;
-            }}
-            QSlider::handle:vertical:hover:focus {{
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #ddd, stop:1 #777);
-                border: 1px solid #555;
-                border-radius: 5px;
-            }}
             QSlider::handle:vertical:hover {{
-                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #eee, stop:1 #ddd);
+                background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #eee, stop:1 #ccc);
                 border: 1px solid #ccc;
                 border-radius: 5px;
             }}

@@ -1,7 +1,7 @@
 #
 # connection.py
 #
-# Copyright (c) 2023, Paul Holleis, Marko Luther
+# Copyright (c) 2021, Paul Holleis, Marko Luther
 # All rights reserved.
 #
 #
@@ -15,28 +15,26 @@
 # version 3 of the License, or (at your option) any later version. It is
 # provided for educational purposes and is distributed in the hope that
 # it will be useful, but WITHOUT ANY WARRANTY; without even the implied
-# warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
 # the GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 try:
-    #pylint: disable = E, W, R, C
+    #ylint: disable = E, W, R, C
     from PyQt6.QtCore import QSemaphore, QTimer # @UnusedImport @Reimport  @UnresolvedImport
 except Exception: # type: ignore # pylint: disable=broad-except
-    #pylint: disable = E, W, R, C
+    #ylint: disable = E, W, R, C
     from PyQt5.QtCore import QSemaphore, QTimer # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
-from typing import List, Dict, Any
-from typing_extensions import Final  # Python <=3.7
+from typing import Final
 
 import logging
 
 from artisanlib.notifications import ntype2NotificationType
 from plus import config, controller, connection, util
 
-_log: Final[logging.Logger] = logging.getLogger(__name__)
+_log: Final = logging.getLogger(__name__)
 
 
 get_notifications_semaphore = QSemaphore(
@@ -46,7 +44,7 @@ get_notifications_semaphore = QSemaphore(
 
 # if notifications > 0 the new notifications are retrieved and forwarded to the user
 # should only be called from the GUI thread
-def updateNotifications(notifications: int, machines:List[str]) -> None:
+def updateNotifications(notifications: int, machines):  #for Python >= 3.9 can replace 'List' with the generic type hint 'list'
     _log.debug('updateNotifications(%s,%s)',notifications,machines)
     try:
         if config.app_window:
@@ -61,7 +59,7 @@ def updateNotifications(notifications: int, machines:List[str]) -> None:
 
 # fetches new notifications and forward them to the Artisan notification system
 # sidecondition: at this point all pending notifications are delivered and the "notification" count on the server can be assumed to be 0
-def retrieveNotifications() -> None:
+def retrieveNotifications():
     gotlock = get_notifications_semaphore.tryAcquire(1,0)
     # we try to catch a lock if available but we do not wait, if we fail we just skip this sampling round (prevents stacking of waiting calls)
     if gotlock:
@@ -69,7 +67,7 @@ def retrieveNotifications() -> None:
             _log.info('retrieveNotifications()')
             if controller.is_connected():
                 aw = config.app_window
-                if aw is not None and aw.qmc.roastertype_setup != '':
+                if aw.qmc.roastertype_setup != '':
                     params = {'machine': aw.qmc.roastertype_setup}
                 else:
                     params = None
@@ -84,12 +82,8 @@ def retrieveNotifications() -> None:
                         and 'result' in res
                         and res['result']
                         and isinstance(res['result'],list)):
-                    # we remove notifications that are tagged not_for_artisan:True
-                    results = [r for r in res['result'] if not ('not_for_artisan' in r and r['not_for_artisan'])]
-                    sorted_results = sorted(results, key=lambda nd: (util.ISO86012epoch(nd['added_on']) if 'added_on' in nd else 0))
-                    # we present the notfications in reverse order, oldest first
-                    for i, n in enumerate(sorted_results):
-                        processNotification(n, i)
+                    for n in res['result']:
+                        processNotification(n)
 
                 # NOTE: we do not updateLimitsFromResponse(res) here to avoid an infinite loop if
                 # the server does not reset the notifications counter. Further notifications will be retrieved on next request
@@ -101,23 +95,21 @@ def retrieveNotifications() -> None:
 
 
 # process the received plus notifications and hand them over to the Artisan notification system
-def processNotification(plus_notification:Dict[str,Any], i:int) -> None:
+def processNotification(plus_notification):
     try:
-        if config.app_window is not None:
+        if config.app_window:
             aw = config.app_window
             if aw.notificationManager:
                 created = None
                 try:
                     created = util.ISO86012epoch(plus_notification['added_on'])
-                except Exception as e:  # pylint: disable=broad-except
-                    _log.error(e)
+                except Exception:  # pylint: disable=broad-except
+                    pass
                 aw.notificationManager.sendNotificationMessage(
                     util.extractInfo(plus_notification, 'title', ''),
                     util.extractInfo(plus_notification, 'text', ''),
                     ntype2NotificationType(util.extractInfo(plus_notification, 'ntype', '')),
                     created = created,
-                    hr_id = util.extractInfo(plus_notification, 'hr_id', None),
-                    link = util.extractInfo(plus_notification, 'link', None),
-                    pos = i)
+                    hr_id = util.extractInfo(plus_notification, 'hr_id', None))
     except Exception as e:  # pylint: disable=broad-except
         _log.exception(e)

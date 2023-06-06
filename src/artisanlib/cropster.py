@@ -5,23 +5,21 @@
 import time as libtime
 import xlrd # type: ignore
 import logging
-from typing import Union, List, Optional, TYPE_CHECKING
-from typing_extensions import Final  # Python <=3.7
-
-if TYPE_CHECKING:
-    from artisanlib.types import ProfileData # pylint: disable=unused-import
+from typing import Final
 
 try:
+    #ylint: disable = E, W, R, C
     from PyQt6.QtCore import QDateTime, Qt # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtWidgets import QApplication # @UnusedImport @Reimport  @UnresolvedImport
-except ImportError:
+except Exception:  # pylint: disable=broad-except
+    #ylint: disable = E, W, R, C
     from PyQt5.QtCore import QDateTime, Qt # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import QApplication # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
 from artisanlib.util import encodeLocal
 
 
-_log: Final[logging.Logger] = logging.getLogger(__name__)
+_log: Final = logging.getLogger(__name__)
 
 # returns a dict containing all profile information contained in the given Cropster XLS file
 def extractProfileCropsterXLS(file,_):
@@ -29,13 +27,13 @@ def extractProfileCropsterXLS(file,_):
     def takeClosest(num, collection):
         return min(collection, key=lambda x:abs(x-num))
 
-    res:ProfileData = {} # the interpreted data set
+    res = {} # the interpreted data set
 
     book = xlrd.open_workbook(file)
 
-    sheet_names:List[str] = book.sheet_names()
+    sheet_names = book.sheet_names()
 
-    id_tag_trans:List[str] = [
+    id_tag_trans = [
         'Id-Tag',  # EN
         'ID-Tag',  # DE
         'Etiqueta de identificaci\u00f3n', # ES
@@ -48,7 +46,7 @@ def extractProfileCropsterXLS(file,_):
         'ID\uff0d\u6807\u7b7e', # CN simplified
         '\u7de8\u865f\u0020\u002d\u0020\u6a19\u7c64'] # CN traditional
 
-    date_trans:List[str] = [
+    date_trans = [
         'Date',  # EN
         'Datum', # DE
         'Fecha', # ES
@@ -622,7 +620,7 @@ def extractProfileCropsterXLS(file,_):
                 if value is None and pos is not None and len(row1)>pos:
                     value = row1[pos].value
                 if value is not None:
-                    res[tag] = encodeLocal(value) # type: ignore # mypy cannot check generic labels accessing the res of type TypedDict
+                    res[tag] = encodeLocal(value)
             except Exception: # pylint: disable=broad-except
                 pass
 
@@ -641,15 +639,9 @@ def extractProfileCropsterXLS(file,_):
                 date_tuple = xlrd.xldate_as_tuple(date_tag_value, book.datemode)
                 date = QDateTime(*date_tuple)
                 if date.isValid():
-                    roastdate:Optional[str] = encodeLocal(date.date().toString())
-                    if roastdate is not None:
-                        res['roastdate'] = roastdate
-                    roastisodate:Optional[str] = encodeLocal(date.date().toString(Qt.DateFormat.ISODate))
-                    if roastisodate is not None:
-                        res['roastisodate'] = roastisodate
-                    roasttime:Optional[str] = encodeLocal(date.time().toString())
-                    if roasttime is not None:
-                        res['roasttime'] = roasttime
+                    res['roastdate'] = encodeLocal(date.date().toString())
+                    res['roastisodate'] = encodeLocal(date.date().toString(Qt.DateFormat.ISODate))
+                    res['roasttime'] = encodeLocal(date.time().toString())
                     res['roastepoch'] = int(date.toSecsSinceEpoch())
                     res['roasttzoffset'] = libtime.timezone
         except Exception: # pylint: disable=broad-except
@@ -712,7 +704,7 @@ def extractProfileCropsterXLS(file,_):
             if start_weight_tag_value is not None and end_weight_tag_value is not None:
                 cropster_weight_units = ['G','KG','LBS','OZ']
                 artisan_weight_units = ['g','Kg','lb','oz']
-                weight:List[Union[float,str]] = [0,0,artisan_weight_units[0]]
+                weight = [0,0,artisan_weight_units[0]]
                 try:
                     if end_weight_unit_tag_value is not None:
                         idx = cropster_weight_units.index(end_weight_unit_tag_value)
@@ -795,8 +787,8 @@ def extractProfileCropsterXLS(file,_):
     # extra temperature curves (only if ET or BT and its corresponding timex was already parsed successfully)
     if len(res['timex']) > 0:
         channel = 1 # toggle between channel 1 and 2 to be filled with extra temperature curve data
-        for CT_idx, sno in enumerate(sheet_names):
-            sn = sno.strip()
+        for CT_idx,sn in enumerate(sheet_names):
+            sn = sn.strip()
             if CT_idx not in (BT_idx, ET_idx): # all but temp and non-temp curves but for the already processed ET and BT curves
                 if sn in extra_temp_curve_trans:
                     temp_curve = True
@@ -811,7 +803,10 @@ def extractProfileCropsterXLS(file,_):
                     for px in curve_prefixa:
                         if extra_curve_name.startswith(px):
                             sp = extra_curve_name.split(px)
-                            extra_curve_name = sp[1] if len(sp) > 1 else sp[0]
+                            if len(sp)>1:
+                                extra_curve_name = sp[1]
+                            else:
+                                extra_curve_name = sp[0]
                             extra_curve_name = extra_curve_name.strip()
                             break
 
@@ -855,10 +850,7 @@ def extractProfileCropsterXLS(file,_):
                                     # no temp conversion
                                     res['extraNoneTempHint1'].append(True)
                                 res['extradevices'].append(25) # Virtual Device
-                                name1:Optional[str] = encodeLocal(extra_curve_name)
-                                if name1 is None:
-                                    name1 = 'extra1'
-                                res['extraname1'].append(name1)
+                                res['extraname1'].append(encodeLocal(extra_curve_name))
                                 res['extratimex'].append([t.value for t in time[1:]])
                                 res['extratemp1'].append([t.value for t in temp[1:]])
                                 res['extramathexpression1'].append('')
@@ -870,15 +862,12 @@ def extractProfileCropsterXLS(file,_):
                                 else:
                                     # no temp conversion
                                     res['extraNoneTempHint2'].append(True)
-                                name2:Optional[str] = encodeLocal(extra_curve_name)
-                                if name2 is None:
-                                    name2 = 'extra2'
-                                res['extraname2'].append(name2)
+                                res['extraname2'].append(encodeLocal(extra_curve_name))
                                 res['extratemp2'].append([t.value for t in temp[1:]])
                                 res['extramathexpression2'].append('')
                 except Exception: # pylint: disable=broad-except
                     pass
-        if 'extratemp1' in res and 'extratemp2' in res and 'extraNoneTempHint2' in res and 'extramathexpression2' in res and 'extraname1' in res and 'extraname2' in res and len(res['extraname1']) != len(res['extraname2']):
+        if 'extraname1' in res and 'extraname2' in res and len(res['extraname1']) != len(res['extraname2']):
             # we add an empty second extra channel if needed
             res['extraname2'].append('Extra 2')
             res['extratemp2'].append([-1]*len(res['extratemp1'][-1]))
@@ -895,10 +884,10 @@ def extractProfileCropsterXLS(file,_):
             COMMENTS_sh = book.sheet_by_index(COMMENTS_idx)
             gas_event = False # set to True if a Gas event exists
             airflow_event = False # set to True if an Airflow event exists
-            specialevents:List[int] = []
-            specialeventstype:List[int] = []
-            specialeventsvalue:List[float] = []
-            specialeventsStrings:List[str] = []
+            specialevents = []
+            specialeventstype = []
+            specialeventsvalue = []
+            specialeventsStrings = []
             if COMMENTS_sh.ncols >= 4:
                 for r in range(COMMENTS_sh.nrows):
                     if r>0:
@@ -942,15 +931,9 @@ def extractProfileCropsterXLS(file,_):
                                     except Exception: # pylint: disable=broad-except
                                         specialeventsvalue.append(0)
                                     if not ae and not ge and comment_type not in comment_trans:
-                                        event_type_str:Optional[str] = encodeLocal(comment_type)
-                                        if event_type_str is None:
-                                            event_type_str = 'event'
-                                        specialeventsStrings.append(event_type_str)
+                                        specialeventsStrings.append(encodeLocal(comment_type))
                                     else:
-                                        event_value_str:Optional[str] = encodeLocal(comment_value)
-                                        if event_value_str is None:
-                                            event_value_str = 'event'
-                                        specialeventsStrings.append(event_value_str)
+                                        specialeventsStrings.append(encodeLocal(comment_value))
                         except Exception: # pylint: disable=broad-except
                             pass
             if len(specialevents) > 0:

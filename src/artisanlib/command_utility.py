@@ -13,7 +13,7 @@
 # the GNU General Public License for more details.
 
 # AUTHOR
-# FilePhil, 2023
+# FilePhil, 2020
 
 from artisanlib import __version__
 import sys

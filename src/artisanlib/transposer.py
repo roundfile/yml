@@ -13,48 +13,43 @@
 # the GNU General Public License for more details.
 
 # AUTHOR
-# Marko Luther, 2023
+# Marko Luther, 2020
 
 import time as libtime
 import warnings
 import copy
 import numpy
-from typing import List, Tuple, Callable, Optional, TYPE_CHECKING
-
-if TYPE_CHECKING:
-    import numpy.typing as npt  # pylint: disable=unused-import
 
 from artisanlib.dialogs import ArtisanDialog
 from artisanlib.util import stringfromseconds, stringtoseconds
 
 
 try:
+    #ylint: disable = E, W, R, C
     from PyQt6.QtCore import Qt, pyqtSlot, QSettings, QRegularExpression, QDateTime # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtGui import QRegularExpressionValidator # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtWidgets import (QApplication, QHeaderView, QAbstractItemView, QWidget, QLabel, QLineEdit, QComboBox, QDialogButtonBox, # @UnusedImport @Reimport  @UnresolvedImport
                 QTableWidget, QTableWidgetItem, QGroupBox, QLayout, QHBoxLayout, QVBoxLayout, QFrame) # @UnusedImport @Reimport  @UnresolvedImport
-except ImportError:
+except Exception: # pylint: disable=broad-except
+    #ylint: disable = E, W, R, C
     from PyQt5.QtCore import Qt, pyqtSlot, QSettings, QRegularExpression, QDateTime # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtGui import QRegularExpressionValidator # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QApplication, QHeaderView, QAbstractItemView, QWidget, QLabel, QLineEdit, QComboBox, QDialogButtonBox, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
                 QTableWidget, QTableWidgetItem, QGroupBox, QLayout, QHBoxLayout, QVBoxLayout, QFrame) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
-
-class MyQRegularExpressionValidator(QRegularExpressionValidator): # pyright: ignore # Argument to class must be a base class (reportGeneralTypeIssues)
+class MyQRegularExpressionValidator(QRegularExpressionValidator):
     # we fix partial time input like '12' => '12:00', '12:' => '12:00' and '12:0' => '12:00'
-
-    @staticmethod
-    def fixup(value):
+    def fixup(self, value):
         if ':' not in value:
-            return value + ':00'
-        if value.endswith(':'):
-            return value + '00'
-        if len(value[value.index(':')+1:]) == 1:
-            return value + '0'
-        return value
+            value = value + ':00'
+        elif value.endswith(':'):
+            value = value + '00'
+        elif len(value[value.index(':')+1:]) == 1:
+            value = value + '0'
+        return input
 
 class profileTransformatorDlg(ArtisanDialog):
-    def __init__(self, parent, aw) -> None:
+    def __init__(self, parent = None, aw = None):
         super().__init__(parent, aw)
         self.setModal(True)
         self.setWindowTitle(QApplication.translate('Form Caption','Profile Transposer'))
@@ -88,23 +83,23 @@ class profileTransformatorDlg(ArtisanDialog):
         #   DRY, FCs, SCs, DROP
         # if an event is not set in the profile, None is set instead of a widget
         #
-        self.phases_target_widgets_time:Optional[List[Optional[QLineEdit]]] = None
-        self.phases_target_widgets_percent:Optional[List[Optional[QLineEdit]]] = None
-        self.phases_result_widgets:Optional[List[Optional[QTableWidgetItem]]] = None
+        self.phases_target_widgets_time = None
+        self.phases_target_widgets_percent = None
+        self.phases_result_widgets = None
         #
-        self.time_target_widgets:Optional[List[Optional[QLineEdit]]] = None
-        self.time_result_widgets:Optional[List[Optional[QTableWidgetItem]]] = None
+        self.time_target_widgets = None
+        self.time_result_widgets = None
 
         # profileTimes: list of DRY, FCs, SCs and DROP times in seconds if event is set, otherwise None
-        self.profileTimes:List[Optional[float]] = self.getProfileTimes()
+        self.profileTimes = self.getProfileTimes()
         # list of DRY, FCs, SCs, and DROP target times in seconds as specified by the user, or None if not set
-        self.targetTimes:List[Optional[float]] = self.getTargetTimes()
+        self.targetTimes = self.getTargetTimes()
 
         # temp table widgets initialized by createTempTable() to a list (target/result) with 5 widgets each
         #   CHARGE, DRY, FCs, SCs, DROP
         # if an event is not set in the profile, None is set instead of a widget
-        self.temp_target_widgets:Optional[List[Optional[QLineEdit]]] = None
-        self.temp_result_widgets:Optional[List[Optional[QTableWidgetItem]]] = None
+        self.temp_target_widgets = None
+        self.temp_result_widgets = None
 
         # list of CHARGE, DRY, FCs, SCs and DROP BT temperatures
         self.profileTemps = self.getProfileTemps()
@@ -141,7 +136,7 @@ class profileTransformatorDlg(ArtisanDialog):
         self.mappingModeComboBox.setCurrentIndex(self.aw.qmc.transMappingMode)
         self.mappingModeComboBox.currentIndexChanged.connect(self.changeMappingMode)
 
-        self.temp_formula:QLabel = QLabel()
+        self.temp_formula = QLabel()
         self.temp_formula.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
         settingsHLayout = QHBoxLayout()
@@ -205,7 +200,7 @@ class profileTransformatorDlg(ArtisanDialog):
 
     # utility functions
 
-    def forgroundOffset(self) -> float:
+    def forgroundOffset(self):
         if self.aw.qmc.timeindex[0] == -1:
             return 0
         return self.org_timex[self.aw.qmc.timeindex[0]]
@@ -216,60 +211,46 @@ class profileTransformatorDlg(ArtisanDialog):
         return 0
 
     def clearPhasesTargetTimes(self):
-        if self.phases_target_widgets_time is not None and len(self.phases_target_widgets_time)>2:
-            for i in range(3):
-                phases_target_widgets_time = self.phases_target_widgets_time[i]
-                if phases_target_widgets_time is not None:
-                    phases_target_widgets_time.setText('')
+        for i in range(3):
+            if self.phases_target_widgets_time[i] is not None:
+                self.phases_target_widgets_time[i].setText('')
 
     def clearPhasesTargetPercent(self):
-        if self.phases_target_widgets_percent is not None and len(self.phases_target_widgets_percent)>2:
-            for i in range(3):
-                phases_target_widgets_percent = self.phases_target_widgets_percent[i]
-                if phases_target_widgets_percent is not None:
-                    phases_target_widgets_percent.setText('')
+        for i in range(3):
+            if self.phases_target_widgets_percent[i] is not None:
+                self.phases_target_widgets_percent[i].setText('')
 
     def clearPhasesResults(self):
-        if self.phases_result_widgets is not None and len(self.phases_result_widgets)>2:
-            for i in range(3):
-                phases_result_widgets = self.phases_result_widgets[i]
-                if phases_result_widgets is not None:
-                    phases_result_widgets.setText('')
+        for i in range(3):
+            if self.phases_result_widgets[i] is not None:
+                self.phases_result_widgets[i].setText('')
 
     def clearTimeTargets(self):
-        if self.time_target_widgets is not None and len(self.time_target_widgets)>3:
-            for i in range(4):
-                time_target_widgets = self.time_target_widgets[i]
-                if time_target_widgets is not None:
-                    time_target_widgets.setText('')
+        for i in range(4):
+            if self.time_target_widgets[i] is not None:
+                self.time_target_widgets[i].setText('')
 
     def clearTimeResults(self):
-        if self.time_result_widgets is not None and len(self.time_result_widgets)>3:
-            for i in range(4):
-                time_result_widgets = self.time_result_widgets[i]
-                if time_result_widgets is not None:
-                    time_result_widgets.setText('')
+        for i in range(4):
+            if self.time_result_widgets[i] is not None:
+                self.time_result_widgets[i].setText('')
 
     def clearTempTargets(self):
-        if self.temp_target_widgets is not None and len(self.temp_target_widgets)>4:
-            for i in range(5):
-                temp_target_widget:Optional[QLineEdit] = self.temp_target_widgets[i]
-                if temp_target_widget is not None:
-                    temp_target_widget.setText('')
+        for i in range(5):
+            if self.temp_target_widgets[i] is not None:
+                self.temp_target_widgets[i].setText('')
 
     def clearTempResults(self):
-        if self.temp_result_widgets is not None and len(self.temp_result_widgets)>4:
-            for i in range(5):
-                temp_result_widget:Optional[QTableWidgetItem] = self.temp_result_widgets[i]
-                if temp_result_widget is not None:
-                    temp_result_widget.setText('')
+        for i in range(5):
+            if self.temp_result_widgets[i] is not None:
+                self.temp_result_widgets[i].setText('')
         self.temp_formula.setText('')
         self.temp_formula.repaint()
 
     # returns list of DRY, FCs, SCs and DROP profile times in seconds if event is set, otherwise None
-    def getProfileTimes(self) -> List[Optional[float]]:
+    def getProfileTimes(self):
         offset = self.forgroundOffset()
-        res:List[Optional[float]] = []
+        res = []
         for i in [1,2,4,6]:
             idx = self.aw.qmc.timeindex[i]
             if idx == 0 or len(self.aw.qmc.timex) < idx:
@@ -279,8 +260,8 @@ class profileTransformatorDlg(ArtisanDialog):
         return res
 
     # returns list of CHARGE, DRY, FCs, SCs and DROP BT temperatures if event is set, otherwise None
-    def getProfileTemps(self) -> List[Optional[float]]:
-        res:List[Optional[float]] = []
+    def getProfileTemps(self):
+        res = []
         for i in [0,1,2,4,6]:
             idx = self.aw.qmc.timeindex[i]
             if (i == 0 and idx == -1) or (i != 0 and idx == 0) or len(self.aw.qmc.timex) < idx:
@@ -293,30 +274,30 @@ class profileTransformatorDlg(ArtisanDialog):
 
     # returns list of DRYING, MAILARD, FINISHING target phases times in seconds as first result and phases percentages (float) as second result
     # if a phase is set not set None is returned instead of a value
-    def getTargetPhases(self) -> Tuple[List[Optional[int]], List[Optional[float]]]:
-        res_times:List[Optional[int]] = []
-        res_phases:List[Optional[float]] = []
+    def getTargetPhases(self):
+        res_times = []
+        res_phases = []
         if self.phases_target_widgets_time is not None:
             for w in self.phases_target_widgets_time:
-                ri:Optional[int] = None
+                r = None
                 if w is not None:
                     txt = w.text()
                     if txt is not None and txt != '':
-                        ri = stringtoseconds(txt)
-                res_times.append(ri)
+                        r = stringtoseconds(txt)
+                res_times.append(r)
         if self.phases_target_widgets_percent is not None:
             for w in self.phases_target_widgets_percent:
-                rf:Optional[float] = None
+                r = None
                 if w is not None:
                     txt = w.text()
                     if txt is not None and txt != '':
-                        rf = float(txt)
-                res_phases.append(rf)
+                        r = float(txt)
+                res_phases.append(r)
         return res_times, res_phases
 
     # returns list of DRY, FCs, SCs and DROP target times in seconds if event is set, otherwise None
-    def getTargetTimes(self) -> List[Optional[float]]:
-        res:List[Optional[float]] = []
+    def getTargetTimes(self):
+        res = []
         if self.time_target_widgets is not None:
             for w in self.time_target_widgets:
                 r = None
@@ -351,10 +332,7 @@ class profileTransformatorDlg(ArtisanDialog):
 
     @pyqtSlot(int)
     def phasesTableColumnHeaderClicked(self,i):
-        if (self.phases_target_widgets_time is not None and
-                self.phases_target_widgets_time[i] is not None and
-                self.phases_target_widgets_percent is not None and
-                self.phases_target_widgets_percent[i] is not None):
+        if self.phases_target_widgets_time[i] is not None and self.phases_target_widgets_percent[i] is not None:
             # clear target value i
             if self.phases_target_widgets_time[i].text() != '' or self.phases_target_widgets_percent[i].text() != '':
                 self.phases_target_widgets_time[i].setText('')
@@ -365,7 +343,7 @@ class profileTransformatorDlg(ArtisanDialog):
                 back_dry = self.aw.qmc.timeB[self.aw.qmc.timeindexB[1]]
                 back_fcs = self.aw.qmc.timeB[self.aw.qmc.timeindexB[2]]
                 back_drop = self.aw.qmc.timeB[self.aw.qmc.timeindexB[6]]
-                s:str = ''
+                s = 0
                 if i == 0:
                     # DRYING
                     s = stringfromseconds(back_dry - back_offset)
@@ -388,7 +366,7 @@ class profileTransformatorDlg(ArtisanDialog):
 
     @pyqtSlot(int)
     def timeTableColumnHeaderClicked(self,i):
-        if self.time_target_widgets is not None and self.time_target_widgets[i] is not None:
+        if self.time_target_widgets[i] is not None:
             # clear target value i
             if self.time_target_widgets[i].text() != '':
                 self.time_target_widgets[i].setText('')
@@ -408,7 +386,7 @@ class profileTransformatorDlg(ArtisanDialog):
 
     @pyqtSlot(int)
     def tempTableColumnHeaderClicked(self,i):
-        if self.temp_target_widgets is not None and self.temp_target_widgets[i] is not None:
+        if self.temp_target_widgets[i] is not None:
             # clear target value i
             if self.temp_target_widgets[i].text() != '':
                 self.temp_target_widgets[i].setText('')
@@ -428,26 +406,20 @@ class profileTransformatorDlg(ArtisanDialog):
     @pyqtSlot()
     def updatePhasesWidget(self):
         self.clearTimeTargets()
-        if self.phases_target_widgets_time is not None and self.phases_target_widgets_percent is not None:
-            sender = self.sender()
-            assert isinstance(sender, QLineEdit)
-            # clear corresponding time target if percentage target is set, or the otherway around
-            if sender.text() != '':
-                try:
-                    time_idx = self.phases_target_widgets_time.index(sender)
-                    phases_target_widgets_percent = self.phases_target_widgets_percent[time_idx]
-                    if phases_target_widgets_percent is not None:
-                        phases_target_widgets_percent.setText('')
-                except Exception: # pylint: disable=broad-except
-                    pass
-                try:
-                    percent_idx = self.phases_target_widgets_percent.index(sender)
-                    phases_target_widgets_time = self.phases_target_widgets_time[percent_idx]
-                    if phases_target_widgets_time is not None:
-                        phases_target_widgets_time.setText('')
-                except Exception: # pylint: disable=broad-except
-                    pass
-            self.updateTimeResults()
+        sender = self.sender()
+        # clear corresponding time target if percentage target is set, or the otherway around
+        if sender.text() != '':
+            try:
+                time_idx = self.phases_target_widgets_time.index(sender)
+                self.phases_target_widgets_percent[time_idx].setText('')
+            except Exception: # pylint: disable=broad-except
+                pass
+            try:
+                percent_idx = self.phases_target_widgets_percent.index(sender)
+                self.phases_target_widgets_time[percent_idx].setText('')
+            except Exception: # pylint: disable=broad-except
+                pass
+        self.updateTimeResults()
 
     @pyqtSlot()
     def updateTimesWidget(self):
@@ -464,6 +436,7 @@ class profileTransformatorDlg(ArtisanDialog):
         self.clearPhasesResults()
         self.clearTimeResults()
         if not (phases_targets_clear and time_targets_clear):
+            self.clearTimeResults()
             # phases targets are set, first clear the time targets
             if not phases_targets_clear:
                 self.targetTimes = self.getTargetPhasesTimes()
@@ -471,47 +444,38 @@ class profileTransformatorDlg(ArtisanDialog):
                 self.targetTimes = self.getTargetTimes()
             # set new time results
             result_times = self.calcTimeResults()
-            if self.time_result_widgets is not None:
-                for i in range(4):
-                    time_result_widget = self.time_result_widgets[i]
-                    if time_result_widget is not None:
-                        if result_times[i] is None:
-                            s = ''
-                        else:
-                            s = stringfromseconds(result_times[i],leadingzero=False)
-                        time_result_widget.setText(s)
+            for i in range(4):
+                if self.time_result_widgets[i] is not None:
+                    if result_times[i] is None:
+                        s = ''
+                    else:
+                        s = stringfromseconds(result_times[i],leadingzero=False)
+                    self.time_result_widgets[i].setText(s)
             # set new phases results
-            if self.phases_result_widgets is not None:
-                result_times = self.calcTimeResults()
-                if all(result_times[r] is not None for r in [0,1,3]):
-                    # DRYING
-                    drying_period = result_times[0]
-                    drying_percentage = 100 * drying_period / result_times[3]
-                    drying_str = \
-                            f'{stringfromseconds(drying_period,leadingzero=False)}    {self.aw.float2float(drying_percentage)}%'
-                    phases_result_widgets = self.phases_result_widgets[0]
-                    if phases_result_widgets is not None:
-                        phases_result_widgets.setText(drying_str)
-                    # MAILARD
-                    mailard_period = result_times[1] - result_times[0]
-                    mailard_percentage = 100 * mailard_period / result_times[3]
-                    mailard_str = \
-                            f'{stringfromseconds(mailard_period,leadingzero=False)}    {self.aw.float2float(mailard_percentage)}%'
-                    phases_result_widgets= self.phases_result_widgets[1]
-                    if phases_result_widgets is not None:
-                        phases_result_widgets.setText(mailard_str)
-                    # FINISHING
-                    finishing_period = result_times[3] - result_times[1]
-                    finishing_percentage = 100 * finishing_period / result_times[3]
-                    finishing_str = \
-                            f'{stringfromseconds(finishing_period,leadingzero=False)}    {self.aw.float2float(finishing_percentage)}%'
-                    phases_result_widgets = self.phases_result_widgets[2]
-                    if phases_result_widgets is not None:
-                        phases_result_widgets.setText(finishing_str)
-                else:
-                    for w in self.phases_result_widgets:
-                        if w is not None:
-                            w.setText('')
+            result_times = self.calcTimeResults()
+            if all(result_times[r] is not None for r in [0,1,3]):
+                # DRYING
+                drying_period = result_times[0]
+                drying_percentage = 100 * drying_period / result_times[3]
+                drying_str = \
+                        f'{stringfromseconds(drying_period,leadingzero=False)}    {self.aw.float2float(drying_percentage)}%'
+                self.phases_result_widgets[0].setText(drying_str)
+                # MAILARD
+                mailard_period = result_times[1] - result_times[0]
+                mailard_percentage = 100 * mailard_period / result_times[3]
+                mailard_str = \
+                        f'{stringfromseconds(mailard_period,leadingzero=False)}    {self.aw.float2float(mailard_percentage)}%'
+                self.phases_result_widgets[1].setText(mailard_str)
+                # FINISHING
+                finishing_period = result_times[3] - result_times[1]
+                finishing_percentage = 100 * finishing_period / result_times[3]
+                finishing_str = \
+                        f'{stringfromseconds(finishing_period,leadingzero=False)}    {self.aw.float2float(finishing_percentage)}%'
+                self.phases_result_widgets[2].setText(finishing_str)
+            else:
+                for w in self.phases_result_widgets:
+                    if w is not None:
+                        w.setText('')
 
     @pyqtSlot()
     def updateTempResults(self):
@@ -519,16 +483,18 @@ class profileTransformatorDlg(ArtisanDialog):
         if all(v is None for v in self.targetTemps):
             # clear all results if no targets are set
             self.clearTempResults()
-        # set new results
-        elif self.temp_result_widgets is not None and len(self.temp_result_widgets)>4:
+        else:
+            # set new results
             result_temps,fit = self.calcTempResults()
             for i in range(5):
-                temp_result_widget:Optional[QTableWidgetItem] = self.temp_result_widgets[i]
-                if temp_result_widget is not None and result_temps[i] is not None:
-                    temp_result_widget.setText(str(self.aw.float2float(result_temps[i])) + self.aw.qmc.mode)
-            s = ''
-            if fit is not None:
+                if self.temp_result_widgets[i] is not None and result_temps[i] is not None:
+                    self.temp_result_widgets[i].setText(str(self.aw.float2float(result_temps[i])) + self.aw.qmc.mode)
+            if fit is None:
+                s = ''
+            elif isinstance(fit,str):
                 s = fit
+            else:
+                s = self.aw.fit2str(fit)
             self.temp_formula.setText(s)
             self.temp_formula.repaint()
 
@@ -615,28 +581,23 @@ class profileTransformatorDlg(ArtisanDialog):
     # returns the list of results times in seconds
     def calcTimeResults(self):
         res = []
-        profileTime:Optional[float]
         if self.aw.qmc.transMappingMode == 0:
             # discrete mapping
             # adding CHARGE
-            fits:List[Optional['npt.NDArray[numpy.float64]']] = self.calcDiscretefits([0] + self.profileTimes,[0] + self.targetTimes)
-            if len(fits)>4 and len(self.profileTimes)>3:
-                for i in range(4):
-                    fit:Optional['npt.NDArray[numpy.float64]'] = fits[i+1]
-                    profileTime = self.profileTimes[i]
-                    if fit is not None and profileTime is not None:
-                        res.append(numpy.poly1d(fit)(profileTime))
-                    else:
-                        res.append(None)
+            fits = self.calcDiscretefits([0] + self.profileTimes,[0] + self.targetTimes)
+            for i in range(4):
+                if self.profileTimes[i] is not None and fits[i+1] is not None:
+                    res.append(numpy.poly1d(fits[i+1])(self.profileTimes[i]))
+                else:
+                    res.append(None)
         else:
             with warnings.catch_warnings():
                 warnings.filterwarnings('error')
                 try:
-                    fit_fuc = self.calcTimePolyfit() # note that this fit is already applied to numpy.polyfit !!
+                    fit = self.calcTimePolyfit() # that that this fit is already applied to numpy.polyfit !!
                     for i in range(4):
-                        profileTime = self.profileTimes[i]
-                        if fit_fuc is not None and profileTime is not None:
-                            res.append(fit_fuc(profileTime))
+                        if fit is not None and self.profileTimes[i] is not None:
+                            res.append(fit(self.profileTimes[i]))
                         else:
                             res.append(None)
                 except numpy.RankWarning:
@@ -646,100 +607,82 @@ class profileTransformatorDlg(ArtisanDialog):
         return res
 
     # returns the list of results temperatures and the polyfit or None as second result
-    def calcTempResults(self) -> Tuple[List[Optional[float]], Optional[str]]:
-        res:List[Optional[float]] = []
-        fit:Optional['npt.NDArray[numpy.float64]'] = None
-        fit_str:Optional[str] = None
-        profileTemp:Optional[float]
+    def calcTempResults(self):
+        res = []
+        fit = None
         if self.aw.qmc.transMappingMode == 0:
             # discrete mapping
             fits = self.calcDiscretefits(self.profileTemps,self.targetTemps)
             for i in range(5):
-                fit = fits[i]
-                profileTemp = self.profileTemps[i]
-                if profileTemp is not None and fit is not None:
-                    res.append(numpy.poly1d(fit)(profileTemp))
+                if self.profileTemps[i] is not None and fits[i] is not None:
+                    res.append(numpy.poly1d(fits[i])(self.profileTemps[i]))
                 else:
                     res.append(None)
             active_fits = list(filter(lambda x: x[1][1] is not None,zip(fits,zip(self.profileTemps,self.targetTemps))))
             if len(active_fits) > 0 and len(active_fits) < 3:
-                fit_str = self.aw.fit2str(fits[0])
+                fit = self.aw.fit2str(fits[0])
             else:
                 formula = ''
-                last_target:Optional[Tuple] = None
+                last_target = None
                 for f,tpl in reversed(active_fits[:-1]):
                     if last_target is None:
                         formula = self.aw.fit2str(f)
                     else:
                         formula = f'({self.aw.fit2str(f)} if x<{last_target} else {formula})'
                     last_target = tpl[1]
-                fit_str = formula
+                fit = formula
         else:
             with warnings.catch_warnings():
                 warnings.filterwarnings('error')
                 try:
-                    fit_func = self.calcTempPolyfit() # numpy.poly1d not yet applied to this fit
-                    if fit_func is not None:
-                        p = numpy.poly1d(fit_func)
-                        for i in range(5):
-                            profileTemp = self.profileTemps[i]
-                            if profileTemp is not None:
-                                res.append(p(profileTemp))
-                            else:
-                                res.append(None)
-                        fit_str = self.aw.fit2str(fit_func)
-                    else:
-                        res = [None]*5
+                    fit = self.calcTempPolyfit() # numpy.poly1d not yet applied to this fit
+                    p = numpy.poly1d(fit)
+                    for i in range(5):
+                        if fit is not None and self.profileTemps[i] is not None:
+                            res.append(p(self.profileTemps[i]))
+                        else:
+                            res.append(None)
                 except numpy.RankWarning:
                     pass
                 except Exception: # pylint: disable=broad-except
                     pass
-        return res,fit_str
+        return res,fit
 
     # returns target times based on the phases target
     def getTargetPhasesTimes(self):
         # get the offset
-        offset:float = self.forgroundOffset()
+        offset = self.forgroundOffset()
         # get profile phases events time
-        dry:float = self.aw.qmc.timex[self.aw.qmc.timeindex[1]] - offset
-        fcs:float = self.aw.qmc.timex[self.aw.qmc.timeindex[2]] - offset
-        drop:float = self.aw.qmc.timex[self.aw.qmc.timeindex[6]] - offset
+        dry = self.aw.qmc.timex[self.aw.qmc.timeindex[1]] - offset
+        fcs = self.aw.qmc.timex[self.aw.qmc.timeindex[2]] - offset
+        drop = self.aw.qmc.timex[self.aw.qmc.timeindex[6]] - offset
         # flags for targets set
-        dry_set:bool = False
-        drop_set:bool = False
-        fcs_set:bool = False
-
-        if self.phases_target_widgets_time is None or self.phases_target_widgets_percent is None:
-            return []
+        dry_set = False
+        drop_set = False
+        fcs_set = False
 
         # first determine the target DROP time (relative to the profile drop) if any
-        drop_phases_target_widget_time = self.phases_target_widgets_time[2]
-        drop_phases_target_widget_percent = self.phases_target_widgets_percent[2]
-        if drop_phases_target_widget_time is not None and drop_phases_target_widget_time.text() != '':
-            drop = fcs + stringtoseconds(drop_phases_target_widget_time.text())
+        if self.phases_target_widgets_time[2] is not None and self.phases_target_widgets_time[2].text() != '':
+            drop = fcs + stringtoseconds(self.phases_target_widgets_time[2].text())
             drop_set = True
-        elif drop_phases_target_widget_percent is not None and drop_phases_target_widget_percent.text() != '':
-            drop = fcs + (float(drop_phases_target_widget_percent.text()) * drop / 100)
+        elif self.phases_target_widgets_percent[2] is not None and self.phases_target_widgets_percent[2].text() != '':
+            drop = fcs + (float(self.phases_target_widgets_percent[2].text()) * drop / 100)
             drop_set = True
 
         # determine the target DRY time (relative to the target drop of above) if any
-        dry_phases_target_widgets_time = self.phases_target_widgets_time[0]
-        dry_phases_target_widgets_percent = self.phases_target_widgets_percent[0]
-        if dry_phases_target_widgets_time is not None and dry_phases_target_widgets_time.text() != '':
-            dry = stringtoseconds(dry_phases_target_widgets_time.text())
+        if self.phases_target_widgets_time[0] is not None and self.phases_target_widgets_time[0].text() != '':
+            dry = stringtoseconds(self.phases_target_widgets_time[0].text())
             dry_set = True
-        elif dry_phases_target_widgets_percent is not None and dry_phases_target_widgets_percent.text() != '':
-            dry = float(dry_phases_target_widgets_percent.text()) * drop / 100
+        elif self.phases_target_widgets_percent[0] is not None and self.phases_target_widgets_percent[0].text() != '':
+            dry = float(self.phases_target_widgets_percent[0].text()) * drop / 100
             dry_set = True
 
         # determine the target FCs time (relative to the target drop of above) if any
-        fcs_phases_target_widgets_time = self.phases_target_widgets_time[1]
-        fcs_phases_target_widgets_percent = self.phases_target_widgets_percent[1]
-        if fcs_phases_target_widgets_time is not None and fcs_phases_target_widgets_time.text() != '':
-            fcs = dry + stringtoseconds(fcs_phases_target_widgets_time.text())
+        if self.phases_target_widgets_time[1] is not None and self.phases_target_widgets_time[1].text() != '':
+            fcs = dry + stringtoseconds(self.phases_target_widgets_time[1].text())
             fcs_set = True
-        elif fcs_phases_target_widgets_percent is not None and fcs_phases_target_widgets_percent.text() != '':
-            fcs = dry + (float(fcs_phases_target_widgets_percent.text()) * drop / 100)
+        elif self.phases_target_widgets_percent[1] is not None and self.phases_target_widgets_percent[1].text() != '':
+            fcs = dry + (float(self.phases_target_widgets_percent[1].text()) * drop / 100)
             fcs_set = True
 
 #        return [(dry if dry_set else None),(fcs if fcs_set else None), None, (drop if drop_set else None)]
@@ -752,16 +695,14 @@ class profileTransformatorDlg(ArtisanDialog):
 
     # calculates the linear (self.aw.qmc.transMappingMode = 1) or quadratic (self.aw.qmc.transMappingMode = 2) mapping
     # between the profileTimes and the targetTimes
-    def calcTimePolyfit(self) -> Optional[Callable[[float], float]]:
+    def calcTimePolyfit(self):
         # initialized by CHARGE time 00:00
-        xa:List[float] = [0]
-        ya:List[float] = [0]
+        xa = [0]
+        ya = [0]
         for i in range(4):
-            profileTime:Optional[float] = self.profileTimes[i]
-            targetTime:Optional[float] = self.targetTimes[i]
-            if profileTime is not None and targetTime is not None:
-                xa.append(profileTime)
-                ya.append(targetTime)
+            if self.targetTimes[i] is not None:
+                xa.append(self.profileTimes[i])
+                ya.append(self.targetTimes[i])
         deg = self.aw.qmc.transMappingMode
         if len(xa) > 1:
             try:
@@ -776,14 +717,12 @@ class profileTransformatorDlg(ArtisanDialog):
     # calculates the linear (self.aw.qmc.transMappingMode = 1) or quadratic (self.aw.qmc.transMappingMode = 2) mapping
     # between the profileTemps and the targetTemps
     def calcTempPolyfit(self):
-        xa:List[float] = []
-        ya:List[float] = []
+        xa = []
+        ya = []
         for i in range(5):
-            profileTemp:Optional[float] = self.profileTemps[i]
-            targetTemp:Optional[float] = self.targetTemps[i]
-            if profileTemp is not None and targetTemp is not None:
-                xa.append(profileTemp)
-                ya.append(targetTemp)
+            if self.targetTemps[i] is not None:
+                xa.append(self.profileTemps[i])
+                ya.append(self.targetTemps[i])
         deg = self.aw.qmc.transMappingMode
         if len(xa) > 0:
             try:
@@ -805,12 +744,12 @@ class profileTransformatorDlg(ArtisanDialog):
     # the lists of sources and targets are expected to be of the same length
     # the length of the result list is the same as that of the sources and targets
     @staticmethod
-    def calcDiscretefits(sources,targets) -> List[Optional['npt.NDArray[numpy.float64]']]:
+    def calcDiscretefits(sources,targets):
         if len(sources) != len(targets):
             return [None]*len(sources)
-        fits:List[Optional['npt.NDArray[numpy.float64]']] = [None]*len(sources)
-        last_fit:Optional['npt.NDArray[numpy.float64]'] = None
-        for i, _ in enumerate(sources):
+        fits = [None]*len(sources)
+        last_fit = None
+        for i in range(len(sources)):
             if sources[i] is not None:
                 if targets[i] is None:
                     # we take the last fit
@@ -828,7 +767,7 @@ class profileTransformatorDlg(ArtisanDialog):
                             # set a simple offset only as there is no previous nor next fit
                             fits[i] = numpy.array([1,targets[i]-sources[i]])
                     else:
-                        fits[i] = numpy.polyfit([sources[i],sources[next_idx]],[targets[i],targets[next_idx]],1)
+                        fits[i] = numpy.polyfit([sources[i],sources[j]],[targets[i],targets[j]],1)
                     # if this is the first fit, we copy it to all previous positions
                     if last_fit is None:
                         for k in range(0,i):
@@ -846,7 +785,7 @@ class profileTransformatorDlg(ArtisanDialog):
             new_offset = 0
         else:
             new_offset = numpy.poly1d(fits[0])(offset)
-        for i, _ in enumerate(timex):
+        for i in range(len(timex)):
             # first fit is to be applied for all readings before DRY
             j = 0
             if self.aw.qmc.timeindex[6] > 0 and i >= self.aw.qmc.timeindex[6]:
@@ -929,7 +868,7 @@ class profileTransformatorDlg(ArtisanDialog):
             # discrete mappings, length 5
             fits = self.calcDiscretefits(self.profileTemps,self.targetTemps)
             self.aw.qmc.temp2 = []
-            for i, _ in enumerate(self.org_temp2):
+            for i in range(len(self.org_temp2)):
                 # first fit is to be applied for all readings before DRY
                 j = 0
                 if self.aw.qmc.timeindex[6] > 0 and i >= self.aw.qmc.timeindex[6]:
@@ -943,22 +882,19 @@ class profileTransformatorDlg(ArtisanDialog):
                     j = 1 # after DRY
 
                 tp = self.org_temp2[i]
-                fitj = fits[j]
-                if tp is None or tp == -1 or fitj is None:
+                if tp is None or tp == -1 or fits[j] is None:
                     self.aw.qmc.temp2.append(tp)
                 else:
-                    fit = numpy.poly1d(fitj) # fit to be applied
+                    fit = numpy.poly1d(fits[j]) # fit to be applied
                     self.aw.qmc.temp2.append(fit(tp))
             return True
         # polyfit mappings
         with warnings.catch_warnings():
             warnings.filterwarnings('error')
             try:
-                p = self.calcTempPolyfit()
-                if p is not None:
-                    fit = numpy.poly1d(p)
-                    if fit is not None:
-                        self.aw.qmc.temp2 = [(-1 if (temp is None) or (temp == -1) else fit(temp)) for temp in self.org_temp2]
+                fit = numpy.poly1d(self.calcTempPolyfit())
+                if fit is not None:
+                    self.aw.qmc.temp2 = [(-1 if (temp is None) or (temp == -1) else fit(temp)) for temp in self.org_temp2]
             except numpy.RankWarning:
                 pass
         return True
@@ -1003,8 +939,8 @@ class profileTransformatorDlg(ArtisanDialog):
         self.phases_target_widgets_percent = []
         self.phases_result_widgets = []
 
-        profilePhasesTimes:List[Optional[float]] = [None]*3 # DRYING, MAILARD, FINISHING
-        profilePhasesPercentages:List[Optional[float]] = [None] * 3
+        profilePhasesTimes = [None]*3 # DRYING, MAILARD, FINISHING
+        profilePhasesPercentages = [None] * 3
         #
         # the phases transformation are only enabled if at least DRY, FCs and DROP events are set
         phases_enabled = self.aw.qmc.timeindex[1] and self.aw.qmc.timeindex[2] and self.aw.qmc.timeindex[6]
@@ -1019,10 +955,9 @@ class profileTransformatorDlg(ArtisanDialog):
                 profilePhasesPercentages = [(ppt/self.profileTimes[3])*100 for ppt in profilePhasesTimes if ppt is not None]
 
         for i in range(3):
-            profilePhasesTime = profilePhasesTimes[i]
-            if len(profilePhasesTimes) > i and profilePhasesTime is not None:
+            if len(profilePhasesTimes) > i and profilePhasesTimes[i] is not None:
                 profile_phases_time_str = \
-                    f'{stringfromseconds(int(round(profilePhasesTime)),leadingzero=False)}    {self.aw.float2float(profilePhasesPercentages[i])}%'
+                    f'{stringfromseconds(profilePhasesTimes[i],leadingzero=False)}    {self.aw.float2float(profilePhasesPercentages[i])}%'
                 profile_phases_widget = QTableWidgetItem(profile_phases_time_str)
                 profile_phases_widget.setTextAlignment(Qt.AlignmentFlag.AlignCenter|Qt.AlignmentFlag.AlignVCenter)
                 self.phasestable.setItem(0,i,profile_phases_widget)
@@ -1099,9 +1034,8 @@ class profileTransformatorDlg(ArtisanDialog):
         self.time_result_widgets = []
 
         for i in range(4):
-            profileTime = self.profileTimes[i]
-            if len(self.profileTimes) > i and profileTime is not None:
-                profile_time_str = stringfromseconds(int(round(profileTime)),leadingzero=False)
+            if len(self.profileTimes) > i and self.profileTimes[i] is not None:
+                profile_time_str = stringfromseconds(self.profileTimes[i],leadingzero=False)
                 profile_widget = QTableWidgetItem(profile_time_str)
                 profile_widget.setTextAlignment(Qt.AlignmentFlag.AlignCenter|Qt.AlignmentFlag.AlignVCenter)
                 self.timetable.setItem(0,i,profile_widget)

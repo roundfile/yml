@@ -123,11 +123,13 @@ with open('Info.plist', 'r+b') as fp:
     try:
         plist['LSMinimumSystemVersion'] = os.environ['MACOSX_DEPLOYMENT_TARGET']
     except Exception: # pylint: disable=broad-except
-        plist['LSMinimumSystemVersion'] = '11.0'
+        plist['LSMinimumSystemVersion'] = '10.15'
     plist['LSMultipleInstancesProhibited'] = 'false'
+#    plist['LSPrefersPPC'] = False # not in use longer
     plist['LSArchitecturePriority'] = ['x86_64']
     plist['NSHumanReadableCopyright'] = LICENSE
     plist['NSHighResolutionCapable'] = True
+#    plist['NSRequiresAquaSystemAppearance'] = False # important to activate the automatic dark mode of Qt on OS X 10.14 or later (with linked against macOS before 10.14, like with PyQt 5.13.1
     fp.seek(0, os.SEEK_SET)
     fp.truncate()
     plistlib.dump(plist, fp)
@@ -334,9 +336,10 @@ for python_version in ['python3.8', 'python3.9', 'python3.10', 'python3.11']:
                 if file.endswith('.pyi'):
                     file_path = os.path.join(subdir, file)
                     subprocess.check_call(f'rm -rf {file_path}',shell = True)
-                if file.endswith(('.abi3.so','.pyi')) and file.split('.')[0] not in Qt_modules:
-                    file_path = os.path.join(subdir, file)
-                    subprocess.check_call(f'rm -rf {file_path}',shell = True)
+                if file.endswith('.abi3.so') or file.endswith('.pyi'):
+                    if file.split('.')[0] not in Qt_modules:
+                        file_path = os.path.join(subdir, file)
+                        subprocess.check_call(f'rm -rf {file_path}',shell = True)
 
 # uncomment for non-Framework variant
     # remove unused Qt frameworks libs (not in Qt_modules_frameworks)

@@ -8,7 +8,7 @@ class ArtisanTime():
 
     __slots__ = ['clock','base']
 
-    def __init__(self) -> None:
+    def __init__(self):
         self.clock = time.perf_counter()
         self.base = 1000.
 

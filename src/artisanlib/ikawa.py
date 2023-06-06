@@ -8,28 +8,25 @@ import os
 import csv
 import re
 import logging
-from typing import Optional, List, TYPE_CHECKING
-from typing_extensions import Final  # Python <=3.7
-
-
-if TYPE_CHECKING:
-    from artisanlib.types import ProfileData # pylint: disable=unused-import
+from typing import Final
 
 try:
+    #ylint: disable = E, W, R, C
     from PyQt6.QtCore import QDateTime,Qt # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtWidgets import QApplication # @UnusedImport @Reimport  @UnresolvedImport
-except ImportError:
+except Exception: # pylint: disable=broad-except
+    #ylint: disable = E, W, R, C
     from PyQt5.QtCore import QDateTime,Qt # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import QApplication # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
 from artisanlib.util import encodeLocal
 
 
-_log: Final[logging.Logger] = logging.getLogger(__name__)
+_log: Final = logging.getLogger(__name__)
 
 # returns a dict containing all profile information contained in the given IKAWA CSV file
 def extractProfileIkawaCSV(file,_):
-    res:ProfileData = {} # the interpreted data set
+    res = {} # the interpreted data set
 
     res['samplinginterval'] = 1.0
 
@@ -40,15 +37,9 @@ def extractProfileIkawaCSV(file,_):
         if p.match(filename):
             s = filename[6:-4] # the extracted date time string
             date = QDateTime.fromString(s,'yyyy-MM-dd HHmmss')
-            roastdate:Optional[str] = encodeLocal(date.date().toString())
-            if roastdate is not None:
-                res['roastdate'] = roastdate
-            roastisodate:Optional[str] = encodeLocal(date.date().toString(Qt.DateFormat.ISODate))
-            if roastisodate is not None:
-                res['roastisodate'] = roastisodate
-            roasttime:Optional[str] = encodeLocal(date.time().toString())
-            if roasttime is not None:
-                res['roasttime'] = roasttime
+            res['roastdate'] = encodeLocal(date.date().toString())
+            res['roastisodate'] = encodeLocal(date.date().toString(Qt.DateFormat.ISODate))
+            res['roasttime'] = encodeLocal(date.time().toString())
             res['roastepoch'] = int(date.toSecsSinceEpoch())
             res['roasttzoffset'] = libtime.timezone
     except Exception as e: # pylint: disable=broad-except
@@ -59,24 +50,23 @@ def extractProfileIkawaCSV(file,_):
         #read file header
         header = next(data)
 
-        fan:Optional[float] = None # holds last processed fan event value
-        fan_last:Optional[float] = None # holds the fan event value before the last one
-        heater:Optional[float] = None # holds last processed heater event value
-        heater_last:Optional[float] = None # holds the heater event value before the last one
-        fan_event:bool = False # set to True if a fan event exists
-        heater_event:bool = False # set to True if a heater event exists
-        specialevents:List[int] = []
-        specialeventstype:List[int] = []
-        specialeventsvalue:List[float] = []
-        specialeventsStrings:List[str] = []
-        timex:List[float] = []
-        temp1:List[float] = []
-        temp2:List[float] = []
-        extra1:List[float] = []
-        extra2:List[float] = []
-        timeindex:List[int] = [-1,0,0,0,0,0,0,0] #CHARGE index init set to -1 as 0 could be an actal index used
-        i:int = 0
-        v:Optional[float]
+        fan = None # holds last processed fan event value
+        fan_last = None # holds the fan event value before the last one
+        heater = None # holds last processed heater event value
+        heater_last = None # holds the heater event value before the last one
+        fan_event = False # set to True if a fan event exists
+        heater_event = False # set to True if a heater event exists
+        specialevents = []
+        specialeventstype = []
+        specialeventsvalue = []
+        specialeventsStrings = []
+        timex = []
+        temp1 = []
+        temp2 = []
+        extra1 = []
+        extra2 = []
+        timeindex = [-1,0,0,0,0,0,0,0] #CHARGE index init set to -1 as 0 could be an actal index used
+        i = 0
         for row in data:
             i = i + 1
             items = list(zip(header, row))
@@ -99,7 +89,7 @@ def extractProfileIkawaCSV(file,_):
             else:
                 temp2.append(-1)
             # mark CHARGE
-            if timeindex[0] <= -1 and 'state' in item and item['state'] == 'doser open':
+            if not timeindex[0] > -1 and 'state' in item and item['state'] == 'doser open':
                 timeindex[0] = max(0,i)
             # mark DROP
             if timeindex[6] == 0 and 'state' in item and item['state'] == 'cooling':
@@ -127,7 +117,7 @@ def extractProfileIkawaCSV(file,_):
                         v = float(item['fan set (%)'])
                     elif 'fan set' in item:
                         v = float(item['fan set'])
-                    if v is not None and v != fan:
+                    if v != fan:
                         # fan value changed
                         if v == fan_last:
                             # just a fluctuation, we remove the last added fan value again
@@ -153,12 +143,11 @@ def extractProfileIkawaCSV(file,_):
                     _log.exception(e)
             if 'heater power (%)' in item or 'heater' in item:
                 try:
-                    v = heater
                     if 'heater power (%)' in item:
                         v = float(item['heater power (%)'])
                     elif 'heater' in item:
                         v = float(item['heater'])
-                    if v is not None and v != heater:
+                    if v != heater:
                         # heater value changed
                         if v == heater_last:
                             # just a fluctuation, we remove the last added heater value again
@@ -208,16 +197,15 @@ def extractProfileIkawaCSV(file,_):
         res['specialeventsStrings'] = specialeventsStrings
         if heater_event or fan_event:
             # first set etypes to defaults
-            etypes:List[str] = [QApplication.translate('ComboBox', 'Air'),
+            res['etypes'] = [QApplication.translate('ComboBox', 'Air'),
                              QApplication.translate('ComboBox', 'Drum'),
                              QApplication.translate('ComboBox', 'Damper'),
                              QApplication.translate('ComboBox', 'Burner'),
                              '--']
             # update
             if fan_event:
-                etypes[0] = 'Fan'
+                res['etypes'][0] = 'Fan'
             if heater_event:
-                etypes[3] = 'Heater'
-            res['etypes'] = etypes
+                res['etypes'][3] = 'Heater'
     res['title'] = Path(file).stem
     return res

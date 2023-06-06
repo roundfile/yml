@@ -13,7 +13,7 @@
 # the GNU General Public License for more details.
 
 # AUTHOR
-# Rui Paulo, 2023
+# Rui Paulo, 2019
 
 import time
 import random
@@ -30,26 +30,19 @@ import json
 from lxml import html # type: ignore
 
 import logging
-from typing import Optional, TYPE_CHECKING
-from typing_extensions import Final  # Python <=3.7
-
-if TYPE_CHECKING:
-    try:
-        from multiprocessing.connection import PipeConnection as Connection # type: ignore # pylint: disable=unused-import
-    except ImportError:
-        from multiprocessing.connection import Connection # type:ignore # pylint: disable=unused-import
-    from artisanlib.types import ProfileData # pylint: disable=unused-import
-
+from typing import Final
 
 try:
+    #ylint: disable = E, W, R, C
     from PyQt6.QtCore import QDateTime, Qt # @UnusedImport @Reimport  @UnresolvedImport
-except ImportError:
+except Exception:  # pylint: disable=broad-except
+    #ylint: disable = E, W, R, C
     from PyQt5.QtCore import QDateTime, Qt # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
 from artisanlib.util import encodeLocal
 
 
-_log: Final[logging.Logger] = logging.getLogger(__name__)
+_log: Final = logging.getLogger(__name__)
 
 
 class AillioR1:
@@ -77,33 +70,33 @@ class AillioR1:
     AILLIO_STATE_COOLING = 0x08
     AILLIO_STATE_SHUTDOWN = 0x09
 
-    def __init__(self, debug=False) -> None:
+    def __init__(self, debug=False):
         self.simulated = False
         self.AILLIO_DEBUG = debug
         self.__dbg('init')
-        self.usbhandle:Optional[usb.core.Device] = None
-        self.bt:float = 0
-        self.dt:float = 0
-        self.heater:float = 0
-        self.fan:float = 0
-        self.bt_ror:float = 0
-        self.drum:float = 0
-        self.voltage:float = 0
-        self.exitt:float = 0
-        self.state_str:str = ''
+        self.usbhandle = None
+        self.bt = 0
+        self.dt = 0
+        self.heater = 0
+        self.fan = 0
+        self.bt_ror = 0
+        self.drum = 0
+        self.voltage = 0
+        self.exitt = 0
+        self.state_str = ''
         self.r1state = 0
-        self.worker_thread:Optional[threading.Thread] = None
+        self.worker_thread = None
         self.worker_thread_run = True
         self.roast_number = -1
-        self.fan_rpm:float = 0
+        self.fan_rpm = 0
 
-        self.parent_pipe:Optional['Connection'] = None
-        self.child_pipe:Optional['Connection'] = None
-        self.irt:float = 0
-        self.pcbt:float = 0
-        self.coil_fan:int = 0
-        self.coil_fan2:int = 0
-        self.pht:int = 0
+        self.parent_pipe = None
+        self.child_pipe = None
+        self.irt = 0
+        self.pcbt = 0
+        self.coil_fan = 0
+        self.coil_fan2 = 0
+        self.pht = 0
         self.minutes = 0
         self.seconds = 0
 
@@ -131,14 +124,15 @@ class AillioR1:
         if self.usbhandle is None:
             raise OSError('not found or no permission')
         self.__dbg('device found!')
-        if not system().startswith('Windows') and self.usbhandle.is_kernel_driver_active(self.AILLIO_INTERFACE):
-            try:
-                self.usbhandle.detach_kernel_driver(self.AILLIO_INTERFACE)
-            except Exception: # pylint: disable=broad-except
-                pass
-                # detach fails on libusb 1.0.26 and newer on macOS >v12 if not running under sudo and seems not to be needed on those configurations
-#                self.usbhandle = None
-#                raise OSError('unable to detach kernel driver') from e
+        if not system().startswith('Windows'):
+            if self.usbhandle.is_kernel_driver_active(self.AILLIO_INTERFACE):
+                try:
+                    self.usbhandle.detach_kernel_driver(self.AILLIO_INTERFACE)
+                except Exception: # pylint: disable=broad-except
+                    pass
+                    # detach fails on libusb 1.0.26 and newer on macOS >v12 if not running under sudo and seems not to be needed on those configurations
+#                    self.usbhandle = None
+#                    raise OSError('unable to detach kernel driver') from e
         try:
             config = self.usbhandle.get_active_configuration()
             if config.bConfigurationValue != self.AILLIO_CONFIGURATION:
@@ -165,8 +159,7 @@ class AillioR1:
         self.parent_pipe, self.child_pipe = Pipe()
         self.worker_thread = threading.Thread(target=self.__updatestate,
                                               args=(self.child_pipe,))
-        if self.worker_thread is not None:
-            self.worker_thread.start()
+        self.worker_thread.start()
 
     def __close(self):
         if self.simulated:
@@ -183,10 +176,8 @@ class AillioR1:
         if self.worker_thread:
             self.worker_thread_run = False
             self.worker_thread.join()
-            if self.parent_pipe is not None:
-                self.parent_pipe.close()
-            if self.child_pipe is not None:
-                self.child_pipe.close()
+            self.parent_pipe.close()
+            self.child_pipe.close()
             self.worker_thread = None
 
     def get_roast_number(self):
@@ -251,12 +242,11 @@ class AillioR1:
         d = abs(h - value)
         if d <= 0:
             return
-        d = int(float(min(d,9)))
+        d = min(d,9)
         if h > value:
-            if self.parent_pipe is not None:
-                for _ in range(d):
-                    self.parent_pipe.send(self.AILLIO_CMD_HEATER_DECR)
-        elif self.parent_pipe is not None:
+            for _ in range(d):
+                self.parent_pipe.send(self.AILLIO_CMD_HEATER_DECR)
+        else:
             for _ in range(d):
                 self.parent_pipe.send(self.AILLIO_CMD_HEATER_INCR)
         self.heater = value
@@ -272,12 +262,11 @@ class AillioR1:
         d = abs(f - value)
         if d <= 0:
             return
-        d = int(round(min(d,11)))
+        d = min(d,11)
         if f > value:
-            if self.parent_pipe is not None:
-                for _ in range(0, d):
-                    self.parent_pipe.send(self.AILLIO_CMD_FAN_DECR)
-        elif self.parent_pipe is not None:
+            for _ in range(0, d):
+                self.parent_pipe.send(self.AILLIO_CMD_FAN_DECR)
+        else:
             for _ in range(0, d):
                 self.parent_pipe.send(self.AILLIO_CMD_FAN_INCR)
         self.fan = value
@@ -289,14 +278,12 @@ class AillioR1:
             value = 1
         elif value > 9:
             value = 9
-        if self.parent_pipe is not None:
-            self.parent_pipe.send([0x32, 0x01, value, 0x00])
+        self.parent_pipe.send([0x32, 0x01, value, 0x00])
         self.drum = value
 
     def prs(self):
         self.__dbg('PRS')
-        if self.parent_pipe is not None:
-            self.parent_pipe.send(self.AILLIO_CMD_PRS)
+        self.parent_pipe.send(self.AILLIO_CMD_PRS)
 
     def __updatestate(self, p):
         while self.worker_thread_run:
@@ -339,7 +326,7 @@ class AillioR1:
             self.state_str = 'roasting'
             return
         self.__open()
-        if self.parent_pipe is None or not self.parent_pipe.poll():
+        if not self.parent_pipe.poll():
             return
         state = self.parent_pipe.recv()
         valid = state[41]
@@ -396,17 +383,14 @@ class AillioR1:
 
     def __sendcmd(self, cmd):
         self.__dbg('sending command: ' + str(cmd))
-        if self.usbhandle is not None:
-            self.usbhandle.write(self.AILLIO_ENDPOINT_WR, cmd)
+        self.usbhandle.write(self.AILLIO_ENDPOINT_WR, cmd)
 
     def __readreply(self, length):
-        if self.usbhandle is not None:
-            return self.usbhandle.read(self.AILLIO_ENDPOINT_RD, length)
-        raise OSError('not found or no permission')
+        return self.usbhandle.read(self.AILLIO_ENDPOINT_RD, length)
 
 def extractProfileBulletDict(data,aw):
     try:
-        res:'ProfileData' = {} # the interpreted data set
+        res = {} # the interpreted data set
 
         if 'celsius' in data and not data['celsius']:
             res['mode'] = 'F'
@@ -421,15 +405,9 @@ def extractProfileBulletDict(data,aw):
                 except Exception: # pylint: disable=broad-except
                     dateQt = QDateTime.fromMSecsSinceEpoch (data['dateTime'])
                 if dateQt.isValid():
-                    roastdate:Optional[str] = encodeLocal(dateQt.date().toString())
-                    if roastdate is not None:
-                        res['roastdate'] = roastdate
-                    roastisodate:Optional[str] = encodeLocal(dateQt.date().toString(Qt.DateFormat.ISODate))
-                    if roastisodate is not None:
-                        res['roastisodate'] = roastisodate
-                    roasttime:Optional[str] = encodeLocal(dateQt.time().toString())
-                    if roasttime is not None:
-                        res['roasttime'] = roasttime
+                    res['roastdate'] = encodeLocal(dateQt.date().toString())
+                    res['roastisodate'] = encodeLocal(dateQt.date().toString(Qt.DateFormat.ISODate))
+                    res['roasttime'] = encodeLocal(dateQt.time().toString())
                     res['roastepoch'] = int(dateQt.toSecsSinceEpoch())
                     res['roasttzoffset'] = time.timezone
         except Exception as e: # pylint: disable=broad-except
@@ -454,10 +432,10 @@ def extractProfileBulletDict(data,aw):
                 wunit = aw.qmc.weight_units.index(aw.qmc.weight[2])
                 if wunit in [1,3]: # turn Kg into g, and lb into oz
                     wunit = wunit -1
-                wgreen:float = 0
+                wgreen = 0
                 if 'weightGreen' in data:
                     wgreen = float(data['weightGreen'])
-                wroasted:float = 0
+                wroasted = 0
                 if 'weightRoasted' in data:
                     wroasted = float(data['weightRoasted'])
                 res['weight'] = [wgreen,wroasted,aw.qmc.weight_units[wunit]]
@@ -466,8 +444,7 @@ def extractProfileBulletDict(data,aw):
         try:
             if 'agtron' in data:
                 res['ground_color'] = int(round(data['agtron']))
-                if 'Agtron' in aw.qmc.color_systems:
-                    res['color_system'] = 'Agtron'
+                res['color_system'] = 'Agtron'
         except Exception: # pylint: disable=broad-except
             pass
         try:
@@ -482,25 +459,40 @@ def extractProfileBulletDict(data,aw):
         if 'humidity' in data:
             res['ambient_humidity'] = data['humidity']
 
-        bt = data.get('beanTemperature', [])
-        dt = data.get('drumTemperature', [])
+        if 'beanTemperature' in data:
+            bt = data['beanTemperature']
+        else:
+            bt = []
+        if 'drumTemperature' in data:
+            dt = data['drumTemperature']
+        else:
+            dt = []
         # make dt the same length as bt
         dt = dt[:len(bt)]
         dt.extend(-1 for _ in range(len(bt) - len(dt)))
 
-        et = data.get('exitTemperature', None)
+        if 'exitTemperature' in data:
+            et = data['exitTemperature']
+        else:
+            et = None
         if et is not None:
             # make et the same length as bt
             et = et[:len(bt)]
             et.extend(-1 for _ in range(len(bt) - len(et)))
 
-        ror = data.get('beanDerivative', None)
+        if 'beanDerivative' in data:
+            ror = data['beanDerivative']
+        else:
+            ror = None
         if ror is not None:
             # make et the same length as bt
             ror = ror[:len(bt)]
             ror.extend(-1 for _ in range(len(bt) - len(ror)))
 
-        sr = data.get('sampleRate', 2.)
+        if 'sampleRate' in data:
+            sr = data['sampleRate']
+        else:
+            sr = 2.
         res['samplinginterval'] = 1.0/sr
         tx = [x/sr for x in range(len(bt))]
         res['timex'] = tx
@@ -538,11 +530,12 @@ def extractProfileBulletDict(data,aw):
         # extract events from older JSON format
         try:
             eventtypes = ['blowerSetting','drumSpeedSetting','--','inductionPowerSetting']
-            for j, eventname in enumerate(eventtypes):
-                if eventname != '--' and eventname in data:
-                    last:Optional[float] = None
+            for j in range(len(eventtypes)):
+                eventname = eventtypes[j]
+                if eventname != '--':
+                    last = None
                     ip = data[eventname]
-                    for i, _ in enumerate(ip):
+                    for i in range(len(ip)):
                         v = ip[i]+1
                         if last is None or last != v:
                             specialevents.append(i)
@@ -558,18 +551,16 @@ def extractProfileBulletDict(data,aw):
             for action in data['actions']['actionTimeList']:
                 time_idx = action['index'] - 1
                 value = action['value'] + 1
-                event_type = None
                 if action['ctrlType'] == 0:
                     event_type = 3
                 elif action['ctrlType'] == 1:
                     event_type = 0
                 elif action['ctrlType'] == 2:
                     event_type = 1
-                if event_type is not None:
-                    specialevents.append(time_idx)
-                    specialeventstype.append(event_type)
-                    specialeventsvalue.append(value)
-                    specialeventsStrings.append(str(value))
+                specialevents.append(time_idx)
+                specialeventstype.append(event_type)
+                specialeventsvalue.append(value)
+                specialeventsStrings.append(str(value))
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
         if len(specialevents) > 0:
@@ -611,8 +602,8 @@ def extractProfileBulletDict(data,aw):
             res['extradevicecolor2'] = ['black']
             res['extramarkersizes1'] = [6.0]
             res['extramarkersizes2'] = [6.0]
-            res['extramarkers1'] = ['None']
-            res['extramarkers2'] = ['None']
+            res['extramarkers1'] = [None]
+            res['extramarkers2'] = [None]
             res['extralinewidths1'] = [aw.qmc.extra_linewidth_default]
             res['extralinewidths2'] = [aw.qmc.extra_linewidth_default]
             res['extralinestyles1'] = [aw.qmc.linestyle_default]

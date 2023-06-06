@@ -1,7 +1,7 @@
 #
 # register.py
 #
-# Copyright (c) 2023, Paul Holleis, Marko Luther
+# Copyright (c) 2018, Paul Holleis, Marko Luther
 # All rights reserved.
 #
 #
@@ -22,23 +22,22 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 try:
-    #pylint: disable = E, W, R, C
+    #ylint: disable = E, W, R, C
     from PyQt6.QtCore import QSemaphore # @UnusedImport @Reimport  @UnresolvedImport
 except Exception: # pylint: disable=broad-except
-    #pylint: disable = E, W, R, C
+    #ylint: disable = E, W, R, C
     from PyQt5.QtCore import QSemaphore # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
 from pathlib import Path
 from artisanlib.util import getDirectory
 from plus import config
+from typing import Optional
+from typing import Final
 import os
 import logging
 
-from typing import Optional
-from typing_extensions import Final  # Python <=3.7
 
-
-_log: Final[logging.Logger] = logging.getLogger(__name__)
+_log: Final = logging.getLogger(__name__)
 
 register_semaphore = QSemaphore(1)
 
@@ -185,7 +184,7 @@ def getPath(uuid: str) -> Optional[str]:
 
 
 # scans all .alog files for UUIDs and registers them in the cache
-def scanDir(path: Optional[str] = None) -> None:
+def scanDir(path: Optional[str] = None):
     _log.debug('scanDir(%s)', path)
     try:
         assert config.app_window is not None
@@ -200,7 +199,7 @@ def scanDir(path: Optional[str] = None) -> None:
             d = config.app_window.deserialize(
                 currentFile
             )  # @UndefinedVariable
-            if d is not None and config.uuid_tag in d:
+            if config.uuid_tag in d:
                 addPath(d[config.uuid_tag], str(currentFile))  # @UndefinedVariable
     except Exception as e:  # pylint: disable=broad-except
         _log.exception(e)

@@ -1,7 +1,7 @@
 #
 # roast.py
 #
-# Copyright (c) 2023, Paul Holleis, Marko Luther
+# Copyright (c) 2018, Paul Holleis, Marko Luther
 # All rights reserved.
 #
 #
@@ -21,25 +21,19 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from plus import config, util, stock
+from plus import config, util
+from typing import Any, Optional, Dict, List, Tuple  #for Python >= 3.9: can remove 'List', 'Dict' and 'Tuple' since type hints can use the generic 'list', 'dict' and 'tuple'
+from typing import Final
 import hashlib
 import logging
 
-from typing import Any, Optional, Dict, List, Tuple, TYPE_CHECKING  #for Python >= 3.9: can remove 'List', 'Dict' and 'Tuple' since type hints can use the generic 'list', 'dict' and 'tuple'
-from typing_extensions import Final  # Python <=3.7
-
-
-if TYPE_CHECKING:
-    from artisanlib.types import ProfileData # pylint: disable=unused-import
-
-
-_log: Final[logging.Logger] = logging.getLogger(__name__)
+_log: Final = logging.getLogger(__name__)
 
 # given a profile dictionary extract key parameters to populate a Roast element
 # background=True if the bp is holding a background profile (ambientTemp, AUCbase not converted to current temp mode)
-def getTemplate(bp: 'ProfileData', background:bool=False) -> Dict[str, Any]:  #for Python >= 3.9 can replace 'Dict' with the generic type hint 'dict'
+def getTemplate(bp: Dict[str, Any],background=False) -> Dict[str, Any]:  #for Python >= 3.9 can replace 'Dict' with the generic type hint 'dict'
     _log.debug('getTemplate()')
-    d: Dict[str, Any] = {}
+    d: dict[str, Any] = {}
     try:
         assert config.app_window is not None
         aw = config.app_window
@@ -70,16 +64,12 @@ def getTemplate(bp: 'ProfileData', background:bool=False) -> Dict[str, Any]:  #f
 
         if 'weight' in bp:
             try:
-                w_in = bp['weight'][0]
-                assert isinstance(w_in, (int, float))
-                w_unit = bp['weight'][2]
-                assert isinstance(w_unit, str)
                 w = util.limitnum(
                     0,
                     65534,
                     aw.convertWeight(
-                        w_in,
-                        aw.qmc.weight_units.index(w_unit),
+                        bp['weight'][0],
+                        aw.qmc.weight_units.index(bp['weight'][2]),
                         aw.qmc.weight_units.index('Kg'),
                     ),
                 )
@@ -90,16 +80,12 @@ def getTemplate(bp: 'ProfileData', background:bool=False) -> Dict[str, Any]:  #f
             except Exception as e:  # pylint: disable=broad-except
                 _log.exception(e)
             try:
-                w_in = bp['weight'][1]
-                assert isinstance(w_in, (int, float))
-                w_unit = bp['weight'][2]
-                assert isinstance(w_unit, str)
                 w = util.limitnum(
                     0,
                     65534,
                     aw.convertWeight(
-                        w_in,
-                        aw.qmc.weight_units.index(w_unit),
+                        bp['weight'][1],
+                        aw.qmc.weight_units.index(bp['weight'][2]),
                         aw.qmc.weight_units.index('Kg'),
                     ),
                 )
@@ -110,15 +96,14 @@ def getTemplate(bp: 'ProfileData', background:bool=False) -> Dict[str, Any]:  #f
             except Exception as e:  # pylint: disable=broad-except
                 _log.exception(e)
 
-        if 'density_roasted' in bp and bp['density_roasted'][0]:
-            try:
-                dr = bp['density_roasted'][0]
-                assert isinstance(dr, (int, float))
-                n = util.limitnum(0, 1000, dr)
-                if n is not None:
-                    d['density_roasted'] = util.float2floatMin(n, 1)
-            except Exception as e:  # pylint: disable=broad-except
-                _log.exception(e)
+        if 'density_roasted' in bp:
+            if bp['density_roasted'][0]:
+                try:
+                    n = util.limitnum(0, 1000, bp['density_roasted'][0])
+                    if n is not None:
+                        d['density_roasted'] = util.float2floatMin(n, 1)
+                except Exception as e:  # pylint: disable=broad-except
+                    _log.exception(e)
 
         util.add2dict(bp, config.uuid_tag, d, 'id')
 
@@ -239,23 +224,24 @@ def getTemplate(bp: 'ProfileData', background:bool=False) -> Dict[str, Any]:  #f
 
 
 # remove all data but for what is to be synced with the server
-def trimBlendSpec(blend_spec:stock.Blend) -> Optional[stock.Blend]:
+def trimBlendSpec(blend_spec):
     try:
-        res:stock.Blend = {} # type: ignore # missing required fields (added later)
+        res = {}
         if 'label' in blend_spec:
             res['label'] = blend_spec['label']
-            if 'ingredients' in blend_spec and blend_spec['ingredients']:
-                res_ingredients:List[stock.BlendIngredient] = []
-                for ingredient in blend_spec['ingredients']:
-                    res_ingredient:stock.BlendIngredient = {} # type: ignore # missing required fields (added later)
-                    for tag in ['coffee', 'ratio', 'ratio_num', 'ratio_denom']:
-                        if tag in ingredient:
-                            res_ingredient[tag] = ingredient[tag] # type: ignore # field vars like 'tag' are not supported by mypy for TypedDicts
-                    if res_ingredient:
-                        res_ingredients.append(res_ingredient)
-                if res_ingredients:
-                    res['ingredients'] = res_ingredients
-                    return res
+        if 'ingredients' in blend_spec and blend_spec['ingredients']:
+            res_ingredients = []
+            for ingredient in blend_spec['ingredients']:
+                res_ingredient = {}
+                for tag in ['coffee', 'ratio', 'ratio_num', 'ratio_denom']:
+                    if tag in ingredient:
+                        res_ingredient[tag] = ingredient[tag]
+                if res_ingredient != {}:
+                    res_ingredients.append(res_ingredient)
+            if res_ingredients != []:
+                res['ingredients'] = res_ingredients
+        if res != {}:
+            return res
         return None
     except Exception as e:  # pylint: disable=broad-except
         _log.exception(e)
@@ -268,7 +254,7 @@ def getRoast() -> Dict[str, Any]:  #for Python >= 3.9 can replace 'Dict' with th
         _log.debug('getRoast()')
         assert config.app_window is not None
         aw = config.app_window
-        p:'ProfileData' = aw.getProfile()
+        p = aw.getProfile()
 
         d = getTemplate(p)
 
@@ -381,9 +367,9 @@ def getRoast() -> Dict[str, Any]:  #for Python >= 3.9 can replace 'Dict' with th
         # the server instead the timestamp
         # of the moment the record is queued
         if aw.curFile is not None:
-            mod_date:Optional[float] = util.getModificationDate(aw.curFile)
-            if mod_date is not None:
-                d['modified_at'] = util.epoch2ISO8601(mod_date)
+            d['modified_at'] = util.epoch2ISO8601(
+                util.getModificationDate(aw.curFile)
+            )
 
     except Exception as e:  # pylint: disable=broad-except
         _log.exception(e)
@@ -463,7 +449,7 @@ sync_record_attributes: List[str] = (  #for Python >= 3.9 can replace 'List' wit
 def getSyncRecord(r: Optional[Dict[str, Any]] = None) -> Tuple[Dict[str, Any], str]:  #for Python >= 3.9 can replace 'Dict' and 'Tuple' with the generic type hints 'dict' and 'tuple'
     _log.debug('getSyncRecord()')
     m = hashlib.sha256()
-    d: Dict[str, Any] = {}
+    d: dict[str, Any] = {}
     try:
         if r is None:
             r = getRoast()

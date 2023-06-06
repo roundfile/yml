@@ -5,18 +5,16 @@
 # Include "skip ci" in the commit message to prevent this build process from running
 
 environment:
-  # Set the Appveyor Python version for windows, macos and linux here. Does not affect windows_legacy.
+  # Set the Python version for windows, macos and linux here. Does not affect windows_legacy.
   PYTHON_V: 3.11
-  # Upgrade to specific version (for platforms supporting upgrade). Upgrade skipped if missing or blank.
-#  PYUPGRADE_V: 3.11.3
 
   matrix:
 #  - job_name: windows_legacy
 #    appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
-    appveyor_build_worker_image: Previous Visual Studio 2019
+    appveyor_build_worker_image: Visual Studio 2022
 #  - job_name: macos
-#    appveyor_build_worker_image: macos-bigsur
+#    appveyor_build_worker_image: macos
 #  - job_name: linux
 #    appveyor_build_worker_image: Ubuntu2004
 
@@ -100,7 +98,7 @@ for:
     fast_finish: false
 
   environment:
-    QT_PATH: "C:\\qt\\6.4\\msvc2019_64"
+    QT_PATH: "C:\\qt\\6.4\\msvc2022_64"
     PYUIC: "pyuic6.exe"
     BUILD_PYINSTALLER: "True"
     ARTISAN_LEGACY: "False"
@@ -158,7 +156,7 @@ for:
 
   environment:
     ARTISAN_OS: macos
-    MACOSX_DEPLOYMENT_TARGET: 11.0
+    MACOSX_DEPLOYMENT_TARGET: 10.15
     PYTHONSITEPKGS: /Users/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
     QT_PATH: ${PYTHONSITEPKGS}/PyQt6/Qt6
     PYUIC: pyuic6
@@ -175,7 +173,6 @@ for:
 
     # run the install script
     - .ci/install-macos.sh
-    - export PATH=/Users/appveyor/venv${PYTHON_V}/bin:${PATH} # required after updating Python in venv
 
   build_script:
     - echo "MacOS Build"
