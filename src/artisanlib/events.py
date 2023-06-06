@@ -29,7 +29,7 @@ from artisanlib.util import uchr, comma2dot
 from artisanlib.dialogs import ArtisanResizeablDialog, ArtisanDialog
 from artisanlib.widgets import MyQComboBox, MyQDoubleSpinBox
 
-from uic import SliderCalculatorDialog # type: ignore [attr-defined] # pylint: disable=no-name-in-module
+from uic import SliderCalculatorDialog
 
 
 try:
@@ -916,7 +916,7 @@ class EventsDlg(ArtisanResizeablDialog):
         mintitlelabel.setFont(titlefont)
         maxtitlelabel = QLabel(QApplication.translate('Label','Max'))
         maxtitlelabel.setFont(titlefont)
-        coarsetitlelabel = QLabel(QApplication.translate('Label','Step'))
+        coarsetitlelabel = QLabel(QApplication.translate('Label','Coarse'))
         coarsetitlelabel.setFont(titlefont)
         self.E1active = QCheckBox(self.aw.qmc.etypesf(0))
         self.E1active.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -930,27 +930,18 @@ class EventsDlg(ArtisanResizeablDialog):
         self.E4active = QCheckBox(self.aw.qmc.etypesf(3))
         self.E4active.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E4active.setChecked(bool(self.aw.eventquantifieractive[3]))
-
-        self.E1coarse = QComboBox()
-        self.E1coarse.setToolTip(QApplication.translate('Tooltip', 'Step Size'))
+        self.E1coarse = QCheckBox()
         self.E1coarse.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.E1coarse.addItems(self.sliderStepSizes)
-        self.E1coarse.setCurrentIndex(self.slidercoarse2stepSizePos(self.aw.eventquantifiercoarse[0]))
-        self.E2coarse = QComboBox()
-        self.E2coarse.setToolTip(QApplication.translate('Tooltip', 'Step Size'))
+        self.E1coarse.setChecked(bool(self.aw.eventquantifiercoarse[0]))
+        self.E2coarse = QCheckBox()
         self.E2coarse.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.E2coarse.addItems(self.sliderStepSizes)
-        self.E2coarse.setCurrentIndex(self.slidercoarse2stepSizePos(self.aw.eventquantifiercoarse[1]))
-        self.E3coarse = QComboBox()
-        self.E3coarse.setToolTip(QApplication.translate('Tooltip', 'Step Size'))
+        self.E2coarse.setChecked(bool(self.aw.eventquantifiercoarse[1]))
+        self.E3coarse = QCheckBox()
         self.E3coarse.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.E3coarse.addItems(self.sliderStepSizes)
-        self.E3coarse.setCurrentIndex(self.slidercoarse2stepSizePos(self.aw.eventquantifiercoarse[2]))
-        self.E4coarse = QComboBox()
-        self.E4coarse.setToolTip(QApplication.translate('Tooltip', 'Step Size'))
+        self.E3coarse.setChecked(bool(self.aw.eventquantifiercoarse[2]))
+        self.E4coarse = QCheckBox()
         self.E4coarse.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.E4coarse.addItems(self.sliderStepSizes)
-        self.E4coarse.setCurrentIndex(self.slidercoarse2stepSizePos(self.aw.eventquantifiercoarse[3]))
+        self.E4coarse.setChecked(bool(self.aw.eventquantifiercoarse[3]))
         self.E1quantifieraction = QCheckBox()
         self.E1quantifieraction.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E1quantifieraction.setChecked(bool(self.aw.eventquantifieraction[0]))
@@ -1781,10 +1772,10 @@ class EventsDlg(ArtisanResizeablDialog):
         self.E2active.setChecked(bool(self.aw.eventquantifieractive[1]))
         self.E3active.setChecked(bool(self.aw.eventquantifieractive[2]))
         self.E4active.setChecked(bool(self.aw.eventquantifieractive[3]))
-        self.E1coarse.setCurrentIndex(self.slidercoarse2stepSizePos(self.aw.eventquantifiercoarse[0]))
-        self.E2coarse.setCurrentIndex(self.slidercoarse2stepSizePos(self.aw.eventquantifiercoarse[1]))
-        self.E3coarse.setCurrentIndex(self.slidercoarse2stepSizePos(self.aw.eventquantifiercoarse[2]))
-        self.E4coarse.setCurrentIndex(self.slidercoarse2stepSizePos(self.aw.eventquantifiercoarse[3]))
+        self.E1coarse.setChecked(bool(self.aw.eventquantifiercoarse[0]))
+        self.E2coarse.setChecked(bool(self.aw.eventquantifiercoarse[1]))
+        self.E3coarse.setChecked(bool(self.aw.eventquantifiercoarse[2]))
+        self.E4coarse.setChecked(bool(self.aw.eventquantifiercoarse[3]))
         self.E1quantifieraction.setChecked(bool(self.aw.eventquantifieraction[0]))
         self.E2quantifieraction.setChecked(bool(self.aw.eventquantifieraction[1]))
         self.E3quantifieraction.setChecked(bool(self.aw.eventquantifieraction[2]))
@@ -2671,9 +2662,15 @@ class EventsDlg(ArtisanResizeablDialog):
             assert isinstance(labeledit, QLineEdit)
             label = labeledit.text()
             label = label.replace('\\n', chr(10))
+
             if i < len(self.extraeventslabels):
+                et = self.extraeventstypes[i]
+                if 4 < et < 9:
+                    et = et - 5
                 self.extraeventslabels[i] = label
-                label = self.aw.substButtonLabel(-1, label, self.extraeventstypes[i])
+                if et < 4:
+                    label = label[:].replace('\\t',self.aw.qmc.etypes[et])
+
             #Update Color Buttons
             colorButton = self.eventbuttontable.cellWidget(i,7)
             assert isinstance(colorButton, QPushButton)
@@ -3024,10 +3021,10 @@ class EventsDlg(ArtisanResizeablDialog):
         self.aw.eventquantifieractive[1] = int(self.E2active.isChecked())
         self.aw.eventquantifieractive[2] = int(self.E3active.isChecked())
         self.aw.eventquantifieractive[3] = int(self.E4active.isChecked())
-        self.aw.eventquantifiercoarse[0] = self.slidercoarse2stepSizePos(self.E1coarse.currentIndex())
-        self.aw.eventquantifiercoarse[1] = self.slidercoarse2stepSizePos(self.E2coarse.currentIndex())
-        self.aw.eventquantifiercoarse[2] = self.slidercoarse2stepSizePos(self.E3coarse.currentIndex())
-        self.aw.eventquantifiercoarse[3] = self.slidercoarse2stepSizePos(self.E4coarse.currentIndex())
+        self.aw.eventquantifiercoarse[0] = int(self.E1coarse.isChecked())
+        self.aw.eventquantifiercoarse[1] = int(self.E2coarse.isChecked())
+        self.aw.eventquantifiercoarse[2] = int(self.E3coarse.isChecked())
+        self.aw.eventquantifiercoarse[3] = int(self.E4coarse.isChecked())
         self.aw.eventquantifieraction[0] = int(self.E1quantifieraction.isChecked())
         self.aw.eventquantifieraction[1] = int(self.E2quantifieraction.isChecked())
         self.aw.eventquantifieraction[2] = int(self.E3quantifieraction.isChecked())
@@ -3194,7 +3191,7 @@ class EventsDlg(ArtisanResizeablDialog):
             self.aw.mark_last_button_pressed = self.markLastButtonPressed.isChecked()
             self.aw.show_extrabutton_tooltips = self.showExtraButtonTooltips.isChecked()
             self.aw.buttonpalette_label = self.transferpalettecurrentLabelEdit.text()
-            self.savetableextraeventbutton()  #dave
+            self.savetableextraeventbutton()
             # save column widths
             self.aw.eventbuttontablecolumnwidths = [self.eventbuttontable.columnWidth(c) for c in range(self.eventbuttontable.columnCount())]
             #save default buttons
@@ -3306,7 +3303,6 @@ class EventsDlg(ArtisanResizeablDialog):
                 self.aw.updateSlidersProperties() # set visibility and event names on slider widgets
             #save special event annotations
             self.saveAnnotationsSettings()
-#dave            self.savetableextraeventbutton()
 #            self.aw.closeEventSettings()
             # restart PhidgetManager
             try:
@@ -3327,7 +3323,7 @@ class EventsDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def showEventbuttonhelp(self,_=False):
-        from help import eventbuttons_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
+        from help import eventbuttons_help
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
@@ -3336,7 +3332,7 @@ class EventsDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def showSliderHelp(self,_=False):
-        from help import eventsliders_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
+        from help import eventsliders_help
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
@@ -3345,7 +3341,7 @@ class EventsDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def showEventannotationhelp(self,_=False):
-        from help import eventannotations_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
+        from help import eventannotations_help
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
