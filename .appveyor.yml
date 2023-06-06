@@ -100,7 +100,7 @@ for:
     fast_finish: false
 
   environment:
-    QT_PATH: "C:\\qt\\6.4\\msvc2022_64"
+    QT_PATH: "C:\\qt\\6.4\\msvc2019_64"
     PYUIC: "pyuic6.exe"
     BUILD_PYINSTALLER: "True"
     ARTISAN_LEGACY: "False"
