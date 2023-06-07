@@ -8,25 +8,30 @@ import os
 import csv
 import re
 import logging
-from typing import Final
+from typing import Optional, List, Tuple, Callable, ClassVar, Generator, TYPE_CHECKING
+from typing_extensions import Final  # Python <=3.7
+
+
+if TYPE_CHECKING:
+    from artisanlib.types import ProfileData # pylint: disable=unused-import
 
 try:
-    #ylint: disable = E, W, R, C
-    from PyQt6.QtCore import QDateTime,Qt # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt6.QtCore import QDateTime, Qt, QTimer, QMutex, QWaitCondition # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtWidgets import QApplication # @UnusedImport @Reimport  @UnresolvedImport
-except Exception: # pylint: disable=broad-except
-    #ylint: disable = E, W, R, C
-    from PyQt5.QtCore import QDateTime,Qt # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
+except ImportError:
+    from PyQt5.QtCore import QDateTime, Qt, QTimer, QMutex, QWaitCondition  # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import QApplication # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
 from artisanlib.util import encodeLocal
+from artisanlib.ble import BleInterface, BLE_CHAR_TYPE # noqa: F811
+from proto import IkawaCmd_pb2 # type: ignore
 
 
-_log: Final = logging.getLogger(__name__)
+_log: Final[logging.Logger] = logging.getLogger(__name__)
 
 # returns a dict containing all profile information contained in the given IKAWA CSV file
 def extractProfileIkawaCSV(file,_):
-    res = {} # the interpreted data set
+    res:ProfileData = {} # the interpreted data set
 
     res['samplinginterval'] = 1.0
 
@@ -37,9 +42,15 @@ def extractProfileIkawaCSV(file,_):
         if p.match(filename):
             s = filename[6:-4] # the extracted date time string
             date = QDateTime.fromString(s,'yyyy-MM-dd HHmmss')
-            res['roastdate'] = encodeLocal(date.date().toString())
-            res['roastisodate'] = encodeLocal(date.date().toString(Qt.DateFormat.ISODate))
-            res['roasttime'] = encodeLocal(date.time().toString())
+            roastdate:Optional[str] = encodeLocal(date.date().toString())
+            if roastdate is not None:
+                res['roastdate'] = roastdate
+            roastisodate:Optional[str] = encodeLocal(date.date().toString(Qt.DateFormat.ISODate))
+            if roastisodate is not None:
+                res['roastisodate'] = roastisodate
+            roasttime:Optional[str] = encodeLocal(date.time().toString())
+            if roasttime is not None:
+                res['roasttime'] = roasttime
             res['roastepoch'] = int(date.toSecsSinceEpoch())
             res['roasttzoffset'] = libtime.timezone
     except Exception as e: # pylint: disable=broad-except
@@ -50,23 +61,24 @@ def extractProfileIkawaCSV(file,_):
         #read file header
         header = next(data)
 
-        fan = None # holds last processed fan event value
-        fan_last = None # holds the fan event value before the last one
-        heater = None # holds last processed heater event value
-        heater_last = None # holds the heater event value before the last one
-        fan_event = False # set to True if a fan event exists
-        heater_event = False # set to True if a heater event exists
-        specialevents = []
-        specialeventstype = []
-        specialeventsvalue = []
-        specialeventsStrings = []
-        timex = []
-        temp1 = []
-        temp2 = []
-        extra1 = []
-        extra2 = []
-        timeindex = [-1,0,0,0,0,0,0,0] #CHARGE index init set to -1 as 0 could be an actal index used
-        i = 0
+        fan:Optional[float] = None # holds last processed fan event value
+        fan_last:Optional[float] = None # holds the fan event value before the last one
+        heater:Optional[float] = None # holds last processed heater event value
+        heater_last:Optional[float] = None # holds the heater event value before the last one
+        fan_event:bool = False # set to True if a fan event exists
+        heater_event:bool = False # set to True if a heater event exists
+        specialevents:List[int] = []
+        specialeventstype:List[int] = []
+        specialeventsvalue:List[float] = []
+        specialeventsStrings:List[str] = []
+        timex:List[float] = []
+        temp1:List[float] = []
+        temp2:List[float] = []
+        extra1:List[float] = []
+        extra2:List[float] = []
+        timeindex:List[int] = [-1,0,0,0,0,0,0,0] #CHARGE index init set to -1 as 0 could be an actal index used
+        i:int = 0
+        v:Optional[float]
         for row in data:
             i = i + 1
             items = list(zip(header, row))
@@ -89,7 +101,7 @@ def extractProfileIkawaCSV(file,_):
             else:
                 temp2.append(-1)
             # mark CHARGE
-            if not timeindex[0] > -1 and 'state' in item and item['state'] == 'doser open':
+            if timeindex[0] <= -1 and 'state' in item and item['state'] == 'doser open':
                 timeindex[0] = max(0,i)
             # mark DROP
             if timeindex[6] == 0 and 'state' in item and item['state'] == 'cooling':
@@ -117,7 +129,7 @@ def extractProfileIkawaCSV(file,_):
                         v = float(item['fan set (%)'])
                     elif 'fan set' in item:
                         v = float(item['fan set'])
-                    if v != fan:
+                    if v is not None and v != fan:
                         # fan value changed
                         if v == fan_last:
                             # just a fluctuation, we remove the last added fan value again
@@ -143,11 +155,12 @@ def extractProfileIkawaCSV(file,_):
                     _log.exception(e)
             if 'heater power (%)' in item or 'heater' in item:
                 try:
+                    v = heater
                     if 'heater power (%)' in item:
                         v = float(item['heater power (%)'])
                     elif 'heater' in item:
                         v = float(item['heater'])
-                    if v != heater:
+                    if v is not None and v != heater:
                         # heater value changed
                         if v == heater_last:
                             # just a fluctuation, we remove the last added heater value again
@@ -197,15 +210,216 @@ def extractProfileIkawaCSV(file,_):
         res['specialeventsStrings'] = specialeventsStrings
         if heater_event or fan_event:
             # first set etypes to defaults
-            res['etypes'] = [QApplication.translate('ComboBox', 'Air'),
+            etypes:List[str] = [QApplication.translate('ComboBox', 'Air'),
                              QApplication.translate('ComboBox', 'Drum'),
                              QApplication.translate('ComboBox', 'Damper'),
                              QApplication.translate('ComboBox', 'Burner'),
                              '--']
             # update
             if fan_event:
-                res['etypes'][0] = 'Fan'
+                etypes[0] = 'Fan'
             if heater_event:
-                res['etypes'][3] = 'Heater'
+                etypes[3] = 'Heater'
+            res['etypes'] = etypes
     res['title'] = Path(file).stem
     return res
+
+
+class IKAWA_BLE():
+
+    ###CmdType
+    BOOTLOADER_GET_VERSION:      ClassVar[int] = 0
+    MACH_PROP_GET_TYPE:          ClassVar[int] = 2
+    MACH_PROP_GET_ID:            ClassVar[int] = 3
+    MACH_STATUS_GET_ERROR_VALUE: ClassVar[int] = 10
+    MACH_STATUS_GET_ALL_VALUE:   ClassVar[int] = 11
+    HIST_GET_TOTAL_ROAST_COUNT:  ClassVar[int] = 13
+    PROFILE_GET:                 ClassVar[int] = 15
+    PROFILE_SET:                 ClassVar[int] = 16
+    SETTING_GET:                 ClassVar[int] = 17
+    MACH_PROP_GET_SUPPORT_INFO:  ClassVar[int] = 23
+
+
+    DEVICE_NAME_IKAWA:   ClassVar[str] = 'IKAWA'
+    IKAWA_SERVICE_UUID:  ClassVar[str] = 'C92A6046-6C8D-4116-9D1D-D20A8F6A245F'
+    IKAWA_SEND_CHAR_UUID: ClassVar[Tuple[str,BLE_CHAR_TYPE]] = ('851A4582-19C1-4E6C-AB37-E7A03766BA16', BLE_CHAR_TYPE.BLE_CHAR_WRITE)
+    IKAWA_RECEIVE_CHAR_UUID: ClassVar[Tuple[str,BLE_CHAR_TYPE]] = ('948C5059-7F00-46D9-AC55-BF090AE066E3', BLE_CHAR_TYPE.BLE_CHAR_NOTIFY)
+
+
+    def __init__(self,
+                connected_handler:Optional[Callable[[], None]] = None,
+                disconnected_handler:Optional[Callable[[], None]] = None) -> None:
+
+        self.connected_handler:Optional[Callable[[], None]] = connected_handler
+        self.disconnected_handler:Optional[Callable[[], None]] = disconnected_handler
+
+        self.receiveMutex:QMutex = QMutex()
+        self.dataReceived:QWaitCondition = QWaitCondition()
+        self.receiveTimeout:int = 400
+
+        self.connected_state:bool = False
+
+        self.ET:float = -1
+        self.BT:float = -1
+        self.SP:float = -1
+        self.RPM:float = -1 # fan speed in RPM
+        self.heater:int = -1
+        self.fan:int = -1
+        self.state:int = -1
+        # state is one of
+        #  0: on-roaster
+        #  1: pre-heating (START)
+        #  2: ready-to-roast
+        #  3: roasting
+        #  4: roaster-is-busy
+        #  5: cooling (DROP)
+        #  6: doser-open (CHARGE)
+        #  7: unexpected-problem
+        #  8: ready-to-blow
+        #  9: test-mode
+
+        self.seq:Generator[int, None, None] = self.seqNum() # message sequence number generator
+
+        self.ble:BleInterface = BleInterface(
+            [(IKAWA_BLE.IKAWA_SERVICE_UUID, [IKAWA_BLE.IKAWA_SEND_CHAR_UUID, IKAWA_BLE.IKAWA_RECEIVE_CHAR_UUID])],
+            self.processData,
+            sendStop = self.sendStop,
+            connected = self.connected,
+            #device_names = [ IKAWA_BLE.DEVICE_NAME_IKAWA ]
+            )
+
+        self.frame_char:Final[int]          = 126 # b'\x7e'
+        self.escape_char:Final[int]         = 125 # b'\x7d'
+        self.escape_offset:Final[int]       = 32
+        self.frame_char_escaped:Final[int]  = self.frame_char - self.escape_offset # 94 = b'\x5e'
+        self.escape_char_escaped:Final[int] = self.escape_char - self.escape_offset # 93 = b'\x5d'
+
+        # either empty, or contains a partial payload incl. the begining frame_char or contains the full payload incl. the begining and ending frame_char
+        self.rcv_buffer:Optional[bytes] = None
+
+    @staticmethod
+    def seqNum() -> Generator[int, None, None]:
+        num = 1
+        while True:
+            yield num
+            num = (num + 1) % 32767
+
+    @staticmethod
+    def crc16(bArr:bytes, i:int) -> bytes:
+        for i2 in bArr:
+            i3 = (i2 & 255) ^ (i & 255)
+            i4 = i3 ^ ((i3 << 4) & 255)
+            i = ((((i >> 8) & 255) | ((i4 << 8) & 65535)) ^ (i4 >> 4)) ^ ((i4 << 3) & 65535)
+        return int(i & 65535).to_bytes(2, byteorder='big')
+
+    def escape(self, msg:bytes) -> bytes:
+        message:bytes = b''
+        for i,_ in enumerate(msg):
+            if msg[i] == self.escape_char:
+                message += self.escape_char.to_bytes(length=1, byteorder='big')
+                message += self.escape_char_escaped.to_bytes(length=1, byteorder='big')
+            elif msg[i] == self.frame_char:
+                message += self.escape_char.to_bytes(length=1, byteorder='big')
+                message += self.frame_char_escaped.to_bytes(length=1, byteorder='big')
+            else:
+                message += msg[i:i+1]
+        return message
+
+    def unescape(self, msg:bytes) -> bytes:
+        unescaped_message = bytearray()
+        i = 0
+        while i < len(msg):
+            if msg[i] == self.escape_char and len(msg)>i+1:
+                unescaped_message.append(msg[i + 1] + self.escape_offset)
+                i += 1 # skip one
+            else:
+                unescaped_message.append(msg[i])
+            i += 1
+        return bytes(unescaped_message)
+
+#-----
+    def reset(self) -> None:
+        self.rcv_buffer = None
+
+    def start(self) -> None:
+        self.reset()
+        # start BLE loop
+        self.ble.deviceDisconnected.connect(self.ble_scan_failed)
+        self.ble.scanDevices()
+
+    def stop(self) -> None:
+        # disconnect signals
+        self.ble.deviceDisconnected.disconnect()
+        self.ble.disconnectDevice()
+
+    def ble_scan_failed(self) -> None:
+        if self.ble is not None:
+            QTimer.singleShot(200, self.ble.scanDevices)
+
+    def processData(self, _write:Callable[[Optional[bytes]],None], data:bytes) -> Tuple[Optional[float], Optional[int]]:
+        if len(data) > 0:
+            try:
+                if self.rcv_buffer is None and data[0] == self.frame_char:
+                    # we received the frame start
+                    self.rcv_buffer = b''
+                if self.rcv_buffer is not None:
+                    # add new data
+                    self.rcv_buffer += data
+                    if len(self.rcv_buffer)>3 and self.rcv_buffer[0] == self.frame_char and self.rcv_buffer[-1] == self.frame_char:
+                        # we received a full frame
+                        message = self.unescape(self.rcv_buffer[1:-1])
+                        crc = message[-2:]
+                        payload = message[:-2]
+                        # clear the buffer
+                        self.rcv_buffer = None
+                        # verify CRC
+                        if crc == self.crc16(payload, 65535):
+                            try:
+                                decoded_message = IkawaCmd_pb2.IkawaResponse().FromString(payload) # pylint: disable=no-member
+                                _log.debug('IKAWA response.resp: %s (%s)', decoded_message.resp, decoded_message.MACH_STATUS_GET_ALL)
+                                status_get_all = decoded_message.resp_mach_status_get_all
+                                self.ET = status_get_all.temp_below / 10
+                                self.BT = status_get_all.temp_above / 10
+                                self.SP = status_get_all.setpoint / 10
+                                self.RPM = (status_get_all.fan_measured / 12)*60 # RPM
+                                self.heater = status_get_all.heater * 2
+                                self.fan = int(round(status_get_all.fan / 2.55))
+                                self.state = status_get_all.state
+                                # add data received and registered, enable delivery
+                                self.dataReceived.wakeAll()
+                            except Exception as e: # pylint: disable=broad-except
+                                _log.error(e)
+                        else:
+                            _log.debug('processData() CRC check failed')
+            except Exception as e:  # pylint: disable=broad-except
+                _log.error(e)
+        return None, None
+
+    def connected(self) -> None:
+        self.connected_state = True
+        if self.connected_handler is not None:
+            self.connected_handler()
+
+    def sendStop(self, _write:Callable[[Optional[bytes]],None]) -> None:
+        self.connected_state = False
+        if self.disconnected_handler is not None:
+            self.disconnected_handler()
+
+#-----
+
+    def requestDataMessage(self) -> bytes:
+        message = IkawaCmd_pb2.Message() # pylint: disable=no-member
+        message.cmd_type = IKAWA_BLE.MACH_STATUS_GET_ALL_VALUE
+        message.seq = next(self.seq)
+        msg = message.SerializeToString()
+        crc = self.crc16(msg, 65535)
+        return self.frame_char.to_bytes(length=1, byteorder='big') + self.escape(msg + crc) + self.frame_char.to_bytes(length=1, byteorder='big')
+
+    def getData(self) -> None:
+        if self.connected_state:
+            request_data = self.requestDataMessage()
+            self.ble.write(request_data)
+            # wait for data to be delivered
+            self.receiveMutex.lock()
+            self.dataReceived.wait(self.receiveMutex, self.receiveTimeout)
+            self.receiveMutex.unlock()

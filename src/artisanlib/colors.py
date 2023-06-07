@@ -13,7 +13,7 @@
 # the GNU General Public License for more details.
 
 # AUTHOR
-# Marko Luther, 2020
+# Marko Luther, 2023
 
 import platform
 
@@ -21,14 +21,12 @@ from artisanlib.util import deltaLabelUTF8
 from artisanlib.dialogs import ArtisanDialog
 
 try:
-    #ylint: disable = E, W, R, C
     from PyQt6.QtCore import Qt, pyqtSlot # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtGui import QColor, QFont, QPalette # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtWidgets import (QApplication, QWidget, QLabel, QPushButton,  # @UnusedImport @Reimport  @UnresolvedImport
         QSizePolicy, QHBoxLayout, QVBoxLayout, QDialogButtonBox, QGridLayout, QGroupBox, # @UnusedImport @Reimport  @UnresolvedImport
         QLayout, QSpinBox, QTabWidget, QMessageBox) # @UnusedImport @Reimport  @UnresolvedImport
-except Exception: # pylint: disable=broad-except
-    #ylint: disable = E, W, R, C
+except ImportError:
     from PyQt5.QtCore import Qt, pyqtSlot # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtGui import QColor, QFont, QPalette # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QApplication, QWidget, QLabel, QPushButton, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
@@ -37,7 +35,7 @@ except Exception: # pylint: disable=broad-except
 
 
 class graphColorDlg(ArtisanDialog):
-    def __init__(self, parent = None, aw = None, activeTab = 0):
+    def __init__(self, parent, aw, activeTab = 0) -> None:
         super().__init__(parent, aw)
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, False) # overwrite the ArtisanDialog class default here!!
         self.setModal(True)
@@ -891,11 +889,14 @@ class graphColorDlg(ArtisanDialog):
         res = self.aw.colordialog(QColor(palette[select]))
         if QColor.isValid(res):
             nc = str(res.name())
-            if nc != disj_palette[select]:
-                palette[select] = nc
+            if nc == disj_palette[select] or (nc in ['white', '#ffffff'] and disj_palette[select] in ['white', '#ffffff']) or (nc in ['black', '#000000'] and disj_palette[select] in ['black', '#000000']):
+                # this QMessageBox is not rendered native on macOS for unkonwn reason. The same dialog called from a different dialog is rendered nativ.
+                QMessageBox.warning(self.aw,
+                    QApplication.translate('Message', 'Config LCD colors'),
+                    QApplication.translate('Message', 'LCD digits color and background color cannot be the same.'),
+                    QMessageBox.StandardButton.Ok)
             else:
-                QMessageBox.question(self.aw,QApplication.translate('Message', 'Config LCD colors'),
-                    'Digits color and Background color cannot be the same.', QMessageBox.StandardButton.Ok)
+                palette[select] = nc
 
     @pyqtSlot(bool)
     def setColorSlot(self,_):

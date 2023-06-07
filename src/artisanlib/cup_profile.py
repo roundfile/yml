@@ -13,7 +13,7 @@
 # the GNU General Public License for more details.
 
 # AUTHOR
-# Marko Luther, 2020
+# Marko Luther, 2023
 
 from matplotlib import rcParams
 
@@ -21,20 +21,18 @@ from artisanlib.dialogs import ArtisanResizeablDialog
 from artisanlib.widgets import MyQDoubleSpinBox
 
 try:
-    #ylint: disable = E, W, R, C
     from PyQt6.QtCore import (Qt, pyqtSlot, QSettings) # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtWidgets import (QApplication, QCheckBox, QHBoxLayout, QVBoxLayout, QLabel, # @UnusedImport @Reimport  @UnresolvedImport
                                  QLineEdit,QPushButton, QComboBox, QDialogButtonBox, QHeaderView, # @UnusedImport @Reimport  @UnresolvedImport
                                  QTableWidget, QDoubleSpinBox, QGroupBox) # @UnusedImport @Reimport  @UnresolvedImport
-except Exception: # pylint: disable=broad-except
-    #ylint: disable = E, W, R, C
+except ImportError:
     from PyQt5.QtCore import (Qt, pyqtSlot, QSettings) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QApplication, QCheckBox, QHBoxLayout, QVBoxLayout, QLabel, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
                                  QLineEdit,QPushButton, QComboBox, QDialogButtonBox, QHeaderView, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
                                  QTableWidget, QDoubleSpinBox, QGroupBox) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
 class flavorDlg(ArtisanResizeablDialog):
-    def __init__(self, parent = None, aw = None):
+    def __init__(self, parent, aw) -> None:
         super().__init__(parent, aw)
         self.setModal(True)
         rcParams['path.effects'] = []
@@ -127,6 +125,7 @@ class flavorDlg(ArtisanResizeablDialog):
 #        mainLayout.addStretch()
         mainLayout.addLayout(mainButtonsLayout)
         self.setLayout(mainLayout)
+        self.aw.qmc.updateFlavorchartValues() # fast incremental redraw
         self.aw.qmc.flavorchart()
         self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok).setFocus()
 
@@ -182,15 +181,14 @@ class flavorDlg(ArtisanResizeablDialog):
                 message = QApplication.translate('Message','Background profile not found')
                 self.aw.sendmessage(message)
                 self.backgroundCheck.setChecked(False)
+            elif len(self.aw.qmc.backgroundFlavors) != len(self.aw.qmc.flavors):
+                message = QApplication.translate('Message','Background does not match number of labels')
+                self.aw.sendmessage(message)
+                self.aw.qmc.flavorbackgroundflag = False
+                self.backgroundCheck.setChecked(False)
             else:
-                if len(self.aw.qmc.backgroundFlavors) != len(self.aw.qmc.flavors):
-                    message = QApplication.translate('Message','Background does not match number of labels')
-                    self.aw.sendmessage(message)
-                    self.aw.qmc.flavorbackgroundflag = False
-                    self.backgroundCheck.setChecked(False)
-                else:
-                    self.aw.qmc.flavorbackgroundflag = True
-                    self.aw.qmc.flavorchart()
+                self.aw.qmc.flavorbackgroundflag = True
+                self.aw.qmc.flavorchart()
         else:
             self.aw.qmc.flavorbackgroundflag = False
             self.aw.qmc.flavorchart()
@@ -206,9 +204,11 @@ class flavorDlg(ArtisanResizeablDialog):
         self.aw.qmc.flavorchart()
 
     def savetable(self):
-        for i in range(len(self.aw.qmc.flavorlabels)):
+        for i, _ in enumerate(self.aw.qmc.flavorlabels):
             labeledit = self.flavortable.cellWidget(i,0)
+            assert isinstance(labeledit, QLineEdit)
             valueSpinBox = self.flavortable.cellWidget(i,1)
+            assert isinstance(valueSpinBox, MyQDoubleSpinBox)
             label = labeledit.text()
             if '\\n' in label:              #make multiple line text if "\n" found in label string
                 parts = label.split('\\n')
@@ -219,26 +219,29 @@ class flavorDlg(ArtisanResizeablDialog):
             # store the current labels as *CUSTOM*
             self.aw.qmc.customflavorlabels = self.aw.qmc.flavorlabels
 
-    @pyqtSlot()
-    @pyqtSlot('QString')
-    def setlabel(self,_):
+#    @pyqtSlot()
+#    @pyqtSlot('QString')
+    @pyqtSlot(str)
+    def setlabel(self,_:str) -> None:
         x = self.aw.findWidgetsRow(self.flavortable,self.sender(),0)
         if x is not None:
             labeledit = self.flavortable.cellWidget(x,0)
+            assert isinstance(labeledit, QLineEdit)
             self.aw.qmc.flavorlabels[x] = labeledit.text()
             self.aw.qmc.updateFlavorchartLabel(x) # fast incremental redraw
 
     @pyqtSlot(float)
-    def setvalue(self,_):
+    def setvalue(self,_:float) -> None:
         x = self.aw.findWidgetsRow(self.flavortable,self.sender(),1)
         if x is not None:
             valueSpinBox = self.flavortable.cellWidget(x,1)
+            assert isinstance(valueSpinBox, MyQDoubleSpinBox)
             self.aw.qmc.flavors[x] = valueSpinBox.value()
 #            self.aw.qmc.flavorchart() # slow full redraw
             self.aw.qmc.updateFlavorchartValues() # fast incremental redraw
 
     @pyqtSlot(int)
-    def setdefault(self,_):
+    def setdefault(self,_:int) -> None:
         if self.lastcomboboxIndex == self.defaultcombobox.count()-1:
             # store the current labels as *CUSTOM*
             self.aw.qmc.customflavorlabels = self.aw.qmc.flavorlabels
@@ -277,15 +280,17 @@ class flavorDlg(ArtisanResizeablDialog):
         self.aw.qmc.flavorchart()
         self.lastcomboboxIndex = dindex
 
+    @pyqtSlot()
     @pyqtSlot(bool)
-    def addlabel(self,_):
+    def addlabel(self,_:bool=False) -> None:
         self.aw.qmc.flavorlabels.append('???')
         self.aw.qmc.flavors.append(5.)
         self.createFlavorTable()
         self.aw.qmc.flavorchart()
 
+    @pyqtSlot()
     @pyqtSlot(bool)
-    def poplabel(self):
+    def poplabel(self,_:bool=False) -> None:
         fn = len(self.aw.qmc.flavors)
         self.aw.qmc.flavors = self.aw.qmc.flavors[:(fn-1)]
         self.aw.qmc.flavorlabels = self.aw.qmc.flavorlabels[:(fn -1)]
@@ -295,7 +300,7 @@ class flavorDlg(ArtisanResizeablDialog):
     def closeEvent(self,_):
         self.close()
 
-    @pyqtSlot()
+#    @pyqtSlot()
     def close(self):
         settings = QSettings()
         #save window geometry

@@ -13,31 +13,25 @@
 # the GNU General Public License for more details.
 
 # AUTHOR
-# Marko Luther, 2020
+# Marko Luther, 2023
 
 from artisanlib.dialogs import ArtisanDialog
 from artisanlib.widgets import MyQDoubleSpinBox
 
 try:
-    #ylint: disable = E, W, R, C
     from PyQt6.QtCore import Qt, pyqtSlot, QSettings # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtWidgets import (QMessageBox, QApplication, QHBoxLayout, QVBoxLayout, QCheckBox, QGridLayout, # @UnusedImport @Reimport  @UnresolvedImport
                                  QDialogButtonBox, QLayout) # @UnusedImport @Reimport  @UnresolvedImport
-except Exception: # pylint: disable=broad-except
-    #ylint: disable = E, W, R, C
+except ImportError:
     from PyQt5.QtCore import Qt, pyqtSlot, QSettings # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QMessageBox, QApplication, QHBoxLayout, QVBoxLayout, QCheckBox, QGridLayout, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
                                  QDialogButtonBox, QLayout) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
 class SamplingDlg(ArtisanDialog):
-    def __init__(self, parent = None, aw = None):
+    def __init__(self, parent, aw) -> None:
         super().__init__(parent, aw)
         self.setWindowTitle(QApplication.translate('Message','Sampling'))
         self.setModal(True)
-
-        self.org_delay = self.aw.qmc.delay
-        self.org_flagKeepON = self.aw.qmc.flagKeepON
-        self.org_flagOpenCompleted = self.aw.qmc.flagOpenCompleted
 
         self.keepOnFlag = QCheckBox(QApplication.translate('Label','Keep ON'))
         self.keepOnFlag.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -98,9 +92,6 @@ class SamplingDlg(ArtisanDialog):
     #cancel button
     @pyqtSlot()
     def close(self):
-        self.aw.qmc.delay = self.org_delay
-        self.aw.qmc.flagKeepON = self.org_flagKeepON
-        self.aw.qmc.flagOpenCompleted = self.org_flagOpenCompleted
         self.storeSettings()
         self.reject()
 
@@ -114,9 +105,11 @@ class SamplingDlg(ArtisanDialog):
     def ok(self):
         self.aw.qmc.flagKeepON = bool(self.keepOnFlag.isChecked())
         self.aw.qmc.flagOpenCompleted = bool(self.openCompletedFlag.isChecked())
-        self.aw.qmc.delay = int(self.interval.value()*1000.)
+        self.aw.setSamplingRate(int(self.interval.value()*1000.))
         if self.aw.qmc.delay < self.aw.qmc.default_delay:
-            QMessageBox.warning(self.aw,QApplication.translate('Message', 'Warning',None),QApplication.translate('Message', 'A tight sampling interval might lead to instability on some machines. We suggest a minimum of 1s.'))
+            QMessageBox.warning(self.aw,
+                QApplication.translate('Message', 'Warning', None),
+                QApplication.translate('Message', 'A tight sampling interval might lead to instability on some machines. We suggest a minimum of 1s.'))
         self.storeSettings()
 #        self.aw.closeEventSettings()
         self.accept()
