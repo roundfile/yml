@@ -29,7 +29,7 @@ environment:
 #    appveyor_build_worker_image: Visual Studio 2022
 #  - job_name: macos
 #    appveyor_build_worker_image: macos-bigsur
- - job_name: linux
+  - job_name: linux
     appveyor_build_worker_image: Ubuntu2004
 
 
