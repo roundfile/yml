@@ -138,12 +138,14 @@ RequestExecutionLevel admin
 !define /ifndef SIGN "False"
 !define /ifndef LEGACY "False"
 
+!define /date CUR_YEAR "%Y"
+
 Caption "${PRODUCT_NAME} Installer"
 VIProductVersion ${PRODUCT_VERSION}
 VIAddVersionKey ProductName "${PRODUCT_NAME}"
 VIAddVersionKey Comments "Installer for Artisan"
 VIAddVersionKey CompanyName ""
-VIAddVersionKey LegalCopyright "Copyright 2010-2022, Artisan developers. GNU General Public License"
+VIAddVersionKey LegalCopyright "Copyright 2010-${CUR_YEAR}, Artisan developers. GNU General Public License"
 VIAddVersionKey FileVersion "${PRODUCT_VERSION}"
 VIAddVersionKey FileDescription "${PRODUCT_NAME} Installer"
 VIAddVersionKey ProductVersion "${PRODUCT_VERSION}"
