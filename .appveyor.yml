@@ -1,36 +1,24 @@
-# ABOUT
+###################################################################
 # Appveyor CI configuration to build Artisan install packages
 #     for Windows, Windows legacy, macOS, and Linux
-#
-# LICENSE
-# This program or module is free software: you can redistribute it and/or
-# modify it under the terms of the GNU General Public License as published
-# by the Free Software Foundation, either version 2 of the License, or
-# version 3 of the License, or (at your option) any later versison. It is
-# provided for educational purposes and is distributed in the hope that
-# it will be useful, but WITHOUT ANY WARRANTY; without even the implied
-# warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
-# the GNU General Public License for more details.
-#
-# AUTHOR
-# Dave Baxter, Marko Luther 2023
+###################################################################
 # Include "skip ci" in the commit message to prevent this build process from running
-
+#
 environment:
   # Set the Appveyor Python version for windows, macos and linux here. Does not affect windows_legacy.
   PYTHON_V: 3.11
-  # Upgrade to specific version (for platforms supporting upgrade). Upgrade skipped if env var is missing or blank.
+  # Upgrade to specific version (for platforms supporting upgrade). Upgrade skipped if missing or blank.
 #  PYUPGRADE_V: 3.11.3
 
   matrix:
   - job_name: windows_legacy
     appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: windows
-#    appveyor_build_worker_image: Visual Studio 2022
-#  - job_name: macos
-#    appveyor_build_worker_image: macos-bigsur
-#  - job_name: linux
-#    appveyor_build_worker_image: Ubuntu2004
+  - job_name: windows
+    appveyor_build_worker_image: Visual Studio 2022
+  - job_name: macos
+    appveyor_build_worker_image: macos-bigsur
+  - job_name: linux
+    appveyor_build_worker_image: Ubuntu2004
 
 
 # Generic build number, later set to commit hash by init
@@ -99,8 +87,7 @@ for:
 #  test_script:
 #    - cmd: python -m unittest discover
 
-  artifacts:
-    - path: 'generated-win-legacy.zip'
+#  artifacts:
 #    - path: 'src\artisan-*.zip'
 
   deploy_script:
@@ -113,7 +100,7 @@ for:
     fast_finish: false
 
   environment:
-    QT_PATH: "C:\\qt\\6.5\\msvc2019_64"  #there is no msvc2022_64 undet qt\*
+    QT_PATH: "C:\\qt\\6.4\\msvc2022_64"
     PYUIC: "pyuic6.exe"
     BUILD_PYINSTALLER: "True"
     ARTISAN_LEGACY: "False"
@@ -156,8 +143,7 @@ for:
 #  test_script:
 #    - cmd: python -m unittest discover
 
-  artifacts:
-    - path: 'generated-win.zip'
+#  artifacts:
 #    - path: 'src\artisan-*.zip'
 
   deploy_script:
@@ -175,9 +161,9 @@ for:
     MACOSX_DEPLOYMENT_TARGET: 11.0
     PYTHONSITEPKGS: /Users/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
     QT_PATH: ${PYTHONSITEPKGS}/PyQt6/Qt6
-    QT_SRC_PATH: /Users/appveyor/Qt/6.4/macos
     PYUIC: pyuic6
-    PYLUPDATE: ./pylupdate6pro.py  #the dot slash is necessary
+    PYRCC: pyrcc6
+    PYLUPDATE: ./pylupdate6pro  #the dot slash is necessary
 
   install:
     - echo "MacOS Install"
@@ -194,7 +180,7 @@ for:
   build_script:
     - echo "MacOS Build"
     - chmod +x src/*.sh
-    - chmod +x src/pylupdate6pro.py
+    - chmod +x src/pylupdate6pro
 
     # run the build script
     - cd src
@@ -204,8 +190,7 @@ for:
 #  test_script:
 #    - python -m unittest discover -s src
 
-  artifacts:
-    - path: 'generated-macos.zip'
+#  artifacts:
 #    - path: 'src/artisan-*.dmg'
 
   deploy_script:
@@ -220,12 +205,8 @@ for:
 
   environment:
     ARTISAN_OS: linux
-    PYTHON_PATH: /home/appveyor/venv${PYTHON_V}
-    PYTHONSITEPKGS: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
+    PYTHON_PATH: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
     QT_PATH: $PYTHON_PATH/PyQt6/Qt6
-    QT_SRC_PATH: /home/appveyor/Qt/6.4/gcc_64
-    PYUIC: pyuic6
-    PYLUPDATE: ./pylupdate6pro.py  #the dot slash is necessary
 
   install:
     - echo "Linux Install"
@@ -253,8 +234,7 @@ for:
 #  test_script:
 #    - QT_QPA_PLATFORM=offscreen python -m unittest discover -s src
 
-  artifacts:
-    - path: 'generated-linux.zip'
+#  artifacts:
 #    - path: 'src/artisan-*.deb'
 #    - path: 'src/artisan-*.rpm'
 #    - path: 'src/artisan-*.AppImage'
