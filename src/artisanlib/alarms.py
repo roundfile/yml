@@ -18,11 +18,7 @@
 import os
 import sys
 import logging
-from typing import TYPE_CHECKING
 from typing_extensions import Final  # Python <=3.7
-
-if TYPE_CHECKING:
-    from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
 
 from artisanlib.util import deltaLabelUTF8, comma2dot
 from artisanlib.dialogs import ArtisanResizeablDialog
@@ -31,13 +27,13 @@ from artisanlib.widgets import (MyQComboBox, MyTableWidgetItemNumber, MyTableWid
 
 
 try:
-    from PyQt6.QtCore import (Qt, pyqtSlot, QSettings, QTimer) # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt6.QtCore import (Qt, pyqtSlot, QSettings) # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtGui import QColor, QIntValidator # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtWidgets import (QApplication, QWidget, QLabel, QLineEdit, QComboBox, QDialogButtonBox, # @UnusedImport @Reimport  @UnresolvedImport
                 QTableWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QPushButton, QSizePolicy, QSpinBox, # @UnusedImport @Reimport  @UnresolvedImport
                 QTableWidgetSelectionRange, QTimeEdit, QTabWidget, QGridLayout, QGroupBox, QHeaderView) # @UnusedImport @Reimport  @UnresolvedImport
 except ImportError:
-    from PyQt5.QtCore import (Qt, pyqtSlot, QSettings, QTimer) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt5.QtCore import (Qt, pyqtSlot, QSettings) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtGui import QColor, QIntValidator # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QApplication, QWidget, QLabel, QLineEdit, QComboBox, QDialogButtonBox, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
                 QTableWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QPushButton, QSizePolicy, QSpinBox, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
@@ -49,9 +45,8 @@ _log: Final[logging.Logger] = logging.getLogger(__name__)
 
 
 class AlarmDlg(ArtisanResizeablDialog):
-    def __init__(self, parent:QWidget, aw:'ApplicationWindow', activeTab:int = 0) -> None:
+    def __init__(self, parent, aw, activeTab = 0) -> None:
         super().__init__(parent, aw)
-        self.activeTab = activeTab
         self.setModal(True)
         self.setWindowTitle(QApplication.translate('Form Caption','Alarms'))
         self.helpdialog = None
@@ -231,6 +226,7 @@ class AlarmDlg(ArtisanResizeablDialog):
         self.TabWidget.addTab(C2Widget,QApplication.translate('Tab','Alarm Sets'))
         C2Widget.setContentsMargins(5, 0, 5, 0)
 
+        self.TabWidget.setCurrentIndex(activeTab)
         self.TabWidget.currentChanged.connect(self.tabSwitched)
 
         mainlayout = QVBoxLayout()
@@ -240,14 +236,6 @@ class AlarmDlg(ArtisanResizeablDialog):
         mainlayout.addLayout(okbuttonlayout)
         self.setLayout(mainlayout)
         self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok).setFocus()
-
-        # we set the active tab with a QTimer after the tabbar has been rendered once, as otherwise
-        # some tabs are not rendered at all on Winwos using Qt v6.5.1 (https://bugreports.qt.io/projects/QTBUG/issues/QTBUG-114204?filter=allissues)
-        QTimer.singleShot(50, self.setActiveTab)
-
-    @pyqtSlot()
-    def setActiveTab(self) -> None:
-        self.TabWidget.setCurrentIndex(self.activeTab)
 
     def setAlarmSetLabels(self):
         alarmset_labels = []
@@ -377,7 +365,7 @@ class AlarmDlg(ArtisanResizeablDialog):
         alarm_temperature = 500.
         alarm_action = 0
         alarm_beep = 0
-        alarm_string = ''
+        alarm_string = QApplication.translate('Label','Enter description')
         selected = self.alarmtable.selectedRanges()
         if len(selected) > 0:
             self.savealarms() # we first "save" the alarmtable to be able to pick up the values of the selected row
@@ -923,7 +911,6 @@ class AlarmDlg(ArtisanResizeablDialog):
         #11: text description
         descriptionedit = QLineEdit(self.aw.qmc.alarmstrings[i])
         descriptionedit.setCursorPosition(0)
-        descriptionedit.setPlaceholderText(QApplication.translate('Label','Enter description'))
         self.alarmtable.setItem(i, 0, MyTableWidgetItemNumber(str(i+1),i))
         self.alarmtable.setCellWidget(i,1,flagComboBox)
         self.alarmtable.setItem(i, 1, MyTableWidgetItemQCheckBox(flagComboBox))
@@ -1114,7 +1101,7 @@ class AlarmDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def showAlarmbuttonhelp(self,_=False):
-        from help import alarms_help
+        from help import alarms_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog

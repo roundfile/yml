@@ -20,11 +20,7 @@ import time as libtime
 import re
 import platform
 import logging
-from typing import Optional, TYPE_CHECKING
 from typing_extensions import Final  # Python <=3.7
-
-if TYPE_CHECKING:
-    from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
 
 from artisanlib.util import deltaLabelUTF8, setDeviceDebugLogLevel
 from artisanlib.dialogs import ArtisanResizeablDialog
@@ -34,14 +30,14 @@ from artisanlib.widgets import MyQComboBox, MyQDoubleSpinBox
 _log: Final[logging.Logger] = logging.getLogger(__name__)
 
 try:
-    from PyQt6.QtCore import (Qt, pyqtSlot, QSettings, QTimer) # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt6.QtCore import (Qt, pyqtSlot, QSettings) # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtGui import (QStandardItemModel, QStandardItem, QColor) # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtWidgets import (QApplication, QWidget, QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,  # @UnusedImport @Reimport  @UnresolvedImport
                                  QPushButton, QSpinBox, QTabWidget, QComboBox, QDialogButtonBox, QGridLayout, # @UnusedImport @Reimport  @UnresolvedImport
                                  QGroupBox, QRadioButton, # @UnusedImport @Reimport  @UnresolvedImport
                                  QTableWidget, QMessageBox, QHeaderView) # @UnusedImport @Reimport  @UnresolvedImport
 except ImportError:
-    from PyQt5.QtCore import (Qt, pyqtSlot, QSettings, QTimer) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt5.QtCore import (Qt, pyqtSlot, QSettings) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtGui import (QStandardItemModel, QStandardItem, QColor) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QApplication, QWidget, QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
                                  QPushButton, QSpinBox, QTabWidget, QComboBox, QDialogButtonBox, QGridLayout, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
@@ -50,9 +46,8 @@ except ImportError:
 
 
 class DeviceAssignmentDlg(ArtisanResizeablDialog):
-    def __init__(self, parent:QWidget, aw:'ApplicationWindow', activeTab:int = 0) -> None:
+    def __init__(self, parent, aw, activeTab = 0) -> None:
         super().__init__(parent,aw)
-        self.activeTab = activeTab
         self.setWindowTitle(QApplication.translate('Form Caption','Device Assignment'))
         self.setModal(True)
 
@@ -1390,14 +1385,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         settings = QSettings()
         if settings.contains('DeviceAssignmentGeometry'):
             self.restoreGeometry(settings.value('DeviceAssignmentGeometry'))
-
-        # we set the active tab with a QTimer after the tabbar has been rendered once, as otherwise
-        # some tabs are not rendered at all on Winwos using Qt v6.5.1 (https://bugreports.qt.io/projects/QTBUG/issues/QTBUG-114204?filter=allissues)
-        QTimer.singleShot(50, self.setActiveTab)
-
-    @pyqtSlot()
-    def setActiveTab(self) -> None:
-        self.TabWidget.setCurrentIndex(self.activeTab)
+        self.TabWidget.setCurrentIndex(activeTab)
 
     @pyqtSlot(int)
     def yoctoBoxRemoteFlagStateChanged(self, _:int) -> None:
@@ -3039,10 +3027,6 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 elif meter == 'IKAWA':
                     self.aw.qmc.device = 142
                     message = QApplication.translate('Message','Device set to {0}').format(meter)
-                    permission_status:Optional[bool] = self.aw.app.getBluetoothPermission(request=True)
-                    if permission_status is False:
-                        msg:str = QApplication.translate('Message','Bluetootooth access denied')
-                        QMessageBox.warning(self, msg, msg)
                 ##########################
                 ####  DEVICE 143 is +IKAWA SET/RPM but +DEVICE cannot be set as main device
                 ##########################
@@ -3254,9 +3238,6 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 self.aw.LCD7frame.setVisible(False)
             self.aw.qmc.ETfunction = str(self.ETfunctionedit.text())
             self.aw.qmc.BTfunction = str(self.BTfunctionedit.text())
-            if self.aw.qmc.BTcurve != self.BTcurve.isChecked():
-                # we reset the chached main event annotation positions as those annotations are now rendered on the other curve
-                self.aw.qmc.l_annotations_dict = {}
             self.aw.qmc.ETcurve = self.ETcurve.isChecked()
             self.aw.qmc.BTcurve = self.BTcurve.isChecked()
             self.aw.qmc.ETlcd = self.ETlcd.isChecked()
@@ -3382,7 +3363,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def showExtradevHelp(self):
-        from help import symbolic_help
+        from help import symbolic_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
@@ -3391,7 +3372,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def showSymbolicHelp(self):
-        from help import symbolic_help
+        from help import symbolic_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
@@ -3400,7 +3381,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def showhelpprogram(self,_=False):
-        from help import programs_help
+        from help import programs_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog

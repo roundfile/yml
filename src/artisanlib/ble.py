@@ -109,23 +109,17 @@ class BleInterface(QtCore.QObject): # pyright: ignore # Argument to class must b
 
         self.dataReceived.connect(self.dataReceivedProcessing)
 
-    def disconnectDiscovery(self):
-        self.m_deviceDiscoveryAgent.deviceDiscovered.disconnect()
-        self.m_deviceDiscoveryAgent.errorOccurred.disconnect()
-        self.m_deviceDiscoveryAgent.finished.disconnect()
-        self.m_deviceDiscoveryAgent.canceled.disconnect()
 
     def removeDevice(self) -> None:
         self.m_device = None
 
     def removeControl(self) -> None:
         try:
-            if self.m_control is not None:
-                self.m_control.disconnectFromDevice()
-                self.m_control.discoveryFinished.disconnect()
-                self.m_control.connected.disconnect()
-                self.m_control.disconnected.disconnect()
-                self.m_control.deleteLater()
+            assert self.m_control is not None
+            self.m_control.discoveryFinished.disconnect()
+            self.m_control.connected.disconnect()
+            self.m_control.disconnected.disconnect()
+            self.m_control.deleteLater()
         except Exception: # pylint: disable=broad-except
             pass
         finally:
@@ -135,13 +129,11 @@ class BleInterface(QtCore.QObject): # pyright: ignore # Argument to class must b
         try:
             self.service_uuid = None
             self.char_uuid = []
-            if self.m_service is not None:
-                self.m_service.stateChanged.disconnect()
-                self.m_service.characteristicChanged.disconnect()
-                self.m_service.characteristicRead.disconnect()
-                self.m_service.errorOccurred.disconnect()
-                self.m_service.descriptorWritten.disconnect()
-                self.m_service.deleteLater()
+            assert self.m_service is not None
+            self.m_service.stateChanged.disconnect()
+            self.m_service.characteristicChanged.disconnect()
+            self.m_service.characteristicRead.disconnect()
+            self.m_service.deleteLater()
         except Exception: # pylint: disable=broad-except
             pass
         finally:
@@ -191,12 +183,11 @@ class BleInterface(QtCore.QObject): # pyright: ignore # Argument to class must b
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
 
-    @QtCore.pyqtSlot()
     def heartbeat(self) -> None:
         if self.m_connected and self.sendHeartbeat is not None:
 #            _log.debug("send heartbeat")
             self.sendHeartbeat(self.write)
-            QtCore.QTimer.singleShot(2000, self.heartbeat)
+            QtCore.QTimer.singleShot(2000,self.heartbeat)
 
     @QtCore.pyqtSlot('QLowEnergyDescriptor','QByteArray')
     def descriptorWrittenSlot(self, descriptor:QtBluetooth.QLowEnergyDescriptor, newValue:QtCore.QByteArray) -> None:
@@ -276,12 +267,11 @@ class BleInterface(QtCore.QObject): # pyright: ignore # Argument to class must b
     def serviceError(self, _error:QtBluetooth.QLowEnergyService.ServiceError) -> None:
         if self.m_service is not None:
             _log.debug('onSeviceErrorOccurred: %s', self.m_service.error())
-#            self.m_service.stateChanged.disconnect(self.onServiceStateChanged)
-#            self.m_service.characteristicChanged.disconnect(self.onCharacteristicChanged)
-#            self.m_service.characteristicRead.disconnect(self.onCharacteristicRead)
-#            self.m_service.errorOccurred.disconnect(self.serviceError)
-#            self.m_service = None
-        self.removeService()
+            self.m_service.stateChanged.disconnect(self.onServiceStateChanged)
+            self.m_service.characteristicChanged.disconnect(self.onCharacteristicChanged)
+            self.m_service.characteristicRead.disconnect(self.onCharacteristicRead)
+            self.m_service.errorOccurred.disconnect(self.serviceError)
+            self.m_service = None
         self.update_connected(False)
 
     @QtCore.pyqtSlot()
@@ -383,7 +373,6 @@ class BleInterface(QtCore.QObject): # pyright: ignore # Argument to class must b
 
 #----------------
 
-    # disconnect from all signals
     def disconnectDevice(self) -> None:
         _log.debug('disconnectDevice()')
         self.update_connected(False) # is this productive!?
@@ -391,11 +380,10 @@ class BleInterface(QtCore.QObject): # pyright: ignore # Argument to class must b
             self.sendStop(self.write)
         if self.m_notificationDesc.isValid() and self.m_service is not None:
             self.m_service.writeDescriptor(self.m_notificationDesc,self.DISABLE_NOTIFICATION_VALUE)
-        self.onDeviceDisconnected()
-        self.disconnectDiscovery()
-        self.dataReceived.disconnect()
+            self.onDeviceDisconnected()
+        elif self.m_control is not None:
+            self.m_control.disconnectFromDevice()
 
-    @QtCore.pyqtSlot()
     def scanDevices(self) -> None:
         _log.debug('scanDevices()')
         self.m_device = None

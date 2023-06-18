@@ -33,14 +33,14 @@ try:
     from PyQt6.QtWidgets import (QApplication, QWidget, QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, # @UnusedImport @Reimport  @UnresolvedImport
                                  QPushButton, QTabWidget, QComboBox, QDialogButtonBox, QGridLayout,QSizePolicy, # @UnusedImport @Reimport  @UnresolvedImport
                                  QGroupBox, QTableWidget, QTableWidgetItem, QDialog, QTextEdit, QDoubleSpinBox, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QHeaderView, QMessageBox)  # @UnusedImport @Reimport  @UnresolvedImport
+                                 QHeaderView)  # @UnusedImport @Reimport  @UnresolvedImport
 except ImportError:
     from PyQt5.QtCore import (Qt, pyqtSlot, QSettings) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtGui import QIntValidator # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QApplication, QWidget, QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
                                  QPushButton, QTabWidget, QComboBox, QDialogButtonBox, QGridLayout,QSizePolicy, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
                                  QGroupBox, QTableWidget, QTableWidgetItem, QDialog, QTextEdit, QDoubleSpinBox, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
-                                 QHeaderView, QMessageBox) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
+                                 QHeaderView) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
@@ -326,7 +326,7 @@ class scanS7Dlg(ArtisanDialog):
                     self.S7Edit.setHtml(result)
                     break
                 if self.typeFloat:
-                    res = self.aw.s7.peekFloat(self.area,self.DBnr,register)
+                    res = self.aw.s7.peakFloat(self.area,self.DBnr,register)
                 else:
                     res = self.aw.s7.peekInt(self.area,self.DBnr,register)
                 if res is not None:
@@ -742,14 +742,13 @@ class comportDlg(ArtisanResizeablDialog):
         ##########################    TAB 4 WIDGETS   SCALE
         scale_devicelabel = QLabel(QApplication.translate('Label', 'Device'))
         self.scale_deviceEdit = QComboBox()
-        self.supported_scales = list(self.aw.scale.devicefunctionlist.keys())
-        self.scale_deviceEdit.addItems(self.supported_scales)
+        supported_scales = list(self.aw.scale.devicefunctionlist.keys())
+        self.scale_deviceEdit.addItems(supported_scales)
         try:
-            self.scale_deviceEdit.setCurrentIndex(self.supported_scales.index(self.aw.scale.device))
+            self.scale_deviceEdit.setCurrentIndex(supported_scales.index(self.aw.scale.device))
         except Exception: # pylint: disable=broad-except
             self.scale_deviceEdit.setCurrentIndex(0)
         self.scale_deviceEdit.setEditable(False)
-        self.scale_deviceEdit.activated.connect(self.scaleDeviceIndexChanged)
 #        scale_devicelabel.setBuddy(self.scale_deviceEdit)
         scale_comportlabel = QLabel(QApplication.translate('Label', 'Comm Port'))
         self.scale_comportEdit = PortComboBox(selection = self.aw.scale.comport)
@@ -1638,15 +1637,6 @@ class comportDlg(ArtisanResizeablDialog):
             self.restoreGeometry(settings.value('PortsGeometry'))
 
     @pyqtSlot(int)
-    def scaleDeviceIndexChanged(self,i):
-        if self.supported_scales[i] in self.aw.scale.bluetooth_devices:
-            permission_status:Optional[bool] = self.aw.app.getBluetoothPermission(request=True)
-            if permission_status is False:
-                message:str = QApplication.translate('Message','Bluetootooth access denied')
-                QMessageBox.warning(self, message, message)
-
-
-    @pyqtSlot(int)
     def s7_optimize_toggle(self,i):
         if i:
             self.s7_full_block.setEnabled(True)
@@ -1819,14 +1809,14 @@ class comportDlg(ArtisanResizeablDialog):
     @pyqtSlot(bool)
     def showModbusbuttonhelp(self,_=False):
         if self.TabWidget.currentIndex() == 2:
-            from help import modbus_help
+            from help import modbus_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
             self.helpdialog = self.aw.showHelpDialog(
                     self,            # this dialog as parent
                     self.helpdialog, # the existing help dialog
                     QApplication.translate('Form Caption','MODBUS Help'),
                     modbus_help.content())
         elif self.TabWidget.currentIndex() == 3:
-            from help import s7_help
+            from help import s7_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
             self.helpdialog = self.aw.showHelpDialog(
                     self,            # this dialog as parent
                     self.helpdialog, # the existing help dialog
