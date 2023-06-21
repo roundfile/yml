@@ -76,7 +76,6 @@ SOURCES = \
     plus/stock.py \
     plus/sync.py
 
-# the list of translation has to be synced with the script pylupdate6pro (for pylupdate6)
 TRANSLATIONS = \
 	translations/artisan_ar.ts \
 	translations/artisan_da.ts \
