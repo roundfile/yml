@@ -94,13 +94,24 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     timeout /t 5 /nobreak
     echo ---dir 2
     dir
+    timeout /t 5 /nobreak
+    echo ---dir 2 repeat
+    dir
     
     ::
     :: build the bootlaoder and wheel
     echo ***** Running WAF
     python .\\waf all --msvc_targets=x64
     cd ..
+    
+    timeout /t 5 /nobreak
+    echo ---dir 3
+    dir
+    
     echo ***** Building Wheel
+    
+    timeout /t 5 /nobreak
+
 ::    python setup.py -q bdist_wheel
     :: redirect standard output to lower the noise in the logs
     echo install build
@@ -109,7 +120,7 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     python -m build --wheel > NUL
     
     timeout /t 5 /nobreak
-    echo ---dir 3
+    echo ---dir 4
     dir
     
     if not exist dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 102)
