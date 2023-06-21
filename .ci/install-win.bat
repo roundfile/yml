@@ -88,12 +88,14 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     ::
     :: build the bootlaoder and wheel
     echo ***** Running WAF
-    python ./waf all --msvc_targets=x64
+    python .\\waf all --msvc_targets=x64
     cd ..
     echo ***** Building Wheel
 ::    python setup.py -q bdist_wheel
     :: redirect standard output to lower the noise in the logs
+    echo install build
     python -m pip install build
+    echo run build
     python -m build --wheel > NUL
     if not exist dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 102)
     echo ***** Finished build pyinstaller v%PYINSTALLER_VER%
