@@ -25,7 +25,7 @@ environment:
 #  - job_name: windows_legacy
 #    appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
-    appveyor_build_worker_image: Visual Studio 2022
+    appveyor_build_worker_image: Visual Studio 2019
 #  - job_name: macos
 #    appveyor_build_worker_image: macos-bigsur
 #  - job_name: linux
