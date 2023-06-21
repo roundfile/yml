@@ -123,9 +123,7 @@ for:
   install:
     - cmd: echo Windows Install
 
-    - cmd: dir "C:\Program Files"
-    - cmd: dir "C:\Program Files (x86)\Microsoft Visual Studio"
-    - cmd: dir "C:\Program Files (x86)\Microsoft Visual Studio\shared"
+    - cmd: dir "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build"
     - cmd: dir "\vcvarsall.bat" /S
 
 #    # derive the python path from the version number
