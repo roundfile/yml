@@ -71,7 +71,7 @@ for /r %%a IN (ui\*.ui) DO (
 echo ** Success
  
 :: Process translation files
-call "C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
+call %VCVARSALL% x86_amd64
 echo ************* pylupdate **************
 if /i "%ARTISAN_LEGACY%" == "True" (
     echo *** Processing translation files defined in artisan.pro with pylupdate5.py
@@ -85,15 +85,13 @@ if /i "%ARTISAN_LEGACY%" == "True" (
 echo ************* lrelease **************
 echo *** Processing artisan.pro
 
-dir %QT_PATH%
-dir %QT_PATH%\bin
-dir %QT_PATH%\bin\lrelease
+dir %QT_PATH%\bin\lrelease.exe
 
-%QT_PATH%\bin\lrelease -verbose artisan.pro
+%QT_PATH%\bin\lrelease.exe -verbose artisan.pro
 if ERRORLEVEL 1 (echo ** Failed in lrelease step 1 & exit /b 1) else (echo ** Success)
 echo *** Processing translation qtbase_*.ts files
 for /r %%a IN (translations\qtbase_*.ts) DO (
-    %QT_PATH%\bin\lrelease -verbose %%~a
+    %QT_PATH%\bin\lrelease.exe -verbose %%~a
     if ERRORLEVEL 1 (echo ** Failed in lrelease step 2 & exit /b 1)
 )
 echo ** Success
