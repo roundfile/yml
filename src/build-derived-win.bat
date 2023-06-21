@@ -71,9 +71,8 @@ for /r %%a IN (ui\*.ui) DO (
 echo ** Success
  
 :: Process translation files
-rem call "%VCVARSALL%" x86_amd64
 dir "C:\Program Files (x86)\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\"
-call "C:\Program Files (x86)\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvarsall.bat" x86_amd64
+call "%VCVARSALL%" x86_amd64
 echo ************* pylupdate **************
 if /i "%ARTISAN_LEGACY%" == "True" (
     echo *** Processing translation files defined in artisan.pro with pylupdate5.py
