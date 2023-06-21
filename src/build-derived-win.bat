@@ -73,9 +73,6 @@ echo ** Success
 :: Process translation files
 call "%VCVARSALL%" x86_amd64
 echo ************* pylupdate **************
-
-dir .
-
 if /i "%ARTISAN_LEGACY%" == "True" (
     echo *** Processing translation files defined in artisan.pro with pylupdate5.py
     %PYTHON_PATH%\Scripts\pylupdate5.exe artisan.pro
@@ -88,7 +85,7 @@ if /i "%ARTISAN_LEGACY%" == "True" (
 echo ************* lrelease **************
 echo *** Processing artisan.pro
 
-dir %QT_PATH%\bin\lrelease.exe
+dir %QT_PATH%\bin
 
 %QT_PATH%\bin\lrelease.exe -verbose -project artisan.pro
 if ERRORLEVEL 1 (echo ** Failed in lrelease step 1 & exit /b 1) else (echo ** Success)
