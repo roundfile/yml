@@ -75,10 +75,10 @@ python -m pip install -r src\requirements-%ARTISAN_SPEC%.txt
 :: custom build the pyinstaller bootloader or install a prebuilt
 ::
 if /i "%BUILD_PYINSTALLER%"=="True" (
-    echo ***** Start build pyinstaller v%PYINSTALLER_VER%
+    echo  Start build pyinstaller v%PYINSTALLER_VER%
     ::
     :: download pyinstaller source
-    echo ***** curl pyinstaller v%PYINSTALLER_VER%
+    echo curl pyinstaller v%PYINSTALLER_VER%
     curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
     if not exist v%PYINSTALLER_VER%.zip (exit /b 100)
     7z x v%PYINSTALLER_VER%.zip
@@ -100,7 +100,7 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     
     ::
     :: build the bootlaoder and wheel
-    echo ***** Running WAF
+    echo Running WAF
     python .\\waf all --msvc_targets=x64
     cd ..
     
@@ -108,13 +108,15 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     echo ---dir 3
     dir
     
-    echo ***** Building Wheel
+    echo Building Wheel
     
-    timeout /t 5 /nobreak
 
 ::    python setup.py -q bdist_wheel
     :: redirect standard output to lower the noise in the logs
     echo install build
+
+    timeout /t 5 /nobreak
+
     python -m pip install build
     echo run build
     python -m build --wheel > NUL
@@ -124,16 +126,16 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     dir
     
     if not exist dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 102)
-    echo ***** Finished build pyinstaller v%PYINSTALLER_VER%
+    echo Finished build pyinstaller v%PYINSTALLER_VER%
     ::
     :: install pyinstaller
-    echo ***** Start install pyinstaller v%PYINSTALLER_VER%
+    echo Start install pyinstaller v%PYINSTALLER_VER%
     python -m pip install -q dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
     cd ..
 ) else (
      python -m pip install -q pyinstaller==%PYINSTALLER_VER%
 )
-echo ***** Finished installing pyinstaller v%PYINSTALLER_VER%
+echo Finished installing pyinstaller v%PYINSTALLER_VER%
 
 ::
 :: download and install required libraries not available on pip
