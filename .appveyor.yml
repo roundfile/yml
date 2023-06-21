@@ -113,7 +113,7 @@ for:
     fast_finish: false
 
   environment:
-    QT_PATH: "C:\\qt\\6.5\\msvc2019_64"  #there is no msvc2022_64 undet qt\*
+    QT_PATH: "C:\\qt\\6.4\\msvc2019_64"  #there is no msvc2022_64 undet qt\*
     PYUIC: "pyuic6.exe"
     BUILD_PYINSTALLER: "True"
     ARTISAN_LEGACY: "False"
