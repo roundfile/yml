@@ -85,11 +85,13 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     del v%PYINSTALLER_VER%.zip
     if not exist pyinstaller-%PYINSTALLER_VER%\bootloader\ (exit /b 101)
     
+    timeout /5 /nobreak
     echo ---dir 1
     dir
     
     cd pyinstaller-%PYINSTALLER_VER%\bootloader
     
+    timeout /5 /nobreak
     echo ---dir 2
     dir
     
@@ -106,6 +108,7 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     echo run build
     python -m build --wheel > NUL
     
+    timeout /5 /nobreak
     echo ---dir 3
     dir
     
