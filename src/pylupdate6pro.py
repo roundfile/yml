@@ -22,6 +22,7 @@ import sys
 from typing import List, Set  #for Python >= 3.9: can remove 'List' since type hints can now use the generic 'list'
 
 try:
+    print("** pylupdate6pro.py is executing")
 #    print("os.environ: ",os.environ)
 
     # read the artisan.pro project file
