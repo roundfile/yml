@@ -84,7 +84,15 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     7z x v%PYINSTALLER_VER%.zip
     del v%PYINSTALLER_VER%.zip
     if not exist pyinstaller-%PYINSTALLER_VER%\bootloader\ (exit /b 101)
+    
+    echo ---dir 1
+    dir
+    
     cd pyinstaller-%PYINSTALLER_VER%\bootloader
+    
+    echo ---dir 2
+    dir
+    
     ::
     :: build the bootlaoder and wheel
     echo ***** Running WAF
@@ -97,6 +105,10 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     python -m pip install build
     echo run build
     python -m build --wheel > NUL
+    
+    echo ---dir 3
+    dir
+    
     if not exist dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 102)
     echo ***** Finished build pyinstaller v%PYINSTALLER_VER%
     ::
