@@ -87,7 +87,7 @@ echo *** Processing artisan.pro
 
 dir %QT_PATH%\bin
 
-%QT_PATH%\bin\lrelease.exe -project artisan.pro
+%QT_PATH%\bin\lrelease.exe artisan.pro
 if ERRORLEVEL 1 (echo ** Failed in lrelease step 1 & exit /b 1) else (echo ** Success)
 echo *** Processing translation qtbase_*.ts files
 for /r %%a IN (translations\qtbase_*.ts) DO (
