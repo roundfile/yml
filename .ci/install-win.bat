@@ -93,7 +93,7 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     echo ***** Building Wheel
 ::    python setup.py -q bdist_wheel
     :: redirect standard output to lower the noise in the logs
-    pip install build
+    python -m pip install build
     python -m build --wheel > NUL
     if not exist dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 102)
     echo ***** Finished build pyinstaller v%PYINSTALLER_VER%
