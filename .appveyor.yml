@@ -126,7 +126,7 @@ for:
     - cmd: dir "C:\Program Files"
     - cmd: dir "C:\Program Files (x86)\Microsoft Visual Studio"
     - cmd: dir "C:\Program Files (x86)\Microsoft Visual Studio\shared"
-    - cmd: dir "vcvarsall.bat" /S
+    - cmd: dir "\vcvarsall.bat" /S
 
 #    # derive the python path from the version number
 #    - ps: $env:PYTHON_PATH = "C:\\Python$($env:PYTHON_V -replace '\.','')-x64"
