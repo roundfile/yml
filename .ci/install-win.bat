@@ -76,8 +76,8 @@ python -m pip install -r src\requirements-%ARTISAN_SPEC%.txt
 ::
 if /i "%BUILD_PYINSTALLER%"=="True" (
     echo ***** Start build pyinstaller v%PYINSTALLER_VER%
-    ::
-    :: download pyinstaller source
+    rem
+    rem download pyinstaller source
     echo ***** curl pyinstaller v%PYINSTALLER_VER%
     curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
     if not exist v%PYINSTALLER_VER%.zip (exit /b 100)
@@ -86,16 +86,12 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     if not exist pyinstaller-%PYINSTALLER_VER%\bootloader\ (exit /b 101)
     cd pyinstaller-%PYINSTALLER_VER%\bootloader
     rem
-    rem build the bootlaoder and wheel
+    rem build the bootloader and wheel
     echo ***** Running WAF
     python .\\waf all --msvc_targets=x64
     cd ..
     echo ***** Building Wheel
-rem    python setup.py -q bdist_wheel
     rem redirect standard output to lower the noise in the logs
-    echo install build
-    python -m pip install build
-    echo run build
     python -m build --wheel > NUL
     if not exist dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 102)
     echo ***** Finished build pyinstaller v%PYINSTALLER_VER%
