@@ -84,6 +84,11 @@ if /i "%ARTISAN_LEGACY%" == "True" (
 )
 echo ************* lrelease **************
 echo *** Processing artisan.pro
+
+dir %QT_PATH%
+dir %QT_PATH%\bin
+dir %QT_PATH%\bin\lrelease
+
 %QT_PATH%\bin\lrelease -verbose artisan.pro
 if ERRORLEVEL 1 (echo ** Failed in lrelease step 1 & exit /b 1) else (echo ** Success)
 echo *** Processing translation qtbase_*.ts files
