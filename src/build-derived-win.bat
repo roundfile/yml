@@ -71,18 +71,11 @@ for /r %%a IN (ui\*.ui) DO (
 echo ** Success
  
 :: Process translation files
-echo %VCVARSALL%
-FOR /D %%I IN ("%VCVARSALL%") DO (
-    SET "shortPath=%%~sI"
-)
-echo %shortPath%
-if exist "shortPath" (
-    echo Inside the if  
-    call "%VCVARSALL%" x86_amd64
-) else (
-    echo *** Error: %VCVARSALL% does not exist
-    exit /b 1
-)
+echo VCVARSAL %VCVARSALL%
+
+call "%VCVARSALL%" x86_amd64
+if ERRORLEVEL 1 (exit /b 1)
+
 echo ************* pylupdate **************
 if /i "%ARTISAN_LEGACY%" == "True" (
     echo *** Processing translation files defined in artisan.pro with pylupdate5.py
@@ -95,7 +88,7 @@ if /i "%ARTISAN_LEGACY%" == "True" (
 )
 echo ************* lrelease **************
 echo *** Processing artisan.pro
-if exist ""%QT_PATH%\bin\lrelease.exe"" (
+if exist "%QT_PATH%\bin\lrelease.exe" (
     %QT_PATH%\bin\lrelease.exe -verbose artisan.pro
     if ERRORLEVEL 1 (echo ** Failed in lrelease step 1 & exit /b 1) else (echo ** Success)
     echo *** Processing translation qtbase_*.ts files
