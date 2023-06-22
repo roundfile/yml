@@ -114,7 +114,7 @@ for:
     fast_finish: false
 
   environment:
-    QT_PATH: "C:\\qt\\6.4\\msvc2019_64"  #there is no msvc2022_64 under qt\*
+    QT_PATH: "C:/qt/6.5.0/msvc2019_64"  #there is no msvc2022_64 under qt\*
     PYUIC: "pyuic6.exe"
     BUILD_PYINSTALLER: "True"
     ARTISAN_LEGACY: "False"
@@ -126,7 +126,7 @@ for:
     - cmd: dir "\lrelease.exe" /S
 
     # derive the python path from the version number
-    - ps: $env:PYTHON_PATH = "C:\\Python$($env:PYTHON_V -replace '\.','')-x64"
+    - ps: $env:PYTHON_PATH = "C:/Python$($env:PYTHON_V -replace '\.','')-x64"
     - ps: Write-Host $env:PYTHON_PATH
 
     # pull library versions from requirments file
