@@ -73,7 +73,7 @@ echo ** Success
 :: Process translation files
 call "%VCVARSALL%" x86_amd64
 if ERRORLEVEL 1 (
-    echo ERROR: %VCVARSALL% does not exist
+    echo ERROR: vcvarsall.bat does not exist
     exit /b 1
 )
 echo ************* pylupdate **************
