@@ -72,13 +72,12 @@ echo ** Success
  
 :: Process translation files
 echo %VCVARSALL%
-FOR %%I IN ("%VCVARSALL%") DO (
-    if exist "%%~I" (
-        call "%VCVARSALL%" x86_amd64
-    ) else (
-        echo *** Error: %VCVARSALL% does not exist
-        exit /b 1
-    )
+if exist "%VCVARSALL%" (
+    echo Inside the if
+    call "%VCVARSALL%" x86_amd64
+) else (
+    echo *** Error: %VCVARSALL% does not exist
+    exit /b 1
 )
 echo ************* pylupdate **************
 if /i "%ARTISAN_LEGACY%" == "True" (
