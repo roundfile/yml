@@ -71,19 +71,20 @@ if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 
 echo "************* lrelease **************"
 echo "*** artisan.pro"
-$QT_SRC_PATH/bin/lrelease -verbose artisan.pro
-if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
-echo "*** translations/qtbase_*.ts"
-for f in translations/qtbase_*.ts
-do
-    echo "Processing $f file..."
-    $QT_SRC_PATH/bin/lrelease -verbose $f
-
-    echo "$?"
-    echo "^^^^ Error code "
-
-    if [ $? -ne 0 ]; then exit $?; fi
-done
+if [ -f "$QT_SRC_PATH/bin/lrelease" ]; then
+    $QT_SRC_PATH/bin/lrelease -verbose artisan.pro
+    if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
+    echo "*** translations/qtbase_*.ts"
+    for f in translations/qtbase_*.ts
+    do
+        echo "Processing $f file..."
+        $QT_SRC_PATH/bin/lrelease -verbose $f
+        if [ $? -ne 0 ]; then exit $?; fi
+    done
+else
+    echo "$QT_SRC_PATH/bin/lrelease does not exist"
+    exit 1
+fi    
 echo "** Success"
 
 # create a zip with the generated files
