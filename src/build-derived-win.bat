@@ -84,15 +84,19 @@ if /i "%ARTISAN_LEGACY%" == "True" (
 )
 echo ************* lrelease **************
 echo *** Processing artisan.pro
-
-%QT_PATH%\bin\lrelease.exe -verbose artisan.pro
-if ERRORLEVEL 1 (echo ** Failed in lrelease step 1 & exit /b 1) else (echo ** Success)
-echo *** Processing translation qtbase_*.ts files
-for /r %%a IN (translations\qtbase_*.ts) DO (
-    %QT_PATH%\bin\lrelease.exe -verbose %%~a
-    if ERRORLEVEL 1 (echo ** Failed in lrelease step 2 & exit /b 1)
-)
-echo ** Success
+if exist "%QT_PATH%\bin\lrelease.exe" (
+    %QT_PATH%\bin\lrelease.exe -verbose artisan.pro
+    if ERRORLEVEL 1 (echo ** Failed in lrelease step 1 & exit /b 1) else (echo ** Success)
+    echo *** Processing translation qtbase_*.ts files
+    for /r %%a IN (translations\qtbase_*.ts) DO (
+        %QT_PATH%\bin\lrelease.exe -verbose %%~a
+        if ERRORLEVEL 1 (echo ** Failed in lrelease step 2 & exit /b 1)
+    )
+    echo ** Success
+) else (
+    echo %QT_PATH%\bin\lrelease.exe does not exist
+    exit /b 1
+)   
 
 :: Zip the generated files
 7z a ..\generated-%ARTISAN_SPEC%.zip ..\doc\help_dialogs\Output_html\ help\ translations\ uic\
