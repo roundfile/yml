@@ -89,7 +89,7 @@ if /i "%ARTISAN_LEGACY%" == "True" (
 )
 echo ************* lrelease **************
 echo *** Processing artisan.pro
-if exist "%QT_PATH%\bin\lrelease.exe" (
+if exist ""%QT_PATH%\bin\lrelease.exe"" (
     %QT_PATH%\bin\lrelease.exe -verbose artisan.pro
     if ERRORLEVEL 1 (echo ** Failed in lrelease step 1 & exit /b 1) else (echo ** Success)
     echo *** Processing translation qtbase_*.ts files
@@ -99,7 +99,7 @@ if exist "%QT_PATH%\bin\lrelease.exe" (
     )
     echo ** Success
 ) else (
-    echo %QT_PATH%\bin\lrelease.exe does not exist
+    echo %Error: QT_PATH%\bin\lrelease.exe does not exist
     exit /b 1
 )   
 
