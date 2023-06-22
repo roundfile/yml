@@ -71,7 +71,8 @@ for /r %%a IN (ui\*.ui) DO (
 echo ** Success
  
 :: Process translation files
-if exist "%VCVARSALL%" (
+echo %VCVARSALL%
+if exist "'%VCVARSALL%'" (
     call "%VCVARSALL%" x86_amd64
 ) else (
     echo *** Error: %VCVARSALL% does not exist
