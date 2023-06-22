@@ -123,6 +123,7 @@ for:
 
   install:
     - cmd: echo Windows Install
+    - cmd: dir "\lrelease.exe" /S
 
     # derive the python path from the version number
     - ps: $env:PYTHON_PATH = "C:\\Python$($env:PYTHON_V -replace '\.','')-x64"
