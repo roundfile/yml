@@ -90,11 +90,11 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     echo ***** Running WAF
     python .\\waf all --msvc_targets=x64
     cd ..
-    echo ***** Building Wheel
+    echo ***** Start build pyinstaller v%PYINSTALLER_VER% wheel
     rem redirect standard output to lower the noise in the logs
     python -m build --wheel > NUL
     if not exist dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 102)
-    echo ***** Finished build pyinstaller v%PYINSTALLER_VER%
+    echo ***** Finished build pyinstaller v%PYINSTALLER_VER% wheel
     rem
     rem install pyinstaller
     echo ***** Start install pyinstaller v%PYINSTALLER_VER%
@@ -103,7 +103,7 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
 ) else (
      python -m pip install -q pyinstaller==%PYINSTALLER_VER%
 )
-echo ***** Finished installing pyinstaller v%PYINSTALLER_VER%
+echo ***** Finished install pyinstaller v%PYINSTALLER_VER%
 
 ::
 :: download and install required libraries not available on pip
