@@ -82,7 +82,7 @@ if [ -f "$QT_SRC_PATH/bin/lrelease" ]; then
         if [ $? -ne 0 ]; then exit $?; fi
     done
 else
-    echo "$QT_SRC_PATH/bin/lrelease does not exist"
+    echo "Error: $QT_SRC_PATH/bin/lrelease does not exist"
     exit 1
 fi    
 echo "** Success"
