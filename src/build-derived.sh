@@ -78,6 +78,10 @@ for f in translations/qtbase_*.ts
 do
     echo "Processing $f file..."
     $QT_SRC_PATH/bin/lrelease -verbose $f
+
+    echo "$?"
+    echo "^^^^ Error code "
+
     if [ $? -ne 0 ]; then exit $?; fi
 done
 echo "** Success"
