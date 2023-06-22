@@ -72,14 +72,17 @@ echo ** Success
  
 :: Process translation files
 echo %VCVARSALL%
-FOR /f %%I IN ("%VCVARSALL%") DO (
-    IF EXIST "%%~I" (
-        echo Inside the if  
-        call "%VCVARSALL%" x86_amd64
-    ) else (
-        echo *** Error: %VCVARSALL% does not exist
-        exit /b 1
-    )
+FOR /D %%I IN ("%VCVARSALL%") DO (
+    SET "shortPath=%%~sI"
+)
+echo %shortPath%
+if exist "shortPath" (
+    echo Inside the if  
+    call "%VCVARSALL%" x86_amd64
+) else (
+    echo *** Error: %VCVARSALL% does not exist
+    exit /b 1
+)
 echo ************* pylupdate **************
 if /i "%ARTISAN_LEGACY%" == "True" (
     echo *** Processing translation files defined in artisan.pro with pylupdate5.py
