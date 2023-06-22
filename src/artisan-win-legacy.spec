@@ -42,6 +42,7 @@ a = Analysis(['artisan.py'],
                             'scipy.spatial.transform._rotation_groups',
                             'scipy.special.cython_special',
                             'scipy._lib.messagestream',
+                            'pkg_resources.py2_warn',
                             'pywintypes',
                             'win32cred',
                             'win32timezone'
