@@ -71,11 +71,11 @@ for /r %%a IN (ui\*.ui) DO (
 echo ** Success
  
 :: Process translation files
-echo VCVARSAL %VCVARSALL%
-
 call "%VCVARSALL%" x86_amd64
-if ERRORLEVEL 1 (echo ERROR: ""%VCVARSALL%"" does not exist & exit /b 1)
-
+if ERRORLEVEL 1 (
+    echo ERROR: %VCVARSALL% does not exist
+    exit /b 1
+)
 echo ************* pylupdate **************
 if /i "%ARTISAN_LEGACY%" == "True" (
     echo *** Processing translation files defined in artisan.pro with pylupdate5.py
