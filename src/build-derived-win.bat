@@ -72,7 +72,7 @@ echo ** Success
  
 :: Process translation files
 echo %VCVARSALL%
-FOR %%I IN ("%VCVARSALL%") DO (
+FOR /f %%I IN ("%VCVARSALL%") DO (
     IF EXIST "%%~I" (
         echo Inside the if  
         call "%VCVARSALL%" x86_amd64
