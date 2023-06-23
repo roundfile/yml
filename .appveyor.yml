@@ -234,6 +234,7 @@ for:
         
     - ls -l ${PYTHON_PATH}
     - ls -l ${PYTHON_PATH}/lib
+    - ls -l ${PYTHON_PATH}/lib/python${PYTHON_V}
         
     - chmod +x .ci/*.sh
 
