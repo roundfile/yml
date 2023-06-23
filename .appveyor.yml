@@ -232,9 +232,12 @@ for:
   install:
     - echo "Linux Install"
         
-    - ls -l ${PYTHON_PATH}
-    - ls -l ${PYTHON_PATH}/lib
-    - ls -l ${PYTHON_PATH}/lib/python${PYTHON_V}
+    - ls -l -a ${PYTHON_PATH}
+    - echo "--"
+    - ls -l -a ${PYTHON_PATH}/lib
+    - echo "--"
+    - ls -l -a ${PYTHON_PATH}/lib/python${PYTHON_V}
+    - echo "--"
         
     - chmod +x .ci/*.sh
 
