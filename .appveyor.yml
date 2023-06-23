@@ -232,8 +232,8 @@ for:
   install:
     - echo "Linux Install"
         
-    - ls -l '$PYTHON_PATH'
-    - ls -l '$PYTHON_PATH/lib'
+    - ls -l ${PYTHON_PATH}
+    - ls -l ${PYTHON_PATH/lib}
         
     - chmod +x .ci/*.sh
 
