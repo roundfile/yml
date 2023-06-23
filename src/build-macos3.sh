@@ -59,6 +59,7 @@ rm -rf build dist
 sleep .3 # sometimes it takes a little for dist to get really empty
 echo "************* p2app **************"
 python3 setup-macos3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'
+
 # Check that the packaged files are above an expected size
 version=$(python3 -c "import artisanlib; print(artisanlib.__version__)")
 basename="artisan-mac-$version"

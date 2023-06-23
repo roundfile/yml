@@ -95,7 +95,7 @@ if /i "%APPVEYOR%" == "True" (
 )
 
 ::
-:: check the approximate size of the zip file  
+:: check that the packaged files are above an expected size
 ::
 set file=artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip
 set expectedbytesize=170000000
