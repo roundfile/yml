@@ -73,6 +73,6 @@ for suffix in $suffixes; do
         echo "$filename is smaller than minimum $min_size bytes"
         exit 1
     else
-        echo "Okay: $filename is larger than minimum $min_size bytes"
+        echo "Success: $filename is larger than minimum $min_size bytes"
     fi
 done
