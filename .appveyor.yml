@@ -23,12 +23,12 @@ environment:
 #  PYUPGRADE_V: 3.11.3
 
   matrix:
-#  - job_name: windows_legacy
-#    appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: windows
-#    appveyor_build_worker_image: Visual Studio 2022
-#  - job_name: macos
-#    appveyor_build_worker_image: macos-bigsur
+  - job_name: windows_legacy
+    appveyor_build_worker_image: Visual Studio 2019
+  - job_name: windows
+    appveyor_build_worker_image: Visual Studio 2022
+  - job_name: macos
+    appveyor_build_worker_image: macos-bigsur
   - job_name: linux
     appveyor_build_worker_image: Ubuntu2004
 
@@ -230,13 +230,6 @@ for:
 
   install:
     - echo "Linux Install"
-        
-#    - ls -l -a ${PYTHON_PATH}
-#    - echo "--"
-#    - ls -l -a ${PYTHON_PATH}/lib
-#    - echo "--"
-#    - ls -l -a ${PYTHON_PATH}/lib/python${PYTHON_V}
-#    - echo "--"
         
     - chmod +x .ci/*.sh
 
