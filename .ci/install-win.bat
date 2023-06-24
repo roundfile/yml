@@ -59,6 +59,8 @@ ver
 echo Python Version
 python -V
 
+path
+
 ::
 :: get pip up to date
 ::

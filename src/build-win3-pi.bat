@@ -69,12 +69,13 @@ for /f "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanl
 :: create a version file for pyinstaller
 create-version-file version-metadata.yml --outfile version_info-win.txt --version %ARTISAN_VERSION%.%ARTISAN_BUILD%
 
-echo Running dir to find phidget22.dll
-dir "\phidget22.dll" /S
-dir "\snap7.dll" /S
-dir "\yapi.dll" /S
-dir "\yapi64.dll" /S
-dir "\libusb0.dll" /S
+::echo Running dir to find phidget22.dll
+::dir "\phidget22.dll" /S
+::dir "\snap7.dll" /S
+::dir "\yapi.dll" /S
+::dir "\yapi64.dll" /S
+::dir "\libusb0.dll" /S
+
 ::
 :: run pyinstaller
 :: Choose log-level from 'TRACE', 'DEBUG', 'INFO', 'WARN', 'DEPRECATION', 'ERROR', 'FATAL'
@@ -82,6 +83,9 @@ echo **** Running pyinstaller
 :: pyinstaller --noconfirm --log-level=WARN artisan-%ARTISAN_SPEC%.spec
 pyinstaller --noconfirm --log-level=WARN artisan-win-legacy.spec
 if ERRORLEVEL 1 (echo ** Failed in pyinstaller & exit /b 1) else (echo ** Success)
+
+dir dist\artisan  /S
+
 
 
 ::
