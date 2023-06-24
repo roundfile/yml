@@ -16,13 +16,6 @@
 
 # -*- mode: python -*-
 
-# Import the required PyInstaller modules
-from PyInstaller.utils import logger
-
-# Function to print debug message
-def debug_print(message):
-    logger.info(message)
-
 # Function to perform file copy
 def copy_file(source_file, destination_file):
     copy_command = 'copy "{}" "{}"'.format(source_file, destination_file)
@@ -132,7 +125,6 @@ os.system(r'copy Wheels\Roasting\* ' + TARGET + r'Wheels\Roasting')
 
 os.system('mkdir ' + TARGET + 'translations')
 os.system(r'copy translations\*.qm ' + TARGET + 'translations')
-debug_print("Debug message: Hello, From PyInstaller!")
 for tr in [
     'qtbase_ar.qm',
     'qtbase_de.qm',
