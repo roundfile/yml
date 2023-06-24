@@ -28,12 +28,15 @@ console_handler.setLevel(logging.DEBUG)
 logging.getLogger().addHandler(console_handler)
 
 # Function to perform file copy
-def copy_file(source_file, destination_file):
+def copy_file(source_file, destination_file, fatal=True):
     #logging.info("Copying %s",source_file)
     copy_command = f'copy "{source_file}" "{destination_file}"'
     exit_code = os.system(copy_command)
     if exit_code != 0:
-        sys.exit(f'Fatal Error: Copy operation failed {source_file} {destination_file}.')
+        msg = f'Error: Copy operation failed {source_file} {destination_file}.'
+        print(msg)
+        if fatal:
+            sys.exit(f'Fatal Error')
 
 def xcopy_files(source_dir, destination_dir):
     #logging.info("Copying %s",source_file)
@@ -111,7 +114,9 @@ a = Analysis(['artisan.py'],
                             'scipy._lib.messagestream',
                             'pywintypes',
                             'win32cred',
-                            'win32timezone'
+                            'win32timezone',
+                            '',
+                            ,
                             ],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
