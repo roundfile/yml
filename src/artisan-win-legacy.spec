@@ -18,6 +18,7 @@
 
 # Function to perform file copy
 def copy_file(source_file, destination_file):
+    print(source_file)
     copy_command = 'copy "{}" "{}"'.format(source_file, destination_file)
     exit_code = os.system(copy_command)
 
@@ -109,11 +110,13 @@ coll = COLLECT(exe,
 
 
 # assumes the Microsoft Visual C++ 2015 Redistributable Package (x64), vc_redist.x64.exe, is located above the source directory
-os.system(r'copy ..\vc_redist.x64.exe ' + TARGET)
+copy_file(r'..\vc_redist.x64.exe', TARGET)
+#os.system(r'copy ..\vc_redist.x64.exe ' + TARGET)
 
 copy_file('README.txt',TARGET)
 #os.system('copy README.txt ' + TARGET)
-os.system(r'copy ..\LICENSE ' + TARGET + r'\LICENSE.txt')
+copy_file(r'..\LICENSE', TARGET + r'\LICENSE.txt')
+#os.system(r'copy ..\LICENSE ' + TARGET + r'\LICENSE.txt')
 #os.system('copy qt-win.conf ' + TARGET + 'qt.conf')
 os.system('mkdir ' + TARGET + 'Wheels')
 os.system('mkdir ' + TARGET + r'Wheels\Cupping')
