@@ -150,7 +150,7 @@ for tr in [
     'qtbase_tr.qm',
     'qtbase_zh_TW.qm',
     ]:
-  copy_file(Env QT_TOOLS + '\\' + tr, TARGET + 'translations')
+  copy_file(QT_TOOLS + '\\' + tr, TARGET + 'translations')
   #copy_file(PYQT_QT_TRANSLATIONS + '\\' + tr, TARGET + 'translations')
   #os.system(r'copy "' + PYQT_QT_TRANSLATIONS + '\\' + tr + '" ' + TARGET + 'translations')
 
