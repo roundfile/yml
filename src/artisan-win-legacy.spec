@@ -90,7 +90,7 @@ else:
   logging.info("** Env QT_TRANSL is not set")
 
 ARTISAN_LEGACY = os.environ.get('ARTISAN_LEGACY')
-if ARTISAN_LEGACY:
+if ARTISAN_LEGACY=='True':
   logging.info("** ARTISAN_LEGACY is True")
 else:
   logging.info("** ARTISAN_LEGACY is not true")
