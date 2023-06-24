@@ -24,7 +24,7 @@ def debug_print(message):
     logger.info(message)
 
 # Function to perform file copy
- def copy_file(source_file, destination_file):
+def copy_file(source_file, destination_file):
     copy_command = 'copy "{}" "{}"'.format(source_file, destination_file)
     exit_code = os.system(copy_command)
 
@@ -46,6 +46,13 @@ else:
   ARTISAN_SRC = r'C:\Users\roast\Documents\artisan-roaster-scope\src'
   PYTHON = r'C:\Program Files\Python38'
 NAME = 'artisan'
+
+QT_TOOLS = os.environ.get('QT_TOOLS')
+if QT_TOOLS:
+  print("Env QT_TOOLS: %s",QT_TOOLS)
+else:
+  print(Env QT_TOOLS is not set")
+
 
 ##
 TARGET = 'dist\\' + NAME + '\\'
@@ -143,7 +150,8 @@ for tr in [
     'qtbase_tr.qm',
     'qtbase_zh_TW.qm',
     ]:
-  copy_file(PYQT_QT_TRANSLATIONS + '\\' + tr, TARGET + 'translations')
+  copy_file(Env QT_TOOLS + '\\' + tr, TARGET + 'translations')
+  #copy_file(PYQT_QT_TRANSLATIONS + '\\' + tr, TARGET + 'translations')
   #os.system(r'copy "' + PYQT_QT_TRANSLATIONS + '\\' + tr + '" ' + TARGET + 'translations')
 
 os.system('rmdir /q /s ' + TARGET + 'mpl-data\\sample_data')

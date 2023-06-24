@@ -120,6 +120,7 @@ for:
     ARTISAN_LEGACY: "False"
     VC_REDIST: "https://aka.ms/vs/17/release/vc_redist.x64.exe"  #redistributable for VS 2015-2022
     VCVARSALL: "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvarsall.bat"
+    QT_TOOLS: "C:/Qt/Tools/QtCreator/share/qtcreator/translations"
 
   install:
     - cmd: echo Windows Install

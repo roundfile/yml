@@ -69,8 +69,8 @@ for /f "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanl
 :: create a version file for pyinstaller
 create-version-file version-metadata.yml --outfile version_info-win.txt --version %ARTISAN_VERSION%.%ARTISAN_BUILD%
 
-echo Running dir to find qtbase_de.qm
-dir "\qtbase_de.qm" /S
+#echo Running dir to find qtbase_de.qm
+#dir "\qtbase_de.qm" /S
 ::
 :: run pyinstaller
 pyinstaller --noconfirm artisan-%ARTISAN_SPEC%.spec
