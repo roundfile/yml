@@ -73,9 +73,12 @@ create-version-file version-metadata.yml --outfile version_info-win.txt --versio
 ::dir "\qtbase_de.qm" /S
 ::
 :: run pyinstaller
-pyinstaller --noconfirm --log-level=WARN artisan-%ARTISAN_SPEC%.spec
+:: Choose log-level from 'TRACE', 'DEBUG', 'INFO', 'WARN', 'DEPRECATION', 'ERROR', 'FATAL'
+echo **** Running pyinstaller
+:: pyinstaller --noconfirm --log-level=WARN artisan-%ARTISAN_SPEC%.spec
+pyinstaller --noconfirm --log-level=WARN artisan-win-legacy.spec
+if ERRORLEVEL 1 (echo ** Failed in pyinstaller & exit /b 1) else (echo ** Success)
 
-exit /b 1
 
 ::
 :: Don't make assumptions as to where the 'makensis.exe' is - look in the obvious places
@@ -86,7 +89,7 @@ if exist "%ProgramFiles(x86)%\NSIS\makensis.exe"    set NSIS_EXE="%ProgramFiles(
 ::
 :: echo the file date since makensis does not have a version command
 for %%x in (%NSIS_EXE%) do set NSIS_DATE=%%~tx
-echo NSIS makensis.exe file date %NSIS_DATE%
+echo **** Running NSIS makensis.exe file date %NSIS_DATE%
 ::
 :: run NSIS to build the install .exe file
 %NSIS_EXE% /DPRODUCT_VERSION=%ARTISAN_VERSION%.%ARTISAN_BUILD% /DLEGACY=%ARTISAN_LEGACY% setup-install3-pi.nsi

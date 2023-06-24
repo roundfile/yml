@@ -83,15 +83,15 @@ else:
   PYTHON = r'C:\Program Files\Python38'
 NAME = 'artisan'
 
-QT_TOOLS = os.environ.get('QT_TOOLS')
-if QT_TOOLS:
-  logging.info("** Env QT_TOOLS: %s",QT_TOOLS)
+QT_TRANSL = os.environ.get('QT_TRANSL')
+if QT_TRANSL:
+  logging.info("** Env QT_TRANSL: %s",QT_TRANSL)
 else:
-  logging.info("** Env QT_TOOLS is not set")
+  logging.info("** Env QT_TRANSL is not set")
 
 ARTISAN_LEGACY = os.environ.get('ARTISAN_LEGACY')
 if ARTISAN_LEGACY:
-  logging.info("** ARTISAN_LEGACYis True")
+  logging.info("** ARTISAN_LEGACY is True")
 else:
   logging.info("** ARTISAN_LEGACY is not true")
 
@@ -200,7 +200,7 @@ for tr in [
     'qtbase_tr.qm',
     'qtbase_zh_TW.qm',
     ]:
-  copy_file(QT_TOOLS + '\\' + tr, TARGET + 'translations')
+  copy_file(QT_TRANSL + '\\' + tr, TARGET + 'translations')
 
 # this directory no longer exists
 remove_dir(TARGET + 'mpl-data/sample_data',False)
