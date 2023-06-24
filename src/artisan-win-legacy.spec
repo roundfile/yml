@@ -22,10 +22,10 @@ import sys
 # Set up the logger
 logging.basicConfig(level=logging.DEBUG)
 
-# Create a stream handler and add it to the logger
-console_handler = logging.StreamHandler(sys.stdout)
-console_handler.setLevel(logging.DEBUG)
-logging.getLogger().addHandler(console_handler)
+## Create a stream handler and add it to the logger
+#console_handler = logging.StreamHandler(sys.stdout)
+#console_handler.setLevel(logging.DEBUG)
+#logging.getLogger().addHandler(console_handler)
 
 # Function to perform file copy
 def copy_file(source_file, destination_file, fatal=False):
@@ -240,7 +240,7 @@ make_dir(TARGET + 'Machines')
 xcopy_files('includes\Machines', TARGET + 'Machines')
 
 make_dir(TARGET + 'Themes')
-xcopy_file('includes\Themes', TARGET + 'Themes')
+xcopy_files('includes\Themes', TARGET + 'Themes')
 
 make_dir(TARGET + 'Icons')
 xcopy_files('includes\Icons', TARGET + 'Icons')
