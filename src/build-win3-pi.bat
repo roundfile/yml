@@ -73,7 +73,7 @@ create-version-file version-metadata.yml --outfile version_info-win.txt --versio
 ::dir "\qtbase_de.qm" /S
 ::
 :: run pyinstaller
-pyinstaller --noconfirm --log-level=WARNING artisan-%ARTISAN_SPEC%.spec
+pyinstaller --noconfirm --log-level=WARN artisan-%ARTISAN_SPEC%.spec
 
 exit /b 1
 
