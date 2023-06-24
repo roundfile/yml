@@ -179,8 +179,9 @@ for tr in [
   #copy_file(PYQT_QT_TRANSLATIONS + '\\' + tr, TARGET + 'translations')
   #os.system(r'copy "' + PYQT_QT_TRANSLATIONS + '\\' + tr + '" ' + TARGET + 'translations')
 
-remove_dir(TARGET + 'mpl-data/sample_data')
-#os.system('rmdir /q /s ' + TARGET + 'mpl-data\\sample_data')
+# this directory no longer exists
+#remove_dir(TARGET + 'mpl-data/sample_data')
+
 # YOCTO HACK BEGIN: manually copy over the dlls
 make_dir(TARGET + 'yoctopuce\cdll')
 copy_file(YOCTO_BIN + r'\yapi.dll"', TARGET + 'yoctopuce\cdll')
