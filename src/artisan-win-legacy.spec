@@ -16,9 +16,20 @@
 
 # -*- mode: python -*-
 
+import logging
+import sys
+
+# Set up the logger
+logging.basicConfig(level=logging.DEBUG)
+
+# Create a stream handler and add it to the logger
+console_handler = logging.StreamHandler(sys.stdout)
+console_handler.setLevel(logging.DEBUG)
+logging.getLogger().addHandler(console_handler)
+
 # Function to perform file copy
 def copy_file(source_file, destination_file):
-    print(source_file)
+    logging.info("Copying %s",source_file)
     copy_command = 'copy "{}" "{}"'.format(source_file, destination_file)
     exit_code = os.system(copy_command)
 
