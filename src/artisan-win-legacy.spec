@@ -152,12 +152,12 @@ make_dir(TARGET + 'Wheels')
 make_dir(TARGET + r'Wheels\Cupping')
 make_dir(TARGET + r'Wheels\Other')
 make_dir(TARGET + r'Wheels\Roasting')
-copy_file(r'copy Wheels\Cupping\*', TARGET + r'Wheels\Cupping')
-copy_file(r'copy Wheels\Other\*', TARGET + r'Wheels\Other')
-copy_file(r'copy Wheels\Roasting\*', TARGET + r'Wheels\Roasting')
+copy_file(r'Wheels\Cupping\*', TARGET + r'Wheels\Cupping')
+copy_file(r'Wheels\Other\*', TARGET + r'Wheels\Other')
+copy_file(r'Wheels\Roasting\*', TARGET + r'Wheels\Roasting')
 
 make_dir(TARGET + 'translations')
-copy_file(r'copy translations\*.qm', TARGET + 'translations')
+copy_file(r'translations\*.qm', TARGET + 'translations')
 for tr in [
     'qtbase_ar.qm',
     'qtbase_de.qm',
