@@ -16,6 +16,26 @@
 
 # -*- mode: python -*-
 
+# Import the required PyInstaller modules
+from PyInstaller.utils import logger
+
+# Function to print debug message
+def debug_print(message):
+    logger.info(message)
+
+# Function to perform file copy
+ def copy_file(source_file, destination_file):
+    copy_command = 'copy "{}" "{}"'.format(source_file, destination_file)
+    exit_code = os.system(copy_command)
+
+    if exit_code != 0:
+        sys.exit("Fatal Error: Copy operation failed with error code {}.".format(exit_code))
+
+# Function to check if a file exists
+def check_file_exists(file_path):
+    if not os.path.isfile(file_path):
+        sys.exit("Fatal Error: File '{}' does not exist.".format(file_path))
+
 block_cipher = None
 
 import os
@@ -91,7 +111,8 @@ coll = COLLECT(exe,
 # assumes the Microsoft Visual C++ 2015 Redistributable Package (x64), vc_redist.x64.exe, is located above the source directory
 os.system(r'copy ..\vc_redist.x64.exe ' + TARGET)
 
-os.system('copy README.txt ' + TARGET)
+copy_file('README.txt',TARGET)
+#os.system('copy README.txt ' + TARGET)
 os.system(r'copy ..\LICENSE ' + TARGET + r'\LICENSE.txt')
 #os.system('copy qt-win.conf ' + TARGET + 'qt.conf')
 os.system('mkdir ' + TARGET + 'Wheels')
@@ -104,6 +125,7 @@ os.system(r'copy Wheels\Roasting\* ' + TARGET + r'Wheels\Roasting')
 
 os.system('mkdir ' + TARGET + 'translations')
 os.system(r'copy translations\*.qm ' + TARGET + 'translations')
+debug_print("Debug message: Hello, From PyInstaller!")
 for tr in [
     'qtbase_ar.qm',
     'qtbase_de.qm',
@@ -121,7 +143,8 @@ for tr in [
     'qtbase_tr.qm',
     'qtbase_zh_TW.qm',
     ]:
-  os.system(r'copy "' + PYQT_QT_TRANSLATIONS + '\\' + tr + '" ' + TARGET + 'translations')
+  copy_file(PYQT_QT_TRANSLATIONS + '\\' + tr, TARGET + 'translations')
+  #os.system(r'copy "' + PYQT_QT_TRANSLATIONS + '\\' + tr + '" ' + TARGET + 'translations')
 
 os.system('rmdir /q /s ' + TARGET + 'mpl-data\\sample_data')
 # YOCTO HACK BEGIN: manually copy over the dlls
