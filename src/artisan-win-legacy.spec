@@ -51,7 +51,7 @@ QT_TOOLS = os.environ.get('QT_TOOLS')
 if QT_TOOLS:
   print("Env QT_TOOLS: %s",QT_TOOLS)
 else:
-  print(Env QT_TOOLS is not set")
+  print("Env QT_TOOLS is not set")
 
 
 ##
