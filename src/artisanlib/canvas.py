@@ -221,7 +221,7 @@ class tgraphcanvas(FigureCanvas):
         'on_unfiltereddelta2', 'on_delta1', 'on_delta2', 'on_extratemp1', 'on_extratemp2', 'on_extratimex', 'on_extractimex1', 'on_extractemp1', 'on_extractimex2', 'on_extractemp2',
         'timeindex', 'ETfunction', 'BTfunction', 'DeltaETfunction', 'DeltaBTfunction', 'safesaveflag', 'pid', 'background', 'backgroundprofile', 'backgroundprofile_moved_x', 'backgroundprofile_moved_y', 'backgroundDetails',
         'backgroundeventsflag', 'backgroundpath', 'backgroundUUID', 'backgroundUUID', 'backgroundShowFullflag', 'backgroundKeyboardControlFlag', 'titleB', 'roastbatchnrB', 'roastbatchprefixB',
-        'roastbatchposB', 'temp1B', 'temp2B', 'temp1BX', 'temp2BX', 'timeB', 'temp1Bdelta', 'temp2Bdelta',
+        'roastbatchposB', 'temp1B', 'temp2B', 'temp1BX', 'temp2BX', 'timeB', 'abs_timeB', 'temp1Bdelta', 'temp2Bdelta',
         'stemp1B', 'stemp2B', 'stemp1BX', 'stemp2BX', 'extraname1B', 'extraname2B', 'extratimexB', 'xtcurveidx', 'ytcurveidx', 'delta1B', 'delta2B', 'timeindexB',
         'TP_time_B_loaded', 'backgroundEvents', 'backgroundEtypes', 'backgroundEvalues', 'backgroundEStrings', 'backgroundalpha', 'backgroundmetcolor',
         'backgroundbtcolor', 'backgroundxtcolor', 'backgroundytcolor', 'backgrounddeltaetcolor', 'backgrounddeltabtcolor', 'backmoveflag', 'detectBackgroundEventTime',
@@ -1227,6 +1227,7 @@ class tgraphcanvas(FigureCanvas):
         self.temp1BX:List['npt.NDArray[numpy.floating]'] = []
         self.temp2BX:List['npt.NDArray[numpy.floating]'] = []
         self.timeB:List[float] = []
+        self.abs_timeB:List[float] = []
         self.temp1Bdelta:List[float] = []
         self.temp2Bdelta:List[float] = []
         # smoothed versions of the background curves
@@ -5793,7 +5794,7 @@ class tgraphcanvas(FigureCanvas):
                         if mathexpression[i] == 't':
                             timex = sample_timex
                         else:
-                            timex = self.timeB
+                            timex = self.abs_timeB
                         seconddigitstr = ''
                         if i+4 < len(mathexpression) and mathexpression[i+1] == '[':
                             Yshiftval = int(mathexpression[i+3])
@@ -5816,6 +5817,8 @@ class tgraphcanvas(FigureCanvas):
                         elif i+3 < len(mathexpression) and mathexpression[i+1] == '{' and mathexpression.find('}',i+2) > -1:
                             end_idx = mathexpression.index('}',i+2)
                             body = mathexpression[i+2:end_idx]
+                            if mathexpression[i]=='b':
+                                body = 'b' + body
                             val = -1
                             try:
                                 absolute_index = eval(body,{'__builtins__':None},mathdictionary)  # pylint: disable=eval-used

@@ -1,21 +1,4 @@
 @echo off
-:: ABOUT
-:: CI install script for Artisan Windows builds
-::
-:: LICENSE
-:: This program or module is free software: you can redistribute it and/or
-:: modify it under the terms of the GNU General Public License as published
-:: by the Free Software Foundation, either version 2 of the License, or
-:: version 3 of the License, or (at your option) any later versison. It is
-:: provided for educational purposes and is distributed in the hope that
-:: it will be useful, but WITHOUT ANY WARRANTY; without even the implied
-:: warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
-:: the GNU General Public License for more details.
-::
-:: AUTHOR
-:: Dave Baxter, Marko Luther 2023
-
-
 :: the current directory on entry to this script must be the folder above src
 ::
 :: script comandline option LEGACY used to flag a legacy build
@@ -55,29 +38,28 @@ if /i "%APPVEYOR%" NEQ "True" (
 )
 :: ----------------------------------------------------------------------
 
-ver
 echo Python Version
-python -V
+%PYTHON_PATH%\python -V
 
 ::
 :: get pip up to date
 ::
-python -m pip install --upgrade pip
-python -m pip install wheel
+%PYTHON_PATH%\python.exe -m pip install --upgrade pip
+%PYTHON_PATH%\python.exe -m pip install wheel
 
 ::
 :: install Artisan required libraries from pip
 ::
-python -m pip install -r src\requirements.txt
-python -m pip install -r src\requirements-%ARTISAN_SPEC%.txt
+%PYTHON_PATH%\python.exe -m pip install -r src\requirements.txt
+%PYTHON_PATH%\python.exe -m pip install -r src\requirements-%ARTISAN_SPEC%.txt
 
 ::
 :: custom build the pyinstaller bootloader or install a prebuilt
 ::
 if /i "%BUILD_PYINSTALLER%"=="True" (
     echo ***** Start build pyinstaller v%PYINSTALLER_VER%
-    rem
-    rem download pyinstaller source
+    ::
+    :: download pyinstaller source
     echo ***** curl pyinstaller v%PYINSTALLER_VER%
     curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v%PYINSTALLER_VER%.zip
     if not exist v%PYINSTALLER_VER%.zip (exit /b 100)
@@ -85,25 +67,24 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     del v%PYINSTALLER_VER%.zip
     if not exist pyinstaller-%PYINSTALLER_VER%\bootloader\ (exit /b 101)
     cd pyinstaller-%PYINSTALLER_VER%\bootloader
-    rem
-    rem build the bootloader and wheel
+    ::
+    :: build the bootlaoder and wheel
     echo ***** Running WAF
-    python .\\waf all --msvc_targets=x64
+    %PYTHON_PATH%\python.exe ./waf all --msvc_targets=x64
     cd ..
-    echo ***** Start build pyinstaller v%PYINSTALLER_VER% wheel
-    rem redirect standard output to lower the noise in the logs
-    python -m build --wheel > NUL
+    echo ***** Building Wheel
+    %PYTHON_PATH%\python.exe setup.py -q bdist_wheel
     if not exist dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 102)
-    echo ***** Finished build pyinstaller v%PYINSTALLER_VER% wheel
-    rem
-    rem install pyinstaller
+    echo ***** Finished build pyinstaller v%PYINSTALLER_VER%
+    ::
+    :: install pyinstaller
     echo ***** Start install pyinstaller v%PYINSTALLER_VER%
-    python -m pip install -q dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
+    %PYTHON_PATH%\python.exe -m pip install -q dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
     cd ..
 ) else (
-     python -m pip install -q pyinstaller==%PYINSTALLER_VER%
+     %PYTHON_PATH%\\python.exe -m pip install -q pyinstaller==%PYINSTALLER_VER%
 )
-echo ***** Finished install pyinstaller v%PYINSTALLER_VER%
+echo ***** Finished installing pyinstaller v%PYINSTALLER_VER%
 
 ::
 :: download and install required libraries not available on pip
