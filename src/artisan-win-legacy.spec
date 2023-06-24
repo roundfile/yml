@@ -34,7 +34,7 @@ def copy_file(source_file, destination_file, fatal=False):
     exit_code = os.system(copy_command)
     if exit_code != 0:
         msg = f'Error: Copy operation failed {source_file} {destination_file}.'
-        print(msg)
+        logging.info(msg)
         if fatal:
             sys.exit(f'Fatal Error')
 
@@ -44,7 +44,7 @@ def xcopy_files(source_dir, destination_dir, fatal=False):
     exit_code = os.system(xcopy_command)
     if exit_code != 0:
         msg =f'Error: Xcopy operation failed {source_dir} {destination_dir}'
-        print(msg)
+        logging.info(msg)
         if fatal:
             sys.exit(f'Fatal Error')
 
@@ -53,7 +53,7 @@ def make_dir(source_dir, fatal=False):
     exit_code = os.system(mkdir_command)
     if exit_code != 0:
         msg =f'Error: mkdir operation failed {source_dir}'
-        print(msg)
+        logging.info(msg)
         if fatal:
             sys.exit(f'Fatal Error')
 
@@ -62,7 +62,7 @@ def remove_dir(source_dir, fatal=False):
     exit_code = os.system(rmdir_command)
     if exit_code != 0:
         msg =f'Error: rmdir operation failed {source_dir}'
-        print(msg)
+        logging.info(msg)
         if fatal:
             sys.exit(f'Fatal Error')
 
