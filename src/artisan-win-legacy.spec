@@ -28,7 +28,7 @@ console_handler.setLevel(logging.DEBUG)
 logging.getLogger().addHandler(console_handler)
 
 # Function to perform file copy
-def copy_file(source_file, destination_file, fatal=True):
+def copy_file(source_file, destination_file, fatal=False):
     #logging.info("Copying %s",source_file)
     copy_command = f'copy "{source_file}" "{destination_file}"'
     exit_code = os.system(copy_command)
@@ -38,24 +38,33 @@ def copy_file(source_file, destination_file, fatal=True):
         if fatal:
             sys.exit(f'Fatal Error')
 
-def xcopy_files(source_dir, destination_dir):
+def xcopy_files(source_dir, destination_dir, fatal=False):
     #logging.info("Copying %s",source_file)
     xcopy_command = f'xcopy "{source_dir}" "{destination_dir}"  /y /S'
     exit_code = os.system(xcopy_command)
     if exit_code != 0:
-        sys.exit(f'Fatal Error: Xcopy operation failed {source_dir} {destination_dir}.')
+        msg =f'Error: Xcopy operation failed {source_dir} {destination_dir}'
+        print(msg)
+        if fatal:
+            sys.exit(f'Fatal Error')
 
-def make_dir(source_dir):
+def make_dir(source_dir, fatal=False):
     mkdir_command = f'mkdir "{source_dir}"'
     exit_code = os.system(mkdir_command)
     if exit_code != 0:
-        sys.exit(f'Fatal Error: mkdir operation failed {source_dir}.')
+        msg =f'Error: mkdir operation failed {source_dir}'
+        print(msg)
+        if fatal:
+            sys.exit(f'Fatal Error')
 
-def remove_dir(source_dir):
+def remove_dir(source_dir, fatal=False):
     rmdir_command = r'rmdir /q /s "' + source_dir + '"'
     exit_code = os.system(rmdir_command)
     if exit_code != 0:
-        sys.exit(f'Fatal Error: rmdir operation failed {source_dir}.')
+        msg =f'Error: rmdir operation failed {source_dir}'
+        print(msg)
+        if fatal:
+            sys.exit(f'Fatal Error')
 
 
 # Function to check if a file exists
@@ -115,7 +124,7 @@ a = Analysis(['artisan.py'],
                             'pywintypes',
                             'win32cred',
                             'win32timezone',
-                            '',
+                            None,
                             '',
                             ],
              win_no_prefer_redirects=False,
@@ -146,12 +155,9 @@ coll = COLLECT(exe,
 
 # assumes the Microsoft Visual C++ 2015 Redistributable Package (x64), vc_redist.x64.exe, is located above the source directory
 copy_file(r'..\vc_redist.x64.exe', TARGET)
-#os.system(r'copy ..\vc_redist.x64.exe ' + TARGET)
 
 copy_file('README.txt',TARGET)
-#os.system('copy README.txt ' + TARGET)
 copy_file(r'..\LICENSE', TARGET + r'\LICENSE.txt')
-#os.system(r'copy ..\LICENSE ' + TARGET + r'\LICENSE.txt')
 #os.system('copy qt-win.conf ' + TARGET + 'qt.conf')
 make_dir(TARGET + 'Wheels')
 make_dir(TARGET + r'Wheels\Cupping')
@@ -181,11 +187,9 @@ for tr in [
     'qtbase_zh_TW.qm',
     ]:
   copy_file(QT_TOOLS + '\\' + tr, TARGET + 'translations')
-  #copy_file(PYQT_QT_TRANSLATIONS + '\\' + tr, TARGET + 'translations')
-  #os.system(r'copy "' + PYQT_QT_TRANSLATIONS + '\\' + tr + '" ' + TARGET + 'translations')
 
 # this directory no longer exists
-#remove_dir(TARGET + 'mpl-data/sample_data')
+remove_dir(TARGET + 'mpl-data/sample_data',False)
 
 # YOCTO HACK BEGIN: manually copy over the dlls
 make_dir(TARGET + 'yoctopuce\cdll')
