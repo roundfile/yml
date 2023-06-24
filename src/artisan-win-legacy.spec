@@ -20,7 +20,7 @@ import logging
 import sys
 
 # Set up the logger
-logging.basicConfig(level=logging.WARNING)
+logging.basicConfig(level=logging.INFO)
 
 ## Create a stream handler and add it to the logger
 #console_handler = logging.StreamHandler(sys.stdout)
@@ -33,7 +33,7 @@ def copy_file(source_file, destination_file, fatal=False):
     copy_command = f'copy "{source_file}" "{destination_file}"'
     exit_code = os.system(copy_command)
     if exit_code != 0:
-        msg = f'Error: Copy operation failed {source_file} {destination_file}.'
+        msg = f'Copy operation failed {source_file} {destination_file}.'
         logging.error(msg)
         if fatal:
             sys.exit(f'Fatal Error')
@@ -43,7 +43,7 @@ def xcopy_files(source_dir, destination_dir, fatal=False):
     xcopy_command = f'xcopy "{source_dir}" "{destination_dir}"  /y /S'
     exit_code = os.system(xcopy_command)
     if exit_code != 0:
-        msg =f'Error: Xcopy operation failed {source_dir} {destination_dir}'
+        msg =f'Xcopy operation failed {source_dir} {destination_dir}'
         logging.error(msg)
         if fatal:
             sys.exit(f'Fatal Error')
@@ -52,7 +52,7 @@ def make_dir(source_dir, fatal=False):
     mkdir_command = f'mkdir "{source_dir}"'
     exit_code = os.system(mkdir_command)
     if exit_code != 0:
-        msg =f'Error: mkdir operation failed {source_dir}'
+        msg =f'mkdir operation failed {source_dir}'
         logging.error(msg)
         if fatal:
             sys.exit(f'Fatal Error')
@@ -61,7 +61,7 @@ def remove_dir(source_dir, fatal=False):
     rmdir_command = r'rmdir /q /s "' + source_dir + '"'
     exit_code = os.system(rmdir_command)
     if exit_code != 0:
-        msg =f'Error: rmdir operation failed {source_dir}'
+        msg =f'rmdir operation failed {source_dir}'
         logging.error(msg)
         if fatal:
             sys.exit(f'Fatal Error')
