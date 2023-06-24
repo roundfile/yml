@@ -29,12 +29,31 @@ logging.getLogger().addHandler(console_handler)
 
 # Function to perform file copy
 def copy_file(source_file, destination_file):
-    logging.info("Copying %s",source_file)
-    copy_command = 'copy "{}" "{}"'.format(source_file, destination_file)
+    #logging.info("Copying %s",source_file)
+    copy_command = f'copy "{source_file}" "{destination_file}"'
     exit_code = os.system(copy_command)
-
     if exit_code != 0:
-        sys.exit("Fatal Error: Copy operation failed with error code {}.".format(exit_code))
+        sys.exit(f'Fatal Error: Copy operation failed {source_file} {destination_file}.')
+
+def xcopy_files(source_dir, destination_dir):
+    #logging.info("Copying %s",source_file)
+    xcopy_command = f'xcopy "{source_dir}" "{destination_dir}"  /y /S'
+    exit_code = os.system(xcopy_command)
+    if exit_code != 0:
+        sys.exit(f'Fatal Error: Xcopy operation failed {source_dir} {destination_dir}.')
+
+def make_dir(source_dir):
+    mkdir_command = f'mkdir "{source_dir}"'
+    exit_code = os.system(mkdir_command)
+    if exit_code != 0:
+        sys.exit(f'Fatal Error: mkdir operation failed {source_dir}.')
+
+def remove_dir(source_dir):
+    rmdir_command = r'rmdir /q /s "' + source_dir + '"'
+    exit_code = os.system(rmdir_command)
+    if exit_code != 0:
+        sys.exit(f'Fatal Error: rmdir operation failed {source_dir}.')
+
 
 # Function to check if a file exists
 def check_file_exists(file_path):
@@ -54,9 +73,9 @@ NAME = 'artisan'
 
 QT_TOOLS = os.environ.get('QT_TOOLS')
 if QT_TOOLS:
-  print("Env QT_TOOLS: %s",QT_TOOLS)
+  logging.info("** Env QT_TOOLS: %s",QT_TOOLS)
 else:
-  print("Env QT_TOOLS is not set")
+  logging.info("** Env QT_TOOLS is not set")
 
 
 ##
@@ -129,16 +148,16 @@ copy_file('README.txt',TARGET)
 copy_file(r'..\LICENSE', TARGET + r'\LICENSE.txt')
 #os.system(r'copy ..\LICENSE ' + TARGET + r'\LICENSE.txt')
 #os.system('copy qt-win.conf ' + TARGET + 'qt.conf')
-os.system('mkdir ' + TARGET + 'Wheels')
-os.system('mkdir ' + TARGET + r'Wheels\Cupping')
-os.system('mkdir ' + TARGET + r'Wheels\Other')
-os.system('mkdir ' + TARGET + r'Wheels\Roasting')
-os.system(r'copy Wheels\Cupping\* ' + TARGET + r'Wheels\Cupping')
-os.system(r'copy Wheels\Other\* ' + TARGET + r'Wheels\Other')
-os.system(r'copy Wheels\Roasting\* ' + TARGET + r'Wheels\Roasting')
+make_dir(TARGET + 'Wheels')
+make_dir(TARGET + r'Wheels\Cupping')
+make_dir(TARGET + r'Wheels\Other')
+make_dir(TARGET + r'Wheels\Roasting')
+copy_file(r'copy Wheels\Cupping\*', TARGET + r'Wheels\Cupping')
+copy_file(r'copy Wheels\Other\*', TARGET + r'Wheels\Other')
+copy_file(r'copy Wheels\Roasting\*', TARGET + r'Wheels\Roasting')
 
-os.system('mkdir ' + TARGET + 'translations')
-os.system(r'copy translations\*.qm ' + TARGET + 'translations')
+make_dir(TARGET + 'translations')
+copy_file(r'copy translations\*.qm', TARGET + 'translations')
 for tr in [
     'qtbase_ar.qm',
     'qtbase_de.qm',
@@ -160,19 +179,20 @@ for tr in [
   #copy_file(PYQT_QT_TRANSLATIONS + '\\' + tr, TARGET + 'translations')
   #os.system(r'copy "' + PYQT_QT_TRANSLATIONS + '\\' + tr + '" ' + TARGET + 'translations')
 
-os.system('rmdir /q /s ' + TARGET + 'mpl-data\\sample_data')
+remove_dir(TARGET + 'mpl-data/sample_data')
+#os.system('rmdir /q /s ' + TARGET + 'mpl-data\\sample_data')
 # YOCTO HACK BEGIN: manually copy over the dlls
-os.system(r'mkdir ' + TARGET + 'yoctopuce\cdll')
-os.system(r'copy "' + YOCTO_BIN + r'\yapi.dll" ' + TARGET + 'yoctopuce\cdll')
-os.system(r'copy "' + YOCTO_BIN + r'\yapi64.dll" ' + TARGET + 'yoctopuce\cdll')
+make_dir(TARGET + 'yoctopuce\cdll')
+copy_file(YOCTO_BIN + r'\yapi.dll"', TARGET + 'yoctopuce\cdll')
+copy_file(YOCTO_BIN + r'\yapi64.dll"', TARGET + 'yoctopuce\cdll')
 # YOCTO HACK END
 
 # copy Snap7 lib
-os.system('copy "' + SNAP7_BIN + r'\snap7.dll" ' + TARGET)
+copy_file(SNAP7_BIN + r'\snap7.dll"', TARGET)
 
 # copy libusb0.1 lib
 
-os.system('copy "' + LIBUSB_BIN + r'\libusb0.dll" ' + TARGET)
+copy_file(LIBUSB_BIN + r'\libusb0.dll"', TARGET)
 
 for fn in [
     'artisan.png',
@@ -204,13 +224,13 @@ for fn in [
     r'includes\jquery-1.11.1.min.js',
     r'includes\logging.yaml',
     ]:
-  os.system('copy ' + fn + ' ' + TARGET)
+  copy_file(fn, TARGET)
 
-os.system(r'mkdir ' +  TARGET + 'Machines')
-os.system(r'xcopy includes\Machines ' + TARGET + 'Machines /y /S')
+make_dir(TARGET + 'Machines')
+xcopy_files('includes\Machines', TARGET + 'Machines')
 
-os.system(r'mkdir ' +  TARGET + 'Themes')
-os.system(r'xcopy includes\Themes ' + TARGET + 'Themes /y /S')
+make_dir(TARGET + 'Themes')
+xcopy_file('includes\Themes', TARGET + 'Themes')
 
-os.system(r'mkdir ' +  TARGET + 'Icons')
-os.system(r'xcopy includes\Icons ' + TARGET + 'Icons /y /S')
+make_dir(TARGET + 'Icons')
+xcopy_files('includes\Icons', TARGET + 'Icons')
