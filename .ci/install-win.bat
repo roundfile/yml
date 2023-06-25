@@ -112,31 +112,18 @@ echo curl vc_redist.x64.exe
 curl -L -O %VC_REDIST%
 if not exist vc_redist.x64.exe (exit /b 104)
 
-:: snap7 binaries are now included in the pip install thus no longer downloaded
-::echo curl snap7
-::curl -k -L -O https://netcologne.dl.sourceforge.net/project/snap7/1.4.2/snap7-full-1.4.2.7z
-::7z x snap7-full-1.4.2.7z
-::copy snap7-full-1.4.2\build\bin\win64\snap7.dll c:\windows
-
 ::
 :: copy the snap7 binary
 ::
-rem dir "\snap7.dll" /S
-dir "%PYTHON_PATH%/Lib/site-packages/snap7/lib"
-rem exit /b 1
-echo Copy snap7.dll to c:\Windows
-rem copy "%PYTHON_PATH%/Lib/site-packages/snap7/lib/snap7.dll" "C:/Windows/"
 copy "%PYTHON_PATH%\Lib\site-packages\snap7\lib\snap7.dll" "C:\Windows"
-echo -----
-echo "%PYTHON_PATH%/Lib/site-packages/snap7/lib/snap7.dll"
-echo -----
+if not exist "C:\Windows\snap7.dll" (exit /b 105)
+
 ::
 :: download and copy the libusb-win32 dll. NOTE-the version number for libusb is set in the requirements-win*.txt file.
 ::
 echo curl libusb-win32
 curl -k -L -O https://netcologne.dl.sourceforge.net/project/libusb-win32/libusb-win32-releases/%LIBUSB_VER%/libusb-win32-bin-%LIBUSB_VER%.zip
-if not exist libusb-win32-bin-%LIBUSB_VER%.zip (exit /b 105)
+if not exist libusb-win32-bin-%LIBUSB_VER%.zip (exit /b 106)
 7z x libusb-win32-bin-%LIBUSB_VER%.zip
 copy "libusb-win32-bin-%LIBUSB_VER%\bin\amd64\libusb0.dll" "C:\Windows\SysWOW64"
-
-dir "c:\Windows\SysWOW64\libusb0.dll"
+if not exist "C:\Windows\SysWOW64\libusb0.dll" (exit /b 107)

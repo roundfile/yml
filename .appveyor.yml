@@ -120,7 +120,7 @@ for:
     fast_finish: false
 
   environment:
-    PYTHON_PATH: "C:/Python311-x64"
+    PYTHON_PATH: "C:\\Python311-x64"
     QT_PATH: "C:/qt/6.5.0/msvc2019_64"  #there is no msvc2022_64 under /qt*
     PYUIC: "pyuic6.exe"
     BUILD_PYINSTALLER: "False"
@@ -141,7 +141,7 @@ for:
     - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements-win.txt 'libusb==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value}
 
     # update path env var
-    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%/Scripts;%PATH%
+    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 
     # run the install script
     - cmd: .ci/install-win.bat
