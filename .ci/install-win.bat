@@ -83,22 +83,22 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     if not exist v%PYINSTALLER_VER%.zip (exit /b 100)
     7z x v%PYINSTALLER_VER%.zip
     del v%PYINSTALLER_VER%.zip
-    if not exist pyinstaller-%PYINSTALLER_VER%\bootloader\ (exit /b 101)
-    cd pyinstaller-%PYINSTALLER_VER%\bootloader
+    if not exist pyinstaller-%PYINSTALLER_VER%/bootloader/ (exit /b 101)
+    cd pyinstaller-%PYINSTALLER_VER%/bootloader
     rem
     rem build the bootloader and wheel
     echo ***** Running WAF
-    python .\\waf all --msvc_targets=x64
+    python ./waf all --msvc_targets=x64
     cd ..
     echo ***** Start build pyinstaller v%PYINSTALLER_VER% wheel
     rem redirect standard output to lower the noise in the logs
     python -m build --wheel > NUL
-    if not exist dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 102)
+    if not exist dist/pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 102)
     echo ***** Finished build pyinstaller v%PYINSTALLER_VER% wheel
     rem
     rem install pyinstaller
     echo ***** Start install pyinstaller v%PYINSTALLER_VER%
-    python -m pip install -q dist\\pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
+    python -m pip install -q dist/pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
     cd ..
 ) else (
      python -m pip install -q pyinstaller==%PYINSTALLER_VER%
@@ -122,10 +122,7 @@ if not exist vc_redist.x64.exe (exit /b 104)
 :: copy the snap7 binary
 ::
 echo Copy snap7.dll to c:\Windows
-dir \python311-x64\lib\site-packages\snap7\lib\snap7.dll
-::copy %PYTHON_PATH%\Lib\site-packages\snap7\lib\snap7.dll C:\Windows
-copy \python311-x64\lib\site-packages\snap7\lib\snap7.dll \windows
-dir \windows\snap7.dll
+copy %PYTHON_PATH%/Lib/site-packages/snap7/lib/snap7.dll C:/Windows
 
 ::
 :: download and copy the libusb-win32 dll. NOTE-the version number for libusb is set in the requirements-win*.txt file.
@@ -134,6 +131,6 @@ echo curl libusb-win32
 curl -k -L -O https://netcologne.dl.sourceforge.net/project/libusb-win32/libusb-win32-releases/%LIBUSB_VER%/libusb-win32-bin-%LIBUSB_VER%.zip
 if not exist libusb-win32-bin-%LIBUSB_VER%.zip (exit /b 105)
 7z x libusb-win32-bin-%LIBUSB_VER%.zip
-copy libusb-win32-bin-%LIBUSB_VER%\bin\amd64\libusb0.dll C:\Windows\SysWOW64
+copy libusb-win32-bin-%LIBUSB_VER%/bin/amd64/libusb0.dll C:/Windows/SysWOW64
 
 dir C:\Windows\SysWOW64\libusb0.dll

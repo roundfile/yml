@@ -69,21 +69,21 @@ for /f "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanl
 :: create a version file for pyinstaller
 create-version-file version-metadata.yml --outfile version_info-win.txt --version %ARTISAN_VERSION%.%ARTISAN_BUILD%
 
-echo Running dir to find phidget22.dll
-pushd .
-cd \python311-x64\lib\
-dir "\phidget22.dll" /S
-dir "\snap7.dll" /S
-dir "\yapi.dll" /S
-dir "\yapi64.dll" /S
-dir "\libusb0.dll" /S
-cd \windows
-dir "\phidget22.dll" /S
-dir "\snap7.dll" /S
-dir "\yapi.dll" /S
-dir "\yapi64.dll" /S
-dir "\libusb0.dll" /S
-popd
+rem echo Running dir to find phidget22.dll
+rem pushd .
+rem cd \python311-x64\lib\
+rem dir "\phidget22.dll" /S
+rem dir "\snap7.dll" /S
+rem dir "\yapi.dll" /S
+rem dir "\yapi64.dll" /S
+rem dir "\libusb0.dll" /S
+rem cd \windows
+rem dir "\phidget22.dll" /S
+rem dir "\snap7.dll" /S
+rem dir "\yapi.dll" /S
+rem dir "\yapi64.dll" /S
+rem dir "\libusb0.dll" /S
+rem popd
 
 ::
 :: run pyinstaller
@@ -95,10 +95,10 @@ if ERRORLEVEL 1 (echo ** Failed in pyinstaller & exit /b 1) else (echo ** Succes
 
 ::
 :: Don't make assumptions as to where the 'makensis.exe' is - look in the obvious places
-if exist "C:\Program Files (x86)\NSIS\makensis.exe" set NSIS_EXE="C:\Program Files (x86)\NSIS\makensis.exe"
-if exist "C:\Program Files\NSIS\makensis.exe"       set NSIS_EXE="C:\Program Files\NSIS\makensis.exe"
-if exist "%ProgramFiles%\NSIS\makensis.exe"         set NSIS_EXE="%ProgramFiles%\NSIS\makensis.exe"
-if exist "%ProgramFiles(x86)%\NSIS\makensis.exe"    set NSIS_EXE="%ProgramFiles(x86)%\NSIS\makensis.exe"
+if exist "/Program Files (x86)/NSIS/makensis.exe"   set NSIS_EXE="/Program Files (x86)/NSIS/makensis.exe"
+if exist "/Program Files/NSIS/makensis.exe"         set NSIS_EXE="/Program Files/NSIS/makensis.exe"
+if exist "%ProgramFiles%/NSIS/makensis.exe"         set NSIS_EXE="%ProgramFiles%/NSIS/makensis.exe"
+if exist "%ProgramFiles(x86)%/NSIS/makensis.exe"    set NSIS_EXE="%ProgramFiles(x86)%/NSIS/makensis.exe"
 ::
 :: echo the file date since makensis does not have a version command
 for %%x in (%NSIS_EXE%) do set NSIS_DATE=%%~tx
@@ -112,7 +112,7 @@ if ERRORLEVEL 1 (echo ** Failed in NSIS & exit /b 1) else (echo ** Success)
 :: package the installation zip file
 ::
 if /i "%APPVEYOR%" == "True" (
-    copy ..\LICENSE LICENSE.txt
+    copy ../LICENSE LICENSE.txt
     7z a artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
 )
 
