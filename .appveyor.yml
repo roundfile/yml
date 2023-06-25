@@ -76,10 +76,10 @@ for:
     - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements-win-legacy.txt 'libusb==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value}
 
     # update path env var
-    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
+    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%/Scripts;%PATH%
 
     # run the install script
-    - cmd: .ci\install-win.bat LEGACY
+    - cmd: .ci/install-win.bat LEGACY
 
   build_script:
     - cmd: echo Windows Legacy Build
@@ -138,10 +138,10 @@ for:
     - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements-win.txt 'libusb==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value}
 
     # update path env var
-    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
+    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%/Scripts;%PATH%
 
     # run the install script
-    - cmd: .ci\install-win.bat
+    - cmd: .ci/install-win.bat
 
   build_script:
     - cmd: echo Windows Build
