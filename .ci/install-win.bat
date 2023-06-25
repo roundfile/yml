@@ -131,6 +131,6 @@ echo curl libusb-win32
 curl -k -L -O https://netcologne.dl.sourceforge.net/project/libusb-win32/libusb-win32-releases/%LIBUSB_VER%/libusb-win32-bin-%LIBUSB_VER%.zip
 if not exist libusb-win32-bin-%LIBUSB_VER%.zip (exit /b 105)
 7z x libusb-win32-bin-%LIBUSB_VER%.zip
-copy libusb-win32-bin-%LIBUSB_VER%/bin/amd64/libusb0.dll C:/Windows/SysWOW64
+copy libusb-win32-bin-%LIBUSB_VER%/bin/amd64/libusb0.dll /Windows/SysWOW64
 
-dir C:\Windows\SysWOW64\libusb0.dll
+dir /Windows/SysWOW64/libusb0.dll
