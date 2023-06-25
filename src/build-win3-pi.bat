@@ -95,7 +95,10 @@ if ERRORLEVEL 1 (echo ** Failed in NSIS & exit /b 1) else (echo ** Success)
 :: package the installation zip file
 ::
 if /i "%APPVEYOR%" == "True" (
-    copy ../LICENSE LICENSE.txt
+    
+    dir ..
+    
+    copy "..\LICENSE" "LICENSE.txt"
     7z a artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
 )
 

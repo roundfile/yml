@@ -23,7 +23,7 @@ import sys
 logging.basicConfig(level=logging.INFO)
 
 # Function to perform file copy
-def copy_file(source_file, destination_file, fatal=False):
+def copy_file(source_file, destination_file, fatal=True):
     #logging.info("Copying %s",source_file)
     copy_command = f'copy "{source_file}" "{destination_file}"'
     exit_code = os.system(copy_command)
@@ -34,7 +34,7 @@ def copy_file(source_file, destination_file, fatal=False):
             sys.exit('Fatal Error')
 
 # Function to perform xcopy
-def xcopy_files(source_dir, destination_dir, fatal=False):
+def xcopy_files(source_dir, destination_dir, fatal=True):
     #logging.info("Copying %s",source_file)
     xcopy_command = f'xcopy "{source_dir}" "{destination_dir}"  /y /S'
     exit_code = os.system(xcopy_command)
@@ -45,7 +45,7 @@ def xcopy_files(source_dir, destination_dir, fatal=False):
             sys.exit('Fatal Error')
 
 # Function to make dir
-def make_dir(source_dir, fatal=False):
+def make_dir(source_dir, fatal=True):
     mkdir_command = f'mkdir "{source_dir}"'
     exit_code = os.system(mkdir_command)
     if exit_code != 0:
@@ -55,7 +55,7 @@ def make_dir(source_dir, fatal=False):
             sys.exit('Fatal Error')
 
 # Function to remove diir
-def remove_dir(source_dir, fatal=False):
+def remove_dir(source_dir, fatal=True):
     rmdir_command = f'rmdir /q /s {source_dir}'
     exit_code = os.system(rmdir_command)
     if exit_code != 0:
@@ -65,7 +65,7 @@ def remove_dir(source_dir, fatal=False):
             sys.exit('Fatal Error')
 
 # Function to check if a file exists
-def check_file_exists(file_path, fatal):
+def check_file_exists(file_path, fatal=True):
     if not os.path.isfile(file_path):
         msg = f'File does not exist: {file_path} '
         logging.error(msg)
