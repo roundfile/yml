@@ -62,6 +62,7 @@ for:
     PYTHON_PATH: "C:\\Python38-x64"
     QT_PATH: "C:/qt/5.15/msvc2019_64"
     PYUIC: "pyuic5.exe"
+    PYQT: "5"
     BUILD_PYINSTALLER: "False"
     ARTISAN_LEGACY: "True"
     VC_REDIST: "https://aka.ms/vs/16/release/vc_redist.x64.exe"
@@ -77,9 +78,6 @@ for:
 
     # update path env var
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
-
-    - cmd: dir \
-    - cmd: path
 
     # run the install script
     - cmd: .ci\install-win.bat LEGACY
@@ -122,6 +120,7 @@ for:
   environment:
     PYTHON_PATH: "C:\\Python311-x64"
     QT_PATH: "C:/qt/6.5.0/msvc2019_64"  #there is no msvc2022_64 under /qt*
+    PYQT: "6"
     PYUIC: "pyuic6.exe"
     BUILD_PYINSTALLER: "False"
     ARTISAN_LEGACY: "False"
