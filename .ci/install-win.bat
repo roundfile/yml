@@ -124,12 +124,14 @@ if not exist vc_redist.x64.exe (exit /b 104)
 :: copy the snap7 binary
 ::
 copy %PYTHON_PATH%\Lib\site-packages\snap7\lib\snap7.dll C:\Windows
+if ERRORLEVEL (exit /b 105)
 
 ::
 :: download and copy the libusb-win32 dll. NOTE-the version number for libusb is set in the requirements-win*.txt file.
 ::
 echo curl libusb-win32
 curl -k -L -O https://netcologne.dl.sourceforge.net/project/libusb-win32/libusb-win32-releases/%LIBUSB_VER%/libusb-win32-bin-%LIBUSB_VER%.zip
-if not exist libusb-win32-bin-%LIBUSB_VER%.zip (exit /b 105)
+if not exist libusb-win32-bin-%LIBUSB_VER%.zip (exit /b 106)
 7z x libusb-win32-bin-%LIBUSB_VER%.zip
 copy libusb-win32-bin-%LIBUSB_VER%\bin\amd64\libusb0.dll C:\Windows\SysWOW64
+if ERRORLEVEL (exit /b 107)

@@ -69,12 +69,21 @@ for /f "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanl
 :: create a version file for pyinstaller
 create-version-file version-metadata.yml --outfile version_info-win.txt --version %ARTISAN_VERSION%.%ARTISAN_BUILD%
 
-::echo Running dir to find phidget22.dll
-::dir "\phidget22.dll" /S
-::dir "\snap7.dll" /S
-::dir "\yapi.dll" /S
-::dir "\yapi64.dll" /S
-::dir "\libusb0.dll" /S
+echo Running dir to find phidget22.dll
+pushd .
+cd \python311-64
+dir "\phidget22.dll" /S
+dir "\snap7.dll" /S
+dir "\yapi.dll" /S
+dir "\yapi64.dll" /S
+dir "\libusb0.dll" /S
+cd \windows
+dir "\phidget22.dll" /S
+dir "\snap7.dll" /S
+dir "\yapi.dll" /S
+dir "\yapi64.dll" /S
+dir "\libusb0.dll" /S
+popd
 
 ::
 :: run pyinstaller
@@ -83,10 +92,6 @@ echo **** Running pyinstaller
 :: pyinstaller --noconfirm --log-level=WARN artisan-%ARTISAN_SPEC%.spec
 pyinstaller --noconfirm --log-level=WARN artisan-win-legacy.spec
 if ERRORLEVEL 1 (echo ** Failed in pyinstaller & exit /b 1) else (echo ** Success)
-
-dir dist\artisan  /S
-
-
 
 ::
 :: Don't make assumptions as to where the 'makensis.exe' is - look in the obvious places
