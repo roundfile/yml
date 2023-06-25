@@ -78,6 +78,7 @@ for:
     # update path env var
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%/Scripts;%PATH%
 
+    - cmd: dir \
     - cmd: path
 
     # run the install script
