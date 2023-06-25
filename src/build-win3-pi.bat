@@ -71,7 +71,7 @@ create-version-file version-metadata.yml --outfile version_info-win.txt --versio
 
 echo Running dir to find phidget22.dll
 pushd .
-cd \python311-x64
+cd \python311-x64\lib\
 dir "\phidget22.dll" /S
 dir "\snap7.dll" /S
 dir "\yapi.dll" /S
