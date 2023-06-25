@@ -59,7 +59,7 @@ for:
     fast_finish: false
 
   environment:
-    PYTHON_PATH: "C:/Python38-64"
+    PYTHON_PATH: "C:/Python38-x64"
     QT_PATH: "C:/qt/5.15/msvc2019_64"
     PYUIC: "pyuic5.exe"
     BUILD_PYINSTALLER: "False"
@@ -76,13 +76,13 @@ for:
     - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements-win-legacy.txt 'libusb==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value}
 
     # update path env var
-    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%/Scripts;%PATH%
+    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 
     - cmd: dir \
     - cmd: path
 
     # run the install script
-    - cmd: .ci/install-win.bat LEGACY
+    - cmd: .ci\install-win.bat LEGACY
 
   build_script:
     - cmd: echo Windows Legacy Build
@@ -120,7 +120,7 @@ for:
     fast_finish: false
 
   environment:
-    PYTHON_PATH: "C:/Python311-64"
+    PYTHON_PATH: "C:/Python311-x64"
     QT_PATH: "C:/qt/6.5.0/msvc2019_64"  #there is no msvc2022_64 under /qt*
     PYUIC: "pyuic6.exe"
     BUILD_PYINSTALLER: "False"
