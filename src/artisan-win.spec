@@ -200,16 +200,16 @@ remove_dir(TARGET + 'mpl-data/sample_data',False)
 
 # YOCTO HACK BEGIN: manually copy over the dlls
 make_dir(TARGET + 'yoctopuce\cdll')
-copy_file(YOCTO_BIN + r'\yapi.dll"', TARGET + 'yoctopuce\cdll')
-copy_file(YOCTO_BIN + r'\yapi64.dll"', TARGET + 'yoctopuce\cdll')
+copy_file(YOCTO_BIN + r'\yapi.dll', TARGET + 'yoctopuce\cdll')
+copy_file(YOCTO_BIN + r'\yapi64.dll', TARGET + 'yoctopuce\cdll')
 # YOCTO HACK END
 
 # copy Snap7 lib
-copy_file(SNAP7_BIN + r'\snap7.dll"', TARGET)
+copy_file(SNAP7_BIN + r'\snap7.dll', TARGET)
 
 # copy libusb0.1 lib
 
-copy_file(LIBUSB_BIN + r'\libusb0.dll"', TARGET)
+copy_file(LIBUSB_BIN + r'\libusb0.dll', TARGET)
 
 for fn in [
     'artisan.png',
