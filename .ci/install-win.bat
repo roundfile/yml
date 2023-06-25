@@ -59,8 +59,6 @@ ver
 echo Python Version
 python -V
 
-path
-
 ::
 :: get pip up to date
 ::
@@ -124,7 +122,10 @@ if not exist vc_redist.x64.exe (exit /b 104)
 :: copy the snap7 binary
 ::
 echo Copy snap7.dll to c:\Windows
+dir %PYTHON_PATH%\Lib\site-packages\snap7\lib\snap7.dll
+dir c:\python311-x64\lib\site-packages\snap7\lib\snap7.dll
 copy %PYTHON_PATH%\Lib\site-packages\snap7\lib\snap7.dll C:\Windows
+copy c:\python311-x64\lib\site-packages\snap7\lib\snap7.dll c:\windows
 dir c:\windows\snap7.dll
 
 ::
