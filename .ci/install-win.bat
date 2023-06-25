@@ -122,6 +122,7 @@ if not exist vc_redist.x64.exe (exit /b 104)
 :: copy the snap7 binary
 ::
 rem dir "\snap7.dll" /S
+dir "%PYTHON_PATH%/Lib/site-packages/snap7/lib"
 rem exit /b 1
 echo Copy snap7.dll to c:\Windows
 copy "%PYTHON_PATH%/Lib/site-packages/snap7/lib/snap7.dll" "C:/Windows/"
@@ -137,4 +138,4 @@ if not exist libusb-win32-bin-%LIBUSB_VER%.zip (exit /b 105)
 7z x libusb-win32-bin-%LIBUSB_VER%.zip
 copy "libusb-win32-bin-%LIBUSB_VER%/bin/amd64/libusb0.dll" "C:/Windows/SysWOW64/"
 
-dir /Windows/SysWOW64/libusb0.dll
+dir "c:/Windows/SysWOW64/libusb0.dll"
