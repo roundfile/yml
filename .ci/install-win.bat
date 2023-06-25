@@ -126,7 +126,7 @@ dir "%PYTHON_PATH%/Lib/site-packages/snap7/lib"
 rem exit /b 1
 echo Copy snap7.dll to c:\Windows
 rem copy "%PYTHON_PATH%/Lib/site-packages/snap7/lib/snap7.dll" "C:/Windows/"
-copy "c:\Python38-x64\Lib\site-packages\snap7\lib\snap7.dll" "C:\Windows"
+copy "c:/Python38-x64/Lib/site-packages/snap7/lib/snap7.dll" "C:\Windows"
 echo -----
 echo "%PYTHON_PATH%/Lib/site-packages/snap7/lib/snap7.dll"
 echo -----
