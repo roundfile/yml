@@ -59,7 +59,7 @@ for:
     fast_finish: false
 
   environment:
-    PYTHON_PATH: "C:/Python38-x64"
+    PYTHON_PATH: "C:/Python38-64"
     QT_PATH: "C:/qt/5.15/msvc2019_64"
     PYUIC: "pyuic5.exe"
     BUILD_PYINSTALLER: "False"
@@ -119,7 +119,7 @@ for:
     fast_finish: false
 
   environment:
-    PYTHON_PATH: "C:/Python311-x64"
+    PYTHON_PATH: "C:/Python311-64"
     QT_PATH: "C:/qt/6.5.0/msvc2019_64"  #there is no msvc2022_64 under /qt*
     PYUIC: "pyuic6.exe"
     BUILD_PYINSTALLER: "False"
