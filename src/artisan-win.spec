@@ -196,7 +196,7 @@ for tr in [
   copy_file(QT_TRANSL + '\\' + tr, TARGET + 'translations')
 
 # this directory no longer exists
-remove_dir(TARGET + 'mpl-data/sample_data',False)
+remove_dir(TARGET + 'mpl-data\sample_data',False)
 
 # YOCTO HACK BEGIN: manually copy over the dlls
 make_dir(TARGET + 'yoctopuce\cdll')

@@ -104,8 +104,6 @@ for:
 
   artifacts:
     - path: 'generated-win-legacy.zip'
-    - path: '/projects/yml/src/build/artisan-win-legacy/warn-artisan-win-legacy.txt'
-    - path: '/projects/yml/src/build/artisan-win-legacy/xref-artisan-win-legacy.html'
 #    - path: 'src\artisan-*.zip'
 
   deploy_script:
@@ -167,8 +165,6 @@ for:
 
   artifacts:
     - path: 'generated-win.zip'
-    - path: '/projects/yml/src/build/artisan-win-legacy/warn-artisan-win-legacy.txt'
-    - path: '/projects/yml/src/build/artisan-win-legacy/xref-artisan-win-legacy.html'
 #    - path: 'src\artisan-*.zip'
 
   deploy_script:

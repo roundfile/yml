@@ -69,12 +69,14 @@ for /f "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanl
 :: create a version file for pyinstaller
 create-version-file version-metadata.yml --outfile version_info-win.txt --version %ARTISAN_VERSION%.%ARTISAN_BUILD%
 
+echo dir "\*qtconnectivity*" /s
+dir "\*qtconnectivity*" /S
+
 ::
 :: run pyinstaller
 :: Choose log-level from 'TRACE', 'DEBUG', 'INFO', 'WARN', 'DEPRECATION', 'ERROR', 'FATAL'
 echo **** Running pyinstaller
-:: pyinstaller --noconfirm --log-level=WARN artisan-%ARTISAN_SPEC%.spec
-pyinstaller --noconfirm --log-level=WARN artisan-win.spec
+pyinstaller --noconfirm --log-level=DEBUG artisan-win.spec
 if ERRORLEVEL 1 (echo ** Failed in pyinstaller & exit /b 1) else (echo ** Success)
 
 ::
