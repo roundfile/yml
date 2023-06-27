@@ -51,10 +51,10 @@ if ($env:APPVEYOR -ne "True") {
 }
 else {
     if ($env:ARTISAN_LEGACY -ne "True") {
-        $ARTISAN_SPEC = "win"
+        $env:ARTISAN_SPEC = "win"
     }
     else {
-        $ARTISAN_SPEC = "win-legacy"
+        $env:ARTISAN_SPEC = "win-legacy"
     }
 }
 
@@ -68,6 +68,7 @@ python -V
 # Get pip up to date
 python -m pip install --upgrade pip
 python -m pip install wheel
+
 
 # Install Artisan required libraries from pip
 python -m pip install -r src/requirements.txt
