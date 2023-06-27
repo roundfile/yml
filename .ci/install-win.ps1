@@ -79,7 +79,7 @@ if ($env:BUILD_PYINSTALLER -eq "True") {
     Write-Host "***** Start build pyinstaller v$env:PYINSTALLER_VER"
     # Download pyinstaller source
     Write-Host "***** curl pyinstaller v$env:PYINSTALLER_VER"
-    curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v$env:PYINSTALLER_VER.zip
+    curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v$env:PYINSTALLER_VER.zipInvoke-WebRequest -Uri "https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v$env:PYINSTALLER_VER.zip" -OutFile "v$env:PYINSTALLER_VER.zip"
     if (-not (Test-Path "v$env:PYINSTALLER_VER.zip")) { exit 100 }
     7z x "v$env:PYINSTALLER_VER.zip"
     Remove-Item "v$env:PYINSTALLER_VER.zip"
@@ -106,7 +106,7 @@ Write-Host "***** Finished install pyinstaller v$env:PYINSTALLER_VER"
 
 # Download and install required libraries not available on pip
 Write-Host "curl vc_redist.x64.exe"
-curl -L -O $env:VC_REDIST
+Invoke-WebRequest -Uri $env:VC_REDIST -OutFile (Split-Path -Leaf $env:VC_REDIST)
 if (-not (Test-Path "vc_redist.x64.exe")) { exit 104 }
 
 # Copy the snap7 binary
@@ -124,6 +124,6 @@ $targetPath = "C:\Windows\SysWOW64\libusb0.dll"
 Invoke-WebRequest -Uri $downloadUrl -OutFile $zipFilePath -UseBasicParsing
 if (-not (Test-Path $zipFilePath)) {exit 106}
 #Add-Type -Path "C:\Program Files\7-Zip\7z.dll"  # Change the path if necessary
-& "C:\Program Files\7-Zip\7z.exe" x $zipFilePath
+"C:\Program Files\7-Zip\7z.exe" x $zipFilePath
 Copy-Item "$extractedFolder\bin\amd64\libusb0.dll" $targetPath -Force
 if (-not (Test-Path $targetPath)) {exit 107}
