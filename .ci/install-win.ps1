@@ -58,8 +58,8 @@ else {
     }
 }
 
-$osVersion = [System.Environment]::OSVersion
-$versionString = "Microsoft Windows [Version {0}.{1}.{2}.{3}]" -f $osVersion.Major, $osVersion.Minor, $osVersion.Build, $osVersion.Revision
+$osVersion = Get-WmiObject -Class Win32_OperatingSystem | Select-Object -ExpandProperty Version
+$versionString = "Microsoft Windows [Version $osVersion]"
 Write-Host $versionString
 
 Write-Host "Python Version"
@@ -79,7 +79,7 @@ if ($env:BUILD_PYINSTALLER -eq "True") {
     Write-Host "***** Start build pyinstaller v$env:PYINSTALLER_VER"
     # Download pyinstaller source
     Write-Host "***** curl pyinstaller v$env:PYINSTALLER_VER"
-    & curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v$env:PYINSTALLER_VER.zip
+    curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v$env:PYINSTALLER_VER.zip
     if (-not (Test-Path "v$env:PYINSTALLER_VER.zip")) { exit 100 }
     7z x "v$env:PYINSTALLER_VER.zip"
     Remove-Item "v$env:PYINSTALLER_VER.zip"
