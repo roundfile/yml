@@ -28,7 +28,7 @@
 
 $ErrorActionPreference = "Stop"
 
-if ($env:APPVEYOR -neq "True") {
+if ($env:APPVEYOR -ne "True") {
     if ($args[0] -eq "LEGACY") {
         $ARTISAN_SPEC = "win-legacy"
         $PYTHON_PATH = "c:\Python38-64"
@@ -50,7 +50,7 @@ if ($env:APPVEYOR -neq "True") {
     $env:PATH = "$PYTHON_PATH;$PYTHON_PATH\Scripts;$env:PATH"
 }
 else {
-    if ($env:ARTISAN_LEGACY -neq "True") {
+    if ($env:ARTISAN_LEGACY -ne "True") {
         $ARTISAN_SPEC = "win"
     }
     else {
