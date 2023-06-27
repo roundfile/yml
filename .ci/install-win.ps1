@@ -118,8 +118,8 @@ Write-Host "curl libusb-win32"
 
 # download and copy the libusb-win32 dll. NOTE-the version number for libusb is set in the requirements-win*.txt file.
 $downloadUrl = "https://netcologne.dl.sourceforge.net/project/libusb-win32/libusb-win32-releases/$LIBUSB_VER/libusb-win32-bin-$LIBUSB_VER.zip"
-$zipFilePath = "libusb-win32-bin-$LIBUSB_VER.zip"
-$extractedFolder = "libusb-win32-bin-$LIBUSB_VER"
+$zipFilePath = "libusb-win32-bin-$env:LIBUSB_VER.zip"
+$extractedFolder = "libusb-win32-bin-$env:LIBUSB_VER"
 $targetPath = "C:\Windows\SysWOW64\libusb0.dll"
 Invoke-WebRequest -Uri $downloadUrl -OutFile $zipFilePath -UseBasicParsing
 if (-not (Test-Path $zipFilePath)) {exit 106}
