@@ -79,7 +79,7 @@ if ($env:BUILD_PYINSTALLER -eq "True") {
     Write-Host "***** Start build pyinstaller v$env:PYINSTALLER_VER"
     # Download pyinstaller source
     Write-Host "***** curl pyinstaller v$env:PYINSTALLER_VER"
-    curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v$env:PYINSTALLER_VER.zipInvoke-WebRequest -Uri "https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v$env:PYINSTALLER_VER.zip" -OutFile "v$env:PYINSTALLER_VER.zip"
+    Invoke-WebRequest -Uri "https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v$env:PYINSTALLER_VER.zip" -OutFile "v$env:PYINSTALLER_VER.zip"
     if (-not (Test-Path "v$env:PYINSTALLER_VER.zip")) { exit 100 }
     7z x "v$env:PYINSTALLER_VER.zip"
     Remove-Item "v$env:PYINSTALLER_VER.zip"
