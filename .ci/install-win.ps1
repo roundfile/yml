@@ -58,9 +58,9 @@ else {
     }
 }
 
-ver
+& ver
 Write-Host "Python Version"
-python -V
+& python -V
 
 # Get pip up to date
 python -m pip install --upgrade pip
