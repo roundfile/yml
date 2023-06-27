@@ -58,7 +58,10 @@ else {
     }
 }
 
-(Get-WmiObject -Class Win32_OperatingSystem).Caption
+$osVersion = [System.Environment]::OSVersion
+$versionString = "Microsoft Windows [Version {0}.{1}.{2}.{3}]" -f $osVersion.Major, $osVersion.Minor, $osVersion.Build, $osVersion.Revision
+Write-Host $versionString
+
 Write-Host "Python Version"
 python -V
 
@@ -67,8 +70,8 @@ python -m pip install --upgrade pip
 python -m pip install wheel
 
 # Install Artisan required libraries from pip
-python -m pip install -r src\requirements.txt
-python -m pip install -r src\requirements-$env:ARTISAN_SPEC.txt
+python -m pip install -r src/requirements.txt
+python -m pip install -r src/requirements-$env:ARTISAN_SPEC.txt
 
 # Custom build the pyinstaller bootloader or install a prebuilt
 if ($env:BUILD_PYINSTALLER -eq "True") {
