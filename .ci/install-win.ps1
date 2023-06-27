@@ -71,15 +71,15 @@ python -m pip install wheel
 
 
 # Install Artisan required libraries from pip
-python -m pip install -r src/requirements.txt
-python -m pip install -r src/requirements-$env:ARTISAN_SPEC.txt
+python -m pip install -r src\requirements.txt
+python -m pip install -r src\requirements-$env:ARTISAN_SPEC.txt
 
 # Custom build the pyinstaller bootloader or install a prebuilt
 if ($env:BUILD_PYINSTALLER -eq "True") {
     Write-Host "***** Start build pyinstaller v$env:PYINSTALLER_VER"
     # Download pyinstaller source
     Write-Host "***** curl pyinstaller v$env:PYINSTALLER_VER"
-    curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v$env:PYINSTALLER_VER.zip
+    & curl -L -O https://github.com/pyinstaller/pyinstaller/archive/refs/tags/v$env:PYINSTALLER_VER.zip
     if (-not (Test-Path "v$env:PYINSTALLER_VER.zip")) { exit 100 }
     7z x "v$env:PYINSTALLER_VER.zip"
     Remove-Item "v$env:PYINSTALLER_VER.zip"
