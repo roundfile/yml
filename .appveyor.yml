@@ -27,10 +27,10 @@ environment:
     appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
     appveyor_build_worker_image: Visual Studio 2022
-#  - job_name: macos
-#    appveyor_build_worker_image: macos-bigsur
-#  - job_name: linux
-#    appveyor_build_worker_image: Ubuntu2004
+  - job_name: macos
+    appveyor_build_worker_image: macos-bigsur
+  - job_name: linux
+    appveyor_build_worker_image: Ubuntu2004
 
 
 # Generic build number, later set to commit hash by init
@@ -80,8 +80,7 @@ for:
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 
     # run the install script
-#    - cmd: .ci\install-win.bat LEGACY
-    - ps: .ci\install-win.ps1 LEGACY
+    - cmd: .ci\install-win.bat LEGACY
 
   build_script:
     - cmd: echo Windows Legacy Build

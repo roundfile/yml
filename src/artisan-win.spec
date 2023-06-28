@@ -193,6 +193,21 @@ for tr in [
     'qtbase_uk.qm',
     'qtbase_tr.qm',
     'qtbase_zh_TW.qm',
+#    'qtconnectivity_bg.qm',
+#    'qtconnectivity_ca.qm',
+#    'qtconnectivity_da.qm',
+    'qtconnectivity_de.qm',
+    'qtconnectivity_en.qm',
+    'qtconnectivity_es.qm',
+#    'qtconnectivity_hr.qm',
+    'qtconnectivity_hu.qm',
+    'qtconnectivity_ko.qm',
+#    'qtconnectivity_nl.qm',
+#    'qtconnectivity_pl.qm',
+#    'qtconnectivity_pt_BR.qm',
+#    'qtconnectivity_ru.qm',
+    'qtconnectivity_tr.qm',
+#    'qtconnectivity_uk.qm',
     ]:
   copy_file(QT_TRANSL + '\\' + tr, TARGET + 'translations')
 
