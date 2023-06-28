@@ -1,8 +1,9 @@
 ######
 # the following commented package versions are read by appveyor.
 #
-# pyinstaller==5.13.0; platform_system='Windows'                         #built during the appveyor ci process
-# libusb==1.0.26; platform_system='Windows' or platform_system=='Linux'  #downloaded during the appveyor ci process
+# pyinstaller==5.13.0; platform_system='Windows' #built during the appveyor ci process
+# libusb==1.2.6.0; platform_system='Windows'     #downloaded during the appveyor ci process
+# libusb==1.0.26;  platform_system=='Linux'      #downloaded during the appveyor ci process
 #
 #
 ######
