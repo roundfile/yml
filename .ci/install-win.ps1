@@ -26,7 +26,7 @@
 # CAUTION: the paths in this section are not gurantted to be up to date!! 
 # ----------------------------------------------------------------------
 
-$ErrorActionPreference = "Stop"
+#$ErrorActionPreference = "Stop"
 
 if ($env:APPVEYOR -ne "True") {
     if ($args[0] -eq "LEGACY") {
