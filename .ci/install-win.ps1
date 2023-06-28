@@ -125,7 +125,8 @@ Invoke-WebRequest -Uri $downloadUrl -OutFile $zipFilePath -UseBasicParsing
 if (-not (Test-Path $zipFilePath)) {exit 106}
 if ((Test-Path $zipFilePath)) {Write-Host "Exists $zipFilePath"}
 Write-Host "Before unzip $zipFilePath"
-7z x "$zipFilePath"
+Expand-Archive -Path $zipFilePath -DestinationPath $extractedFolder
+#7z x "$zipFilePath"
 Write-Host "After unzip"
 Copy-Item ".\$extractedFolder\bin\amd64\libusb0.dll" $targetPath -Force
 if (-not (Test-Path $targetPath)) {exit 107}
