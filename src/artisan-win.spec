@@ -207,9 +207,11 @@ for tr in [
 #    'qtconnectivity_pt_BR.qm',
 #    'qtconnectivity_ru.qm',
     'qtconnectivity_tr.qm',
-#    'qtconnectivity_uk.qm',
+#    'qtconnectivity_uk.qm', 
+    'qtconnectivity_zh_CN.qm',
     ]:
-  copy_file(QT_TRANSL + '\\' + tr, TARGET + 'translations')
+  #copy_file(QT_TRANSL + '\\' + tr, TARGET + 'translations')
+  pass
 
 # this directory no longer exists
 remove_dir(TARGET + 'mpl-data\sample_data',False)
