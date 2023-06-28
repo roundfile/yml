@@ -1,7 +1,7 @@
 ######
 # the following commented package versions are read by appveyor.
 #
-# pyinstaller==5.13.1; platform_system='Windows'                         #built during the appveyor ci process
+# pyinstaller==5.13.0; platform_system='Windows'                         #built during the appveyor ci process
 # libusb==1.0.26; platform_system='Windows' or platform_system=='Linux'  #downloaded during the appveyor ci process
 #
 #
@@ -66,7 +66,7 @@ PyQt6-WebEngine==6.5.0; (sys_platform=='darwin' and platform_release>='20.0') or
 matplotlib==3.7.0; platform_system=='Windows' #3.7.1 has an issue with the click handle on Windows
 matplotlib==3.7.1; platform_system!='Windows'
 ###
-pyinstaller==5.13.2; platform_system=='Linux' # on Windows pyinstaller is separately installed (see above)
+pyinstaller==5.13.0; platform_system=='Linux' # on Windows pyinstaller is separately installed (see above)
 ###
 ###
 ########
