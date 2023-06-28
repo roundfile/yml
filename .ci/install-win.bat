@@ -68,7 +68,7 @@ python -m pip install wheel
 ::
 :: install Artisan required libraries from pip
 ::
-python -m pip install -r src\requirements-new.txt
+python -m pip install --no-warn-script-location -r src\requirements-new.txt
 rem python -m pip install -r src\requirements.txt
 rem python -m pip install -r src\requirements-%ARTISAN_SPEC%.txt
 
