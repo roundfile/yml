@@ -68,7 +68,7 @@ python -m pip install wheel
 ::
 :: install Artisan required libraries from pip
 ::
-python -m pip install --no-warn-script-location -r src\requirements-new.txt
+python -m pip install -r src\requirements-new.txt | findstr /v /b "Ignoring"
 rem python -m pip install -r src\requirements.txt
 rem python -m pip install -r src\requirements-%ARTISAN_SPEC%.txt
 
@@ -128,3 +128,9 @@ if not exist libusb-win32-bin-%LIBUSB_VER%.zip (exit /b 106)
 7z x libusb-win32-bin-%LIBUSB_VER%.zip
 copy "libusb-win32-bin-%LIBUSB_VER%\bin\amd64\libusb0.dll" "C:\Windows\SysWOW64"
 if not exist "C:\Windows\SysWOW64\libusb0.dll" (exit /b 107)
+
+::
+:: what set of libraries are installed
+::
+echo pip freeze
+python -m pip freeze
