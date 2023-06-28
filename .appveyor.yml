@@ -80,7 +80,8 @@ for:
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 
     # run the install script
-    - cmd: .ci\install-win.bat LEGACY
+#    - cmd: .ci\install-win.bat LEGACY
+    - ps: .ci\install-win.ps1 LEGACY
 
   build_script:
     - cmd: echo Windows Legacy Build
