@@ -123,7 +123,6 @@ $extractedFolder = "libusb-win32-bin-$env:LIBUSB_VER"
 $targetPath = "C:\Windows\SysWOW64\libusb0.dll"
 Invoke-WebRequest -Uri $downloadUrl -OutFile $zipFilePath -UseBasicParsing
 if (-not (Test-Path $zipFilePath)) {exit 106}
-#Add-Type -Path "C:\Program Files\7-Zip\7z.dll"  # Change the path if necessary
-& "C:\Program Files\7-Zip\7z.exe" x $zipFilePath
+7z x $zipFilePath
 Copy-Item "$extractedFolder\bin\amd64\libusb0.dll" $targetPath -Force
 if (-not (Test-Path $targetPath)) {exit 107}
