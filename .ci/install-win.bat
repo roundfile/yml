@@ -1,6 +1,6 @@
 @echo off
 :: ABOUT
-:: CI install script for Artisan Windows builds
+:: Install script for Artisan Windows CI builds
 ::
 :: LICENSE
 :: This program or module is free software: you can redistribute it and/or
