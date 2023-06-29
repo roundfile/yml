@@ -29,7 +29,7 @@ sudo apt-get install -y -q libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 libxcb-i
 
 gem install fpm -v 1.12.0 # Linux build fails using 1.13.0
 pip install --upgrade pip
-pip install -r src/requirements-new.txt
+pip install -r src/requirements-new.txt | sed '/^Ignoring/d'
 #pip install -r src/requirements.txt
 #pip install -r src/requirements-${ARTISAN_OS}.txt
 
