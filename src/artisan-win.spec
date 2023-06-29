@@ -75,15 +75,17 @@ def check_file_exists(file_path, fatal=True):
 block_cipher = None
 
 import os
-if os.environ.get('APPVEYOR'):
+if os.environ.get('APPVEYOR-X'):
   ARTISAN_SRC = r'C:\projects\artisan\src'
   PYTHON = os.environ.get('PYTHON_PATH')
   PYQT = os.environ.get('PYQT')
   QT_TRANSL = os.environ.get('QT_TRANSL')
   ARTISAN_LEGACY = os.environ.get('ARTISAN_LEGACY')
 else:
-  ARTISAN_SRC = r'C:\Users\roast\Documents\artisan-roaster-scope\src'
-  PYTHON = r'C:\Program Files\Python38'
+  msg =f'artisan-win.spec is intended only to run on Appveyor CI.'
+  logging.error(msg)
+  sys.exit('Fatal Error')
+
 NAME = 'artisan'
 
 logging.info("** ARTISAN_LEGACY: %s", ARTISAN_LEGACY)
