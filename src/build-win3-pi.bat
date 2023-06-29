@@ -1,6 +1,6 @@
 @echo off
 :: ABOUT
-:: Windows build file for Artisan
+:: Windows CI build file for Artisan
 ::
 :: LICENSE
 :: This program or module is free software: you can redistribute it and/or
@@ -14,38 +14,20 @@
 ::
 :: AUTHOR
 :: Dave Baxter, Marko Luther 2023
+
 :: on entry to this script the current path must be the src folder
-::
-:: script comandline option LEGACY used to flag a legacy build
 ::
 
 :: ----------------------------------------------------------------------
-:: normally these paths are set in appveyor.yml
-:: when running locally these paths must be set here 
-:: CAUTION: the paths in this section are not guranteed to be up to date!! 
-:: ----------------------------------------------------------------------
 setlocal enabledelayedexpansion
 if /i "%APPVEYOR%" NEQ "True" (
-    if /i "%~1" == "LEGACY" (
-        set ARTISAN_SPEC=win-legacy
-        set PYTHON_PATH=c:\Python38-64
-        set ARTISAN_LEGACY=True
-        set PYUIC=pyuic5.exe
-        set QT_PATH=c:\qt\5.15\msvc2019_64
-    ) else (
-        set ARTISAN_SPEC=win
-        set PYTHON_PATH=c:\Python311-64
-        set ARTISAN_LEGACY=False
-        set PYUIC=pyuic6.exe
-        set QT_PATH=c:\qt\6.4\msvc2022_64
-    )
-    set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
+    echo This file is for use on Appveyor CI only.
+    exit /b 1
+}
+if /i "%ARTISAN_LEGACY%" NEQ "True" (
+    set ARTISAN_SPEC=win
 ) else (
-    if /i "%ARTISAN_LEGACY%" NEQ "True" (
-        set ARTISAN_SPEC=win
-    ) else (
-        set ARTISAN_SPEC=win-legacy
-    )
+    set ARTISAN_SPEC=win-legacy
 )
 :: ----------------------------------------------------------------------
 

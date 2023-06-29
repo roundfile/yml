@@ -84,7 +84,7 @@ for:
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 
     # run the install script
-    - cmd: .ci\install-win.bat LEGACY
+    - cmd: .ci\install-win.bat
 
   build_script:
     - cmd: echo Windows Legacy Build
@@ -101,7 +101,7 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the build script
-    - cmd: build-win3-pi.bat LEGACY
+    - cmd: build-win3-pi.bat
 
 #  test_script:
 #    - cmd: python -m unittest discover

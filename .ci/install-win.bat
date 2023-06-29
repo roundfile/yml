@@ -17,41 +17,16 @@
 
 
 :: the current directory on entry to this script must be the folder above src
-::
-:: script comandline option LEGACY used to flag a legacy build
-::
 
-:: ----------------------------------------------------------------------
-:: normally these paths are set in appveyor.yml
-:: when running locally these paths must be set here 
-:: CAUTION: the paths in this section are not gurantted to be up to date!! 
-:: ----------------------------------------------------------------------
 setlocal enabledelayedexpansion
 if /i "%APPVEYOR%" NEQ "True" (
-    if /i "%~1" == "LEGACY" (
-        set ARTISAN_SPEC=win-legacy
-        set PYTHON_PATH=c:\Python38-64
-        set QT_PATH=c:\qt\5.15\msvc2019_64
-        set PYINSTALLER_VER=5.7
-        set LIBUSB_VER=1.2.6.0
-        set BUILD_PYINSTALLER=False
-        set VC_REDIST=https://aka.ms/vs/16/release/vc_redist.x64.exe
-    ) else (
-        set ARTISAN_SPEC=win
-        set PYTHON_PATH=c:\Python311-64
-        set QT_PATH=c:\qt\6.4\msvc2022_64
-        set PYINSTALLER_VER=5.7
-        set LIBUSB_VER=1.2.6.0
-        set BUILD_PYINSTALLER=True
-        set VC_REDIST=https://aka.ms/vs/17/release/vc_redist.x64.exe
-    )
-    set PATH=!PYTHON_PATH!;!PYTHON_PATH!\Scripts;!PATH!
+    echo This file is for use on Appveyor CI only.
+    exit /b 1
+}
+if /i "%ARTISAN_LEGACY%" NEQ "True" (
+    set ARTISAN_SPEC=win
 ) else (
-    if /i "%ARTISAN_LEGACY%" NEQ "True" (
-        set ARTISAN_SPEC=win
-    ) else (
-        set ARTISAN_SPEC=win-legacy
-    )
+    set ARTISAN_SPEC=win-legacy
 )
 :: ----------------------------------------------------------------------
 
