@@ -37,3 +37,9 @@ pip install -r src/requirements-new.txt | sed '/^Ignoring/d'
 sudo cp -f ${PYTHONSITEPKGS}/snap7/lib/libsnap7.so /usr/lib
 
 .ci/install-libusb.sh
+
+# show set of libraries are installed
+echo "**** pip freeze ****"
+pip freeze
+
+

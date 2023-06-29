@@ -130,7 +130,7 @@ copy "libusb-win32-bin-%LIBUSB_VER%\bin\amd64\libusb0.dll" "C:\Windows\SysWOW64"
 if not exist "C:\Windows\SysWOW64\libusb0.dll" (exit /b 107)
 
 ::
-:: what set of libraries are installed
+:: show set of libraries are installed
 ::
-echo pip freeze
+echo **** pip freeze ****
 python -m pip freeze
