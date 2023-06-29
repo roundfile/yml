@@ -175,33 +175,33 @@ copy_file(r'Wheels\Cupping\*', TARGET + r'Wheels\Cupping')
 copy_file(r'Wheels\Other\*', TARGET + r'Wheels\Other')
 copy_file(r'Wheels\Roasting\*', TARGET + r'Wheels\Roasting')
 
-#make_dir(TARGET + 'translations')
-#copy_file(r'translations\*.qm', TARGET + 'translations')
-#for tr in [
-#    'qtbase_ar.qm',
-#    'qtbase_de.qm',
-#    'qtbase_en.qm',
-#    'qtbase_es.qm',
-#    'qtbase_fi.qm',
-#    'qtbase_fr.qm',
-#    'qtbase_he.qm',
-#    'qtbase_hu.qm',
-#    'qtbase_it.qm',
-#    'qtbase_ja.qm',
-#    'qtbase_ko.qm',
-#    'qtbase_pl.qm',
-#    'qtbase_uk.qm',
-#    'qtbase_tr.qm',
-#    'qtbase_zh_TW.qm',
-#    'qtconnectivity_de.qm',
-#    'qtconnectivity_en.qm',
-#    'qtconnectivity_es.qm',
-#    'qtconnectivity_hu.qm',
-#    'qtconnectivity_ko.qm',
-#    'qtconnectivity_tr.qm',
-#    'qtconnectivity_zh_CN.qm',
-#    ]:
-#  copy_file(QT_TRANSL + '\\' + tr, TARGET + 'translations')
+make_dir(TARGET + 'translations')
+copy_file(r'translations\*.qm', TARGET + 'translations')
+for tr in [
+    'qtbase_ar.qm',
+    'qtbase_de.qm',
+    'qtbase_en.qm',
+    'qtbase_es.qm',
+    'qtbase_fi.qm',
+    'qtbase_fr.qm',
+    'qtbase_he.qm',
+    'qtbase_hu.qm',
+    'qtbase_it.qm',
+    'qtbase_ja.qm',
+    'qtbase_ko.qm',
+    'qtbase_pl.qm',
+    'qtbase_uk.qm',
+    'qtbase_tr.qm',
+    'qtbase_zh_TW.qm',
+    'qtconnectivity_de.qm',
+    'qtconnectivity_en.qm',
+    'qtconnectivity_es.qm',
+    'qtconnectivity_hu.qm',
+    'qtconnectivity_ko.qm',
+    'qtconnectivity_tr.qm',
+    'qtconnectivity_zh_CN.qm',
+    ]:
+  copy_file(QT_TRANSL + '\\' + tr, TARGET + 'translations')
 
 # this directory no longer exists
 remove_dir(TARGET + 'mpl-data\sample_data',False)
