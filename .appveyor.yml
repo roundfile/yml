@@ -87,7 +87,7 @@ for:
     # run the install script
     - cmd: .ci\install-win.bat
         
-    -cmd: fc /b "C:\Qt\Tools\QtCreator\share\qtcreator\translations\qtbase_de.qm" "C:\Python38-x64\Lib\site-packages\PyQt5\Qt5\translations\qtbase_de.qm"
+    - cmd: fc /b "C:\Qt\Tools\QtCreator\share\qtcreator\translations\qtbase_de.qm" "C:\Python38-x64\Lib\site-packages\PyQt5\Qt5\translations\qtbase_de.qm"
 
   build_script:
     - cmd: echo Windows Legacy Build
@@ -155,7 +155,7 @@ for:
     # run the install script
     - cmd: .ci/install-win.bat
 
-    -cmd: fc /b "C:\Qt\Tools\QtCreator\share\qtcreator\translations\qtbase_de.qm" "C:\Python311-x64\Lib\site-packages\PyQt6\Qt6\translations\qtbase_de.qm"
+    - cmd: fc /b "C:\Qt\Tools\QtCreator\share\qtcreator\translations\qtbase_de.qm" "C:\Python311-x64\Lib\site-packages\PyQt6\Qt6\translations\qtbase_de.qm"
 
   build_script:
     - cmd: echo Windows Build
