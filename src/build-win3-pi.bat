@@ -68,6 +68,7 @@ if exist "%ProgramFiles(x86)%/NSIS/makensis.exe"    set NSIS_EXE="%ProgramFiles(
 :: echo the file date since makensis does not have a version command
 for %%x in (%NSIS_EXE%) do set NSIS_DATE=%%~tx
 echo **** Running NSIS makensis.exe file date %NSIS_DATE%
+
 ::
 :: run NSIS to build the install .exe file
 %NSIS_EXE% /DPRODUCT_VERSION=%ARTISAN_VERSION%.%ARTISAN_BUILD% /DLEGACY=%ARTISAN_LEGACY% setup-install3-pi.nsi
@@ -79,17 +80,18 @@ if ERRORLEVEL 1 (echo ** Failed in NSIS & exit /b 1) else (echo ** Success)
 if /i "%APPVEYOR%" == "True" (
     copy "..\LICENSE" "LICENSE.txt"
     7z a artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
+    if ERRORLEVEL 1 (echo ** Failed in 7z zipping the setup files & exit /b 1)
 )
 
 ::
 :: check that the packaged files are above an expected size
 ::
 set file=artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip
-set expectedbytesize=170000000
+set min_size=170000000
 for %%A in (%file%) do set size=%%~zA
-if %size% LSS %expectedbytesize% (
+if %size% LSS %min_size% (
     echo *** Zip file is smaller than expected
     exit /b 1
 ) else (
-    echo **** Success: %file% is larger than minimum %expectedbytesize% bytes
+    echo **** Success: %file% is larger than minimum %min_size% bytes
 )
