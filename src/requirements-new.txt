@@ -1,8 +1,8 @@
 ######
 # the following commented package versions are read by appveyor.yml and downloaded outside of pip.
 #
-# 5.6.2-Y 5.7.0 5.8.0 5.9.0-N 5.10.0 5.10.1-N 5.11.0 5.12.0 5.13.0-N
-# pyinstaller==5.8.0; platform_system='Windows'   #5.13.0  #5.6.2 works for weblcds
+# 5.6.2-Y 5.7.0 5.8.0-N 5.9.0-N 5.10.0 5.10.1-N 5.11.0 5.12.0 5.13.0-N
+# pyinstaller==5.7.0; platform_system='Windows'   #5.13.0  #5.6.2 works for weblcds
 # libusb==1.2.7.3; platform_system='Windows'  #1.2.6.0
 # libusb==1.0.26;  platform_system='Linux'
 #
