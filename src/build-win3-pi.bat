@@ -55,7 +55,7 @@ create-version-file version-metadata.yml --outfile version_info-win.txt --versio
 :: run pyinstaller
 :: Choose log-level from 'TRACE', 'DEBUG', 'INFO', 'WARN', 'DEPRECATION', 'ERROR', 'FATAL'
 echo **** Running pyinstaller
-pyinstaller --noconfirm --log-level=WARN artisan-win.spec
+pyinstaller --noconfirm --log-level=INFO artisan-win.spec
 if ERRORLEVEL 1 (echo ** Failed in pyinstaller & exit /b 1) else (echo ** Success)
 
 ::
