@@ -25,10 +25,10 @@ environment:
   matrix:
 #  - job_name: windows_legacy
 #    appveyor_build_worker_image: Visual Studio 2019
-  - job_name: windows
-    appveyor_build_worker_image: Visual Studio 2022
-#  - job_name: macos
-#    appveyor_build_worker_image: macos-bigsur
+#  - job_name: windows
+#    appveyor_build_worker_image: Visual Studio 2022
+  - job_name: macos
+    appveyor_build_worker_image: macos-bigsur
 #  - job_name: linux
 #    appveyor_build_worker_image: Ubuntu2004
 
@@ -197,6 +197,9 @@ for:
   install:
     - echo "MacOS Install"
     - chmod +x .ci/*.sh
+
+    - echo "sudo find / -name libusb*"
+    - sudo find / -name libusb*
 
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
