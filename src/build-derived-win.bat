@@ -98,7 +98,9 @@ if exist "%QT_PATH%\bin\lrelease.exe" (
     )
     echo ** Success
 ) else (
-    echo %Error: QT_PATH%\bin\lrelease.exe does not exist
+    echo Error: %QT_PATH%\bin\lrelease.exe does not exist
+    dir %QT_PATH%
+    dir %QT_PATH%\bin
     exit /b 1
 )   
 
