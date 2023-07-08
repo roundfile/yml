@@ -87,20 +87,26 @@ if /i "%ARTISAN_LEGACY%" == "True" (
     if ERRORLEVEL 1 (echo ** Failed in pylupdate6pro.py & exit /b 1) else (echo ** Success)
 )
 echo ************* lrelease **************
-echo *** Processing artisan.pro
-if exist "%QT_PATH%\bin\lrelease.exe" (
-    %QT_PATH%\bin\lrelease.exe -verbose artisan.pro
-    if ERRORLEVEL 1 (echo ** Failed in lrelease step 1 & exit /b 1) else (echo ** Success)
-    echo *** Processing translation qtbase_*.ts files
-    for /r %%a IN (translations\qtbase_*.ts) DO (
-        %QT_PATH%\bin\lrelease.exe -verbose %%~a
-        if ERRORLEVEL 1 (echo ** Failed in lrelease step 2 & exit /b 1)
-    )
-    echo ** Success
-) else (
-    echo %Error: QT_PATH%\bin\lrelease.exe does not exist
-    exit /b 1
-)   
+rem if exist "%QT_PATH%\bin\lrelease.exe" (
+rem     %QT_PATH%\bin\lrelease.exe -verbose artisan.pro
+rem     if ERRORLEVEL 1 (echo ** Failed in lrelease step 1 & exit /b 1) else (echo ** Success)
+rem     echo *** Processing translation qtbase_*.ts files
+rem     for /r %%a IN (translations\qtbase_*.ts) DO (
+rem         %QT_PATH%\bin\lrelease.exe -verbose %%~a
+rem         if ERRORLEVEL 1 (echo ** Failed in lrelease step 2 & exit /b 1)
+rem     )
+rem     echo ** Success
+rem ) else (
+rem     echo %Error: QT_PATH%\bin\lrelease.exe does not exist
+rem     exit /b 1
+rem )
+cd translations   
+for /r %%a IN (*.ts) DO (
+    qt%PYQT%-tools lrelease %%~a
+    if ERRORLEVEL 1 (echo ** Failed in qt%PYQT%-tools lrelease step 2 & exit /b 1)
+)
+cd ..
+
 
 :: Zip the generated files
 7z a ..\generated-%ARTISAN_SPEC%.zip ..\doc\help_dialogs\Output_html\ help\ translations\ uic\
