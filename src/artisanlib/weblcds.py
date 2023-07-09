@@ -14,45 +14,49 @@
 
 # AUTHOR
 # Marko Luther, 2023
+import logging
+_log = logging.getLogger(__name__)
+try:
+    from bottle import default_app, request, abort, route, template, static_file, get, TEMPLATE_PATH # type: ignore
+    from gevent import Timeout, kill # type: ignore
 
-from bottle import default_app, request, abort, route, template, static_file, get, TEMPLATE_PATH # type: ignore
-from gevent import Timeout, kill # type: ignore
+    # what is the exact difference between the next too?
+    #from gevent import signal as gsignal # works only up to gevent v1.4.0
+    #from gevent.signal import signal as gsignal # works on gevent v1.4.0 and newer
+    from gevent import signal_handler as gsignal # type: ignore # works on gevent v1.4.0 and newer
 
-# what is the exact difference between the next too?
-#from gevent import signal as gsignal # works only up to gevent v1.4.0
-#from gevent.signal import signal as gsignal # works on gevent v1.4.0 and newer
-from gevent import signal_handler as gsignal # type: ignore # works on gevent v1.4.0 and newer
+    from gevent.pywsgi import WSGIServer # type: ignore
+    #from geventwebsocket import WebSocketError
+    from geventwebsocket.handler import WebSocketHandler # type: ignore
+    from platform import system as psystem
 
-from gevent.pywsgi import WSGIServer # type: ignore
-#from geventwebsocket import WebSocketError
-from geventwebsocket.handler import WebSocketHandler # type: ignore
-from platform import system as psystem
+    if psystem() != 'Windows':
+        from signal import SIGQUIT # type: ignore[attr-defined] # pylint: disable=no-name-in-module # not available on Windows
 
-if psystem() != 'Windows':
-    from signal import SIGQUIT # type: ignore[attr-defined] # pylint: disable=no-name-in-module # not available on Windows
+    import multiprocessing as mp
 
-import multiprocessing as mp
+    from json import dumps as jdumps
+    from requests import get as rget
 
-from json import dumps as jdumps
-from requests import get as rget
-
-import time as libtime
-from typing import Any, List
+    import time as libtime
+    from typing import Any, List
 
 
-wsocks: List[Any] = [] # list of open web sockets
-process = None
-port = None
-nonesymbol = '--'
-timecolor='#FFF'
-timebackground='#000'
-btcolor='#00007F'
-btbackground='#CCCCCC'
-etcolor='#FF0000'
-etbackground='#CCCCCC'
-showet = True
-showbt = True
-static_path = ''
+    wsocks: List[Any] = [] # list of open web sockets
+    process = None
+    port = None
+    nonesymbol = '--'
+    timecolor='#FFF'
+    timebackground='#000'
+    btcolor='#00007F'
+    btbackground='#CCCCCC'
+    etcolor='#FF0000'
+    etbackground='#CCCCCC'
+    showet = True
+    showbt = True
+    static_path = ''
+except Exception as e:  # pylint: disable=broad-except  #dave
+    _log.exception(e) #dave
 
 # pickle hack:
 def work(p,rp,nonesym,timec,timebg,btc,btbg,etc,etbg,showetflag,showbtflag):
