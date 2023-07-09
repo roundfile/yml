@@ -73,6 +73,13 @@ def work(p,rp,nonesym,timec,timebg,btc,btbg,etc,etbg,showetflag,showbtflag):
     s.serve_forever()
 
 def startWeb(p,resourcePath,nonesym,timec,timebg,btc,btbg,etc,etbg,showetflag,showbtflag):
+    from log2d import Log, Path
+    pathtoLogFile = '/temp'
+    fmt = f'%(asctime)s|{Path(__file__).stem}|%(message)s'
+    datefmt = '%m/%d/%Y %H:%M:%S'
+    davelog = Log('davelog', path=pathtoLogFile, fmt=fmt, datefmt=datefmt, to_file=True, mode='a')
+    #davelog(f"This is a test")
+    
     global port, process, static_path, nonesymbol, timecolor, timebackground, btcolor, btbackground, etcolor, etbackground, showet, showbt # pylint: disable=global-statement
     port = p
     static_path = resourcePath
@@ -85,8 +92,10 @@ def startWeb(p,resourcePath,nonesym,timec,timebg,btc,btbg,etc,etbg,showetflag,sh
     etbackground = etbg
     showet = showetflag
     showbt = showbtflag
+    davelog("OK to here 1")  #dave
     if psystem() != 'Windows':
         gsignal(SIGQUIT, kill)
+    davelog("OK to here 2")  #dave
 
     process = mp.Process(name='WebLCDs',target=work,args=(
         port,
@@ -101,8 +110,10 @@ def startWeb(p,resourcePath,nonesym,timec,timebg,btc,btbg,etc,etbg,showetflag,sh
         showetflag,
         showbtflag))
     process.start()
+    davelog("OK to here 3")  #dave
 
     libtime.sleep(4)
+    davelog("OK to here 4")  #dave
 
     if process.is_alive():
         # check successful start
