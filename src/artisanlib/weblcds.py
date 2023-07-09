@@ -73,55 +73,48 @@ def work(p,rp,nonesym,timec,timebg,btc,btbg,etc,etbg,showetflag,showbtflag):
     s.serve_forever()
 
 def startWeb(p,resourcePath,nonesym,timec,timebg,btc,btbg,etc,etbg,showetflag,showbtflag):
-    from log2d import Log, Path
-    pathtoLogFile = '/temp'
-    fmt = f'%(asctime)s|{Path(__file__).stem}|%(message)s'
-    datefmt = '%m/%d/%Y %H:%M:%S'
-    davelog = Log('davelog', path=pathtoLogFile, fmt=fmt, datefmt=datefmt, to_file=True, mode='a')
-    #davelog(f"This is a test")
-    
-    global port, process, static_path, nonesymbol, timecolor, timebackground, btcolor, btbackground, etcolor, etbackground, showet, showbt # pylint: disable=global-statement
-    port = p
-    static_path = resourcePath
-    nonesymbol = nonesym
-    timecolor = timec
-    timebackground = timebg
-    btcolor = btc
-    btbackground = btbg
-    etcolor = etc
-    etbackground = etbg
-    showet = showetflag
-    showbt = showbtflag
-    davelog("OK to here 1")  #dave
-    if psystem() != 'Windows':
-        gsignal(SIGQUIT, kill)
-    davelog("OK to here 2")  #dave
+    try:
+        global port, process, static_path, nonesymbol, timecolor, timebackground, btcolor, btbackground, etcolor, etbackground, showet, showbt # pylint: disable=global-statement
+        port = p
+        static_path = resourcePath
+        nonesymbol = nonesym
+        timecolor = timec
+        timebackground = timebg
+        btcolor = btc
+        btbackground = btbg
+        etcolor = etc
+        etbackground = etbg
+        showet = showetflag
+        showbt = showbtflag
+        if psystem() != 'Windows':
+            gsignal(SIGQUIT, kill)
 
-    process = mp.Process(name='WebLCDs',target=work,args=(
-        port,
-        resourcePath,
-        nonesym,
-        timec,
-        timebg,
-        btc,
-        btbg,
-        etc,
-        etbg,
-        showetflag,
-        showbtflag))
-    process.start()
-    davelog("OK to here 3")  #dave
+        process = mp.Process(name='WebLCDs',target=work,args=(
+            port,
+            resourcePath,
+            nonesym,
+            timec,
+            timebg,
+            btc,
+            btbg,
+            etc,
+            etbg,
+            showetflag,
+            showbtflag))
+        process.start()
 
-    libtime.sleep(4)
-    davelog("OK to here 4")  #dave
+        libtime.sleep(4)
 
-    if process.is_alive():
-        # check successful start
-        url = f'http://127.0.0.1:{port}/status'
-        r = rget(url,timeout=2)
+        if process.is_alive():
+            # check successful start
+            url = f'http://127.0.0.1:{port}/status'
+            r = rget(url,timeout=2)
 
-        return bool(r.status_code == 200)
-    return False
+            return bool(r.status_code == 200)
+        return False
+    except Exception as e:  # pylint: disable=broad-except  #dave
+        _log.exception(e) #dave
+        return False #dave
 
 def stopWeb():
     global wsocks, process # pylint: disable=global-statement
