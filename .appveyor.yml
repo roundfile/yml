@@ -88,6 +88,7 @@ for:
 
     - cmd: copy /y nul "%PYTHON_PATH%\Lib\site-packages\zope\__init__.py"
     - cmd: dir "%PYTHON_PATH%\Lib\site-packages\zope"
+    - cmd: pip install log2d
 
   build_script:
     - cmd: echo Windows Legacy Build
