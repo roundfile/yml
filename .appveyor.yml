@@ -151,6 +151,9 @@ for:
     # run the install script
     - cmd: .ci/install-win.bat
 
+    - cmd: copy /y nul "%PYTHON_PATH\Lib\site-packages\zope\__init__.py"
+    - cmd: dir "%PYTHON_PATH\Lib\site-packages\zope"
+
   build_script:
     - cmd: echo Windows Build
     - cmd: cd src
