@@ -25372,9 +25372,9 @@ def main() -> None:
     if not sys.platform.startswith('darwin') and appFrozen():
         # bottle.py used by WebLCDs requires stdout and stderr to exist, which is not the case on Windows/Linux with PyInstaller >= 5.8.0
         if sys.stderr is None:
-            sys.stderr = LoggerWriter(_log.error)
+            sys.stderr = _log.error
         if sys.stdout is None:
-            sys.stdout = LoggerWriter(_log.info)
+            sys.stdout = _log.info
             
     QTimer.singleShot(700, appWindow.qmc.startPhidgetManager)
 
