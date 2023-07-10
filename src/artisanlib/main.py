@@ -612,8 +612,6 @@ _log.info(
     str(__build__),
 )
 _log.info('platform: %s',str(platform.platform()))
-sys.stdout = LoggerWriter(_log.info)
-sys.stderr = LoggerWriter(_log.error)
 
 
 if platform.system().startswith('Windows'):
@@ -25371,7 +25369,13 @@ def main() -> None:
 #        except Exception: # pylint: disable=broad-except
 #            pass
 
-
+    if not sys.platform.startswith('darwin') and appFrozen():
+        # bottle.py used by WebLCDs requires stdout and stderr to exist, which is not the case on Windows/Linux with PyInstaller >= 5.8.0
+        if sys.stderr is None:
+            sys.stderr = LoggerWriter(_log.error)
+        if sys.stdout is None:
+            sys.stdout = LoggerWriter(_log.info)
+            
     QTimer.singleShot(700, appWindow.qmc.startPhidgetManager)
 
     #the following line is to trap numpy warnings that occur in the Cup Profile dialog if all values are set to 0
