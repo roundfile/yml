@@ -25374,9 +25374,9 @@ def main() -> None:
 #        sys.stderr = _log.error
 #        sys.stdout = _log.info
         if getattr(sys,'stdout') is None:
-            setattr(sys,'stdout', open(os.devnull,'w'))
+            setattr(sys,'stdout', sys.__stdout__)
         if getattr(sys,'stderr') is None:
-            setattr(sys,'stderr', open(os.devnull,'w'))
+            setattr(sys,'stderr', sys.__stderr__)
             
     QTimer.singleShot(700, appWindow.qmc.startPhidgetManager)
 
