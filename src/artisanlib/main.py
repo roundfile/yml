@@ -612,6 +612,8 @@ _log.info(
     str(__build__),
 )
 _log.info('platform: %s',str(platform.platform()))
+sys.stdout = LoggerWriter(_log.info)
+sys.stderr = LoggerWriter(_log.error)
 
 
 if platform.system().startswith('Windows'):
