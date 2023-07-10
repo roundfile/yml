@@ -25369,10 +25369,10 @@ def main() -> None:
 #        except Exception: # pylint: disable=broad-except
 #            pass
 
-#dave    if not sys.platform.startswith('darwin') and appFrozen():
-#        # bottle.py used by WebLCDs requires stdout and stderr to exist, which is not the case on Windows/Linux with PyInstaller >= 5.8.0
-#        sys.stderr = _log.error
-#        sys.stdout = _log.info
+    if not sys.platform.startswith('darwin') and appFrozen():
+        # bottle.py used by WebLCDs requires stdout and stderr to exist, which is not the case on Windows/Linux with PyInstaller >= 5.8.0
+        sys.stderr = _log.error
+        sys.stdout = _log.info
             
     QTimer.singleShot(700, appWindow.qmc.startPhidgetManager)
 
@@ -25383,9 +25383,8 @@ def main() -> None:
         logging.captureWarnings(True)
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')
-#dave            with suppress_stdout_stderr():
-#dave             app.exec()
-         app.exec()  #dave
+            with suppress_stdout_stderr():
+                app.exec()
         # alternative:
         # ret = app.exec()
         # app = None
