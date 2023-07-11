@@ -73,7 +73,7 @@ def work(p,rp,nonesym,timec,timebg,btc,btbg,etc,etbg,showetflag,showbtflag):
     showet = showetflag
     showbt = showbtflag
     TEMPLATE_PATH.insert(0,rp)
-    s = WSGIServer(('0.0.0.0', p), default_app(), handler_class=WebSocketHandler, log=None, error_log=None)
+    s = WSGIServer(('0.0.0.0', p), default_app(), handler_class=WebSocketHandler) #, log=None, error_log=None)
     s.serve_forever()
 
 def startWeb(p,resourcePath,nonesym,timec,timebg,btc,btbg,etc,etbg,showetflag,showbtflag):

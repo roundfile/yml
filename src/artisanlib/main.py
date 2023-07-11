@@ -25314,12 +25314,12 @@ def main() -> None:
 
     app.setActivationWindow(appWindow,activateOnMessage=False) # set the activation window for the QtSingleApplication
 
-    # NOTE: replace_stderr_and_stdout_with_logger() needs to be called before settingsLoad() which starts WebLCDs and loads bottle.py    
-    if platform.system() == 'Windows' and appFrozen():
-        try:
-            replace_stderr_and_stdout_with_logger()
-        except Exception: # pylint: disable=broad-except
-            pass
+#    # NOTE: replace_stderr_and_stdout_with_logger() needs to be called before settingsLoad() which starts WebLCDs and loads bottle.py    
+#    if platform.system() == 'Windows' and appFrozen():
+#        try:
+#            replace_stderr_and_stdout_with_logger()
+#        except Exception: # pylint: disable=broad-except
+#            pass
 
     # only here deactivating the app napping seems to have an effect
     if sys.platform.startswith('darwin'):
