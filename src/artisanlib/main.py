@@ -25025,6 +25025,56 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore # Argument to class mus
                 _log.exception(e)
             self.simulatorAction.setChecked(bool(self.simulator))
 
+### BEGIN STDOUT/STDERR HACK
+# to (re-)set sys.stdout/sys.stderr on Windows builds under PyInstaller >= 5.8.0 (which clears those to None under --noconsole using pythonw)
+# which is assumed by bottle.py (used by WebLCDs) to exists
+# from: https://stackoverflow.com/questions/19425736/how-to-redirect-stdout-and-stderr-to-logger-in-python
+# see also
+#   https://github.com/bottlepy/bottle/issues/1104#issuecomment-1195740112
+#   https://github.com/bottlepy/bottle/issues/1401#issuecomment-1284450625
+#   https://github.com/r0x0r/pywebview/pull/1048/files
+
+class LoggerWriter(io.StringIO):
+    """Class to replace the stderr/stdout calls to a logger"""
+
+    def __init__(self, logger_name: str, log_level: int):
+        """:param logger_name: Name to give the logger (e.g. 'stderr')
+        :param log_level: The log level, e.g. logging.DEBUG / logging.INFO that
+                          the MESSAGES should be logged at.
+        """
+        self.std_logger = logging.getLogger(logger_name)
+        # Get the "root" logger from by its name (i.e. from a config dict or at the bottom of this file)
+        #  We will use this to create a copy of all its settings, except the name
+        app_logger = logging.getLogger(__name__)
+        for handler in app_logger.handlers:
+            self.std_logger.addHandler(handler)
+        self.std_logger.setLevel(app_logger.level)  # the minimum lvl msgs will show at
+        self.level = log_level  # the level msgs will be logged at
+        self.sbuffer:List[str] = []
+
+    def write(self, msg: Union[str, bytes]) -> int:
+        """Stdout/stderr logs one line at a time, rather than 1 message at a time.
+        Use this function to aggregate multi-line messages into 1 log call."""
+        msg_str:str = msg.decode() if isinstance(msg, bytes) else msg
+
+        if not msg_str.endswith("\n"):
+            self.sbuffer.append(msg_str)
+
+        self.sbuffer.append(msg_str.rstrip("\n"))
+        message = "".join(self.sbuffer)
+        message_len:int = len(message)
+        self.std_logger.log(self.level, message)
+        self.sbuffer = []
+        return message_len
+
+
+def replace_stderr_and_stdout_with_logger():
+    """Replaces calls to sys.stderr -> logger.info & sys.stdout -> logger.error"""
+    # To access the original stdout/stderr, use sys.__stdout__/sys.__stderr__
+    sys.stdout = LoggerWriter("stdout", logging.INFO)
+    sys.stderr =  LoggerWriter("stderr", logging.ERROR)
+
+### END STDOUT/STDERR HACK
 
 ###########################################################################################################################################
 ###########################################################################################################################################
@@ -25264,6 +25314,12 @@ def main() -> None:
 
     app.setActivationWindow(appWindow,activateOnMessage=False) # set the activation window for the QtSingleApplication
 
+    # NOTE: replace_stderr_and_stdout_with_logger() needs to be called before settingsLoad() which starts WebLCDs and loads bottle.py    
+    if platform.system() == 'Windows' and appFrozen():
+        try:
+            replace_stderr_and_stdout_with_logger()
+        except Exception: # pylint: disable=broad-except
+            pass
 
     # only here deactivating the app napping seems to have an effect
     if sys.platform.startswith('darwin'):
@@ -25361,27 +25417,6 @@ def main() -> None:
 
     # write gc debug messages to stdout
 #    gc.set_debug(gc.DEBUG_STATS)
-
-
-#    if platform.system() == 'Windows' and appFrozen():
-#        try:
-#            sys.stderr = sys.stdout
-#        except Exception: # pylint: disable=broad-except
-#            pass
-
-#    if not sys.platform.startswith('darwin') and appFrozen():
-#        # bottle.py used by WebLCDs requires stdout and stderr to exist, which is not the case on Windows/Linux with PyInstaller >= 5.8.0
-#        sys.stderr = _log.error
-#        sys.stdout = _log.info
-        if getattr(sys,'stdout') is None:
-            setattr(sys,'stdout', sys.__stdout__)
-        if getattr(sys,'stderr') is None:
-            setattr(sys,'stderr', sys.__stderr__)
-    # sys.stdout/err is None in GUI mode on Windows
-    if sys.stdout is None: 
-      sys.stdout = NullWriter() 
-    if sys.stderr is None: 
-      sys.stderr = NullWriter()
               
     QTimer.singleShot(700, appWindow.qmc.startPhidgetManager)
 
