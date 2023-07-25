@@ -76,7 +76,30 @@ else: # Linux
 from artisanlib import main, command_utility
 from multiprocessing import freeze_support
 
+# from pyinstaller 5.8:
+class NullWriter:
+  softspace = 0
+  encoding = 'UTF-8'
+
+  def write(*args):
+      pass
+
+  def flush(*args):
+      pass
+
+  # Some packages are checking if stdout/stderr is available (e.g., youtube-dl). For details, see #1883.
+  def isatty(self):
+      return False
+
 if system() == 'Windows' and hasattr(sys, 'frozen'): # tools/freeze
+    try:
+        if sys.stdout is None:
+            sys.stdout = NullWriter()
+        if sys.stderr is None:
+            sys.stderr = NullWriter()
+    except Exception: # pylint: disable=broad-except
+        pass
+
     from multiprocessing import set_executable
     executable = os.path.join(os.path.dirname(sys.executable), 'artisan.exe')
     set_executable(executable)

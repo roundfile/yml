@@ -73,7 +73,7 @@ def work(p,rp,nonesym,timec,timebg,btc,btbg,etc,etbg,showetflag,showbtflag):
     showet = showetflag
     showbt = showbtflag
     TEMPLATE_PATH.insert(0,rp)
-    s = WSGIServer(('0.0.0.0', p), default_app(), handler_class=WebSocketHandler)
+    s = WSGIServer(('0.0.0.0', p), default_app(), handler_class=WebSocketHandler) #, log=None, error_log=None)
     s.serve_forever()
 
 def startWeb(p,resourcePath,nonesym,timec,timebg,btc,btbg,etc,etbg,showetflag,showbtflag):
@@ -153,12 +153,12 @@ def send_all(msg):
                 pass
 
 # route to push new data to the client
-@route('/send', method='POST')
+@route('/send', method='POST') # pyright: ignore [reportUnboundVariable]
 def send():
     send_all(jdumps(request.json))
 
 # route that establishes the websocket between the Artisan app and the clients
-@route('/websocket')
+@route('/websocket') # pyright: ignore [reportUnboundVariable]
 def handle_websocket():
     wsock = request.environ.get('wsgi.websocket')  # @UndefinedVariable
     if not wsock:
@@ -186,12 +186,12 @@ def handle_websocket():
                 pass
             break
 
-@route('/status')
+@route('/status') # pyright: ignore [reportUnboundVariable]
 def status():
     return '1'
 
 # route to serve the static page
-@route('/artisan')
+@route('/artisan') # pyright: ignore [reportUnboundVariable]
 def index():
     showspace_str = 'inline' if not (showbt and showet) else 'none'
     showbt_str = 'inline' if showbt else 'none'
@@ -212,10 +212,10 @@ def index():
 
 # Static Routes
 
-@get(r'/<filename:re:.*\.js>')
+@get(r'/<filename:re:.*\.js>') # pyright: ignore [reportUnboundVariable]
 def javascripts(filename):
     return static_file(filename, root=static_path)
 
-@get(r'/<filename:re:.*\.(eot|ttf|woff|svg)>')
+@get(r'/<filename:re:.*\.(eot|ttf|woff|svg)>') # pyright: ignore [reportUnboundVariable]
 def fonts(filename):
     return static_file(filename, root=static_path)
