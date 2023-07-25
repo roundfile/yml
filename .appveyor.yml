@@ -22,18 +22,15 @@ environment:
   # Upgrade to specific version (for platforms supporting upgrade). Upgrade skipped if env var is missing or blank.
 #  PYUPGRADE_V: 3.11.3
   
-  #For RDP access
-  APPVEYOR_RDP_PASSWORD: 427!54n
-
   matrix:
 #  - job_name: windows_legacy
 #    appveyor_build_worker_image: Visual Studio 2019
-  - job_name: windows
-    appveyor_build_worker_image: Visual Studio 2022
+#  - job_name: windows
+#    appveyor_build_worker_image: Visual Studio 2022
 #  - job_name: macos
 #    appveyor_build_worker_image: macos-bigsur
-#  - job_name: linux
-#    appveyor_build_worker_image: Ubuntu2004
+  - job_name: linux
+    appveyor_build_worker_image: Ubuntu2004
 
 
 # Generic build number, later set to commit hash by init
@@ -259,7 +256,7 @@ for:
     PYLUPDATE: ./pylupdate6pro.py  #the dot slash is necessary
 
   install:
-    - echo "Linux Install"
+    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -    - echo "Linux Install"
 
     - chmod +x .ci/*.sh
 
