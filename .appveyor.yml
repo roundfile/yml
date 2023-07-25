@@ -256,7 +256,9 @@ for:
     PYLUPDATE: ./pylupdate6pro.py  #the dot slash is necessary
 
   install:
-    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -    - echo "Linux Install"
+    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+
+    - echo "Linux Install"
 
     - chmod +x .ci/*.sh
 
