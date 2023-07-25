@@ -98,7 +98,8 @@ PYQT_QT = PYTHON_PACKAGES + r'\PyQt' +PYQT +r'\Qt'
 PYQT_QT_BIN = PYQT_QT + r'\bin'
 PYQT_QT_TRANSLATIONS = QT_TRANSL
 YOCTO_BIN = PYTHON_PACKAGES + r'\yoctopuce\cdll'
-SNAP7_BIN = r'C:\Windows'
+#SNAP7_BIN = r'C:\Windows'
+SNAP7_BIN = PYTHON_PACKAGES + r'snap7\lib'
 LIBUSB_BIN = r'C:\Windows\SysWOW64'
 
 from PyInstaller.utils.hooks import is_module_satisfies
@@ -232,7 +233,7 @@ copy_file(YOCTO_BIN + r'\yapi64.dll', TARGET + 'yoctopuce\cdll')
 # YOCTO HACK END
 
 # copy Snap7 lib
-#copy_file(SNAP7_BIN + r'\snap7.dll', TARGET)
+copy_file(SNAP7_BIN + r'\snap7.dll', TARGET)
 
 # copy libusb0.1 lib
 
