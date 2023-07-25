@@ -232,7 +232,7 @@ copy_file(YOCTO_BIN + r'\yapi64.dll', TARGET + 'yoctopuce\cdll')
 # YOCTO HACK END
 
 # copy Snap7 lib
-copy_file(SNAP7_BIN + r'\snap7.dll', TARGET)
+#copy_file(SNAP7_BIN + r'\snap7.dll', TARGET)
 
 # copy libusb0.1 lib
 
