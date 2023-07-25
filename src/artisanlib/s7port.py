@@ -16,6 +16,8 @@
 # Marko Luther, 2023
 
 import time
+import platform
+import os
 import sys
 import struct
 import logging
@@ -200,12 +202,12 @@ def set_real(bytearray_: bytearray, byte_index: int, real) -> bytearray:
         bytearray_[byte_index + i] = b
     return bytearray_
 
-class s7port:
+class s7port():
 
     __slots__ = [ 'aw', 'readRetries', 'channels', 'default_host', 'host', 'port', 'rack', 'slot', 'lastReadResult', 'area', 'db_nr', 'start', 'type', 'mode',
         'div', 'optimizer', 'fetch_max_blocks', 'fail_on_cache_miss', 'activeRegisters', 'readingsCache', 'PID_area', 'PID_db_nr', 'PID_SV_register', 'PID_p_register',
         'PID_i_register', 'PID_d_register', 'PID_ON_action', 'PID_OFF_action', 'PIDmultiplier', 'SVtype', 'SVmultiplier', 'COMsemaphore',
-        'areas', 'last_request_timestamp', 'min_time_between_requests', 'is_connected', 'plc', 'commError' ]
+        'areas', 'last_request_timestamp', 'min_time_between_requests', 'is_connected', 'plc', 'commError', 'libLoaded' ]
 
     def __init__(self, aw:'ApplicationWindow') -> None:
         self.aw = aw
@@ -269,6 +271,7 @@ class s7port:
 
         self.plc:Optional['S7Client'] = None
         self.commError:bool = False # True after a communication error was detected and not yet cleared by receiving proper data
+        self.libLoaded:bool = False
 
 ################
 
@@ -356,7 +359,25 @@ class s7port:
 
 
     def connect(self) -> None:
-        if self.plc is None:
+        if not self.libLoaded:
+            _log.debug('connect() load lib')
+            from snap7.common import load_library as load_snap7_library
+            # first load shared lib if needed
+            platf = str(platform.system())
+            if platf in ['Windows','Linux'] and artisanlib.util.appFrozen():
+                libpath = os.path.dirname(sys.executable)
+                if platf == 'Linux':
+                    snap7dll = os.path.join(libpath,'libsnap7.so')
+                else: # Windows:
+                    snap7dll = os.path.join(libpath,'snap7.dll')
+                load_snap7_library(snap7dll) # will ensure to load it only once
+            elif platf in ['Darwin'] and artisanlib.util.appFrozen():
+                libpath = os.path.dirname(sys.executable)
+                snap7dll = os.path.abspath(os.path.join(libpath,'../Frameworks/libsnap7.dylib'))
+                load_snap7_library(snap7dll) # will ensure to load it only once
+            self.libLoaded = True
+
+        if self.libLoaded and self.plc is None:
             _log.debug('connect() create S7Client')
             # create a client instance
             from artisanlib.s7client import S7Client

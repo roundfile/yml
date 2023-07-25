@@ -10,6 +10,13 @@ import sys
 import os
 from platform import system
 
+from log2d import Log, Path
+pathtoLogFile = os.environ['TEMP']
+fmt = f'%(asctime)s|{Path(__file__).stem}|%(message)s'
+datefmt = '%m/%d/%Y %H:%M:%S'
+bootlog = Log('bootlog', path=pathtoLogFile, fmt=fmt, datefmt=datefmt, to_file=True, mode='a')
+bootlog(f"starting artisan.py")
+
 # highDPI support must be set before creating the Application instance
 try:
     if system() == 'Darwin':
@@ -36,6 +43,7 @@ if system().startswith('Windows'):
             hasattr(sys, 'frozen') or # new py2exe
             hasattr(sys, 'importers') # old py2exe
         )
+        bootlog(f'{ib=}')
         try:
             from PyQt6.QtWidgets import QApplication  # @UnresolvedImport @Reimport @UnusedImport pylint: disable=import-error
             if ib:
@@ -43,7 +51,8 @@ if system().startswith('Windows'):
             else:
                 import site # @Reimport @UnusedImport
                 QApplication.addLibraryPath(site.getsitepackages()[1] + '\\PyQt6\\plugins')
-        except Exception:  # pylint: disable=broad-except
+        except Exception as e:  # pylint: disable=broad-except
+            bootlog(f'Exception importing PyQt6 {str(e)=}')
             from PyQt5.QtWidgets import QApplication # type: ignore # @UnresolvedImport @Reimport @UnusedImport pylint: disable=import-error
             if ib:
                 QApplication.addLibraryPath(os.path.join(os.path.dirname(os.path.realpath(sys.executable)), 'plugins'))
@@ -76,30 +85,7 @@ else: # Linux
 from artisanlib import main, command_utility
 from multiprocessing import freeze_support
 
-# from pyinstaller 5.8:
-class NullWriter:
-  softspace = 0
-  encoding = 'UTF-8'
-
-  def write(*args):
-      pass
-
-  def flush(*args):
-      pass
-
-  # Some packages are checking if stdout/stderr is available (e.g., youtube-dl). For details, see #1883.
-  def isatty(self):
-      return False
-
 if system() == 'Windows' and hasattr(sys, 'frozen'): # tools/freeze
-    try:
-        if sys.stdout is None:
-            sys.stdout = NullWriter()
-        if sys.stderr is None:
-            sys.stderr = NullWriter()
-    except Exception: # pylint: disable=broad-except
-        pass
-
     from multiprocessing import set_executable
     executable = os.path.join(os.path.dirname(sys.executable), 'artisan.exe')
     set_executable(executable)

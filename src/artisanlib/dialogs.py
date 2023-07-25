@@ -35,7 +35,6 @@ from typing import Optional, List, Tuple, TYPE_CHECKING
 from typing_extensions import Final  # Python <=3.7
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # pylint: disable=unused-import
-    from PyQt6.QtWidgets import QPushButton # pylint: disable=unused-import
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
 
@@ -93,7 +92,7 @@ class ArtisanDialog(QDialog): # pyright: ignore # Argument to class must be a ba
         self.reject()
 
     @staticmethod
-    def setButtonTranslations(btn:'QPushButton', txt:str, trans:str):
+    def setButtonTranslations(btn, txt, trans):
         current_trans = btn.text()
         if txt == current_trans:
             # if standard qtbase translations fail, revert to artisan translations

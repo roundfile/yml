@@ -37,14 +37,12 @@ import os
 import platform
 import threading
 import logging
-from typing import Optional, TYPE_CHECKING
-from typing_extensions import Final # Python <=3.7
-
-if TYPE_CHECKING:
-    from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
+from typing import Optional
+from typing_extensions import Final  # Python <=3.7
 
 from artisanlib.util import getResourcePath
 from plus import config, connection, stock, queue, sync, roast
+
 
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
@@ -67,7 +65,7 @@ def is_on() -> bool:
 
 # returns True if current profile is under sync (i.e. in the sync-cache) or
 # no profile is loaded currently
-def is_synced() -> bool:
+def is_synced():
     aw = config.app_window
     if aw is not None:
         if aw.qmc.roastUUID is None:
@@ -77,7 +75,7 @@ def is_synced() -> bool:
     return False
 
 
-def start(app_window:'ApplicationWindow'):
+def start(app_window):
     config.app_window = app_window
     QTimer.singleShot(2, connect)
 

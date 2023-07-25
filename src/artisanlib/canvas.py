@@ -221,7 +221,7 @@ class tgraphcanvas(FigureCanvas):
         'on_unfiltereddelta2', 'on_delta1', 'on_delta2', 'on_extratemp1', 'on_extratemp2', 'on_extratimex', 'on_extractimex1', 'on_extractemp1', 'on_extractimex2', 'on_extractemp2',
         'timeindex', 'ETfunction', 'BTfunction', 'DeltaETfunction', 'DeltaBTfunction', 'safesaveflag', 'pid', 'background', 'backgroundprofile', 'backgroundprofile_moved_x', 'backgroundprofile_moved_y', 'backgroundDetails',
         'backgroundeventsflag', 'backgroundpath', 'backgroundUUID', 'backgroundUUID', 'backgroundShowFullflag', 'backgroundKeyboardControlFlag', 'titleB', 'roastbatchnrB', 'roastbatchprefixB',
-        'roastbatchposB', 'temp1B', 'temp2B', 'temp1BX', 'temp2BX', 'timeB', 'abs_timeB', 'temp1Bdelta', 'temp2Bdelta',
+        'roastbatchposB', 'temp1B', 'temp2B', 'temp1BX', 'temp2BX', 'timeB', 'temp1Bdelta', 'temp2Bdelta',
         'stemp1B', 'stemp2B', 'stemp1BX', 'stemp2BX', 'extraname1B', 'extraname2B', 'extratimexB', 'xtcurveidx', 'ytcurveidx', 'delta1B', 'delta2B', 'timeindexB',
         'TP_time_B_loaded', 'backgroundEvents', 'backgroundEtypes', 'backgroundEvalues', 'backgroundEStrings', 'backgroundalpha', 'backgroundmetcolor',
         'backgroundbtcolor', 'backgroundxtcolor', 'backgroundytcolor', 'backgrounddeltaetcolor', 'backgrounddeltabtcolor', 'backmoveflag', 'detectBackgroundEventTime',
@@ -230,7 +230,7 @@ class tgraphcanvas(FigureCanvas):
         'E4backgroundvalues', 'l_backgroundeventtype1dots', 'l_backgroundeventtype2dots', 'l_backgroundeventtype3dots', 'l_backgroundeventtype4dots',
         'DeltaETBflag', 'DeltaBTBflag', 'clearBgbeforeprofileload', 'hideBgafterprofileload', 'heating_types', 'operator', 'organization', 'roastertype', 'roastersize', 'roasterheating', 'drumspeed',
         'organization_setup', 'operator_setup', 'roastertype_setup', 'roastersize_setup', 'roastersize_setup_default', 'roasterheating_setup', 'drumspeed_setup', 'last_batchsize', 'machinesetup_energy_ratings',
-        'machinesetup', 'roastingnotes', 'cuppingnotes', 'roastdate', 'roastepoch', 'roastepoch_timeout', 'lastroastepoch', 'batchcounter', 'batchsequence', 'batchprefix', 'neverUpdateBatchCounter',
+        'machinesetup', 'roastingnotes', 'cuppingnotes', 'roastdate', 'roastepoch', 'lastroastepoch', 'batchcounter', 'batchsequence', 'batchprefix', 'neverUpdateBatchCounter',
         'roastbatchnr', 'roastbatchprefix', 'roastbatchpos', 'roasttzoffset', 'roastUUID', 'plus_default_store', 'plus_store', 'plus_store_label', 'plus_coffee',
         'plus_coffee_label', 'plus_blend_spec', 'plus_blend_spec_labels', 'plus_blend_label', 'plus_custom_blend', 'plus_sync_record_hash', 'plus_file_last_modified', 'beans', 'projectFlag', 'curveVisibilityCache', 'ETcurve', 'BTcurve',
         'ETlcd', 'BTlcd', 'swaplcds', 'LCDdecimalplaces', 'foregroundShowFullflag', 'DeltaETflag', 'DeltaBTflag', 'DeltaETlcdflag', 'DeltaBTlcdflag',
@@ -1227,7 +1227,6 @@ class tgraphcanvas(FigureCanvas):
         self.temp1BX:List['npt.NDArray[numpy.floating]'] = []
         self.temp2BX:List['npt.NDArray[numpy.floating]'] = []
         self.timeB:List[float] = []
-        self.abs_timeB:List[float] = []
         self.temp1Bdelta:List[float] = []
         self.temp2Bdelta:List[float] = []
         # smoothed versions of the background curves
@@ -1322,8 +1321,7 @@ class tgraphcanvas(FigureCanvas):
         self.roastdate:QDateTime = QDateTime.currentDateTime()
         # system batch nr system
         self.roastepoch:int = self.roastdate.toSecsSinceEpoch() # in seconds
-        self.roastepoch_timeout:Final[int] = 90*60  # in seconds; period after last roast which starts a new roasting session
-        self.lastroastepoch:int = self.roastepoch - self.roastepoch_timeout - 1 # the epoch of the last roast in seconds, initialized such that a new roast session can start
+        self.lastroastepoch:int = self.roastepoch # the epoch of the last roast in seconds
         self.batchcounter:int = -1 # global batch counter; if batchcounter is -1, batchcounter system is inactive
         self.batchsequence:int = 1 # global counter of position in sequence of batches of one session
         self.batchprefix:str = ''
@@ -2527,9 +2525,7 @@ class tgraphcanvas(FigureCanvas):
             _log.exception(e)
 
     # eventsvalues maps the given internal event value v to an external event int value as displayed to the user as special event value
-    # historicaly internal event values ranged from [1-11] and external event values from [0-10]
-    #   that range was extended to 0-100 in later Artisan versions
-    # v is expected to be float value of range [-11.0,11.0] or None (interpreted as 0)
+    # v is expected to be float value of range [-11.0,11.0]
     # negative values are not used as event values, but as step arguments in extra button definitions
     #   11.0 => 100
     #   10.1 => 91
@@ -2553,12 +2549,11 @@ class tgraphcanvas(FigureCanvas):
         return int(round(v*10)) - 10
 
     # the inverse of eventsInternal2ExternalValue, converting an external to an internal event value
-    # v from [-100,100]
     @staticmethod
-    def eventsExternal2InternalValue(v:int) -> float:
-        if v == 0:
-            return 0.
-        if v >= 1:
+    def eventsExternal2InternalValue(v:float) -> float:
+        if -1.0 < v < 1.0:
+            return 1.0 # ML: should this be 0!?
+        if v >= 1.0:
             return v/10. + 1.
         return v/10. - 1.
 
@@ -2588,7 +2583,7 @@ class tgraphcanvas(FigureCanvas):
         st = s.strip()
         if st is None or len(st) == 0:
             return -1
-        return self.eventsExternal2InternalValue(int(st))
+        return self.eventsExternal2InternalValue(float(st))
 
     def fit_titles(self) -> None:
         #truncate title and statistic line to width of axis system to avoid that the MPL canvas goes into miser mode
@@ -5798,7 +5793,7 @@ class tgraphcanvas(FigureCanvas):
                         if mathexpression[i] == 't':
                             timex = sample_timex
                         else:
-                            timex = self.abs_timeB
+                            timex = self.timeB
                         seconddigitstr = ''
                         if i+4 < len(mathexpression) and mathexpression[i+1] == '[':
                             Yshiftval = int(mathexpression[i+3])
@@ -5821,8 +5816,6 @@ class tgraphcanvas(FigureCanvas):
                         elif i+3 < len(mathexpression) and mathexpression[i+1] == '{' and mathexpression.find('}',i+2) > -1:
                             end_idx = mathexpression.index('}',i+2)
                             body = mathexpression[i+2:end_idx]
-                            if mathexpression[i]=='b':
-                                body = 'b' + body
                             val = -1
                             try:
                                 absolute_index = eval(body,{'__builtins__':None},mathdictionary)  # pylint: disable=eval-used
@@ -13121,7 +13114,7 @@ class tgraphcanvas(FigureCanvas):
 
     def decBatchCounter(self):
         if not bool(self.aw.simulator):
-            if self.lastroastepoch + self.roastepoch_timeout < self.roastepoch:
+            if self.lastroastepoch + 5400 < self.roastepoch:
                 # reset the sequence counter
                 self.batchsequence = 1
             elif self.batchsequence > 1:
@@ -14338,7 +14331,8 @@ class tgraphcanvas(FigureCanvas):
                         factor = math.sqrt(load_pct / 100)
                     else:
                         factor = load_pct / 100
-                    return self.loadratings[i] * factor * (duration / 3600) #* self.convertHeat(1,self.ratingunits[i],0)
+                    energy = self.loadratings[i] * factor * (duration / 3600) #* self.convertHeat(1,self.ratingunits[i],0)
+                    return energy
                 except Exception as ex: # pylint: disable=broad-except
                     _log.exception(ex)
                     _, _, exc_tb = sys.exc_info()
@@ -14934,7 +14928,7 @@ class tgraphcanvas(FigureCanvas):
 
 
     #adds errors (can be called also outside the GUI thread, eg. from the sampling thread as actual message is written by updategraphics in the GUI thread)
-    def adderror(self,error:str,line:Optional[Any]=None) -> None:
+    def adderror(self,error,line=None):
         try:
             #### lock shared resources #####
             self.errorsemaphore.acquire(1)

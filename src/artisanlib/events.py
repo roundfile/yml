@@ -29,7 +29,7 @@ from artisanlib.util import uchr, comma2dot
 from artisanlib.dialogs import ArtisanResizeablDialog, ArtisanDialog
 from artisanlib.widgets import MyQComboBox, MyQDoubleSpinBox
 
-from uic import SliderCalculatorDialog # type: ignore[attr-defined] # pylint: disable=no-name-in-module
+from uic import SliderCalculatorDialog
 
 
 try:
@@ -1740,12 +1740,6 @@ class EventsDlg(ArtisanResizeablDialog):
         if redraw:
             self.aw.qmc.redraw(recomputeAllDeltas=False)
 
-    def saveEventTypes(self):
-        self.aw.qmc.etypes[0] = self.etype0.text()
-        self.aw.qmc.etypes[1] = self.etype1.text()
-        self.aw.qmc.etypes[2] = self.etype2.text()
-        self.aw.qmc.etypes[3] = self.etype3.text()
-
     @pyqtSlot(int)
     def tabSwitched(self,i):
         self.closeHelp()
@@ -1753,7 +1747,6 @@ class EventsDlg(ArtisanResizeablDialog):
             self.saveSliderSettings()
             self.saveQuantifierSettings()
         elif i == 1: # switched to Button tab
-            self.saveEventTypes()
             self.createEventbuttonTable()
             self.saveSliderSettings()
             self.saveQuantifierSettings()
@@ -3318,11 +3311,6 @@ class EventsDlg(ArtisanResizeablDialog):
             self.saveAnnotationsSettings()
             self.savetableextraeventbutton()
 #            self.aw.closeEventSettings()
-            # we need to update the ExtraLCDs as they might use event types in their names via substitutions
-            if self.aw.largeExtraLCDs_dialog is not None:
-                self.aw.largeExtraLCDs_dialog.reLayout()
-            # we need to update the DeviceLCDs as they might use event types in their names via substitutions
-            self.aw.establish_etypes()
             # restart PhidgetManager
             try:
                 self.aw.qmc.restartPhidgetManager()
@@ -3342,7 +3330,7 @@ class EventsDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def showEventbuttonhelp(self,_=False):
-        from help import eventbuttons_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
+        from help import eventbuttons_help
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
@@ -3351,7 +3339,7 @@ class EventsDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def showSliderHelp(self,_=False):
-        from help import eventsliders_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
+        from help import eventsliders_help
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
@@ -3360,7 +3348,7 @@ class EventsDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def showEventannotationhelp(self,_=False):
-        from help import eventannotations_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
+        from help import eventannotations_help
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog

@@ -43,7 +43,7 @@ class State(TypedDict, total=False):
     AH:int     # auto heating mode (0: off, 1: on)
     HS:int     # heating (0: off, 1: on)
 
-class KaleidoPort:
+class KaleidoPort():
 
     __slots__ = [ '_loop', '_thread', '_write_queue', '_default_data_stream', '_ping_timeout', '_open_timeout', '_init_timeout',
             '_send_timeout', '_read_timeout', '_ping_retry_delay', '_reconnect_delay', 'send_button_timeout', '_single_await_var_prefix',
@@ -541,7 +541,8 @@ class KaleidoPort:
                     return None
                 future = asyncio.run_coroutine_threadsafe(task, self._loop)
                 try:
-                    return future.result(send_timeout)
+                    res = future.result(send_timeout)
+                    return res
                 except TimeoutError:
                     # the coroutine took too long, cancelling the task...
                     if self._logging:

@@ -14,49 +14,45 @@
 
 # AUTHOR
 # Marko Luther, 2023
-import logging
-_log = logging.getLogger(__name__)
-try:
-    from bottle import default_app, request, abort, route, template, static_file, get, TEMPLATE_PATH # type: ignore
-    from gevent import Timeout, kill # type: ignore
 
-    # what is the exact difference between the next too?
-    #from gevent import signal as gsignal # works only up to gevent v1.4.0
-    #from gevent.signal import signal as gsignal # works on gevent v1.4.0 and newer
-    from gevent import signal_handler as gsignal # type: ignore # works on gevent v1.4.0 and newer
+from bottle import default_app, request, abort, route, template, static_file, get, TEMPLATE_PATH # type: ignore
+from gevent import Timeout, kill # type: ignore
 
-    from gevent.pywsgi import WSGIServer # type: ignore
-    #from geventwebsocket import WebSocketError
-    from geventwebsocket.handler import WebSocketHandler # type: ignore
-    from platform import system as psystem
+# what is the exact difference between the next too?
+#from gevent import signal as gsignal # works only up to gevent v1.4.0
+#from gevent.signal import signal as gsignal # works on gevent v1.4.0 and newer
+from gevent import signal_handler as gsignal # type: ignore # works on gevent v1.4.0 and newer
 
-    if psystem() != 'Windows':
-        from signal import SIGQUIT # type: ignore[attr-defined] # pylint: disable=no-name-in-module # not available on Windows
+from gevent.pywsgi import WSGIServer # type: ignore
+#from geventwebsocket import WebSocketError
+from geventwebsocket.handler import WebSocketHandler # type: ignore
+from platform import system as psystem
 
-    import multiprocessing as mp
+if psystem() != 'Windows':
+    from signal import SIGQUIT # type: ignore[attr-defined] # pylint: disable=no-name-in-module # not available on Windows
 
-    from json import dumps as jdumps
-    from requests import get as rget
+import multiprocessing as mp
 
-    import time as libtime
-    from typing import Any, List
+from json import dumps as jdumps
+from requests import get as rget
+
+import time as libtime
+from typing import Any, List
 
 
-    wsocks: List[Any] = [] # list of open web sockets
-    process = None
-    port = None
-    nonesymbol = '--'
-    timecolor='#FFF'
-    timebackground='#000'
-    btcolor='#00007F'
-    btbackground='#CCCCCC'
-    etcolor='#FF0000'
-    etbackground='#CCCCCC'
-    showet = True
-    showbt = True
-    static_path = ''
-except Exception as e:  # pylint: disable=broad-except  #dave
-    _log.exception(e) #dave
+wsocks: List[Any] = [] # list of open web sockets
+process = None
+port = None
+nonesymbol = '--'
+timecolor='#FFF'
+timebackground='#000'
+btcolor='#00007F'
+btbackground='#CCCCCC'
+etcolor='#FF0000'
+etbackground='#CCCCCC'
+showet = True
+showbt = True
+static_path = ''
 
 # pickle hack:
 def work(p,rp,nonesym,timec,timebg,btc,btbg,etc,etbg,showetflag,showbtflag):
@@ -73,52 +69,48 @@ def work(p,rp,nonesym,timec,timebg,btc,btbg,etc,etbg,showetflag,showbtflag):
     showet = showetflag
     showbt = showbtflag
     TEMPLATE_PATH.insert(0,rp)
-    s = WSGIServer(('0.0.0.0', p), default_app(), handler_class=WebSocketHandler) #, log=None, error_log=None)
+    s = WSGIServer(('0.0.0.0', p), default_app(), handler_class=WebSocketHandler)
     s.serve_forever()
 
 def startWeb(p,resourcePath,nonesym,timec,timebg,btc,btbg,etc,etbg,showetflag,showbtflag):
-    try:
-        global port, process, static_path, nonesymbol, timecolor, timebackground, btcolor, btbackground, etcolor, etbackground, showet, showbt # pylint: disable=global-statement
-        port = p
-        static_path = resourcePath
-        nonesymbol = nonesym
-        timecolor = timec
-        timebackground = timebg
-        btcolor = btc
-        btbackground = btbg
-        etcolor = etc
-        etbackground = etbg
-        showet = showetflag
-        showbt = showbtflag
-        if psystem() != 'Windows':
-            gsignal(SIGQUIT, kill)
+    global port, process, static_path, nonesymbol, timecolor, timebackground, btcolor, btbackground, etcolor, etbackground, showet, showbt # pylint: disable=global-statement
+    port = p
+    static_path = resourcePath
+    nonesymbol = nonesym
+    timecolor = timec
+    timebackground = timebg
+    btcolor = btc
+    btbackground = btbg
+    etcolor = etc
+    etbackground = etbg
+    showet = showetflag
+    showbt = showbtflag
+    if psystem() != 'Windows':
+        gsignal(SIGQUIT, kill)
 
-        process = mp.Process(name='WebLCDs',target=work,args=(
-            port,
-            resourcePath,
-            nonesym,
-            timec,
-            timebg,
-            btc,
-            btbg,
-            etc,
-            etbg,
-            showetflag,
-            showbtflag))
-        process.start()
+    process = mp.Process(name='WebLCDs',target=work,args=(
+        port,
+        resourcePath,
+        nonesym,
+        timec,
+        timebg,
+        btc,
+        btbg,
+        etc,
+        etbg,
+        showetflag,
+        showbtflag))
+    process.start()
 
-        libtime.sleep(4)
+    libtime.sleep(4)
 
-        if process.is_alive():
-            # check successful start
-            url = f'http://127.0.0.1:{port}/status'
-            r = rget(url,timeout=2)
+    if process.is_alive():
+        # check successful start
+        url = f'http://127.0.0.1:{port}/status'
+        r = rget(url,timeout=2)
 
-            return bool(r.status_code == 200)
-        return False
-    except Exception as e:  # pylint: disable=broad-except  #dave
-        _log.exception(e) #dave
-        return False #dave
+        return bool(r.status_code == 200)
+    return False
 
 def stopWeb():
     global wsocks, process # pylint: disable=global-statement
@@ -153,12 +145,12 @@ def send_all(msg):
                 pass
 
 # route to push new data to the client
-@route('/send', method='POST') # pyright: ignore [reportUnboundVariable]
+@route('/send', method='POST')
 def send():
     send_all(jdumps(request.json))
 
 # route that establishes the websocket between the Artisan app and the clients
-@route('/websocket') # pyright: ignore [reportUnboundVariable]
+@route('/websocket')
 def handle_websocket():
     wsock = request.environ.get('wsgi.websocket')  # @UndefinedVariable
     if not wsock:
@@ -186,12 +178,12 @@ def handle_websocket():
                 pass
             break
 
-@route('/status') # pyright: ignore [reportUnboundVariable]
+@route('/status')
 def status():
     return '1'
 
 # route to serve the static page
-@route('/artisan') # pyright: ignore [reportUnboundVariable]
+@route('/artisan')
 def index():
     showspace_str = 'inline' if not (showbt and showet) else 'none'
     showbt_str = 'inline' if showbt else 'none'
@@ -212,10 +204,10 @@ def index():
 
 # Static Routes
 
-@get(r'/<filename:re:.*\.js>') # pyright: ignore [reportUnboundVariable]
+@get(r'/<filename:re:.*\.js>')
 def javascripts(filename):
     return static_file(filename, root=static_path)
 
-@get(r'/<filename:re:.*\.(eot|ttf|woff|svg)>') # pyright: ignore [reportUnboundVariable]
+@get(r'/<filename:re:.*\.(eot|ttf|woff|svg)>')
 def fonts(filename):
     return static_file(filename, root=static_path)

@@ -150,14 +150,6 @@ def fromFtoC(Ffloat) -> float:
     return (Ffloat-32.0)*(5.0/9.0)
 
 def fromCtoF(Cfloat) -> float:
-    """
-    >>> fromCtoF(-1)
-    -1
-    >>> fromCtoF(None)
-    None
-    >>> fromCtoF(32)
-    89.6
-    """
     if Cfloat in [-1,None] or numpy.isnan(Cfloat):
         return Cfloat
     return (Cfloat*9.0/5.0)+32.0
@@ -484,7 +476,7 @@ def debugLogLevelToggle() -> bool:
 def natsort(s):
     return [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', s)]
 
-#convert number to string and auto set the number of decimal places 0, 0.999, 9.99, 999.9, 9999
+#convert number to string an auto set the number of decimal places 0, 0.999, 9.99, 999.9, 9999
 def scaleFloat2String(num):
     n = toFloat(num)
     if n == 0:
