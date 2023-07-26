@@ -48,13 +48,6 @@ from artisanlib import __release_sponsor_name__
 #    return wrapper
 
 import os
-from log2d import Log, Path
-pathtoLogFile = os.environ['TEMP']
-fmt = f'%(asctime)s|{Path(__file__).stem}|%(message)s'
-datefmt = '%m/%d/%Y %H:%M:%S'
-bootlog = Log('bootlog', path=pathtoLogFile, fmt=fmt, datefmt=datefmt, to_file=True, mode='a')
-bootlog(f"starting main.py")
-
 import sys  # @UnusedImport
 import ast
 import platform
@@ -125,7 +118,7 @@ try:
                                 QPixmap,QColor,QDesktopServices,QIcon, # @Reimport @UnresolvedImport @UnusedImport
                                 QRegularExpressionValidator,QDoubleValidator, QPainter, QCursor, QFont) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt6.QtPrintSupport import (QPrinter,QPrintDialog) # @Reimport @UnresolvedImport @UnusedImport
-    from PyQt6.QtCore import (QLibraryInfo, QTranslator, QLocale, QFileInfo, PYQT_VERSION_STR, pyqtSignal, pyqtSlot, # type: ignore # @Reimport @UnresolvedImport @UnusedImport
+    from PyQt6.QtCore import (QLibraryInfo, QTranslator, QLocale, QFileInfo, PYQT_VERSION_STR, pyqtSignal, pyqtSlot, # @Reimport @UnresolvedImport @UnusedImport
 #                              QSize, pyqtProperty, # type: ignore # @Reimport @UnresolvedImport @UnusedImport
                               qVersion, QVersionNumber, QTime, QTimer, QFile, QIODevice, QTextStream, QSettings, # @Reimport @UnresolvedImport @UnusedImport
                               QRegularExpression, QDate, QUrl, QUrlQuery, QDir, Qt, QPoint, QEvent, QDateTime, QThread, qInstallMessageHandler) # @Reimport @UnresolvedImport @UnusedImport
@@ -140,21 +133,20 @@ try:
     from PyQt6 import sip # @Reimport @UnresolvedImport @UnusedImport
 except ImportError:
     from PyQt5.QtWidgets import (QAction, QApplication, QWidget, QMessageBox, QLabel, QMainWindow, QFileDialog, QGraphicsDropShadowEffect,  # type: ignore  # @Reimport @UnresolvedImport @UnusedImport
-                             QInputDialog, QGroupBox, QLineEdit,  # type: ignore  # @Reimport @UnresolvedImport @UnusedImport
-                             QSizePolicy, QVBoxLayout, QHBoxLayout, QPushButton, # type: ignore  # @Reimport @UnresolvedImport @UnusedImport
-                             QLCDNumber, QSpinBox, QComboBox,  # type: ignore  # @Reimport @UnresolvedImport @UnusedImport
-                             QSlider, # type: ignore # @Reimport @UnresolvedImport @UnusedImport
-                             QColorDialog, QFrame, QSplitter, QScrollArea, QProgressDialog, # type: ignore # @Reimport @UnresolvedImport @UnusedImport
-                             QStyleFactory, QMenu, QLayout, QShortcut) # type: ignore # @Reimport @UnresolvedImport @UnusedImport
+                             QInputDialog, QGroupBox, QLineEdit, # @Reimport @UnresolvedImport @UnusedImport
+                             QSizePolicy, QVBoxLayout, QHBoxLayout, QPushButton, # @Reimport @UnresolvedImport @UnusedImport
+                             QLCDNumber, QSpinBox, QComboBox, # @Reimport @UnresolvedImport @UnusedImport
+                             QSlider, # @Reimport @UnresolvedImport @UnusedImport
+                             QColorDialog, QFrame, QSplitter, QScrollArea, QProgressDialog, # @Reimport @UnresolvedImport @UnusedImport
+                             QStyleFactory, QMenu, QLayout, QShortcut) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt5.QtGui import (QScreen, QPageLayout, QImageReader, QWindow,  # type: ignore # @Reimport @UnresolvedImport @UnusedImport
-                                QKeySequence, # type: ignore # @Reimport @UnresolvedImport @UnusedImport
-                                QPixmap,QColor,QDesktopServices,QIcon, # type: ignore # @Reimport @UnresolvedImport @UnusedImport
-                                QRegularExpressionValidator,QDoubleValidator, QPainter, QCursor, QFont) # type: ignore # @Reimport @UnresolvedImport @UnusedImport
+                                QKeySequence, # @Reimport @UnresolvedImport @UnusedImport
+                                QPixmap,QColor,QDesktopServices,QIcon, # @Reimport @UnresolvedImport @UnusedImport
+                                QRegularExpressionValidator,QDoubleValidator, QPainter, QCursor, QFont) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt5.QtPrintSupport import (QPrinter,QPrintDialog) # type: ignore # @Reimport @UnresolvedImport @UnusedImport
     from PyQt5.QtCore import (QLibraryInfo, QTranslator, QLocale, QFileInfo, PYQT_VERSION_STR, pyqtSignal, pyqtSlot, # type: ignore # @Reimport @UnresolvedImport @UnusedImport
-#                              QSize, pyqtProperty, # type: ignore # @Reimport @UnresolvedImport @UnusedImport
-                              qVersion, QVersionNumber, QTime, QTimer, QFile, QIODevice, QTextStream, QSettings, # type: ignore # @Reimport @UnresolvedImport @UnusedImport
-                              QRegularExpression, QDate, QUrl, QUrlQuery, QDir, Qt, QPoint, QEvent, QDateTime, QThread, qInstallMessageHandler) # type: ignore # @Reimport @UnresolvedImport @UnusedImport
+                              qVersion, QVersionNumber, QTime, QTimer, QFile, QIODevice, QTextStream, QSettings, # @Reimport @UnresolvedImport @UnusedImport
+                              QRegularExpression, QDate, QUrl, QUrlQuery, QDir, Qt, QPoint, QEvent, QDateTime, QThread, qInstallMessageHandler) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt5.QtNetwork import QLocalSocket # type: ignore # @Reimport @UnresolvedImport @UnusedImport
     #QtWebEngineWidgets must be imported before a QCoreApplication instance is created
     try:
@@ -1363,7 +1355,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore # Argument to class mus
 
     __slots__ = [ 'locale_str', 'app', 'superusermode', 'sample_loop_running', 'time_stopped', 'plus_account', 'plus_remember_credentials', 'plus_email', 'plus_language', 'plus_subscription',
         'plus_paidUntil', 'plus_rlimit', 'plus_used', 'plus_readonly', 'appearance', 'mpl_fontproperties', 'full_screen_mode_active', 'processingKeyEvent', 'quickEventShortCut',
-        'eventaction_running_threads', 'qtbase_additional_locales', 'qtbase_locales', 'curFile', 'MaxRecentFiles', 'recentFileActs', 'recentSettingActs',
+        'eventaction_running_threads', 'curFile', 'MaxRecentFiles', 'recentFileActs', 'recentSettingActs',
         'recentThemeActs', 'applicationDirectory', 'helpdialog', 'redrawTimer', 'lastLoadedProfile', 'lastLoadedBackground', 'LargeScaleLCDsFlag', 'largeScaleLCDs_dialog',
         'analysisresultsanno', 'segmentresultsanno', 'largeLCDs_dialog', 'LargeLCDsFlag', 'largeDeltaLCDs_dialog', 'LargeDeltaLCDsFlag', 'largePIDLCDs_dialog',
         'LargePIDLCDsFlag', 'largeExtraLCDs_dialog', 'LargeExtraLCDsFlag', 'largePhasesLCDs_dialog', 'LargePhasesLCDsFlag', 'WebLCDs', 'WebLCDsPort',
@@ -1467,13 +1459,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore # Argument to class mus
 
         self.eventaction_running_threads:List[EventActionThread] = []
 
-        # locales that come with a standard qtbase translation for standard elements/buttons
-        # for other locales standard OK/Cancel buttons created in dialogs via QDialogButtonBoxes should be
-        # renamed via setText to link them to artisan translations (which hopefully provides those translations)
-
-        self.qtbase_additional_locales = ['da','el','fa','gd','lv','nl','pt_BR','pt','sk','sv','zh_CN'] # additionally added to /translations
-        self.qtbase_locales = ['ar','de','en','es','fi','fr','he','hu','it','ja','ko','pl','uk','tr','zh_TW'] # from Qt distribution
-
         #############################  Define variables that need to exist before calling settingsload()
         self.curFile:Optional[str] = None
         self.MaxRecentFiles = 20
@@ -1518,25 +1503,25 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore # Argument to class mus
         self.WebLCDsAlerts:bool = False
 
         # active tab
-        self.EventsDlg_activeTab = 0
-        self.graphColorDlg_activeTab = 0
-        self.PID_DlgControl_activeTab = 0
-        self.CurveDlg_activeTab = 0 # curves dialog
-        self.editGraphDlg_activeTab = 0 # roast properties dialog
-        self.backgroundDlg_activeTab = 0
-        self.DeviceAssignmentDlg_activeTab = 0
-        self.AlarmDlg_activeTab = 0
+        self.EventsDlg_activeTab:int = 0
+        self.graphColorDlg_activeTab:int = 0
+        self.PID_DlgControl_activeTab:int = 0
+        self.CurveDlg_activeTab:int = 0 # curves dialog
+        self.editGraphDlg_activeTab:int = 0 # roast properties dialog
+        self.backgroundDlg_activeTab:int = 0
+        self.DeviceAssignmentDlg_activeTab:int = 0
+        self.AlarmDlg_activeTab:int = 0
 
         #flag to reset Qsettings
-        self.resetqsettings = 0
+        self.resetqsettings:int = 0
         #path of last loadded QSettings
-        self.settingspath = '' # if empty string, the settingspath will be ignored, otherwise it will be used to update the batchcounter of those settings
+        self.settingspath:str = '' # if empty string, the settingspath will be ignored, otherwise it will be used to update the batchcounter of those settings
 
         # path of last loaded WheelGraph
-        self.wheelpath = ''
+        self.wheelpath:str = ''
 
         # self.profilepath is obteined at dirstruct() and points to profiles/year/month file-open/save will point to profilepath
-        self.profilepath = ''
+        self.profilepath:str = ''
         if platform.system() in ['Darwin', 'Linux']:
             self.profilepath = QDir().homePath() + '/Documents/'
         else:
@@ -1553,7 +1538,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore # Argument to class mus
 
 
         #defaults the users profile path to the standard profilepath (incl. month/year subdirectories)
-        self.userprofilepath = self.profilepath
+        self.userprofilepath:str = self.profilepath
 
         self.printer:Optional[QPrinter] = None
 
@@ -5022,7 +5007,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore # Argument to class mus
 #            string = QApplication.translate('Message', 'Configure for<br>{0}?<br><br>Your current settings will be overwritten!<br><br>It is advisable to save your current settings beforehand via menu Help >> Save Settings.').format(label)
             help_menu = QApplication.translate('Menu', 'Help')
             string = QApplication.translate('Message', 'Configure for<br>{0}?<br><br>Some of your settings will be modified!<br><br>Before proceeding it is best to save your current settings and reset Artisan<br>(first menu {1} >> {2} then {4} >> {3})').format(label, help_menu, QApplication.translate('Menu', 'Save Settings...'),QApplication.translate('Menu', 'Factory Reset'),help_menu)
-#            string = QApplication.translate('Message', 'Configure for<br>{0}?<br><br>Some of your settings will be modified!<br><br>Before proceeding it is best to save your current settings and reset Artisan<br>(first menu {1} >> {2} then {1} >> {3})').format(label, QApplication.translate('Menu', 'Help'),QApplication.translate('Menu', 'Save Settings...'),QApplication.translate('Menu', 'Factory Reset'))
             reply = QMessageBox.question(self, QApplication.translate('Message', 'Adjust Settings'),string,
                 QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.Cancel)
             if reply == QMessageBox.StandardButton.Cancel:
@@ -6072,8 +6056,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore # Argument to class mus
             #cd.setOption(QColorDialog.ColorDialogOption.NoButtons | QColorDialog.ColorDialogOption.ShowAlphaChannel,True)
             cd.setCurrentColor(c)
             cd.exec()
-            cr = cd.currentColor()
-            return cr
+            return cd.currentColor()
         return QColorDialog.getColor(c)
 
     @pyqtSlot(int)
@@ -11531,7 +11514,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore # Argument to class mus
     @pyqtSlot()
     @pyqtSlot(bool)
     def viewKshortcuts(self,_=False):
-        from help import keyboardshortcuts_help
+        from help import keyboardshortcuts_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
         self.helpdialog = self.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
@@ -11696,7 +11679,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore # Argument to class mus
             else:
                 self.loadFile(filename)
 
-    def getDefaultPath(self):
+    def getDefaultPath(self) -> str:
         #compare profilepath with userprofilepath (modulo the last two segments which are month/year respectively)
         return self.userprofilepath
 
@@ -12272,6 +12255,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore # Argument to class mus
                 names2x = [decodeLocalStrict(x) for x in profile['extraname2']]
                 timex = profile['extratimex']
                 self.qmc.temp1B,self.qmc.temp2B,self.qmc.timeB, self.qmc.temp1BX, self.qmc.temp2BX = t1,t2,tb,t1x,t2x
+                self.qmc.abs_timeB = tb.copy()  #invariant copy of timeB
                 self.qmc.extratimexB = timex
 
                 if 'extraDelta1' in profile:
@@ -12356,7 +12340,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore # Argument to class mus
                         self.qmc.backgroundFlavors[i] *= 10.
                     self.qmc.backgroundFlavors = self.qmc.backgroundFlavors[:(l-1)]
                 if 'etypes' in profile:
-                    self.qmc.Betypes = profile['etypes']
+                    self.qmc.Betypes = [decodeLocalStrict(x) for x in profile['etypes']]
                 if 'timeindex' in profile:
                     self.qmc.timeindexB = [max(0,v) if i>0 else max(-1,v) for i,v in enumerate(profile['timeindex'])]          #if new profile found with variable timeindex
                     if self.qmc.phasesfromBackgroundflag:
@@ -13491,7 +13475,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore # Argument to class mus
             pass
 
     #Read object from file
-    def deserialize(self, filename) -> Dict[str, Any]:
+    def deserialize(self, filename:str) -> Dict[str, Any]:
         obj:Dict[str,Any] = {}
         try:
             fn = str(filename)
@@ -13836,6 +13820,17 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore # Argument to class mus
                     settings.endGroup()
                     # now remove the settings file
                     self.clearExtraDeviceSettingsBackup(filename)
+
+                    # etypes might have been changed thus we need to update the slider labels
+                    self.updateSlidersProperties()
+                    # update extra device lcds which might use event types as part of their labels
+                    self.establish_etypes()
+                    # as well as the large extra LCDs
+                    if self.largeExtraLCDs_dialog is not None:
+                        self.largeExtraLCDs_dialog.reLayout()
+                    # update extra event button which might use event types as part of their labels
+                    self.realignbuttons()
+
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
 
@@ -14276,6 +14271,17 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore # Argument to class mus
             if 'etypes' in profile:
                 self.qmc.etypes = [decodeLocalStrict(x) for x in profile['etypes']]
 
+            if updateRender:
+                # etypes might have been changed thus we need to update the slider labels
+                self.updateSlidersProperties()
+                # update extra device lcds which might use event types as part of their labels
+                self.establish_etypes()
+                # as well as the large extra LCDs
+                if self.largeExtraLCDs_dialog is not None:
+                    self.largeExtraLCDs_dialog.reLayout()
+                # update extra event button which might use event types as part of their labels
+                self.realignbuttons()
+
             if 'roastingnotes' in profile:
                 self.qmc.roastingnotes = decodeLocalStrict(profile['roastingnotes'])
             else:
@@ -14469,8 +14475,9 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore # Argument to class mus
                 self.qmc.backgroundpath = decodeLocalStrict(profile['backgroundpath'])
                 if os.path.isfile(self.qmc.backgroundpath):
                     try:
+                        background_hidden = self.qmc.backgroundprofile is not None and not self.qmc.background # before loading this new profile, a background was loaded but hidden
                         self.loadbackground(self.qmc.backgroundpath)
-                        self.qmc.background = not self.qmc.hideBgafterprofileload
+                        self.qmc.background = not self.qmc.hideBgafterprofileload and not background_hidden # if before the loaded background was hidden, we again hide the background on loading this profile
                         self.qmc.timealign(redraw=False) # there will be a later redraw triggered that also recomputes the deltas
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
@@ -15672,7 +15679,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore # Argument to class mus
                 if fire_slider_action:
                     self.fireslideractionSignal.emit(etype)
                 # create a new event
-                nv:float = self.qmc.eventsExternal2InternalValue(float(new_value))
+                nv:float = self.qmc.eventsExternal2InternalValue(new_value)
                 if record and self.qmc.flagstart:
                     self.qmc.eventRecordActionSignal.emit(etype,nv,'')
 
@@ -15727,11 +15734,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore # Argument to class mus
     #loads the settings at the start of application. See the oppposite closeEventSettings()
     def settingsLoad(self, filename=None, theme=False, machine=False, redraw=True): # pyright: ignore # Code is too complex to analyze; reduce complexity by refactoring into subroutines or reducing
         res = False
-
         try:
             updateBatchCounter = True
             if filename is not None:
-                settings = QSettings(filename,QSettings.Format.IniFormat)
+                settings = QSettings(filename, QSettings.Format.IniFormat)
 
                 # a proper artisan-settings.aset file needs at least to contain a Mode tag
                 if not (theme or machine) and not settings.contains('Mode'):
@@ -15789,7 +15795,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore # Argument to class mus
                     return True  #don't load any more settings. They could be bad (corrupted). Stop here.
 
             # we remember from which location we loaded the last settings file
-            # to be able to update the batch counter in this file from incBatchCounter()/decBatchCounter()
+            # to be able to update the batch counter in this file from qmc.incBatchCounter()/qmc.decBatchCounter()
             # but not for loading of settings fragments like themes or machines
             if filename:
                 if updateBatchCounter:
@@ -25019,6 +25025,56 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore # Argument to class mus
                 _log.exception(e)
             self.simulatorAction.setChecked(bool(self.simulator))
 
+### BEGIN STDOUT/STDERR HACK
+# to (re-)set sys.stdout/sys.stderr on Windows builds under PyInstaller >= 5.8.0 (which clears those to None under --noconsole using pythonw)
+# which is assumed by bottle.py (used by WebLCDs) to exists
+# from: https://stackoverflow.com/questions/19425736/how-to-redirect-stdout-and-stderr-to-logger-in-python
+# see also
+#   https://github.com/bottlepy/bottle/issues/1104#issuecomment-1195740112
+#   https://github.com/bottlepy/bottle/issues/1401#issuecomment-1284450625
+#   https://github.com/r0x0r/pywebview/pull/1048/files
+
+class LoggerWriter(io.StringIO):
+    """Class to replace the stderr/stdout calls to a logger"""
+
+    def __init__(self, logger_name: str, log_level: int):
+        """:param logger_name: Name to give the logger (e.g. 'stderr')
+        :param log_level: The log level, e.g. logging.DEBUG / logging.INFO that
+                          the MESSAGES should be logged at.
+        """
+        self.std_logger = logging.getLogger(logger_name)
+        # Get the "root" logger from by its name (i.e. from a config dict or at the bottom of this file)
+        #  We will use this to create a copy of all its settings, except the name
+        app_logger = logging.getLogger(__name__)
+        for handler in app_logger.handlers:
+            self.std_logger.addHandler(handler)
+        self.std_logger.setLevel(app_logger.level)  # the minimum lvl msgs will show at
+        self.level = log_level  # the level msgs will be logged at
+        self.sbuffer:List[str] = []
+
+    def write(self, msg: Union[str, bytes]) -> int:
+        """Stdout/stderr logs one line at a time, rather than 1 message at a time.
+        Use this function to aggregate multi-line messages into 1 log call."""
+        msg_str:str = msg.decode() if isinstance(msg, bytes) else msg
+
+        if not msg_str.endswith("\n"):
+            self.sbuffer.append(msg_str)
+
+        self.sbuffer.append(msg_str.rstrip("\n"))
+        message = "".join(self.sbuffer)
+        message_len:int = len(message)
+        self.std_logger.log(self.level, message)
+        self.sbuffer = []
+        return message_len
+
+
+def replace_stderr_and_stdout_with_logger():
+    """Replaces calls to sys.stderr -> logger.info & sys.stdout -> logger.error"""
+    # To access the original stdout/stderr, use sys.__stdout__/sys.__stderr__
+    sys.stdout = LoggerWriter("stdout", logging.INFO)
+    sys.stderr =  LoggerWriter("stderr", logging.ERROR)
+
+### END STDOUT/STDERR HACK
 
 ###########################################################################################################################################
 ###########################################################################################################################################
@@ -25108,7 +25164,7 @@ if sys.platform.startswith('darwin'):
     class Document(NSDocument): # pylint: disable= too-few-public-methods
 #        def windowNibName(self):
 #            return None #"Document"
-        def makeWindowControllers(self):
+        def makeWindowControllers(self) -> None:
             pass
 
 def qt_message_handler(_msg_type, _msg_log_context, _msg_string):
@@ -25122,6 +25178,12 @@ def initialize_locale(my_app) -> str:
             locale = 'en'
     else:
         locale = ''
+
+    qt_translation_modules:List[str] = [
+        'qtbase',
+        'qtconnectivity',
+        'qtwebengine'
+    ]
 
     supported_languages:List[str] = [
         'ar',
@@ -25188,39 +25250,47 @@ def initialize_locale(my_app) -> str:
     if locale is None or len(locale) == 0:
         locale = 'en'
 
+
     #load Qt default translations from QLibrary
-    qtTranslator = QTranslator(my_app)
     try:
-        qt_trans_path = QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)
-    except Exception: # pylint: disable=broad-except
-        qt_trans_path = QLibraryInfo.location(QLibraryInfo.TranslationsPath) # type: ignore
-    if qtTranslator.load('qtbase_' + locale, qt_trans_path):
-        my_app.installTranslator(qtTranslator)
-    #find Qt default translations in Unix binaries
-    elif qtTranslator.load('qtbase_' + locale, QApplication.applicationDirPath() + '/translations'):
-        my_app.installTranslator(qtTranslator)
-    #find Qt default translations in Mac binary
-    elif qtTranslator.load('qtbase_' + locale, QApplication.applicationDirPath() + '/../translations'):
-        my_app.installTranslator(qtTranslator)
-    # qtbase_ translations added to the Artisan source as they are not in the official Qt builds
-    elif qtTranslator.load('qtbase_' + locale, 'translations'):
+        try:
+            qt_trans_path = QLibraryInfo.path(QLibraryInfo.LibraryPath.TranslationsPath)
+        except Exception: # pylint: disable=broad-except
+            qt_trans_path = QLibraryInfo.location(QLibraryInfo.TranslationsPath) # type: ignore
+
+        trans_paths:List[str] = []
+        # add the translations path for binary installations
+        if sys.platform.startswith('darwin'):
+            trans_paths.append(QApplication.applicationDirPath() + '/../translations')
+        else:
+            trans_paths.append(QApplication.applicationDirPath() + '/translations')
+        # add the translations path for source installations
+        trans_paths.append('translations')
+
+        #load Qt translations
+        qtTranslator:QTranslator = QTranslator(my_app)
+        for qt_trans_module in qt_translation_modules:
+            qt_qm_file:str = f'{qt_trans_module}_{locale}'
+            for trans_path in [qt_trans_path] + trans_paths: # start with the default PyQt/Qt translations location
+                if qtTranslator.load(qt_qm_file, trans_path):
+                    _log.info('loading qt translations %s from %s', qt_qm_file, trans_path)
+                    break
         my_app.installTranslator(qtTranslator)
 
-    #load Artisan translations
-    appTranslator = QTranslator(my_app)
-    #find application translations in source folder
-    if appTranslator.load('artisan_' + locale, 'translations'):
+        #load Artisan translations
+        appTranslator:QTranslator = QTranslator(my_app)
+        artisan_qm_file:str = f'artisan_{locale}'
+        for trans_path in trans_paths:
+            if qtTranslator.load(artisan_qm_file, trans_path):
+                _log.info('loading Artisan translations %s from %s', artisan_qm_file, trans_path)
+                break
         my_app.installTranslator(appTranslator)
-    #find application translations in Unix binaries
-    elif appTranslator.load('artisan_' + locale, QApplication.applicationDirPath() + '/translations'):
-        my_app.installTranslator(appTranslator)
-    #find application translations in Mac binary
-    elif appTranslator.load('artisan_' + locale, QApplication.applicationDirPath() + '/../translations'):
-        my_app.installTranslator(appTranslator)
+    except Exception as e:
+        _log.exception(e)
 
     return locale
 
-def main():
+def main() -> None:
 
     locale_str = initialize_locale(app)
     _log.info('locale: %s',locale_str)
@@ -25244,6 +25314,12 @@ def main():
 
     app.setActivationWindow(appWindow,activateOnMessage=False) # set the activation window for the QtSingleApplication
 
+#    # NOTE: replace_stderr_and_stdout_with_logger() needs to be called before settingsLoad() which starts WebLCDs and loads bottle.py    
+#    if platform.system() == 'Windows' and appFrozen():
+#        try:
+#            replace_stderr_and_stdout_with_logger()
+#        except Exception: # pylint: disable=broad-except
+#            pass
 
     # only here deactivating the app napping seems to have an effect
     if sys.platform.startswith('darwin'):
@@ -25341,15 +25417,7 @@ def main():
 
     # write gc debug messages to stdout
 #    gc.set_debug(gc.DEBUG_STATS)
-
-
-#    if platform.system() == 'Windows' and appFrozen():
-#        try:
-#            sys.stderr = sys.stdout
-#        except Exception: # pylint: disable=broad-except
-#            pass
-
-
+              
     QTimer.singleShot(700, appWindow.qmc.startPhidgetManager)
 
     #the following line is to trap numpy warnings that occur in the Cup Profile dialog if all values are set to 0
@@ -25361,6 +25429,7 @@ def main():
             warnings.simplefilter('ignore')
             with suppress_stdout_stderr():
                 app.exec()
+
         # alternative:
         # ret = app.exec()
         # app = None
