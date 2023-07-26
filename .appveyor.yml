@@ -27,10 +27,10 @@ environment:
 #    appveyor_build_worker_image: Visual Studio 2019
 #  - job_name: windows
 #    appveyor_build_worker_image: Visual Studio 2022
-#  - job_name: macos
-#    appveyor_build_worker_image: macos-bigsur
-  - job_name: linux
-    appveyor_build_worker_image: Ubuntu2004
+  - job_name: macos
+    appveyor_build_worker_image: macos-bigsur
+#  - job_name: linux
+#    appveyor_build_worker_image: Ubuntu2004
 
 
 # Generic build number, later set to commit hash by init
@@ -212,6 +212,12 @@ for:
     - echo "MacOS Install"
     - chmod +x .ci/*.sh
 
+    - sh: export APPVEYOR_VNC_BLOCK=true
+    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-vnc.sh' | bash -e -
+    - sh: sleep 5s
+    - sh: export APPVEYOR_SSH_BLOCK=true
+    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+    
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
