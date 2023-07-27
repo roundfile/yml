@@ -193,7 +193,7 @@ for:
   deploy_script:
     - cmd: bash ../.ci/upload.sh artisan-*.zip
         
-#  on_finish:
+  on_finish:
     - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 
