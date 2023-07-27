@@ -26,7 +26,7 @@ Whenever a commit is made to the repository a number of actions occur. On GitHub
 
 ### Step by Step
 
-###### Setup Accounts  
+#### Setup Accounts  
 1. [Sign up](https://github.com/signup) to create a GitHub account if you do not already have one.
 1. [Login](https://github.com/login) to your GitHub account.
 1. [Fork the Artisan repository](https://github.com/artisan-roaster-scope/artisan/fork) to your GitHub account.
@@ -35,7 +35,7 @@ Whenever a commit is made to the repository a number of actions occur. On GitHub
 1. Appveyor should now ask "Select repository for your new project".  Click on the repository created earlier by the fork.
 1. This completes the setup required to build installation packages on AppVeyor.
 
-###### Start a CI Build.
+#### Start a CI Build.
 Make a commit to your GitHub repository.  If working ina locl clone do not forget to push the commit.  This will trigger the GitHub actions listed above including starting the CI build.    
 
 If you encounter this message on AppVeyor: *"There was an error while trying to complete the current operation. Please contact AppVeyor support."* you must send an email to support@appveyor.com asking to have your account enabled.
