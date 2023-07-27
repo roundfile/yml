@@ -4,7 +4,7 @@ ____
 **Important: Artisan is licensed under [The GNU General Public License](https://www.gnu.org/licenses/gpl-3.0.html).  Copies of Artisan and derivative works are subject to this license.  Be sure to review the license to understand your legal obligations and please respect them.**  
 ____
 
-##### Introduction
+#### Introduction
 
 Artisan official and continuous install packages for **Windows**, **macOS** and **Linux** are built from the GitHub repository using [AppVeyor CI/CD](https://www.appveyor.com).  This is an automated process, known as continuous integration (CI), that begins whenever a commit is made to the GitHub repository.  All the necessary files to manage the CI process are contained in the [Artisan GitHub repository](https://github.com/artisan-roaster-scope/artisan).  
 
@@ -16,7 +16,7 @@ While this document is presumed free of errors as of July 2023, there is no guar
 
 *Note: Building Artisan install packages on a local machine cannot be done without modifying the repository files. The Artisan team does not have the resources to support users making local builds.*
 
-##### What Happens
+#### What Happens
 
 Whenever a commit is made to the repository a number of actions occur. On GitHub several scripts are executed to, among other things, 
   * validate and correct certain possible inconsistencies in the committed files,  
@@ -24,7 +24,7 @@ Whenever a commit is made to the repository a number of actions occur. On GitHub
   * trigger the CI process on AppVeyor causing the build and deployment (CD) of the packages back to GitHub.
 
 
-##### Step by Step
+#### Step by Step
 
 ###### Setup Accounts  
 1. [Sign up](https://github.com/signup) to create a GitHub account if you do not already have one.
