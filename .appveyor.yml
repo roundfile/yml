@@ -25,10 +25,10 @@ environment:
   matrix:
 #  - job_name: windows_legacy
 #    appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: windows
-#    appveyor_build_worker_image: Visual Studio 2022
-  - job_name: macos
-    appveyor_build_worker_image: macos-bigsur
+  - job_name: windows
+    appveyor_build_worker_image: Visual Studio 2022
+#  - job_name: macos
+#    appveyor_build_worker_image: macos-bigsur
 #  - job_name: linux
 #    appveyor_build_worker_image: Ubuntu2004
 
@@ -139,6 +139,8 @@ for:
   install:
     - cmd: echo Windows Install
 
+    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
     # derive the python path from the version number
     - ps: $env:PYTHON_PATH = "C:/Python$($env:PYTHON_V -replace '\.','')-x64"
     - ps: Write-Host $env:PYTHON_PATH
@@ -247,9 +249,7 @@ for:
 #  on_finish:
 #    - sh: export APPVEYOR_VNC_BLOCK=true
 #    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-vnc.sh' | bash -e -
-#    - sh: sleep 5s
-#    - sh: export APPVEYOR_SSH_BLOCK=true
-#    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+##    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
 
 
 -
