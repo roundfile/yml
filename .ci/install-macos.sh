@@ -39,6 +39,8 @@ if [ -n "${PYUPGRADE_V:-}" ]; then
     echo $PATH
     which python3
     python3 --version
+    echo "VIRTUAL_ENV"
+    echo $VIRTUAL_ENV
 
     # create new venv
     python3 -m venv /Users/appveyor/venv${PYUPGRADE_V}
@@ -53,6 +55,8 @@ hash -r
 uname -srv
 which python3
 python3 --version
+echo "VIRTUAL_ENV"
+echo $VIRTUAL_ENV
 
 # to work around a wget open ssl issue: dyld: Library not loaded: /usr/local/opt/openssl/lib/libssl.1.0.0.dylib
 # however for now we settled to use curl instead to download the upload script
