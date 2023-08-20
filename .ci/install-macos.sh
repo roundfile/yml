@@ -44,7 +44,7 @@ if [ -n "${PYUPGRADE_V:-}" ]; then
     python3 -m venv /Users/appveyor/venv${PYUPGRADE_V}
     source /Users/appveyor/venv${PYUPGRADE_V}/bin/activate
     # update symbolic link to point to our new venv
-    ln -vfns /Users/appveyor/venv${PYUPGRADE_V} /Users/appveyor/venv${PYTHON_V}
+#remove?    ln -vfns /Users/appveyor/venv${PYUPGRADE_V} /Users/appveyor/venv${PYTHON_V}
     export PATH=/Users/appveyor/venv${PYUPGRADE_V}/bin:${PATH} # not exported?
 fi
 
