@@ -35,6 +35,7 @@ if [ -n "${PYUPGRADE_V:-}" ]; then
     # add path
 #    export PATH="$(brew --prefix)/Cellar/python@${PYTHON_V}/${PYUPGRADE_V}/bin:${PATH}"
     export PATH="$(brew --cellar python@${PYTHON_V})/$(brew info --json python@${PYTHON_V} | jq -r '.[0].installed[0].version')/bin:${PATH}"
+    echo "Here 123"
     echo $PATH
     which python3
     python3 --version
@@ -47,6 +48,7 @@ if [ -n "${PYUPGRADE_V:-}" ]; then
     export PATH=/Users/appveyor/venv${PYUPGRADE_V}/bin:${PATH} # not exported?
 fi
 
+echo "Here 456"
 hash -r
 uname -srv
 which python3
