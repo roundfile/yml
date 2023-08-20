@@ -35,7 +35,7 @@ try:
     )
     from PyQt6.QtCore import Qt, pyqtSlot, QSize, QSettings # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtGui import QIcon # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt6 import sip # @UnusedImport @Reimport  @UnresolvedImport
+#    from PyQt6 import sip # @UnusedImport @Reimport  @UnresolvedImport
 except Exception: # pylint: disable=broad-except
     #pylint: disable = E, W, R, C
     from PyQt5.QtWidgets import (  # type: ignore
@@ -50,10 +50,10 @@ except Exception: # pylint: disable=broad-except
     )
     from PyQt5.QtCore import Qt, pyqtSlot, QSize, QSettings # type: ignore  # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtGui import QIcon # type: ignore  # @UnusedImport @Reimport  @UnresolvedImport
-    try:
-        from PyQt5 import sip # type: ignore  # @Reimport @UnresolvedImport @UnusedImport
-    except Exception: # pylint: disable=broad-except
-        import sip  # type: ignore # @Reimport @UnresolvedImport @UnusedImport
+#    try:
+#        from PyQt5 import sip # type: ignore  # @Reimport @UnresolvedImport @UnusedImport
+#    except Exception: # pylint: disable=broad-except
+#        import sip  # type: ignore # @Reimport @UnresolvedImport @UnusedImport
 
 import logging
 from artisanlib.util import comma2dot
@@ -61,7 +61,7 @@ from artisanlib.dialogs import ArtisanDialog
 from artisanlib.widgets import MyQComboBox
 from uic import BlendDialog # type: ignore[attr-defined] # pylint: disable=no-name-in-module
 from typing import Optional, List, Dict, Tuple, Any, TYPE_CHECKING
-from typing_extensions import Final  # Python <=3.7
+from typing import Final  # Python <=3.7
 
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
@@ -157,8 +157,9 @@ class CustomBlendDialog(ArtisanDialog):
         self.ui.buttonBox.setStandardButtons(QDialogButtonBox.StandardButton.Cancel|QDialogButtonBox.StandardButton.Apply)
         # hack to assign the Apply button the AcceptRole without losing default system translations
         applyButton = self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Apply)
-        self.ui.buttonBox.removeButton(applyButton)
-        self.applyButton = self.ui.buttonBox.addButton(applyButton.text(), QDialogButtonBox.ButtonRole.AcceptRole)
+        if applyButton is not None:
+            self.ui.buttonBox.removeButton(applyButton)
+            self.applyButton = self.ui.buttonBox.addButton(applyButton.text(), QDialogButtonBox.ButtonRole.AcceptRole)
 
         # populate widgets
         self.ui.lineEdit_name.setText(self.blend.name)
@@ -305,8 +306,9 @@ class CustomBlendDialog(ArtisanDialog):
         super().reject()
 
     @pyqtSlot()
-    def close(self) -> None:
+    def close(self) -> bool:
         self.closeEvent(None)
+        return True
 
     def updateAddButton(self) -> None:
         self.ui.pushButton_add.setEnabled(len(self.coffees)>len(self.blend.components))
@@ -339,7 +341,8 @@ class CustomBlendDialog(ArtisanDialog):
 
             ratio_correct = self.checkRatio()
 
-            self.applyButton.setEnabled(ratio_correct)
+            if self.applyButton is not None:
+                self.applyButton.setEnabled(ratio_correct)
 
             for i, c in enumerate(self.blend.components):
                 #ratio
@@ -376,7 +379,9 @@ class CustomBlendDialog(ArtisanDialog):
                 #delete
                 if rows>2:
                     deleteButton = QToolButton()
-                    deleteButton.setIcon(QIcon(QApplication.style().standardIcon(QStyle.StandardPixmap.SP_DialogDiscardButton))) #SP_TitleBarCloseButton
+                    app_style = QApplication.style()
+                    if app_style is not None:
+                        deleteButton.setIcon(QIcon(app_style.standardIcon(QStyle.StandardPixmap.SP_DialogDiscardButton))) #SP_TitleBarCloseButton
                     deleteButton.setIconSize(QSize(16,16))
                     deleteButton.setFixedSize(QSize(22, 22))
                     deleteButton.clicked.connect(self.deleteComponent)
@@ -384,11 +389,12 @@ class CustomBlendDialog(ArtisanDialog):
 
             header = self.ui.tableWidget.horizontalHeader()
             self.ui.tableWidget.resizeColumnsToContents()
-            header.setStretchLastSection(False)
-            header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-            header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
-            header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
-            header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
+            if header is not None:
+                header.setStretchLastSection(False)
+                header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+                header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
+                header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
+                header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
             self.ui.tableWidget.setColumnWidth(3,22)
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
@@ -405,13 +411,14 @@ def openCustomBlendDialog(window:'QWidget', aw:'ApplicationWindow', inWeight:flo
         blend_res = None
         total_weight = inWeight
 
-    #deleteLater() will not work here as the dialog is still bound via the parent
-    #dialog.deleteLater() # now we explicitly allow the dialog an its widgets to be GCed
-    # the following will immediately release the memory despite this parent link
-    QApplication.processEvents() # we ensure events concerning this dialog are processed before deletion
-    try: # sip not supported on older PyQt versions (RPi!)
-        sip.delete(dialog)
-        #print(sip.isdeleted(dialog))
-    except Exception: # pylint: disable=broad-except
-        pass
+#    #deleteLater() will not work here as the dialog is still bound via the parent
+#    #dialog.deleteLater() # now we explicitly allow the dialog an its widgets to be GCed
+#    # the following will immediately release the memory despite this parent link
+#    QApplication.processEvents() # we ensure events concerning this dialog are processed before deletion
+#    try: # sip not supported on older PyQt versions (RPi!)
+#        sip.delete(dialog)
+#        #print(sip.isdeleted(dialog))
+#    except Exception: # pylint: disable=broad-except
+#        pass
+
     return blend_res, total_weight

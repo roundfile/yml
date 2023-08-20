@@ -14,7 +14,7 @@ maintainers = [
 ]
 license = {file = 'LICENSE'}
 requires-python = '>=3.8'
-keywords = ['markdown', 'markdown-parser', 'python-markdown', 'markdown-to-html']
+keywords = ['roasting', 'roast logging', 'speciality coffee']
 classifiers = [
     'Development Status :: 5 - Production/Stable',
     'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
@@ -43,8 +43,8 @@ classifiers = [
 ## black
 
 [tool.black]
-line-length = 79
-target-version = ['py39']
+line-length = 100
+target-version = ['py38']
 include = '\.pyi?$'
 extend-exclude = '''
 # A regex preceded with ^/ will apply only to files and directories
@@ -215,6 +215,7 @@ enable='''c-extension-no-member,'''
 
 [tool.mypy]
 files = ["artisanlib/*.py", "plus/*.py"]
+exclude = ['build', 'dist', 'uic']
 ##python_version = "3.7"
 check_untyped_defs = true
 
@@ -224,6 +225,9 @@ plugins = ["numpy.typing.mypy_plugin"]
 module = "matplotlib.*"
 ignore_missing_imports = true
 
+[[tool.mypy.overrides]]
+module = "uic.*"
+follow_imports = 'skip'
 
 ## ruff conf
 

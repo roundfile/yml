@@ -37,7 +37,7 @@ import plus.connection
 import plus.config
 
 from typing import Optional
-from typing_extensions import Final  # Python <=3.7
+from typing import Final  # Python <=3.7
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
 
@@ -127,7 +127,7 @@ def sendPlusNotificationSeen(hr_id:str, date):
         _log.exception(e)
 
 
-class NotificationManager(QObject): # pyright: ignore # Argument to class must be a base class (reportGeneralTypeIssues)
+class NotificationManager(QObject): # pyright: ignore [reportGeneralTypeIssues]
 
     __slots__ = ( 'notification_timeout', 'notification_queue_max_length', 'notification_queue_max_age',
                 'tray_menu', 'tray_icon', 'notifications_available', 'notifications_enabled', 'notifications_visible',
@@ -316,7 +316,7 @@ class NotificationManager(QObject): # pyright: ignore # Argument to class must b
     @pyqtSlot(bool)
     def notificationItemSelected(self, _checked:bool = False):
         action = self.sender()
-        if hasattr(action, 'data'):
+        if action is not None and hasattr(action, 'data'):
             n = action.data()
             self.setNotification(n, addToQueue=False)
 

@@ -37,7 +37,7 @@ import psutil
 from psutil._common import bytes2human
 
 from typing import Optional, List, Dict, Callable, Tuple, Union, Any, cast, TYPE_CHECKING  #for Python >= 3.9: can remove 'List' since type hints can now use the generic 'list'
-from typing_extensions import Final  # Python <=3.7
+from typing import Final  # Python <=3.7
 
 if TYPE_CHECKING:
     from artisanlib.types import ProfileData, EnergyMetrics, BTU # pylint: disable=unused-import
@@ -124,7 +124,7 @@ _log: Final[logging.Logger] = logging.getLogger(__name__)
 #################### Ambient Data Collection  #########################################
 #######################################################################################
 
-class AmbientWorker(QObject): # pylint: disable=too-few-public-methods # pyright: ignore # Argument to class must be a base class (reportGeneralTypeIssues)
+class AmbientWorker(QObject): # pylint: disable=too-few-public-methods # pyright: ignore [reportGeneralTypeIssues] # Argument to class must be a base class
     finished = pyqtSignal()
 
     def __init__(self, aw:'ApplicationWindow') -> None:
@@ -163,6 +163,7 @@ class tgraphcanvas(FigureCanvas):
     markSCeSignal = pyqtSignal(bool)
     markDropSignal = pyqtSignal(bool)
     markCoolSignal = pyqtSignal(bool)
+    onMonitorSignal = pyqtSignal()
     toggleMonitorSignal = pyqtSignal()
     toggleRecorderSignal = pyqtSignal()
     processAlarmSignal = pyqtSignal(int, bool, int, str)
@@ -690,7 +691,8 @@ class tgraphcanvas(FigureCanvas):
         # ADD DEVICE: to add a device you have to modify several places. Search for the tag "ADD DEVICE:" in the code
         # (check also the tags in comm.py and devices.py!!)
         # - add to self.devices
-        self.devices: Final[List[str]] = [#Fuji PID        #0
+        self.devices: Final[List[str]] = [
+                        #Fuji PID               #0
                        'Omega HH806AU',         #1
                        'Omega HH506RA',         #2
                        'CENTER 309',            #3
@@ -835,7 +837,11 @@ class tgraphcanvas(FigureCanvas):
                        'IKAWA',                     #142
                        '+IKAWA SET/RPM',            #143
                        '+IKAWA Heater/Fan',         #144
-                       '+IKAWA State'               #145
+                       '+IKAWA State',              #145
+                       'Phidget DAQ1000 01',        #146
+                       '+Phidget DAQ1000 23',       #147
+                       '+Phidget DAQ1000 45',       #148
+                       '+Phidget DAQ1000 67'        #149
                        ]
 
         # ADD DEVICE:
@@ -863,7 +869,8 @@ class tgraphcanvas(FigureCanvas):
             123, # Phidget VCP1000
             124, # Phidget VCP1001
             125, # Phidget VCP1002
-            137  # Phidget DAQ1500
+            137, # Phidget DAQ1500
+            146  # Phidget DAQ1000 01
         ]
 
         # ADD DEVICE:
@@ -945,7 +952,11 @@ class tgraphcanvas(FigureCanvas):
             141, # Kaleido Heater/Fan
             143, # IKAWA Set/RPM
             144, # IKAWA Heater/Fan
-            145  # IKAWA State
+            145, # IKAWA State
+            146, # Phidget DAQ1000 01
+            147, # +Phidget DAQ1000 23
+            148, # +Phidget DAQ1000 45
+            149  # +Phidget DAQ1000 67
         ]
 
         #extra devices
@@ -2193,6 +2204,7 @@ class tgraphcanvas(FigureCanvas):
         self.markSCeSignal.connect(self.mark2Cend)
         self.markDropSignal.connect(self.markDrop)
         self.markCoolSignal.connect(self.markCoolEnd)
+        self.onMonitorSignal.connect(self.OnMonitor, type=Qt.ConnectionType.QueuedConnection) # type: ignore
         self.toggleMonitorSignal.connect(self.toggleMonitorTigger)
         self.toggleRecorderSignal.connect(self.toggleRecorderTigger)
         self.processAlarmSignal.connect(self.processAlarm, type=Qt.ConnectionType.QueuedConnection) # type: ignore # queued to avoid deadlock between RampSoak processing and EventRecordAction, both accessing the same critical section protected by profileDataSemaphore
@@ -3071,12 +3083,12 @@ class tgraphcanvas(FigureCanvas):
             try:
                 dlg.dialogbuttons.accepted.disconnect()
                 dlg.dialogbuttons.rejected.disconnect()
-                QApplication.processEvents() # we ensure events concerning this dialog are processed before deletion
-                try: # sip not supported on older PyQt versions (RPi!)
-                    sip.delete(dlg)
-                    #print(sip.isdeleted(dlg))
-                except Exception: # pylint: disable=broad-except
-                    pass
+#                QApplication.processEvents() # we ensure events concerning this dialog are processed before deletion
+#                try: # sip not supported on older PyQt versions (RPi!)
+#                    sip.delete(dlg)
+#                    #print(sip.isdeleted(dlg))
+#                except Exception: # pylint: disable=broad-except
+#                    pass
             except Exception: # pylint: disable=broad-except
                 pass
 
@@ -3387,7 +3399,7 @@ class tgraphcanvas(FigureCanvas):
     # sample devices at interval self.delay milliseconds.
     # we can assume within the processing of sample_processing() that flagon=True
     # NOTE: sample_processing is processed in the GUI thread NOT the sample thread!
-    def sample_processing(self, local_flagstart:bool, temp1_readings:List[float], temp2_readings:List[float], timex_readings:List[float]): # pyright: ignore # Code is too complex to analyze; reduce complexity by refactoring into subroutines or reducing conditional code paths (reportGeneralTypeIssues)
+    def sample_processing(self, local_flagstart:bool, temp1_readings:List[float], temp2_readings:List[float], timex_readings:List[float]): # pyright: ignore [reportGeneralTypeIssues] # Code is too complex to analyze; reduce complexity by refactoring into subroutines or reducing conditional code paths
         ##### (try to) lock resources  #########
         wait_period = 200  # we try to catch a lock within the next 200ms
         if self.delay < 500:
@@ -4247,11 +4259,11 @@ class tgraphcanvas(FigureCanvas):
             _log.exception(e)
 
     # runs from GUI thread.
-    # this function is called by a signal at the end of the thread sample()
+    # this function is called by a signal at the end of the thread sample() from sample_processing()
     # during sample, updates to GUI widgets or anything GUI must be done here (never from thread)
     @pyqtSlot()
     def updategraphics(self) -> None:
-        QApplication.processEvents() # without this we see some flickers (canvas redraws) on using multiple button event actions on macOS!?
+#        QApplication.processEvents() # without this we see some flickers (canvas redraws) on using multiple button event actions on macOS!?
         try:
             if self.flagon and self.ax is not None:
                 #### lock shared resources #####
@@ -4679,7 +4691,11 @@ class tgraphcanvas(FigureCanvas):
             if self.backgroundeventsflag and self.eventsGraphflag in [2,3,4]:
                 unique_etypes = set(self.backgroundEtypes)
                 # only those background event lines exists that are active and hold events
-                active_background_events = [e < 4 and self.showEtypes[e] for e in unique_etypes] # we remove the "untyped" event as this is only drawn as annotation
+#                active_background_events = [e < 4 and self.showEtypes[e] for e in unique_etypes] # we remove the "untyped" event as this is only drawn as annotation
+#  the above is not reliable as background event lines might be missing if there are no events within the CHARGE/DROP period with backgroundShowFullflag=False
+#  the active_background_events below just checks which lines are None and which are populated by line objects
+                background_lines = [self.l_backgroundeventtype1dots,self.l_backgroundeventtype2dots,self.l_backgroundeventtype3dots,self.l_backgroundeventtype4dots]
+                active_background_events = [l is not None and e < 4 and self.showEtypes[e] and e in unique_etypes for e, l in enumerate(background_lines)]
                 c += sum(active_background_events)
         if self.eventsshowflag and self.eventsGraphflag in [2,3,4]:
             c += 4 # the foreground event lines (in contrast to the background ones) are always all present in those modes
@@ -6314,7 +6330,7 @@ class tgraphcanvas(FigureCanvas):
                 self.extractimex1[i],self.extractimex2[i],self.extractemp1[i],self.extractemp2[i] = [],[],[],[]
             self.replayedBackgroundEvents=[]
             self.beepedBackgroundEvents=[]
-            self.specialevents=[]
+            self.deleteEvents() # clear special events
             self.aw.lcd1.display('00:00')
             if self.aw.WebLCDs:
                 self.updateWebLCDs(time='00:00')
@@ -7125,7 +7141,7 @@ class tgraphcanvas(FigureCanvas):
                     elif TP_time_loaded is not None:
                         a = self.backgroundalpha if timeindex2 else 1.0
                         e = 0
-                        shift = timex[timeindex[0]] if timeindex[0] > 0 else 0
+                        shift = timex[timeindex[0]]
                         TP_index = self.backgroundtime2index(TP_time_loaded + shift)
                         ystep_down,ystep_up = self.findtextgap(ystep_down,ystep_up,stemp[t0idx],stemp[TP_index],d)
                         st1 = self.aw.arabicReshape(QApplication.translate('Scope Annotation','TP {0}'),stringfromseconds(TP_time_loaded,False))
@@ -7493,12 +7509,13 @@ class tgraphcanvas(FigureCanvas):
             iy = self.stemp2[idx:self.timeindex[6]+1]
 
             # Create the shaded region
-            a = ix[0]
-            b = ix[-1]
-            verts = [ xy for xy in [(a, rtbt)] + list(zip(ix, iy)) + [(b, rtbt)] if xy[1] > 0 ]
-            if verts:
-                poly = Polygon(verts, facecolor=self.palette['aucarea'], edgecolor='0.5', alpha=0.3)
-                self.ax.add_patch(poly)
+            if len(ix)>1:
+                a = ix[0]
+                b = ix[-1]
+                verts = [ xy for xy in [(a, rtbt)] + list(zip(ix, iy)) + [(b, rtbt)] if xy[1] > 0 ]
+                if verts:
+                    poly = Polygon(verts, facecolor=self.palette['aucarea'], edgecolor='0.5', alpha=0.3)
+                    self.ax.add_patch(poly)
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
 
@@ -7797,7 +7814,7 @@ class tgraphcanvas(FigureCanvas):
 
     #Redraws data
     # if recomputeAllDeltas, the delta arrays; if smooth the smoothed line arrays are recomputed (incl. those of the background curves)
-    def redraw(self, recomputeAllDeltas=True, smooth=True, sampling=False, takelock=True, forceRenewAxis=False): # pyright: ignore # Code is too complex to analyze; reduce complexity by refactoring into subroutines or reducing conditional code paths (reportGeneralTypeIssues)
+    def redraw(self, recomputeAllDeltas=True, smooth=True, sampling=False, takelock=True, forceRenewAxis=False): # pyright: ignore [reportGeneralTypeIssues] # Code is too complex to analyze; reduce complexity by refactoring into subroutines or reducing conditional code paths
         if self.designerflag:
             self.redrawdesigner(force=True)
         elif self.aw.comparator is not None:
@@ -10022,7 +10039,8 @@ class tgraphcanvas(FigureCanvas):
             eventanno = eventanno.replace('\n', '')
 
             #text between single quotes ' will show only before FCs
-            eventanno = re.sub(r'{pd}([^{pd}]+){pd}'.format(pd=preFCsDelim),
+
+            eventanno = re.sub(r'{pd}([^{pd}]+){pd}'.format(pd=preFCsDelim), # noqa: UP032
                 r'\1',eventanno) if not postFCs else re.sub(r'{pd}([^{pd}]+){pd}'.format(pd=preFCsDelim),
                 r'',eventanno)
             #text between double quotes " will show only after FCs
@@ -10786,15 +10804,15 @@ class tgraphcanvas(FigureCanvas):
                 self.backgroundxtcolor = str(dialog.bgextraButton.text())
                 self.backgroundytcolor = str(dialog.bgextra2Button.text())
                 self.aw.closeEventSettings()
-            #deleteLater() will not work here as the dialog is still bound via the parent
-            #dialog.deleteLater() # now we explicitly allow the dialog an its widgets to be GCed
-            # the following will immediately release the memory despite this parent link
-            QApplication.processEvents() # we ensure events concerning this dialog are processed before deletion
-            try: # sip not supported on older PyQt versions (RPi!)
-                sip.delete(dialog)
-                #print(sip.isdeleted(dialog))
-            except Exception:  # pylint: disable=broad-except
-                pass
+#            #deleteLater() will not work here as the dialog is still bound via the parent
+#            #dialog.deleteLater() # now we explicitly allow the dialog an its widgets to be GCed
+#            # the following will immediately release the memory despite this parent link
+#            QApplication.processEvents() # we ensure events concerning this dialog are processed before deletion
+#            try: # sip not supported on older PyQt versions (RPi!)
+#                sip.delete(dialog)
+#                #print(sip.isdeleted(dialog))
+#            except Exception:  # pylint: disable=broad-except
+#                pass
 
         #update screen with new colors
         self.aw.updateCanvasColors()
@@ -11189,9 +11207,6 @@ class tgraphcanvas(FigureCanvas):
         # this is needed to suppress the message on the ignored Exception
         #                            # Phidget that is raised on starting the PhidgetManager without installed
         #                            # Phidget driver (artisanlib/suppress_error.py fails to suppress this)
-#        _stderr = sys.stderr
-#        sys.stderr = object
-#        try:
         if not self.aw.app.artisanviewerMode and self.PhidgetsConfigured():
             # Phidget server is only started if any device or action addressing Phidgets is configured
             if self.phidgetManager is None:
@@ -11217,23 +11232,23 @@ class tgraphcanvas(FigureCanvas):
                 except Exception: # pylint: disable=broad-except
                     if self.device in self.phidgetDevices:
                         self.adderror(QApplication.translate('Error Message',"Exception: PhidgetManager couldn't be started. Verify that the Phidget driver is correctly installed!"))
-#        finally:
-#            sys.stderr = _stderr
 
     def stopPhidgetManager(self):
-        if self.phidgetManager is not None:
-            self.phidgetManager.close()
-            self.phidgetManager = None
-        self.removePhidgetServer()
-        try:
-            from Phidget22.Devices.Log import Log as PhidgetLog # type: ignore
-            PhidgetLog.disable()
-        except Exception: # pylint: disable=broad-except
-            pass
+        if not self.flagon:
+            if self.phidgetManager is not None:
+                self.phidgetManager.close()
+                self.phidgetManager = None
+            self.removePhidgetServer()
+            try:
+                from Phidget22.Devices.Log import Log as PhidgetLog # type: ignore
+                PhidgetLog.disable()
+            except Exception: # pylint: disable=broad-except
+                pass
 
     def restartPhidgetManager(self):
-        self.stopPhidgetManager()
-        self.startPhidgetManager()
+        if not self.flagon:
+            self.stopPhidgetManager()
+            self.startPhidgetManager()
 
     # this one is protected by the sampleSemaphore not to mess up with the timex during sampling
     def resetTimer(self):
@@ -11350,12 +11365,11 @@ class tgraphcanvas(FigureCanvas):
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
 
-            QApplication.processEvents()
+#            QApplication.processEvents()
             if self.aw.simulator:
                 self.aw.buttonONOFF.setStyleSheet(self.aw.pushbuttonstyles_simulator['ON'])
             else:
                 self.aw.buttonONOFF.setStyleSheet(self.aw.pushbuttonstyles['ON'])
-#            QApplication.processEvents()
 
             self.aw.buttonONOFF.setText(QApplication.translate('Button', 'OFF')) # text means click to turn OFF (it is ON)
             self.aw.buttonONOFF.setToolTip(QApplication.translate('Tooltip', 'Stop monitoring'))
@@ -11393,32 +11407,12 @@ class tgraphcanvas(FigureCanvas):
             _, _, exc_tb = sys.exc_info()
             self.adderror((QApplication.translate('Error Message', 'Exception:') + ' OnMonitor() {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
-    def OffMonitor(self):
-        _log.info('OFF MONITOR')
+    # OffMonitorCloseDown is called after the sampling loop stopped
+    @pyqtSlot()
+    def OffMonitorCloseDown(self):
+        _log.debug('OffMonitorCloseDown')
         try:
-            # first activate "Stopping Mode" to ensure that sample() is not resetting the timer now (independent of the flagstart state)
-
-            # stop Recorder if still running
-            recording = self.flagstart
-            if recording:
-                self.OffRecorder(autosave=False) # we autosave after the monitor is turned off to get all the data in the generated PDF!
-
-            self.flagon = False
-            # stop async sampling action before stopping sampling
-            self.StopAsyncSamplingAction()
-
-            try:
-                # trigger event action before disconnecting from devices
-                if self.extrabuttonactions[1] != 18: # Artisan Commands are executed after the OFFMonitor action is fully executued as they might trigger another buttons
-                    self.aw.eventactionx(self.extrabuttonactions[1],self.extrabuttonactionstrings[1])
-                    QApplication.processEvents()
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
-
-            # now wait until the current sampling round is done
-            while self.flagsampling:
-                libtime.sleep(0.05)
-                QApplication.processEvents()
+            self.threadserver.terminatingSignal.disconnect(self.OffMonitorCloseDown)
             if len(self.timex) < 3:
                 # clear data from monitoring-only mode
                 self.clearMeasurements()
@@ -11428,12 +11422,9 @@ class tgraphcanvas(FigureCanvas):
 
             #if self.device != 138: # don't forward pidOff command to connected Kaleido machine
             self.aw.pidcontrol.pidOff(send_command=self.device != 138)
+
 #            if self.device == 53:
 #                self.aw.HottopControlOff()
-
-            # we need to wait a moment and processEvents to give OFF actions using Qt signals the chance to still run correctly
-            libtime.sleep(0.2)
-            QApplication.processEvents()
 
             # disconnect Santoker
             if not bool(self.aw.simulator) and self.device == 134 and self.aw.santoker is not None:
@@ -11496,6 +11487,7 @@ class tgraphcanvas(FigureCanvas):
             self.aw.update_minieventline_visibility()
             self.aw.updateExtraButtonsVisibility()
             self.aw.pidcontrol.activateONOFFeasySV(False)
+            self.StopAsyncSamplingAction()
             self.aw.enableEditMenus()
 
             self.aw.autoAdjustAxis()
@@ -11506,8 +11498,8 @@ class tgraphcanvas(FigureCanvas):
             # solutions are to run an updateBackground() or another redraw() about in 100s using a QTimer
             # also a call  to self.fig.canvas.flush_events() or QApplication.processEvents() here resolves it. A libtime.sleep(1) does not solve the issue
 #            QTimer.singleShot(100,self.updateBackground) # solves the issue
-#            self.fig.canvas.flush_events() # solves the issue
-            QApplication.processEvents()  # solves the issue
+            self.fig.canvas.flush_events() # solves the issue
+#            QApplication.processEvents()  # solves the issue (but is more general as the MPL flush_events
 
             # we autosave after full redraw after OFF to have the optional generated PDF containing all information
             if len(self.timex) > 2 and self.autosaveflag != 0 and self.autosavepath:
@@ -11527,14 +11519,53 @@ class tgraphcanvas(FigureCanvas):
                     _log.exception(e)
 
             try:
-                # trigger event action before disconnecting from devices
-                if self.extrabuttonactions[1] == 18: # Artisan Commands are executed after the OFFMonitor action is fully executued as they might trigger other buttons
+                # Artisan Commands are executed after the OFFMonitor action is fully executued as they might trigger other buttons
+                if self.extrabuttonactions[1] == 18:
                     self.aw.eventactionx(self.extrabuttonactions[1],self.extrabuttonactionstrings[1])
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
 
-            if recording and self.flagKeepON and len(self.timex) > 10:
-                QTimer.singleShot(300,self.OnMonitor)
+            self.aw.buttonONOFF.setEnabled(True)
+            self.aw.buttonONOFF.setGraphicsEffect(self.aw.makeShadow())
+            self.aw.buttonSTARTSTOP.setEnabled(True)
+            self.aw.buttonSTARTSTOP.setGraphicsEffect(self.aw.makeShadow())
+
+            if self.flagKeepON and len(self.timex) > 10:
+                QTimer.singleShot(300, self.onMonitorSignal.emit)
+
+        except Exception as ex: # pylint: disable=broad-except
+            _log.exception(ex)
+            _, _, exc_tb = sys.exc_info()
+            self.adderror((QApplication.translate('Error Message', 'Exception:') + ' OffMonitorCloseDown() {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+
+    def OffMonitor(self):
+        _log.info('OFF MONITOR')
+        try:
+            # first activate "Stopping Mode" to ensure that sample() is not resetting the timer now (independent of the flagstart state)
+
+            self.aw.buttonONOFF.setEnabled(False)
+            ge:Optional[QGraphicsEffect] = self.aw.buttonONOFF.graphicsEffect()
+            if ge is not None:
+                ge.setEnabled(False)
+            self.aw.buttonSTARTSTOP.setEnabled(False)
+            ge = self.aw.buttonSTARTSTOP.graphicsEffect()
+            if ge is not None:
+                ge.setEnabled(False)
+            self.aw.buttonSTARTSTOP.setEnabled(False)
+
+            # stop Recorder if still running
+            if self.flagstart:
+                self.OffRecorder(autosave=False, enableButton=False) # we autosave after the monitor is turned off to get all the data in the generated PDF!
+
+            try:
+                # trigger event action before disconnecting from devices
+                if self.extrabuttonactions[1] != 18: # Artisan Commands are executed after the OFFMonitor action is fully executued as they might trigger another buttons
+                    self.aw.eventactionx(self.extrabuttonactions[1],self.extrabuttonactionstrings[1])
+            except Exception as e: # pylint: disable=broad-except
+                _log.exception(e)
+
+            self.threadserver.terminatingSignal.connect(self.OffMonitorCloseDown)
+            self.flagon = False
 
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
@@ -11806,7 +11837,7 @@ class tgraphcanvas(FigureCanvas):
     def ToggleMonitor(self,_=False):
         #turn ON
         if not self.flagon:
-            QApplication.processEvents()
+#            QApplication.processEvents()
             # the sample thread might still run, but should terminate soon. We do nothing and ignore this click on ON
             if not self.flagsamplingthreadrunning:
                 if not self.checkSaved():
@@ -11937,7 +11968,7 @@ class tgraphcanvas(FigureCanvas):
             _, _, exc_tb = sys.exc_info()
             self.adderror((QApplication.translate('Error Message', 'Exception:') + ' OnRecorder() {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
-    def OffRecorder(self, autosave=True):
+    def OffRecorder(self, autosave=True, enableButton=True):
         _log.info('STOP RECORDING')
         try:
             # mark DROP if not yet set, at least 7min roast time and CHARGE is set and either autoDROP is active or DROP button is hidden
@@ -11952,8 +11983,9 @@ class tgraphcanvas(FigureCanvas):
                 self.aw.buttonSTARTSTOP.setStyleSheet(self.aw.pushbuttonstyles_simulator['STOP'])
             else:
                 self.aw.buttonSTARTSTOP.setStyleSheet(self.aw.pushbuttonstyles['STOP'])
-            self.aw.buttonSTARTSTOP.setEnabled(True)
-            self.aw.buttonSTARTSTOP.setGraphicsEffect(self.aw.makeShadow())
+            if enableButton:
+                self.aw.buttonSTARTSTOP.setEnabled(True)
+                self.aw.buttonSTARTSTOP.setGraphicsEffect(self.aw.makeShadow())
             #enable RESET button:
             self.aw.buttonRESET.setStyleSheet(self.aw.pushbuttonstyles['RESET'])
             self.aw.buttonRESET.setEnabled(True)
@@ -12248,6 +12280,7 @@ class tgraphcanvas(FigureCanvas):
                         start = self.timex[self.timeindex[0]]
                     else:
                         start = 0
+                    _log.info('PRINT before')
                     if self.aw.buttonDRY.isFlat() and self.timeindex[1] > 0:
                         # undo wrongly set DRY
                         # deactivate autoDRY
@@ -15207,13 +15240,21 @@ class tgraphcanvas(FigureCanvas):
             # we have first to calculate the delta data
             # returns the max ET/BT RoR between CHARGE and DROP
             if setET:
-                func1 = UnivariateSpline(self.timex,self.temp1, k = self.ETsplinedegree)
-                funcDelta1 = func1.derivative()
-                delta1_max = max(funcDelta1(self.designer_timez) * 60)
+                try:
+                    func1 = UnivariateSpline(self.timex,self.temp1, k = self.ETsplinedegree)
+                    funcDelta1 = func1.derivative()
+                    delta1_max = max(funcDelta1(self.designer_timez) * 60)
+                except Exception: # pylint: disable=broad-except
+                    # scipy interpolate might fail for certain k
+                    pass
             if setBT:
-                func2 = UnivariateSpline(self.timex,self.temp2, k = self.BTsplinedegree)
-                funcDelta2 = func2.derivative()
-                delta2_max = max(funcDelta2(self.designer_timez) * 60)
+                try:
+                    func2 = UnivariateSpline(self.timex,self.temp2, k = self.BTsplinedegree)
+                    funcDelta2 = func2.derivative()
+                    delta2_max = max(funcDelta2(self.designer_timez) * 60)
+                except Exception: # pylint: disable=broad-except
+                    # scipy interpolate might fail for certain k
+                    pass
             dmax = max(delta1_max, delta2_max)
             # we only adjust the upper limit automatically
             assert self.aw is not None
@@ -15405,7 +15446,7 @@ class tgraphcanvas(FigureCanvas):
                 func1 = UnivariateSpline(self.timex,self.temp1, k = self.ETsplinedegree)
                 etvals = func1(self.designer_timez)
             except Exception: # pylint: disable=broad-except
-                self.adderror(QApplication.translate('Error Message', 'Exception: redrawdesigner() Roast events may be out of order. Restting Designer.'))
+                self.adderror(QApplication.translate('Error Message', 'Exception: redrawdesigner() Roast events may be out of order. Resetting Designer.'))
                 self.reset_designer()
                 return
 
@@ -16551,8 +16592,9 @@ class tgraphcanvas(FigureCanvas):
 ###     Sample thread
 ########################################################################################
 
-class SampleThread(QThread): # pyright: ignore # Argument to class must be a base class (reportGeneralTypeIssues)
+class SampleThread(QThread): # pyright: ignore [reportGeneralTypeIssues] # Argument to class must be a base class
     sample_processingSignal = pyqtSignal(bool,list,list,list)
+    terminatingSignal = pyqtSignal()
 
     def __init__(self, aw:'ApplicationWindow') -> None:
         super().__init__()
@@ -16694,17 +16736,19 @@ class SampleThread(QThread): # pyright: ignore # Argument to class must be a bas
                             self.aw.qmc.flagsampling = False # we signal that we are done with sampling
                 else:
                     self.aw.qmc.flagsampling = False # type: ignore # mypy: Statement is unreachable  [unreachable] # we signal that we are done with sampling
-                    try:
-                        if self.aw.ser.SP.is_open:
-                            self.aw.ser.closeport()
-                        QApplication.processEvents()
-                    except Exception: # pylint: disable=broad-except
-                        pass
+                    # port is disconnected in OFFmonitor by calling disconnectProbes() => disconnectProbesFromSerialDevice()
+#                    try:
+#                        if self.aw.ser.SP.is_open:
+#                            self.aw.ser.closeport()
+##                        QApplication.processEvents()
+#                    except Exception: # pylint: disable=broad-except
+#                        pass
                     self.quit()
                     break  #thread ends
                 # skip tasks if we are behind schedule:
                 next_time += (libtime.perf_counter() - next_time) // interval * interval + interval
         finally:
+            self.terminatingSignal.emit()
             self.aw.qmc.flagsampling = False # we signal that we are done with sampling
             self.aw.qmc.flagsamplingthreadrunning = False
             if sys.platform.startswith('darwin'):
@@ -16716,7 +16760,9 @@ class SampleThread(QThread): # pyright: ignore # Argument to class must be a bas
 ###     Artisan thread Server
 #########################################################################################################
 
-class Athreadserver(QWidget): # pylint: disable=too-few-public-methods # pyright: ignore # Argument to class must be a base class (reportGeneralTypeIssues)
+class Athreadserver(QWidget): # pylint: disable=too-few-public-methods # pyright: ignore [reportGeneralTypeIssues] # Argument to class must be a base class
+    terminatingSignal = pyqtSignal()
+
     def __init__(self, aw:'ApplicationWindow') -> None:
         super().__init__()
         self.aw = aw
@@ -16727,5 +16773,10 @@ class Athreadserver(QWidget): # pylint: disable=too-few-public-methods # pyright
 
             #connect graphics to GUI thread
             sthread.sample_processingSignal.connect(self.aw.qmc.sample_processing)
+            sthread.terminatingSignal.connect(self.terminating)
             sthread.start(QThread.Priority.TimeCriticalPriority) # TimeCriticalPriority > HighestPriority > HighPriority > NormalPriority > LowPriority
             sthread.wait(300)    #needed in some Win OS
+
+    @pyqtSlot()
+    def terminating(self):
+        self.terminatingSignal.emit()

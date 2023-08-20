@@ -10,6 +10,10 @@ import sys
 import os
 from platform import system
 
+# limit the number of numpy threads to 1 to limit the total number of threads taking into account a potential performance reduction on array operations using blas,
+# which should not be significant
+os.environ['OMP_NUM_THREADS'] = '1'
+
 # highDPI support must be set before creating the Application instance
 try:
     if system() == 'Darwin':
@@ -79,7 +83,7 @@ from multiprocessing import freeze_support
 # from pyinstaller 5.8:
 class NullWriter:
   softspace = 0
-  encoding = 'UTF-8'
+  encoding:str = 'UTF-8'
 
   def write(*args):
       pass
@@ -92,6 +96,13 @@ class NullWriter:
       return False
 
 if system() == 'Windows' and hasattr(sys, 'frozen'): # tools/freeze
+    # to (re-)set sys.stdout/sys.stderr on Windows builds under PyInstaller >= 5.8.0 (set to None under --noconsole using pythonw)
+    # which is assumed by bottle.py (used by WebLCDs) to exists (Issue #1229)
+    # see also
+    #   https://github.com/bottlepy/bottle/issues/1104#issuecomment-1195740112
+    #   https://github.com/bottlepy/bottle/issues/1401#issuecomment-1284450625
+    #   https://github.com/r0x0r/pywebview/pull/1048/files
+    #   https://stackoverflow.com/questions/19425736/how-to-redirect-stdout-and-stderr-to-logger-in-python
     try:
         if sys.stdout is None:
             sys.stdout = NullWriter()

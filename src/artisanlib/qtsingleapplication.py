@@ -27,7 +27,7 @@ except ImportError:
     from PyQt5.QtNetwork import QLocalSocket, QLocalServer # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
 
-class QtSingleApplication(QApplication): # pyright: ignore # Argument to class must be a base class (reportGeneralTypeIssues)
+class QtSingleApplication(QApplication): # pyright: ignore [reportGeneralTypeIssues] # Argument to class must be a base class
     messageReceived = pyqtSignal(str)
 
     __slots__ = [ '_id', '_viewer_id', '_activationWindow', '_activateOnMessage', '_inSocket', '_outSocket', '_isRunning', '_server',
@@ -137,7 +137,7 @@ class QtSingleApplication(QApplication): # pyright: ignore # Argument to class m
     def sendMessage(self, msg:str) -> bool:
         if self._outStream is None or self._outSocket is None:
             return False
-        self._outStream << msg << '\n' # pylint: disable=pointless-statement # pyright: ignore # warning: Expression value is unused (reportUnusedExpression)
+        self._outStream << msg << '\n' # pylint: disable=pointless-statement # pyright: ignore [reportUnusedExpression] # warning: Expression value is unused
         self._outStream.flush()
         return self._outSocket.waitForBytesWritten()
 
@@ -153,7 +153,8 @@ class QtSingleApplication(QApplication): # pyright: ignore # Argument to class m
             self._inStream.setCodec('UTF-8') # type: ignore # setCodec not available in PyQt6, but UTF-8 the default encoding
         except Exception: # pylint: disable=broad-except
             pass
-        self._inSocket.readyRead.connect(self._onReadyRead)
+        if self._inSocket is not None:
+            self._inSocket.readyRead.connect(self._onReadyRead)
         if self._activateOnMessage and self._isRunning:
             self.activateWindow()
 

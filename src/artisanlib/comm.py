@@ -26,7 +26,7 @@ import threading
 import platform
 import logging
 from typing import Optional, List, Tuple, Dict, Callable, Union, TYPE_CHECKING
-from typing_extensions import Final  # Python <=3.7
+from typing import Final  # Python <=3.7
 
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # pylint: disable=unused-import
@@ -166,7 +166,7 @@ class YoctoThread(threading.Thread):
 #########################################################################
 
 #inputs temperature
-class nonedevDlg(QDialog): # pylint: disable=too-few-public-methods # pyright: ignore # Argument to class must be a base class (reportGeneralTypeIssues)
+class nonedevDlg(QDialog): # pylint: disable=too-few-public-methods # pyright: ignore [reportGeneralTypeIssues] # Argument to class must be a base class
     __slots__ = ['etEdit','btEdit','ETbox','okButton','cancelButton'] # save some memory by using slots
     def __init__(self, parent:QWidget, aw:'ApplicationWindow') -> None:
         super().__init__(parent)
@@ -506,7 +506,11 @@ class serialport:
                                    self.Ikawa,                #142
                                    self.Ikawa_SetRpm,         #143
                                    self.Ikawa_HeaterFan,      #144
-                                   self.Ikawa_State           #145
+                                   self.Ikawa_State,          #145
+                                   self.PHIDGET_DAQ1000_01,   #146
+                                   self.PHIDGET_DAQ1000_23,   #147
+                                   self.PHIDGET_DAQ1000_45,   #148
+                                   self.PHIDGET_DAQ1000_67    #149
                                    ]
         #string with the name of the program for device #27
         self.externalprogram:str = 'test.py'
@@ -921,6 +925,26 @@ class serialport:
     def PHIDGET1018_78(self) -> Tuple[float,float,float]:
         tx = self.aw.qmc.timeclock.elapsedMilli()
         v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_1010_1013_1018_1019,3,'voltage')
+        return tx,v1,v2
+
+    def PHIDGET_DAQ1000_01(self) -> Tuple[float,float,float]:
+        tx = self.aw.qmc.timeclock.elapsedMilli()
+        v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_DAQ1000,0,'voltage')
+        return tx,v1,v2
+
+    def PHIDGET_DAQ1000_23(self) -> Tuple[float,float,float]:
+        tx = self.aw.qmc.timeclock.elapsedMilli()
+        v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_DAQ1000,1,'voltage')
+        return tx,v1,v2
+
+    def PHIDGET_DAQ1000_45(self) -> Tuple[float,float,float]:
+        tx = self.aw.qmc.timeclock.elapsedMilli()
+        v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_DAQ1000,2,'voltage')
+        return tx,v1,v2
+
+    def PHIDGET_DAQ1000_67(self) -> Tuple[float,float,float]:
+        tx = self.aw.qmc.timeclock.elapsedMilli()
+        v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_DAQ1000,3,'voltage')
         return tx,v1,v2
 
     def PHIDGET1011_D(self) -> Tuple[float,float,float]:
@@ -2011,7 +2035,7 @@ class serialport:
 
     @staticmethod
     def binary(n, digits=8):
-        return '{0:0>{1}}'.format(bin(n)[2:], digits) # pylint: disable=consider-using-f-string
+        return '{0:0>{1}}'.format(bin(n)[2:], digits) # pylint: disable=consider-using-f-string # noqa: PLE1300
 
     #similar to Omega HH806
     def MS6514temperature(self, retry:int=2) -> Tuple[float, float]:
@@ -2067,7 +2091,7 @@ class serialport:
 
                     #return original T1 T2
                     ts1:float
-                    if(r[index+11] == 9 or r[index+11] == 65): # 9="\x09" 65="\x41"
+                    if r[index+11] in (9, 65): # 9="\x09" 65="\x41"
                         ts1 = s1 # pylint: disable=consider-swap-variables # Consider using tuple unpacking for swapping variables consider-swap-variables # tuple unpacking not used here to make pyright happy
                         s1 = s2
                         s2 = ts1
@@ -2079,7 +2103,7 @@ class serialport:
                         ts1 = s1
                         s1 = s2
                         s2 = s1 + s2
-                    elif r[index+11] == 66 or r[index+11] == 194:  # 66="\x42" and 194="\xc2"
+                    elif r[index+11] in (66, 194):  # 66="\x42" and 194="\xc2"
                         s1 = s2
                         s2 = -1.
                     elif r[index+11] == 11: # 11="\x0b"
@@ -5306,6 +5330,8 @@ class serialport:
                         self.aw.sendmessage(QApplication.translate('Message','Phidget IO 6/6/6 attached'))
                     elif deviceType == DeviceID.PHIDID_1010_1013_1018_1019:
                         self.aw.sendmessage(QApplication.translate('Message','Phidget IO 8/8/8 attached'))
+                    elif deviceType == DeviceID.PHIDID_DAQ1000:
+                        self.aw.sendmessage(QApplication.translate('Message','Phidget DAQ1000 attached'))
                     elif deviceType == DeviceID.PHIDID_DAQ1400:
                         self.aw.sendmessage(QApplication.translate('Message','Phidget DAQ1400 attached'))
                     elif deviceType == DeviceID.PHIDID_VCP1000:
@@ -5332,6 +5358,8 @@ class serialport:
                         self.aw.sendmessage(QApplication.translate('Message','Phidget IO 6/6/6 detached'))
                     elif deviceType == DeviceID.PHIDID_1010_1013_1018_1019:
                         self.aw.sendmessage(QApplication.translate('Message','Phidget IO 8/8/8 detached'))
+                    elif deviceType == DeviceID.PHIDID_DAQ1000:
+                        self.aw.sendmessage(QApplication.translate('Message','Phidget DAQ1000 detached'))
                     elif deviceType == DeviceID.PHIDID_DAQ1400:
                         self.aw.sendmessage(QApplication.translate('Message','Phidget DAQ1400 detached'))
                     elif deviceType == DeviceID.PHIDID_VCP1000:
@@ -5350,7 +5378,8 @@ class serialport:
     #  - Phidget IO 8/8/8 (1010,1013,1018,1019,SBC): DeviceID.PHIDID_1010_1013_1018_1019
     #  - Phidget IO 6/6/6 (HUB0000): DeviceID.PHIDID_HUB0000
     #  - Phidget IO 2/2/2 (1011): DeviceID.PHIDID_1011
-    #  - Phidget Phidget DAQ1400 Current/Frequency/Digital/VOLTAGE  (DAQ1400): PHIDID_DAQ1400
+    #  - Phidget DAQ1000 8x VoltageInput: PHIDID_DAQ1000
+    #  - Phidget DAQ1400 Current/Frequency/Digital/VOLTAGE: PHIDID_DAQ1400
     #  - Phidget VCP1000: PHIDID_VCP1000 (20-bit ±40V Voltage Input Phidget; ±312mV, ±40V)
     #  - Phidget VCP1001: PHIDID_VCP1001 (±40V Voltage Input Phidget; ±5V, ±15V or ±40V)
     #  - Phidget VCP1002: PHIDID_VCP1002 (±1V Voltage Input Phidget; ±10mV -- ±1V)

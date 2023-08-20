@@ -20,11 +20,14 @@ import math
 import platform
 import logging
 from typing import Optional, List, Tuple, Dict, cast, TYPE_CHECKING
-from typing_extensions import Final  # Python <=3.7
+from typing import Final  # Python <=3.7
 
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
     from artisanlib.ble import BleInterface # noqa: F401 # pylint: disable=unused-import
+    from PyQt6.QtWidgets import QLayout, QAbstractItemView, QCompleter # pylint: disable=unused-import
+    from PyQt6.QtGui import QClipboard # pylint: disable=unused-import
+
 
 # import artisan.plus modules
 import plus.config  # @UnusedImport
@@ -53,7 +56,7 @@ try:
                                  QHBoxLayout, QVBoxLayout, QHeaderView, QLabel, QLineEdit, QTextEdit, QListView,  # @UnusedImport @Reimport  @UnresolvedImport
                                  QPushButton, QSpinBox, QTableWidget, QTableWidgetItem, QTabWidget, QSizePolicy, # @UnusedImport @Reimport  @UnresolvedImport
                                  QGroupBox, QToolButton) # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt6 import sip # @UnusedImport @Reimport  @UnresolvedImport
+#    from PyQt6 import sip # @UnusedImport @Reimport  @UnresolvedImport
 except ImportError:
     from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot, QRegularExpression, QSettings, QTimer, QEvent, QLocale # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtGui import QColor, QIntValidator, QRegularExpressionValidator, QKeySequence, QPalette # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
@@ -61,10 +64,10 @@ except ImportError:
                                  QHBoxLayout, QVBoxLayout, QHeaderView, QLabel, QLineEdit, QTextEdit, QListView, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
                                  QPushButton, QSpinBox, QTableWidget, QTableWidgetItem, QTabWidget, QSizePolicy, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
                                  QGroupBox, QToolButton) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
-    try:
-        from PyQt5 import sip # type: ignore # @Reimport @UnresolvedImport @UnusedImport
-    except ImportError:
-        import sip  # type: ignore # @Reimport @UnresolvedImport @UnusedImport
+#    try:
+#        from PyQt5 import sip # type: ignore # @Reimport @UnresolvedImport @UnusedImport
+#    except ImportError:
+#        import sip  # type: ignore # @Reimport @UnresolvedImport @UnusedImport
 
 
 ########################################################################################
@@ -371,13 +374,13 @@ class volumeCalculatorDlg(ArtisanDialog):
     def inWeight(self,_):
         QTimer.singleShot(1, self.setWidgetInWeight)
         QTimer.singleShot(10, self.resetInVolume)
-        QApplication.processEvents()
+#        QApplication.processEvents()
 
     @pyqtSlot(bool)
     def outWeight(self,_):
         QTimer.singleShot(1, self.setWidgetOutWeight)
         QTimer.singleShot(10, self.resetOutVolume)
-        QApplication.processEvents()
+#        QApplication.processEvents()
 
     def retrieveWeight(self):
         v = self.scale_weight
@@ -467,7 +470,7 @@ class volumeCalculatorDlg(ArtisanDialog):
 ########################################################################################
 #####################  RECENT ROAST POPUP  #############################################
 
-class RoastsComboBox(QComboBox): # pyright: ignore # Argument to class must be a base class (reportGeneralTypeIssues)
+class RoastsComboBox(QComboBox): # pyright: ignore [reportGeneralTypeIssues] # Argument to class must be a base class
     def __init__(self, parent:QWidget, aw:'ApplicationWindow', selection:Optional[str] = None) -> None:
         super().__init__(parent)
         self.aw:'ApplicationWindow' = aw
@@ -477,7 +480,9 @@ class RoastsComboBox(QComboBox): # pyright: ignore # Argument to class must be a
         self.updateMenu()
         self.editTextChanged.connect(self.textEdited)
         self.setEditable(True)
-        self.completer().setCaseSensitivity(Qt.CaseSensitivity.CaseSensitive)
+        completer: Optional['QCompleter'] = self.completer()
+        if completer is not None:
+            completer.setCaseSensitivity(Qt.CaseSensitivity.CaseSensitive)
 #        self.setMouseTracking(False)
 
 #    @pyqtSlot('QString')
@@ -520,8 +525,10 @@ class RoastsComboBox(QComboBox): # pyright: ignore # Argument to class must be a
             pass
         self.blockSignals(False)
 
+
 ########################################################################################
 #####################  Roast Properties Dialog  ########################################
+
 
 class editGraphDlg(ArtisanResizeablDialog):
     scaleWeightUpdated = pyqtSignal(float)
@@ -1148,7 +1155,9 @@ class editGraphDlg(ArtisanResizeablDialog):
         self.tareComboBox.setMinimumWidth(80)
         self.tareComboBox.addItems(self.aw.qmc.container_names)
         width = self.tareComboBox.minimumSizeHint().width()
-        self.tareComboBox.view().setMinimumWidth(width)
+        tare_view: Optional['QAbstractItemView'] = self.tareComboBox.view()
+        if tare_view is not None:
+            tare_view.setMinimumWidth(width)
         self.tareComboBox.setCurrentIndex(self.aw.qmc.container_idx + 3)
         self.tareComboBox.currentIndexChanged.connect(self.tareChanged)
         self.tarePopupEnabled = True # controls if the popup will process tareChange events
@@ -1272,9 +1281,9 @@ class editGraphDlg(ArtisanResizeablDialog):
             plusCoffeeslabel = QLabel('<b>' + QApplication.translate('Label', 'Stock') + '</b>')
             self.plusStoreslabel = QLabel('<b>' + QApplication.translate('Label', 'Store') + '</b>')
             self.plusBlendslabel = QLabel('<b>' + QApplication.translate('Label', 'Blend') + '</b>')
-            self.plus_stores_combo = MyQComboBox()
-            self.plus_coffees_combo = MyQComboBox()
-            self.plus_blends_combo = MyQComboBox()
+            self.plus_stores_combo = MyQComboBox(self)
+            self.plus_coffees_combo = CoffeesComboBox(self)
+            self.plus_blends_combo = BlendsComboBox(self)
             self.plus_stores_combo.currentIndexChanged.connect(self.storeSelectionChanged)
             self.plus_coffees_combo.currentIndexChanged.connect(self.coffeeSelectionChanged)
             self.plus_blends_combo.currentIndexChanged.connect(self.blendSelectionChanged)
@@ -1593,10 +1602,10 @@ class editGraphDlg(ArtisanResizeablDialog):
                     QTimer.singleShot(1500, self.populatePlusCoffeeBlendCombos)
         except Exception as e:  # pylint: disable=broad-except
             _log.exception(e)
-        if platform.system() == 'Windows':
-            self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok)
-        else:
-            self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok).setFocus()
+        if platform.system() != 'Windows':
+            ok_button: Optional[QPushButton] = self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok)
+            if ok_button is not None:
+                ok_button.setFocus()
 
         # we set the active tab with a QTimer after the tabbar has been rendered once, as otherwise
         # some tabs are not rendered at all on Winwos using Qt v6.5.1 (https://bugreports.qt.io/projects/QTBUG/issues/QTBUG-114204?filter=allissues)
@@ -1605,7 +1614,6 @@ class editGraphDlg(ArtisanResizeablDialog):
     @pyqtSlot()
     def setActiveTab(self) -> None:
         self.TabWidget.setCurrentIndex(self.activeTab)
-
 
 ## CUSTOM BLEND DIALOG
 
@@ -1906,9 +1914,6 @@ class editGraphDlg(ArtisanResizeablDialog):
                     self.plus_stores_combo.blockSignals(True)
                     self.plus_stores_combo.clear()
                     store_items = plus.stock.getStoreLabels(self.plus_stores)
-    #                # HACK to prevent those cut menu items on macOS and Qt 5.15.1:
-    #                if sys.platform.startswith("darwin"):
-    #                    store_items = [l + "  " for l in store_items]
                     self.plus_stores_combo.addItems([''] + store_items)
                     p = (plus.stock.getStorePosition(self.plus_default_store,self.plus_stores) if self.plus_default_store is not None else None)
                     if p is None:
@@ -1948,10 +1953,8 @@ class editGraphDlg(ArtisanResizeablDialog):
                 self.plus_coffees = plus.stock.getCoffees(self.unitsComboBox.currentIndex(),self.plus_default_store)
                 self.plus_coffees_combo.blockSignals(True)
                 self.plus_coffees_combo.clear()
+                self.plus_coffees_combo.resetInverted()
                 coffee_items = plus.stock.getCoffeesLabels(self.plus_coffees)
-    #            # HACK to prevent those cut menu items on macOS and Qt 5.15.1:
-    #            if sys.platform.startswith("darwin"):
-    #                coffee_items = [l + "  " for l in coffee_items]
                 self.plus_coffees_combo.addItems([''] + coffee_items)
 
                 p = None
@@ -1988,11 +1991,9 @@ class editGraphDlg(ArtisanResizeablDialog):
                 self.plus_blends = plus.stock.getBlends(self.unitsComboBox.currentIndex(),self.plus_default_store, custom_blend)
                 self.plus_blends_combo.blockSignals(True)
                 self.plus_blends_combo.clear()
+                self.plus_blends_combo.resetInverted()
                 blend_items = plus.stock.getBlendLabels(self.plus_blends)
 
-    #            # HACK to prevent those cut menu items on macOS and Qt 5.15.1:
-    #            if sys.platform.startswith("darwin"):
-    #                blend_items = [l + "  " for l in blend_items]
                 self.plus_blends_combo.addItems([''] + blend_items)
 
                 if len(self.plus_blends) == 0:
@@ -2717,9 +2718,11 @@ class editGraphDlg(ArtisanResizeablDialog):
             self.org_electricEnergyMix = self.aw.qmc.electricEnergyMix
 
             ### reset UI text labels and tooltips for proper translation
-            # hack to access the Qt automatic translation of the RestoreDefaults button
+            # hack to access the Qt automatic translation of the Help button
             db_help = QDialogButtonBox(QDialogButtonBox.StandardButton.Help)
-            help_text_translated = db_help.button(QDialogButtonBox.StandardButton.Help).text()
+            help_button: Optional[QPushButton] = db_help.button(QDialogButtonBox.StandardButton.Help)
+            if help_button is not None:
+                help_text_translated = help_button.text()
             self.energy_ui.helpButton.setText(help_text_translated)
             self.setButtonTranslations(self.energy_ui.helpButton,'Help',QApplication.translate('Button','Help'))
             self.energy_ui.tabWidget.setTabText(0,QApplication.translate('Tab','Details'))
@@ -2731,19 +2734,37 @@ class editGraphDlg(ArtisanResizeablDialog):
             # Details tab
             self.energy_ui.copyTableButton.setText(QApplication.translate('Button','Copy Table'))
             self.energy_ui.copyTableButton.setToolTip(QApplication.translate('Tooltip','Copy table to clipboard, OPTION or ALT click for tabular text'))
-            self.energy_ui.datatable.horizontalHeaderItem(0).setText(QApplication.translate('Table','Power'))
-            self.energy_ui.datatable.horizontalHeaderItem(1).setText(QApplication.translate('Table','Duration'))
-            self.energy_ui.datatable.horizontalHeaderItem(2).setText('BTU')
-            self.energy_ui.datatable.horizontalHeaderItem(3).setText(QApplication.translate('Table','CO2').replace('CO2','CO₂') + ' (g)')
-            self.energy_ui.datatable.horizontalHeaderItem(4).setText(QApplication.translate('Table','Load'))
-            self.energy_ui.datatable.horizontalHeaderItem(5).setText(QApplication.translate('Table','Source'))
-            self.energy_ui.datatable.horizontalHeaderItem(6).setText(QApplication.translate('Table','Kind'))
-            self.energy_ui.datatable.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+            item0 = self.energy_ui.datatable.horizontalHeaderItem(0)
+            if item0 is not None:
+                item0.setText(QApplication.translate('Table','Power'))
+            item1 = self.energy_ui.datatable.horizontalHeaderItem(1)
+            if item1 is not None:
+                item1.setText(QApplication.translate('Table','Duration'))
+            item2 = self.energy_ui.datatable.horizontalHeaderItem(2)
+            if item2 is not None:
+                item2.setText('BTU')
+            item3 = self.energy_ui.datatable.horizontalHeaderItem(3)
+            if item3 is not None:
+                item3.setText(QApplication.translate('Table','CO2').replace('CO2','CO₂') + ' (g)')
+            item4 = self.energy_ui.datatable.horizontalHeaderItem(4)
+            if item4 is not None:
+                item4.setText(QApplication.translate('Table','Load'))
+            item5 = self.energy_ui.datatable.horizontalHeaderItem(5)
+            if item5 is not None:
+                item5.setText(QApplication.translate('Table','Source'))
+            item6 = self.energy_ui.datatable.horizontalHeaderItem(6)
+            if item6 is not None:
+                item6.setText(QApplication.translate('Table','Kind'))
+            vheader = self.energy_ui.datatable.verticalHeader()
+            if vheader is not None:
+                vheader.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
             # Loads tab
             self.energy_ui.loadsSetDefaultsButton.setText(QApplication.translate('Button','Save Defaults'))
             # hack to access the Qt automatic translation of the RestoreDefaults button
             db = QDialogButtonBox(QDialogButtonBox.StandardButton.RestoreDefaults)
-            defaults_button_text_translated = db.button(QDialogButtonBox.StandardButton.RestoreDefaults).text()
+            defaults_button: Optional[QPushButton] = db.button(QDialogButtonBox.StandardButton.RestoreDefaults)
+            if defaults_button is not None:
+                defaults_button_text_translated = defaults_button.text()
             self.energy_ui.loadsDefaultsButtons.setText(defaults_button_text_translated)
             self.setButtonTranslations(self.energy_ui.loadsDefaultsButtons,'Restore Defaults',QApplication.translate('Button','Restore Defaults'))
             self.energy_ui.loadlabelsLabel.setText(QApplication.translate('Label','Label'))
@@ -2912,7 +2933,9 @@ class editGraphDlg(ArtisanResizeablDialog):
         self.energy_ui.datatable.setRowCount(0) # clears the table, but keeps the header intact
         self.energy_ui.datatable.setRowCount(ndata)
 
-        self.energy_ui.datatable.horizontalHeaderItem(2).setText(self.aw.qmc.energyunits[self.aw.qmc.energyresultunit_setup])
+        item2 = self.energy_ui.datatable.horizontalHeaderItem(2)
+        if item2 is not None:
+            item2.setText(self.aw.qmc.energyunits[self.aw.qmc.energyresultunit_setup])
 
         for i in range(ndata):
             if self.btu_list[i]['Kind'] in [0, 2]:  #Preheat Measured, BBP Measured
@@ -2953,7 +2976,8 @@ class editGraphDlg(ArtisanResizeablDialog):
             self.energy_ui.datatable.setItem(i,6,Kind_widget)
 
         header = self.energy_ui.datatable.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        if header is not None:
+            header.setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
 #        header.setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
 #        self.energy_ui.datatable.resizeColumnsToContents()
 
@@ -3387,7 +3411,8 @@ class editGraphDlg(ArtisanResizeablDialog):
                 clipboard += self.energy_ui.datatable.item(r,6).text() + '\n'
         # copy to the system clipboard
         sys_clip = QApplication.clipboard()
-        sys_clip.setText(clipboard)
+        if sys_clip is not None:
+            sys_clip.setText(clipboard)
         self.aw.sendmessage(QApplication.translate('Message','Data table copied to clipboard'))
 
     ##
@@ -3701,8 +3726,10 @@ class editGraphDlg(ArtisanResizeablDialog):
             self.setup_ui.SetDefaults.setText(QApplication.translate('Button', 'Save Defaults'))
             # hack to access the Qt automatic translation of the RestoreDefaults button
             db = QDialogButtonBox(QDialogButtonBox.StandardButton.RestoreDefaults)
-            defaults_button_text_translated = db.button(QDialogButtonBox.StandardButton.RestoreDefaults).text()
-            self.setup_ui.Defaults.setText(defaults_button_text_translated)
+            defaults_button: Optional[QPushButton] = db.button(QDialogButtonBox.StandardButton.RestoreDefaults)
+            if defaults_button is not None:
+                defaults_button_text_translated = defaults_button.text()
+                self.setup_ui.Defaults.setText(defaults_button_text_translated)
             self.setButtonTranslations(self.setup_ui.Defaults,'Restore Defaults',QApplication.translate('Button','Restore Defaults'))
 
             # fill dialog with data
@@ -3944,7 +3971,9 @@ class editGraphDlg(ArtisanResizeablDialog):
         self.datatable.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.datatable.setSelectionMode(QTableWidget.SelectionMode.ExtendedSelection) # QTableWidget.SelectionMode.SingleSelection, ContiguousSelection, MultiSelection
         self.datatable.setShowGrid(True)
-        self.datatable.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+        vheader: Optional[QHeaderView] = self.datatable.verticalHeader()
+        if vheader is not None:
+            vheader.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
         offset = 0
         if self.aw.qmc.timeindex[0] > -1:
             offset = self.aw.qmc.timex[self.aw.qmc.timeindex[0]]
@@ -3991,36 +4020,41 @@ class editGraphDlg(ArtisanResizeablDialog):
                 text = QApplication.translate('Table', '#{0} {1}{2}').format(str(index+1),self.aw.qmc.etypesf(self.aw.qmc.specialeventstype[index])[0],self.aw.qmc.eventsvalues(self.aw.qmc.specialeventsvalue[index]))
                 Rtime.setText(text + ' ' + Rtime.text())
             self.datatable.setItem(i,0,Rtime)
+            tableitem: Optional[QTableWidgetItem]
             if i in self.aw.qmc.specialevents:
-                self.datatable.item(i,0).setBackground(QColor('yellow'))
+                tableitem = self.datatable.item(i,0)
+                if tableitem is not None:
+                    tableitem.setBackground(QColor('yellow'))
 
             #identify by color and add notation
-            if i == self.aw.qmc.timeindex[0] and i != -1:
-                self.datatable.item(i,0).setBackground(QColor('#f07800'))
-                text = QApplication.translate('Table', 'CHARGE')
-            elif i == self.aw.qmc.timeindex[1] and i != 0:
-                self.datatable.item(i,0).setBackground(QColor('orange'))
-                text = QApplication.translate('Table', 'DRY END')
-            elif i == self.aw.qmc.timeindex[2] and i != 0:
-                self.datatable.item(i,0).setBackground(QColor('orange'))
-                text = QApplication.translate('Table', 'FC START')
-            elif i == self.aw.qmc.timeindex[3] and i != 0:
-                self.datatable.item(i,0).setBackground(QColor('orange'))
-                text = QApplication.translate('Table', 'FC END')
-            elif i == self.aw.qmc.timeindex[4] and i != 0:
-                self.datatable.item(i,0).setBackground(QColor('orange'))
-                text = QApplication.translate('Table', 'SC START')
-            elif i == self.aw.qmc.timeindex[5] and i != 0:
-                self.datatable.item(i,0).setBackground(QColor('orange'))
-                text = QApplication.translate('Table', 'SC END')
-            elif i == self.aw.qmc.timeindex[6] and i != 0:
-                self.datatable.item(i,0).setBackground(QColor('#f07800'))
-                text = QApplication.translate('Table', 'DROP')
-            elif i == self.aw.qmc.timeindex[7] and i != 0:
-                self.datatable.item(i,0).setBackground(QColor('orange'))
-                text = QApplication.translate('Table', 'COOL')
-            else:
-                text = ''
+            tableitem = self.datatable.item(i,0)
+            if tableitem is not None:
+                if i == self.aw.qmc.timeindex[0] and i != -1:
+                    tableitem.setBackground(QColor('#f07800'))
+                    text = QApplication.translate('Table', 'CHARGE')
+                elif i == self.aw.qmc.timeindex[1] and i != 0:
+                    tableitem.setBackground(QColor('orange'))
+                    text = QApplication.translate('Table', 'DRY END')
+                elif i == self.aw.qmc.timeindex[2] and i != 0:
+                    tableitem.setBackground(QColor('orange'))
+                    text = QApplication.translate('Table', 'FC START')
+                elif i == self.aw.qmc.timeindex[3] and i != 0:
+                    tableitem.setBackground(QColor('orange'))
+                    text = QApplication.translate('Table', 'FC END')
+                elif i == self.aw.qmc.timeindex[4] and i != 0:
+                    tableitem.setBackground(QColor('orange'))
+                    text = QApplication.translate('Table', 'SC START')
+                elif i == self.aw.qmc.timeindex[5] and i != 0:
+                    tableitem.setBackground(QColor('orange'))
+                    text = QApplication.translate('Table', 'SC END')
+                elif i == self.aw.qmc.timeindex[6] and i != 0:
+                    tableitem.setBackground(QColor('#f07800'))
+                    text = QApplication.translate('Table', 'DROP')
+                elif i == self.aw.qmc.timeindex[7] and i != 0:
+                    tableitem.setBackground(QColor('orange'))
+                    text = QApplication.translate('Table', 'COOL')
+                else:
+                    text = ''
             Rtime.setText(text + ' ' + Rtime.text())
 
             self.datatable.setItem(i,1,ET)
@@ -4074,7 +4108,9 @@ class editGraphDlg(ArtisanResizeablDialog):
 
                 self.eventtable.setShowGrid(True)
 
-                self.eventtable.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+                vheader: Optional[QHeaderView] = self.eventtable.verticalHeader()
+                if vheader is not None:
+                    vheader.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
                 regextime = QRegularExpression(r'^-?[0-9]?[0-9]?[0-9]:[0-5][0-9]$')
                 etypes = self.aw.qmc.getetypes()
                 #populate table
@@ -4127,14 +4163,15 @@ class editGraphDlg(ArtisanResizeablDialog):
                     self.eventtable.setCellWidget(i,4,typeComboBox)
                     self.eventtable.setCellWidget(i,5,valueEdit)
                     valueEdit.setValidator(QIntValidator(0,self.aw.eventsMaxValue,self.eventtable.cellWidget(i,5)))
-                header = self.eventtable.horizontalHeader()
-                #header.setStretchLastSection(True)
-                header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-                header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
-                header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
-                header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
-                header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
-                header.setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)
+                header: Optional[QHeaderView] = self.eventtable.horizontalHeader()
+                if header is not None:
+                    #header.setStretchLastSection(True)
+                    header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+                    header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
+                    header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
+                    header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
+                    header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
+                    header.setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)
                 # improve width of Time column
                 self.eventtable.setColumnWidth(0,60)
                 self.eventtable.setColumnWidth(1,65)
@@ -4196,7 +4233,9 @@ class editGraphDlg(ArtisanResizeablDialog):
             tbl = prettytable.PrettyTable()
             fields = []
             for c in range(ncols):
-                fields.append(self.eventtable.horizontalHeaderItem(c).text())
+                headeritem = self.eventtable.horizontalHeaderItem(c)
+                if headeritem is not None:
+                    fields.append(headeritem.text())
             tbl.field_names = fields
             for i in range(nrows):
                 rows = []
@@ -4222,9 +4261,11 @@ class editGraphDlg(ArtisanResizeablDialog):
             clipboard = tbl.get_string()
         else:
             for c in range(ncols):
-                clipboard += self.eventtable.horizontalHeaderItem(c).text()
-                if c != (ncols-1):
-                    clipboard += '\t'
+                headeritem = self.eventtable.horizontalHeaderItem(c)
+                if headeritem is not None:
+                    clipboard += headeritem.text()
+                    if c != (ncols-1):
+                        clipboard += '\t'
             clipboard += '\n'
             for r in range(nrows):
                 timeline = self.eventtable.cellWidget(r,0)
@@ -4246,8 +4287,9 @@ class editGraphDlg(ArtisanResizeablDialog):
                 clipboard += typeComboBox.currentText() + '\t'
                 clipboard += valueEdit.text() + '\n'
         # copy to the system clipboard
-        sys_clip = QApplication.clipboard()
-        sys_clip.setText(clipboard)
+        sys_clip: Optional['QClipboard'] = QApplication.clipboard()
+        if sys_clip is not None:
+            sys_clip.setText(clipboard)
         self.aw.sendmessage(QApplication.translate('Message','Event table copied to clipboard'))
 
     def createAlarmEventRows(self,rows):
@@ -5061,7 +5103,7 @@ class editGraphDlg(ArtisanResizeablDialog):
 
     def openEnergyMeasuringDialog(self,title,loadLabels,loadValues,loadUnits,protocolDuration):
         dialog = EnergyMeasuringDialog(self, self.aw)
-        layout  = dialog.layout()
+        layout: Optional['QLayout']  = dialog.layout()
         # set data
         dialog.ui.groupBox.setTitle(title)
         dialog.ui.loadAlabel.setText(loadLabels[0])
@@ -5078,19 +5120,79 @@ class editGraphDlg(ArtisanResizeablDialog):
         dialog.ui.loadDunit.setText(loadUnits[3])
         dialog.ui.duration.setText(protocolDuration)
         # fixed height
-        layout.setSpacing(5)
+        if layout is not None:
+            layout.setSpacing(5)
         dialog.setFixedHeight(dialog.sizeHint().height())
-        res = dialog.exec()
-        #deleteLater() will not work here as the dialog is still bound via the parent
-        #dialog.deleteLater() # now we explicitly allow the dialog an its widgets to be GCed
-        # the following will immediately release the memory despite this parent link
-        QApplication.processEvents() # we ensure events concerning this dialog are processed before deletion
-        try: # sip not supported on older PyQt versions (RPi!)
-            sip.delete(dialog)
-            #print(sip.isdeleted(dialog))
-        except Exception: # pylint: disable=broad-except
-            pass
-        return res
+#        res = dialog.exec()
+#        #deleteLater() will not work here as the dialog is still bound via the parent
+#        #dialog.deleteLater() # now we explicitly allow the dialog an its widgets to be GCed
+#        # the following will immediately release the memory despite this parent link
+#        QApplication.processEvents() # we ensure events concerning this dialog are processed before deletion
+#        try: # sip not supported on older PyQt versions (RPi!)
+#            sip.delete(dialog)
+#            #print(sip.isdeleted(dialog))
+#        except Exception: # pylint: disable=broad-except
+#            pass
+#        return res
+        return dialog.exec()
+
+class StockComboBox(MyQComboBox):
+    def __init__(self, unitsComboBox:QComboBox, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.inverted:bool = False # is True if the weight units were inverted before
+        self.unitsComboBox:QComboBox = unitsComboBox
+
+    # to be overwritten by subclasses
+    def getItems(self, _unit:int) -> List[str]: # pylint: disable=no-self-use
+        return []
+
+    def resetInverted(self):
+        self.inverted = False
+
+    def mousePressEvent(self, event):
+        if self.unitsComboBox is not None and QApplication.keyboardModifiers() == Qt.KeyboardModifier.AltModifier or self.inverted:
+            # with ALT (Win) / OPTION (macOS) pressed we rewrite the popup menu indicating weights in imperial units if metric units were selected and vise versa
+            default_unit:int = self.unitsComboBox.currentIndex()
+            unit:int = 0 # g
+            if self.inverted:
+                # we revert to the original units
+                unit = default_unit
+            elif default_unit < 2:
+                # if default unit is g or kg we convert to oz, otherwise to g
+                unit = 3
+            items = self.getItems(unit)
+            for i in range(self.count()):
+                if len(items) > i:
+                    self.setItemText(i, items[i])
+            self.inverted = not self.inverted
+        super().mousePressEvent(event)
+
+class CoffeesComboBox(StockComboBox):
+    def __init__(self, parent:editGraphDlg, *args, **kwargs) -> None:
+        super().__init__(parent.unitsComboBox, *args, **kwargs)
+        self.parentDialog = parent
+
+    def getItems(self, unit:int):
+        plus_coffees = plus.stock.getCoffees(unit, self.parentDialog.plus_default_store)
+        return [''] + plus.stock.getCoffeesLabels(plus_coffees)
+
+class BlendsComboBox(StockComboBox):
+    def __init__(self, parent:editGraphDlg, *args, **kwargs) -> None:
+        super().__init__(parent.unitsComboBox, *args, **kwargs)
+        self.parentDialog:editGraphDlg = parent
+
+    def getItems(self, unit:int):
+        custom_blend:Optional[plus.stock.Blend] = None
+        if self.parentDialog.aw.qmc.plus_custom_blend is not None and self.parentDialog.aw.qmc.plus_custom_blend.name.strip() != '':
+            coffees = plus.stock.getCoffeeLabels()
+            if len(coffees)>2 and self.parentDialog.aw.qmc.plus_custom_blend.isValid(coffees.values()):
+                custom_blend = {
+                    'hr_id': '',
+                    'label': self.parentDialog.aw.qmc.plus_custom_blend.name.strip(),
+                    'ingredients': [{'ratio': c.ratio, 'coffee': c.coffee} for c in self.parentDialog.aw.qmc.plus_custom_blend.components]}
+        plus_blends = plus.stock.getBlends(unit,self.parentDialog.plus_default_store, custom_blend)
+        blend_items:List[str] = plus.stock.getBlendLabels(plus_blends)
+        return [''] + blend_items
 
 ##########################################################################
 #####################  VIEW Tare  ########################################
@@ -5163,7 +5265,9 @@ class tareDlg(ArtisanDialog):
         self.tarePopup.tareComboBox.addItem('')
         self.tarePopup.tareComboBox.addItems(self.aw.qmc.container_names)
         width = self.tarePopup.tareComboBox.minimumSizeHint().width()
-        self.tarePopup.tareComboBox.view().setMinimumWidth(width)
+        view: Optional['QAbstractItemView'] = self.tarePopup.tareComboBox.view()
+        if view is not None:
+            view.setMinimumWidth(width)
         self.tarePopup.tareComboBox.setCurrentIndex(2) # reset to the empty entry
         self.aw.qmc.container_idx = -1
         self.tarePopup.tarePopupEnabled = True
@@ -5223,7 +5327,9 @@ class tareDlg(ArtisanDialog):
         self.taretable.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.taretable.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.taretable.setShowGrid(True)
-        self.taretable.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+        vheader: Optional[QHeaderView] = self.taretable.verticalHeader()
+        if vheader is not None:
+            vheader.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
         for i, cn in enumerate(self.aw.qmc.container_names):
             #add widgets to the table
             name = QLineEdit()
@@ -5236,9 +5342,10 @@ class tareDlg(ArtisanDialog):
 
             self.taretable.setCellWidget(i,0,name)
             self.taretable.setCellWidget(i,1,weight)
-        header = self.taretable.horizontalHeader()
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
+        header: Optional[QHeaderView] = self.taretable.horizontalHeader()
+        if header is not None:
+            header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+            header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
         self.taretable.setColumnWidth(1,65)
 
 ########################################################################################

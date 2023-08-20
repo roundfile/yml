@@ -19,7 +19,7 @@ import sys
 import platform
 import logging
 from typing import List, Optional, cast, TYPE_CHECKING
-from typing_extensions import Final  # Python <=3.7
+from typing import Final  # Python <=3.7
 
 if TYPE_CHECKING:
     from artisanlib.types import Palette
@@ -38,17 +38,17 @@ try:
     from PyQt6.QtWidgets import (QApplication, QCheckBox, QComboBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, # @UnusedImport @Reimport  @UnresolvedImport
                                  QPushButton, QSpinBox, QWidget, QTabWidget, QDialogButtonBox, # @UnusedImport @Reimport  @UnresolvedImport
                                  QGridLayout, QGroupBox, QTableWidget, QHeaderView, QToolButton) # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt6 import sip # @UnusedImport @Reimport  @UnresolvedImport
+#    from PyQt6 import sip # @UnusedImport @Reimport  @UnresolvedImport
 except ImportError:
     from PyQt5.QtCore import (Qt, pyqtSlot, QSettings, QTimer) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtGui import (QColor, QFont, QIntValidator) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
                                  QPushButton, QSpinBox, QWidget, QTabWidget, QDialogButtonBox, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
                                  QGridLayout, QGroupBox, QTableWidget, QHeaderView, QToolButton) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
-    try:
-        from PyQt5 import sip # type: ignore # @Reimport @UnresolvedImport @UnusedImport
-    except ImportError:
-        import sip  # type: ignore # @Reimport @UnresolvedImport @UnusedImport
+#    try:
+#        from PyQt5 import sip # type: ignore # @Reimport @UnresolvedImport @UnusedImport
+#    except ImportError:
+#        import sip  # type: ignore # @Reimport @UnresolvedImport @UnusedImport
 
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
@@ -240,11 +240,12 @@ class EventsDlg(ArtisanResizeablDialog):
         self.overlapEdit.setSuffix(' %')
 
         helpcurveDialogButton = QDialogButtonBox()
-        helpButton = helpcurveDialogButton.addButton(QDialogButtonBox.StandardButton.Help)
-        self.setButtonTranslations(helpButton,'Help',QApplication.translate('Button','Help'))
-        helpButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        helpButton: Optional[QPushButton] = helpcurveDialogButton.addButton(QDialogButtonBox.StandardButton.Help)
+        if helpButton is not None:
+            self.setButtonTranslations(helpButton,'Help',QApplication.translate('Button','Help'))
+            helpButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            helpButton.clicked.connect(self.showEventannotationhelp)
 
-        helpButton.clicked.connect(self.showEventannotationhelp)
         buttonLayout = QHBoxLayout()
         buttonLayout.addWidget(overlapeditLabel)
         buttonLayout.addWidget(self.overlapEdit)
@@ -575,33 +576,39 @@ class EventsDlg(ArtisanResizeablDialog):
         self.eventbuttontable = QTableWidget()
         self.eventbuttontable.setTabKeyNavigation(True)
         self.eventbuttontable.itemSelectionChanged.connect(self.selectionChanged)
-        self.eventbuttontable.verticalHeader().sectionMoved.connect(self.sectionMoved)
+        vheader: Optional[QHeaderView] = self.eventbuttontable.verticalHeader()
+        if vheader is not None:
+            vheader.sectionMoved.connect(self.sectionMoved)
 #        self.createEventbuttonTable()
         self.copyeventbuttonTableButton = QPushButton(QApplication.translate('Button', 'Copy Table'))
         self.copyeventbuttonTableButton.setToolTip(QApplication.translate('Tooltip','Copy table to clipboard, OPTION or ALT click for tabular text'))
         self.copyeventbuttonTableButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.copyeventbuttonTableButton.clicked.connect(self.copyEventButtonTabletoClipboard)
-        addButton = QPushButton(QApplication.translate('Button','Add'))
-        addButton.setToolTip(QApplication.translate('Tooltip','Add new extra Event button'))
-        #addButton.setMaximumWidth(100)
-        addButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        addButton.clicked.connect(self.addextraeventbuttonSlot)
-        delButton = QPushButton(QApplication.translate('Button','Delete'))
-        delButton.setToolTip(QApplication.translate('Tooltip','Delete the last extra Event button'))
-        #delButton.setMaximumWidth(100)
-        delButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        delButton.clicked.connect(self.delextraeventbutton)
-        self.insertButton = QPushButton(QApplication.translate('Button','Insert'))
-        self.insertButton.clicked.connect(self.insertextraeventbuttonSlot)
-        self.insertButton.setMinimumWidth(80)
-        self.insertButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.insertButton.setEnabled(False)
+        addButton: Optional[QPushButton] = QPushButton(QApplication.translate('Button','Add'))
+        if addButton is not None:
+            addButton.setToolTip(QApplication.translate('Tooltip','Add new extra Event button'))
+            #addButton.setMaximumWidth(100)
+            addButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            addButton.clicked.connect(self.addextraeventbuttonSlot)
+        delButton: Optional[QPushButton] = QPushButton(QApplication.translate('Button','Delete'))
+        if delButton is not None:
+            delButton.setToolTip(QApplication.translate('Tooltip','Delete the last extra Event button'))
+            #delButton.setMaximumWidth(100)
+            delButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            delButton.clicked.connect(self.delextraeventbutton)
+        self.insertButton: Optional[QPushButton] = QPushButton(QApplication.translate('Button','Insert'))
+        if self.insertButton is not None:
+            self.insertButton.clicked.connect(self.insertextraeventbuttonSlot)
+            self.insertButton.setMinimumWidth(80)
+            self.insertButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            self.insertButton.setEnabled(False)
         helpDialogButton = QDialogButtonBox()
-        helpButton = helpDialogButton.addButton(QDialogButtonBox.StandardButton.Help)
-        helpButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        helpButton.setToolTip(QApplication.translate('Tooltip','Show help'))
-        self.setButtonTranslations(helpButton,'Help',QApplication.translate('Button','Help'))
-        helpButton.clicked.connect(self.showEventbuttonhelp)
+        helpButtonD: Optional[QPushButton] = helpDialogButton.addButton(QDialogButtonBox.StandardButton.Help)
+        if helpButtonD is not None:
+            helpButtonD.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            helpButtonD.setToolTip(QApplication.translate('Tooltip','Show help'))
+            self.setButtonTranslations(helpButton,'Help',QApplication.translate('Button','Help'))
+            helpButtonD.clicked.connect(self.showEventbuttonhelp)
         #color patterns
         #flag that prevents changing colors too fast
         self.changingcolorflag = False
@@ -896,13 +903,17 @@ class EventsDlg(ArtisanResizeablDialog):
         self.E4unit.setMaximumWidth(maxwidth)
         self.E4unit.setToolTip(slider_unit_tooltip_text)
         helpsliderDialogButton = QDialogButtonBox()
-        helpsliderbutton = helpsliderDialogButton.addButton(QDialogButtonBox.StandardButton.Help)
-        helpsliderbutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.setButtonTranslations(helpsliderbutton,'Help',QApplication.translate('Button','Help'))
-        helpsliderbutton.clicked.connect(self.showSliderHelp)
+        helpsliderbutton: Optional[QPushButton] = helpsliderDialogButton.addButton(QDialogButtonBox.StandardButton.Help)
+        if helpsliderbutton is not None:
+            helpsliderbutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            self.setButtonTranslations(helpsliderbutton,'Help',QApplication.translate('Button','Help'))
+            helpsliderbutton.clicked.connect(self.showSliderHelp)
         self.sliderKeyboardControlflag = QCheckBox(QApplication.translate('CheckBox','Keyboard Control'))
         self.sliderKeyboardControlflag.setToolTip(QApplication.translate('Tooltip', 'Move slider under focus using the up/down cursor keys'))
         self.sliderKeyboardControlflag.setChecked(self.aw.eventsliderKeyboardControl)
+        self.sliderAlternativeLayoutFlag = QCheckBox(QApplication.translate('CheckBox','Alternative Layout'))
+        self.sliderAlternativeLayoutFlag.setToolTip(QApplication.translate('Tooltip', 'Group Slider 1 with Slider 4 and Slider 2 with Slider 3'))
+        self.sliderAlternativeLayoutFlag.setChecked(self.aw.eventsliderAlternativeLayout)
         ## tab4
         qeventtitlelabel = QLabel(QApplication.translate('Label','Event'))
         qeventtitlelabel.setFont(titlefont)
@@ -1035,10 +1046,11 @@ class EventsDlg(ArtisanResizeablDialog):
         self.E4max.setRange(-99999,99999)
         self.E4max.setValue(self.aw.eventquantifiermax[3])
         applyDialogButton = QDialogButtonBox()
-        applyquantifierbutton = applyDialogButton.addButton(QDialogButtonBox.StandardButton.Apply)
-        self.setButtonTranslations(applyquantifierbutton,'Apply',QApplication.translate('Button','Apply'))
-        applyquantifierbutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        applyquantifierbutton.clicked.connect(self.applyQuantifiers)
+        applyquantifierbutton: Optional[QPushButton] = applyDialogButton.addButton(QDialogButtonBox.StandardButton.Apply)
+        if applyquantifierbutton is not None:
+            self.setButtonTranslations(applyquantifierbutton,'Apply',QApplication.translate('Button','Apply'))
+            applyquantifierbutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            applyquantifierbutton.clicked.connect(self.applyQuantifiers)
         self.clusterEventsFlag = QCheckBox(QApplication.translate('Label','Cluster'))
         self.clusterEventsFlag.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.clusterEventsFlag.setChecked(bool(self.aw.clusterEventsFlag))
@@ -1481,6 +1493,8 @@ class EventsDlg(ArtisanResizeablDialog):
         SliderHelpHBox.addStretch()
         SliderHelpHBox.addWidget(helpsliderDialogButton)
         SliderHelpHBox.addStretch()
+        SliderHelpHBox.addWidget(self.sliderAlternativeLayoutFlag)
+        SliderHelpHBox.addSpacing(10)
         SliderHelpHBox.addWidget(self.sliderKeyboardControlflag)
         C5VBox = QVBoxLayout()
         C5VBox.addLayout(tab5Layout)
@@ -1575,10 +1589,10 @@ class EventsDlg(ArtisanResizeablDialog):
         mainLayout.setContentsMargins(5, 15, 5, 5)
         mainLayout.addLayout(buttonLayout)
         self.setLayout(mainLayout)
-        if platform.system() == 'Windows':
-            self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok)
-        else:
-            self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok).setFocus()
+        if platform.system() != 'Windows':
+            ok_button: Optional[QPushButton] = self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok)
+            if ok_button is not None:
+                ok_button.setFocus()
 
         self.TabWidget.currentChanged.connect(self.tabSwitched)
 
@@ -1683,10 +1697,11 @@ class EventsDlg(ArtisanResizeablDialog):
     @pyqtSlot()
     def selectionChanged(self):
         selected = self.eventbuttontable.selectedRanges()
-        if selected and len(selected) > 0:
-            self.insertButton.setEnabled(True)
-        else:
-            self.insertButton.setEnabled(False)
+        if self.insertButton is not None:
+            if selected and len(selected) > 0:
+                self.insertButton.setEnabled(True)
+            else:
+                self.insertButton.setEnabled(False)
 
     @pyqtSlot(int)
     def changeShowMet(self,_):
@@ -1831,8 +1846,11 @@ class EventsDlg(ArtisanResizeablDialog):
         self.E2textcolorButton.setText(self.etype1.text())
         self.E3textcolorButton.setText(self.etype2.text())
         self.E4textcolorButton.setText(self.etype3.text())
-        self.E1colorButton.setMinimumWidth(max(self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok).width(),self.E1textcolorButton.minimumSizeHint().width()))
-        self.E1textcolorButton.setMinimumWidth(max(self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok).width(),self.E1textcolorButton.minimumSizeHint().width()))
+        ok_button = self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok)
+        if ok_button is not None:
+            ok_button_width = ok_button.width()
+            self.E1colorButton.setMinimumWidth(max(ok_button_width,self.E1textcolorButton.minimumSizeHint().width()))
+            self.E1textcolorButton.setMinimumWidth(max(ok_button_width,self.E1textcolorButton.minimumSizeHint().width()))
         self.E1colorButton.setStyleSheet('background-color: ' + self.aw.qmc.EvalueColor[0] + '; color: ' + self.aw.qmc.EvalueTextColor[0] + '; border-style: solid; border-width: 1px; border-radius: 4px; border-color: black; padding: 4px;')
         self.E2colorButton.setStyleSheet('background-color: ' + self.aw.qmc.EvalueColor[1] + '; color: ' + self.aw.qmc.EvalueTextColor[1] + '; border-style: solid; border-width: 1px; border-radius: 4px; border-color: black; padding: 4px;')
         self.E3colorButton.setStyleSheet('background-color: ' + self.aw.qmc.EvalueColor[2] + '; color: ' + self.aw.qmc.EvalueTextColor[2] + '; border-style: solid; border-width: 1px; border-radius: 4px; border-color: black; padding: 4px;')
@@ -2371,14 +2389,18 @@ class EventsDlg(ArtisanResizeablDialog):
         self.eventbuttontable.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
         self.eventbuttontable.setShowGrid(True)
 
-        self.eventbuttontable.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+        vheader = self.eventbuttontable.verticalHeader()
+        if vheader is not None:
+            vheader.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
 
         #Enable Drag Sorting
         self.eventbuttontable.setDragEnabled(False) # content not draggable, only vertical header!
-        self.eventbuttontable.verticalHeader().setSectionsMovable(True)
-        self.eventbuttontable.verticalHeader().setDragDropMode(QTableWidget.DragDropMode.InternalMove)
         self.eventbuttontable.setAutoScroll(False)
-        self.eventbuttontable.verticalHeader().setAutoScroll(False)
+        vheader = self.eventbuttontable.verticalHeader()
+        if vheader is not None:
+            vheader.setSectionsMovable(True)
+            vheader.setDragDropMode(QTableWidget.DragDropMode.InternalMove)
+            vheader.setAutoScroll(False)
 
         visibility = [QApplication.translate('ComboBox','OFF'),
                       QApplication.translate('ComboBox','ON')]
@@ -2468,9 +2490,11 @@ class EventsDlg(ArtisanResizeablDialog):
             self.eventbuttontable.setCellWidget(i,8,colorTextButton)
             self.eventbuttontable.setCellWidget(i,9,emptyCell)
 
-        self.eventbuttontable.horizontalHeader().setStretchLastSection(False)
-        self.eventbuttontable.resizeColumnsToContents()
-        self.eventbuttontable.horizontalHeader().setStretchLastSection(True)
+        hheader = self.eventbuttontable.horizontalHeader()
+        if hheader is not None:
+            hheader.setStretchLastSection(False)
+            self.eventbuttontable.resizeColumnsToContents()
+            hheader.setStretchLastSection(True)
         self.eventbuttontable.setColumnWidth(0,70)
         self.eventbuttontable.setColumnWidth(1,80)
         self.eventbuttontable.setColumnWidth(2,100)
@@ -2501,7 +2525,9 @@ class EventsDlg(ArtisanResizeablDialog):
             fields = []
             fields.append(' ')  # this column shows the row number
             for c in range(ncols):
-                fields.append(self.eventbuttontable.horizontalHeaderItem(c).text())
+                item = self.eventbuttontable.horizontalHeaderItem(c)
+                if item is not None:
+                    fields.append(item.text())
             tbl.field_names = fields
             for r in range(nrows):
                 rows = []
@@ -2547,9 +2573,11 @@ class EventsDlg(ArtisanResizeablDialog):
         else:
             clipboard += ' ' + '\t'  # this column shows the row number
             for c in range(ncols):
-                clipboard += self.eventbuttontable.horizontalHeaderItem(c).text()
-                if c != (ncols-1):
-                    clipboard += '\t'
+                item = self.eventbuttontable.horizontalHeaderItem(c)
+                if item is not None:
+                    clipboard += item.text()
+                    if c != (ncols-1):
+                        clipboard += '\t'
             clipboard += '\n'
             for r in range(nrows):
                 clipboard += str(r+1) + '\t'
@@ -2582,7 +2610,8 @@ class EventsDlg(ArtisanResizeablDialog):
                 clipboard += colorTextButton.palette().button().color().name() + '\n'
         # copy to the system clipboard
         sys_clip = QApplication.clipboard()
-        sys_clip.setText(clipboard)
+        if sys_clip is not None:
+            sys_clip.setText(clipboard)
         self.aw.sendmessage(QApplication.translate('Message','Event Button table copied to clipboard'))
 
 
@@ -2742,8 +2771,12 @@ class EventsDlg(ArtisanResizeablDialog):
                 backColor =  self.extraeventbuttoncolor[i]
                 label = self.extraeventslabels[i]
                 style = f'background-color: {backColor}; color: {textColor};'
-                self.eventbuttontable.cellWidget(i,7).setStyleSheet(style)
-                self.eventbuttontable.cellWidget(i,8).setStyleSheet(style)
+                widget7 = self.eventbuttontable.cellWidget(i,7)
+                if widget7 is not None:
+                    widget7.setStyleSheet(style)
+                widget8 = self.eventbuttontable.cellWidget(i,8)
+                if widget8 is not None:
+                    widget8.setStyleSheet(style)
                 self.aw.checkColors([(QApplication.translate('Label','Event button')+' '+ label, backColor, ' '+QApplication.translate('Label','its text'), textColor)])
 
     @pyqtSlot(bool)
@@ -2757,8 +2790,12 @@ class EventsDlg(ArtisanResizeablDialog):
                 backColor =  self.extraeventbuttoncolor[i]
                 label = self.extraeventslabels[i]
                 style = f'background-color: {backColor}; color: {textColor};'
-                self.eventbuttontable.cellWidget(i,7).setStyleSheet(style)
-                self.eventbuttontable.cellWidget(i,8).setStyleSheet(style)
+                widget7 = self.eventbuttontable.cellWidget(i,7)
+                if widget7 is not None:
+                    widget7.setStyleSheet(style)
+                widget8 = self.eventbuttontable.cellWidget(i,8)
+                if widget8 is not None:
+                    widget8.setStyleSheet(style)
                 self.aw.checkColors([(QApplication.translate('Label','Event button')+' '+ label, backColor, ' '+QApplication.translate('Label','its text'),textColor)])
 
     def disconnectTableItemActions(self):
@@ -3097,6 +3134,7 @@ class EventsDlg(ArtisanResizeablDialog):
         self.autoDropFlagstored = self.aw.qmc.autoDropFlag
         self.markTPFlagstored = self.aw.qmc.markTPflag
         self.eventsliderKeyboardControlstored = self.aw.eventsliderKeyboardControl
+        self.eventsliderAlternativeLayoutstored = self.aw.eventsliderAlternativeLayout
         # buttons
         self.extraeventslabels = self.aw.extraeventslabels[:]
         self.extraeventsdescriptions = self.aw.extraeventsdescriptions[:]
@@ -3159,6 +3197,7 @@ class EventsDlg(ArtisanResizeablDialog):
         self.aw.qmc.autoChargeFlag = self.autoChargeFlagstored
         self.aw.qmc.autoDropFlag = self.autoDropFlagstored
         self.aw.eventsliderKeyboardControl = self.eventsliderKeyboardControlstored
+        self.aw.eventsliderAlternativeLayout = self.eventsliderAlternativeLayoutstored
         self.aw.qmc.markTPflag = self.markTPFlagstored
         # buttons saved only if ok is pressed, so no restore needed
         self.aw.buttonlistmaxlen = self.buttonlistmaxlen
@@ -3302,6 +3341,7 @@ class EventsDlg(ArtisanResizeablDialog):
                         self.aw.setSliderFocusPolicy(Qt.FocusPolicy.StrongFocus)
                     else:
                         self.aw.setSliderFocusPolicy(Qt.FocusPolicy.NoFocus)
+                self.aw.updateSliderLayout(self.sliderAlternativeLayoutFlag.isChecked())
                 #save quantifiers
                 self.aw.updateSlidersProperties() # set visibility and event names on slider widgets
 # we don't do that anymore!
@@ -3402,7 +3442,8 @@ class EventsDlg(ArtisanResizeablDialog):
 
         offset = ''
         factor = ''
-        dialog.applyButton.setEnabled(False)
+        if dialog.applyButton is not None:
+            dialog.applyButton.setEnabled(False)
         if min_text != '' and max_text != '':
             try:
                 min_slider = min(self.E1_min.value(), self.E1_max.value())
@@ -3417,7 +3458,8 @@ class EventsDlg(ArtisanResizeablDialog):
                     if len(res) == 2:
                         factor = f'{res[0]:.4f}'
                         offset = f'{res[1]:.2f}'
-                        dialog.applyButton.setEnabled(True)
+                        if dialog.applyButton is not None:
+                            dialog.applyButton.setEnabled(True)
             except Exception: # pylint: disable=broad-except
                 pass
         dialog.ui.lineEdit_Factor.setText(factor)
@@ -3425,12 +3467,12 @@ class EventsDlg(ArtisanResizeablDialog):
 
     def openSliderCalculator(self,sliderMin:int, sliderMax:int, factorWidget, offsetWidget):
         dialog = SliderCalculator(self, self.aw, factorWidget, offsetWidget)
-        layout  = dialog.layout()
         # set data
         dialog.ui.lineEdit_SliderValue_min.setText(str(sliderMin))
         dialog.ui.lineEdit_SliderValue_max.setText(str(sliderMax))
         #
-        dialog.applyButton.setEnabled(False)
+        if dialog.applyButton is not None:
+            dialog.applyButton.setEnabled(False)
         # translations
         dialog.ui.label_min.setText(QApplication.translate('Label','Min'))
         dialog.ui.label_max.setText(QApplication.translate('Label','Max'))
@@ -3445,20 +3487,23 @@ class EventsDlg(ArtisanResizeablDialog):
         dialog.ui.lineEdit_TargetValue_min.editingFinished.connect(self.calcSliderFactorOffset)
         dialog.ui.lineEdit_TargetValue_max.editingFinished.connect(self.calcSliderFactorOffset)
         # fixed height
-        layout.setSpacing(7)
+        layout  = dialog.layout()
+        if layout is not None:
+            layout.setSpacing(7)
         dialog.setFixedHeight(dialog.sizeHint().height())
         dialog.setFixedWidth(dialog.sizeHint().width())
-        res = dialog.exec()
-        #deleteLater() will not work here as the dialog is still bound via the parent
-        #dialog.deleteLater() # now we explicitly allow the dialog an its widgets to be GCed
-        # the following will immediately release the memory despite this parent link
-        QApplication.processEvents() # we ensure events concerning this dialog are processed before deletion
-        try: # sip not supported on older PyQt versions (RPi!)
-            sip.delete(dialog)
-            #print(sip.isdeleted(dialog))
-        except Exception: # pylint: disable=broad-except
-            pass
-        return res
+#        res = dialog.exec()
+#        #deleteLater() will not work here as the dialog is still bound via the parent
+#        #dialog.deleteLater() # now we explicitly allow the dialog an its widgets to be GCed
+#        # the following will immediately release the memory despite this parent link
+#        QApplication.processEvents() # we ensure events concerning this dialog are processed before deletion
+#        try: # sip not supported on older PyQt versions (RPi!)
+#            sip.delete(dialog)
+#            #print(sip.isdeleted(dialog))
+#        except Exception: # pylint: disable=broad-except
+#            pass
+#        return res
+        return dialog.exec()
 
 #########################################################################
 #############  SLIDER Calculator Dialog  ################################
@@ -3475,8 +3520,9 @@ class SliderCalculator(ArtisanDialog):
         self.ui.buttonBox.setStandardButtons(QDialogButtonBox.StandardButton.Cancel|QDialogButtonBox.StandardButton.Apply)
         # hack to assign the Apply button the AcceptRole without losing default system translations
         applyButton = self.ui.buttonBox.button(QDialogButtonBox.StandardButton.Apply)
-        self.ui.buttonBox.removeButton(applyButton)
-        self.applyButton = self.ui.buttonBox.addButton(applyButton.text(), QDialogButtonBox.ButtonRole.AcceptRole)
+        if applyButton is not None:
+            self.ui.buttonBox.removeButton(applyButton)
+            self.applyButton = self.ui.buttonBox.addButton(applyButton.text(), QDialogButtonBox.ButtonRole.AcceptRole)
 
     @pyqtSlot()
     def accept(self):

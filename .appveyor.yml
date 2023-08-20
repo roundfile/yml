@@ -20,17 +20,17 @@ environment:
   # Set the Appveyor Python version for windows, macos and linux here. Does not affect windows_legacy.
   PYTHON_V: 3.11
   # Upgrade to specific version (for platforms supporting upgrade). Upgrade skipped if env var is missing or blank.
-#  PYUPGRADE_V: 3.11.3
-  
+  PYUPGRADE_V: 3.11.4
+
   matrix:
-#  - job_name: windows_legacy
-#    appveyor_build_worker_image: Visual Studio 2019
+  - job_name: windows_legacy
+    appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
     appveyor_build_worker_image: Visual Studio 2022
-#  - job_name: macos
-#    appveyor_build_worker_image: macos-bigsur
-#  - job_name: linux
-#    appveyor_build_worker_image: Ubuntu2004
+  - job_name: macos
+    appveyor_build_worker_image: macos-bigsur
+  - job_name: linux
+    appveyor_build_worker_image: Ubuntu2004
 
 
 # Generic build number, later set to commit hash by init
@@ -63,9 +63,9 @@ for:
     QT_PATH: "C:/qt/5.15/msvc2019_64"
     PYUIC: "pyuic5.exe"
     PYQT: "5"
-    BUILD_PYINSTALLER: "False"
+    BUILD_PYINSTALLER: "True"
     ARTISAN_LEGACY: "True"
-    VC_REDIST: "https://aka.ms/vs/16/release/vc_redist.x64.exe"
+    VC_REDIST: "https://aka.ms/vs/16/release/vc_redist.x64.exe"  #redistributable for VS 2015-2019
     VCVARSALL: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Auxiliary/Build/vcvarsall.bat"
 
   install:
@@ -85,9 +85,6 @@ for:
 
     # run the install script
     - cmd: .ci\install-win.bat
-
-    - cmd: copy /y nul "%PYTHON_PATH%\Lib\site-packages\zope\__init__.py"
-    - cmd: dir "%PYTHON_PATH%\Lib\site-packages\zope"
 
   build_script:
     - cmd: echo Windows Legacy Build
@@ -116,6 +113,7 @@ for:
   deploy_script:
     - cmd: bash ../.ci/upload.sh artisan-*.zip
 
+#  # uncomment this section for remote desktop connection to build image
 #  on_finish:
 #    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
@@ -158,18 +156,10 @@ for:
     # run the install script
     - cmd: .ci/install-win.bat
 
-    - cmd: copy /y nul "%PYTHON_PATH%\Lib\site-packages\zope\__init__.py"
-    - cmd: dir "%PYTHON_PATH%\Lib\site-packages\zope"
-
   build_script:
     - cmd: echo Windows Build
     - cmd: cd src
 
-    # Enable RDP
-#    - sh: export APPVEYOR_SSH_BLOCK=true
-#    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -    - cmd: SET >> allvariables.txt
-#    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
-    
     #update the copyright year used by pyinstaller to set exe properties for Windows
     - ps: $YEAR=(Get-Date).year
     - ps: gc version-metadata.yml | %{ $_ -replace "yyyy", "$YEAR" } | out-file newfile -encoding ascii
@@ -192,9 +182,10 @@ for:
 
   deploy_script:
     - cmd: bash ../.ci/upload.sh artisan-*.zip
-        
-  on_finish:
-    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
+#  # uncomment this section for remote desktop connection to build image
+#  on_finish:
+#    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 
 -
@@ -215,7 +206,7 @@ for:
   install:
     - echo "MacOS Install"
     - chmod +x .ci/*.sh
-    
+
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
@@ -244,10 +235,11 @@ for:
   deploy_script:
     - ../.ci/upload.sh artisan-*.dmg
 
+#  # uncomment this section for vnc or ssh connection to the build image
 #  on_finish:
 #    - sh: export APPVEYOR_VNC_BLOCK=true
 #    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-vnc.sh' | bash -e -
-##    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+#    #- sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
 
 
 -
@@ -266,7 +258,6 @@ for:
 
   install:
     - echo "Linux Install"
-
     - chmod +x .ci/*.sh
 
     # pull library versions from requirments file
@@ -304,7 +295,7 @@ for:
     - ../.ci/upload.sh artisan-*.rpm
     - ../.ci/upload.sh artisan-*.AppImage
 
+#  # uncomment this section for ssh connection to build image
 #  on_finish:
 #    - sh: export APPVEYOR_SSH_BLOCK=true
 #    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
-

@@ -94,12 +94,11 @@ logging.info("** QT_TRANSL: %s",QT_TRANSL)
 ##
 TARGET = 'dist\\' + NAME + '\\'
 PYTHON_PACKAGES = PYTHON + r'\Lib\site-packages'
-PYQT_QT = PYTHON_PACKAGES + r'\PyQt' +PYQT +r'\Qt'
+PYQT_QT = PYTHON_PACKAGES + r'\PyQt' + PYQT + r'\Qt'
 PYQT_QT_BIN = PYQT_QT + r'\bin'
 PYQT_QT_TRANSLATIONS = QT_TRANSL
 YOCTO_BIN = PYTHON_PACKAGES + r'\yoctopuce\cdll'
-#SNAP7_BIN = r'C:\Windows'
-SNAP7_BIN = PYTHON_PACKAGES + r'\snap7\lib'
+SNAP7_BIN = r'C:\Windows'
 LIBUSB_BIN = r'C:\Windows\SysWOW64'
 
 from PyInstaller.utils.hooks import is_module_satisfies
@@ -118,8 +117,7 @@ hiddenimports_list=['charset_normalizer.md__mypyc', # part of requests 2.28.2 # 
                             'scipy._lib.messagestream',
                             'pywintypes',
                             'win32cred',
-                            'win32timezone',
-                            'bottle'
+                            'win32timezone'
                             ]
 # Add the hidden imports not required by legacy Windows.
 if not ARTISAN_LEGACY=='True':

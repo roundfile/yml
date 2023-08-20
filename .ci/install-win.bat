@@ -90,8 +90,8 @@ if not exist vc_redist.x64.exe (exit /b 140)
 ::
 :: copy the snap7 binary
 ::
-#copy "%PYTHON_PATH%\Lib\site-packages\snap7\lib\snap7.dll" "C:\Windows"
-#if not exist "C:\Windows\snap7.dll" (exit /b 150)
+copy "%PYTHON_PATH%\Lib\site-packages\snap7\lib\snap7.dll" "C:\Windows"
+if not exist "C:\Windows\snap7.dll" (exit /b 150)
 
 ::
 :: download and copy the libusb-win32 dll. NOTE-the version number for libusb is set in the requirements-win*.txt file.
