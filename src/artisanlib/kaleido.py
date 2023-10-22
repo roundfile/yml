@@ -89,7 +89,7 @@ class KaleidoPort:
     # getETBT triggers a 'Read Device Data' request to the machine also fetching data other than BT/ET
     def getBTET(self) -> Tuple[float,float, int]:
         if self.get_state('sid') is not None and self.get_state('TU') is not None:
-            # only if initalization is complete (sid and TU received) we request data
+            # only if initialization is complete (sid and TU received) we request data
             self.send_request('RD', self._default_data_stream, 'BT')
         bt = self.get_state('BT')
         et = self.get_state('ET')
@@ -127,7 +127,7 @@ class KaleidoPort:
 
     @staticmethod
     def intVar(var:str) -> bool:
-        return var in ('sid', 'HP', 'FC', 'RC', 'AH', 'HS', 'EV', 'CS')
+        return var in {'sid', 'HP', 'FC', 'RC', 'AH', 'HS', 'EV', 'CS'}
 
     @staticmethod
     def floatVar(var:str) -> bool:
@@ -135,7 +135,7 @@ class KaleidoPort:
 
     @staticmethod
     def strVar(var:str) -> bool:
-        return var in ['TU', 'SC', 'CL', 'SN']
+        return var in {'TU', 'SC', 'CL', 'SN'}
 
 # -- Kaleido PID control
 
@@ -163,7 +163,7 @@ class KaleidoPort:
     def get_state(self, var:str) -> Optional[Union[str,int,float]]:
         if var in self._state:
             return self._state[var] # type: ignore # TypedDict key must be a string literal
-        if var in ['sid', 'TU', 'SC', 'CL', 'SN']:
+        if var in {'sid', 'TU', 'SC', 'CL', 'SN'}:
             return None
         if self.intVar(var):
             return -1
@@ -211,13 +211,13 @@ class KaleidoPort:
             except Exception as e:  # pylint: disable=broad-except
                 _log.exception(e)
 
-    async def add_request(self, var) -> asyncio.Event:
+    async def add_request(self, var:str) -> asyncio.Event:
         if var in self._pending_requests:
             return self._pending_requests[var]
         self._pending_requests[var] = asyncio.Event()
         return self._pending_requests[var]
 
-    async def clear_request(self, var) -> None:
+    async def clear_request(self, var:str) -> None:
         if var in self._pending_requests:
             # clear and remove lock
             self._pending_requests.pop(var).set()
@@ -270,13 +270,13 @@ class KaleidoPort:
             await asyncio.sleep(self._ping_retry_delay)
         # send TU (temperature unit)
         try:
-            # ping was successfull, now we send the temperature mode via the queue
+            # ping was successful, now we send the temperature mode via the queue
             await self.ws_write_process(websocket, self.create_msg('TU', mode))
         except asyncio.TimeoutError:
             _log.debug('TU response timeout')
         # send SC (start guard)
         try:
-            # ping was successfull, now we send the start guard via the queue
+            # ping was successful, now we send the start guard via the queue
             await self.ws_write_process(websocket, self.create_msg('SC', 'AR'))
         except asyncio.TimeoutError:
             _log.debug('SC AR timeout')
@@ -413,13 +413,13 @@ class KaleidoPort:
             # otherwise repeat in one second
             await asyncio.sleep(self._ping_retry_delay)
         try:
-            # ping was successfull, now we send the temperature mode via the queue
+            # ping was successful, now we send the temperature mode via the queue
             await self.serial_write_process(reader, writer, self.create_msg('TU', mode))
         except asyncio.TimeoutError:
             _log.debug('TU response timeout')
         # send SC (start guard)
         try:
-            # ping was successfull, now we send the temperature mode via the queue
+            # ping was successful, now we send the temperature mode via the queue
             await self.serial_write_process(reader, writer, self.create_msg('SC', 'AR'))
         except asyncio.TimeoutError:
             _log.debug('SC AR timeout')
@@ -486,7 +486,8 @@ class KaleidoPort:
             await asyncio.sleep(self._reconnect_delay)
 
     @staticmethod
-    def start_background_loop(loop: asyncio.AbstractEventLoop) -> None:
+    def start_background_loop(loop: asyncio.AbstractEventLoop,
+                disconnected_handler:Optional[Callable[[], None]] = None) -> None:
         asyncio.set_event_loop(loop)
         try:
             # run_forever() returns after calling loop.stop()
@@ -497,6 +498,11 @@ class KaleidoPort:
             for t in [t for t in asyncio.all_tasks(loop) if not (t.done() or t.cancelled())]:
                 with suppress(asyncio.CancelledError):
                     loop.run_until_complete(t)
+            if disconnected_handler is not None:
+                try:
+                    disconnected_handler()
+                except Exception as e: # pylint: disable=broad-except
+                    _log.exception(e)
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
         finally:
@@ -567,8 +573,6 @@ class KaleidoPort:
             msg = self.create_msg(target, value)
             if self._write_queue is not None:
                 task = self.write_await(msg, variable, await_var)
-                if task is None:
-                    return None
                 future = asyncio.run_coroutine_threadsafe(task, self._loop)
                 try:
                     return future.result(send_timeout)
@@ -595,7 +599,7 @@ class KaleidoPort:
         try:
             _log.debug('start sampling')
             self._loop = asyncio.new_event_loop()
-            self._thread = Thread(target=self.start_background_loop, args=(self._loop,), daemon=True)
+            self._thread = Thread(target=self.start_background_loop, args=(self._loop,disconnected_handler), daemon=True)
             self._thread.start()
             # run sample task in async loop
             if serial is None:

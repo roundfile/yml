@@ -32,7 +32,7 @@ try:
 except Exception: # pylint: disable=broad-except
     pass
 
-# on Qt5, the platform plugin cocoa/windows is not found in the plugin directory (dispite the qt.conf file) if we do not
+# on Qt5, the platform plugin cocoa/windows is not found in the plugin directory (despite the qt.conf file) if we do not
 # extend the libraryPath accordingly
 if system().startswith('Windows'):
     try:
@@ -78,22 +78,25 @@ else: # Linux
         pass
 
 from artisanlib import main, command_utility
-from multiprocessing import freeze_support
+#from multiprocessing import freeze_support
 
 # from pyinstaller 5.8:
 class NullWriter:
-  softspace = 0
-  encoding:str = 'UTF-8'
+    softspace = 0
+    encoding:str = 'UTF-8'
 
-  def write(*args):
-      pass
+    @staticmethod
+    def write(*args):
+        pass
 
-  def flush(*args):
-      pass
+    @staticmethod
+    def flush(*args):
+        pass
 
-  # Some packages are checking if stdout/stderr is available (e.g., youtube-dl). For details, see #1883.
-  def isatty(self):
-      return False
+    # Some packages are checking if stdout/stderr is available (e.g., youtube-dl). For details, see #1883.
+    @staticmethod
+    def isatty():
+        return False
 
 if system() == 'Windows' and hasattr(sys, 'frozen'): # tools/freeze
     # to (re-)set sys.stdout/sys.stderr on Windows builds under PyInstaller >= 5.8.0 (set to None under --noconsole using pythonw)
@@ -105,22 +108,23 @@ if system() == 'Windows' and hasattr(sys, 'frozen'): # tools/freeze
     #   https://stackoverflow.com/questions/19425736/how-to-redirect-stdout-and-stderr-to-logger-in-python
     try:
         if sys.stdout is None:
-            sys.stdout = NullWriter()
+            sys.stdout = NullWriter() # type: ignore[unreachable]
         if sys.stderr is None:
-            sys.stderr = NullWriter()
+            sys.stderr = NullWriter() # type: ignore[unreachable]
     except Exception: # pylint: disable=broad-except
         pass
 
-    from multiprocessing import set_executable
-    executable = os.path.join(os.path.dirname(sys.executable), 'artisan.exe')
-    set_executable(executable)
-    del executable
+# no longer needed as multiprocessing is not used by Hottop/WebLCDs any longer
+#    from multiprocessing import set_executable
+#    executable = os.path.join(os.path.dirname(sys.executable), 'artisan.exe')
+#    set_executable(executable)
+#    del executable
 
 if __name__ == '__main__':
 
     # Manage commands that does not need to start the whole application
     if command_utility.handleCommands():
-        freeze_support()
+#        freeze_support() # needed for multiprocessing; was used by Hottop/WebLCDs module, as well as for py-cpuinfo!
         main.main()
 
 

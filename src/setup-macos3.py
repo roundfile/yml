@@ -38,45 +38,52 @@ QTDIR = os.environ['QT_PATH']
 APP = ['artisan.py']
 
 DATA_FILES = [
-#    ("../Resources", [r"qt.conf"]), # uncomment in QT Framework variant
-    ('../Resources', [r'artisanProfile.icns']),
-    ('../Resources', [r'artisanAlarms.icns']),
-    ('../Resources', [r'artisanPalettes.icns']),
-    ('../Resources', [r'artisanSettings.icns']),
-    ('../Resources', [r'artisanTheme.icns']),
-    ('../Resources', [r'artisanWheel.icns']),
-    ('../Resources', [r'includes/alarmclock.eot']),
-    ('../Resources', [r'includes/alarmclock.svg']),
-    ('../Resources', [r'includes/alarmclock.ttf']),
-    ('../Resources', [r'includes/alarmclock.woff']),
-    ('../Resources', [r'includes/artisan.tpl']),
-    ('../Resources', [r'includes/bigtext.js']),
-    ('../Resources', [r'includes/sorttable.js']),
-    ('../Resources', [r'includes/report-template.htm']),
-    ('../Resources', [r'includes/roast-template.htm']),
-    ('../Resources', [r'includes/ranking-template.htm']),
-    ('../Resources', [r'includes/Humor-Sans.ttf']),
-    ('../Resources', [r'includes/WenQuanYiZenHei-01.ttf']),
-    ('../Resources', [r'includes/WenQuanYiZenHeiMonoMedium.ttf']),
-    ('../Resources', [r'includes/SourceHanSansCN-Regular.otf']),
-    ('../Resources', [r'includes/SourceHanSansHK-Regular.otf']),
-    ('../Resources', [r'includes/SourceHanSansJP-Regular.otf']),
-    ('../Resources', [r'includes/SourceHanSansKR-Regular.otf']),
-    ('../Resources', [r'includes/SourceHanSansTW-Regular.otf']),
-    ('../Resources', [r'includes/dijkstra.ttf']),
-    ('../Resources', [r'includes/jquery-1.11.1.min.js']),
-    ('../Resources', [r'includes/Machines']),
-    ('../Resources', [r'includes/Themes']),
-    ('../Resources', [r'includes/Icons']),
-    ('../Resources', [r'includes/logging.yaml']),
-  ]
+    ('../Resources', [
+        r'artisanProfile.icns',
+        r'artisanAlarms.icns',
+        r'artisanPalettes.icns',
+        r'artisanSettings.icns',
+        r'artisanTheme.icns',
+        r'artisanWheel.icns',
+        r'includes/alarmclock.eot',
+        r'includes/alarmclock.svg',
+        r'includes/alarmclock.ttf',
+        r'includes/alarmclock.woff',
+        r'includes/artisan.tpl',
+        r'includes/bigtext.js',
+        r'includes/jquery-1.11.1.min.js',
+        r'includes/android-chrome-192x192.png',
+        r'includes/android-chrome-512x512.png',
+        r'includes/apple-touch-icon.png',
+        r'includes/browserconfig.xml',
+        r'includes/favicon-16x16.png',
+        r'includes/favicon-32x32.png',
+        r'includes/favicon.ico',
+        r'includes/mstile-150x150.png',
+        r'includes/safari-pinned-tab.svg',
+        r'includes/site.webmanifest',
+        r'includes/sorttable.js',
+        r'includes/report-template.htm',
+        r'includes/roast-template.htm',
+        r'includes/ranking-template.htm',
+        r'includes/Humor-Sans.ttf',
+        r'includes/WenQuanYiZenHei-01.ttf',
+        r'includes/WenQuanYiZenHeiMonoMedium.ttf',
+        r'includes/SourceHanSansCN-Regular.otf',
+        r'includes/SourceHanSansHK-Regular.otf',
+        r'includes/SourceHanSansJP-Regular.otf',
+        r'includes/SourceHanSansKR-Regular.otf',
+        r'includes/SourceHanSansTW-Regular.otf',
+        r'includes/dijkstra.ttf',
+        r'includes/Machines',
+        r'includes/Themes',
+        r'includes/Icons',
+        r'includes/logging.yaml',
+  ])]
 
 # add Artisan translations to DATA_FILES
-for _subdir, _dirs, files in os.walk('translations'):
-    for file in files:
-        filename, ext = file.split('.')
-        if ext == 'qm':
-            DATA_FILES.append(('../translations', [f'translations/{file}']))
+DATA_FILES.append(('../translations',
+    [f'translations/{file}' for root,dirs,files in os.walk('translations') for file in files if (file.split('.')[1]) == 'qm']))
 
 with open('Info.plist', 'r+b') as fp:
     plist = plistlib.load(fp)
@@ -98,12 +105,11 @@ with open('Info.plist', 'r+b') as fp:
     plistlib.dump(plist, fp)
 
 OPTIONS = {
-    'strip': False,
-#    'xref': True,
+    'no_strip': False,
     'argv_emulation': False, # this would confuses GUI processing
     'semi_standalone': False,
     'site_packages': True,
-    'packages': ['yoctopuce','gevent','openpyxl','numpy','scipy','certifi',
+    'packages': ['yoctopuce','openpyxl','numpy','scipy','certifi',
         'matplotlib','PIL', 'lxml', 'snap7', 'google.protobuf', 'google._upb'],
     'optimize':  2,
     'compressed': True,
@@ -112,6 +118,7 @@ OPTIONS = {
     'matplotlib_backends': '-', # '-' for imported or explicit "Qt5Agg, PDF, PS, SVG"
     'includes': ['serial', 'charset_normalizer.md__mypyc'],
     'excludes' :  ['tkinter','curses',
+                'PyInstaller', # if pyinstaller is installed, whyever, py2app tries to include pyinstaller and fails on some missing pyside modules
                 'PyQt5', # standard builds are now running on PyQt6. If PyQt5 is not excluded here it will be included in Resources/lib/python310.zip
                 # 'sqlite3',
                 ],
@@ -128,7 +135,6 @@ setup(
     options={'py2app': OPTIONS},
     setup_requires=['py2app'],
 )
-
 
 subprocess.check_call(r'cp README.txt dist',shell = True)
 subprocess.check_call(r'cp ../LICENSE dist/LICENSE.txt',shell = True)
@@ -165,7 +171,7 @@ for lang in ['ar', 'da', 'de','el','en','es','fa','fi','fr','gd', 'he','hu','id'
 
 
 # copy brew installed libusb (note the slight name change of the dylib!)
-    # cannot be run brew as root thus the folllowing does not work
+    # cannot be run brew as root thus the following does not work
     # subprocess.check_call(r'cp $(brew list libusb | grep libusb-1.0.0.dylib) Artisan.app/Contents/Frameworks/libusb-1.0.dylib',shell = True)
 
 # you need to do a
@@ -386,3 +392,16 @@ os.chdir('..')
 subprocess.check_call(r'rm -f artisan-mac-' + VERSION + r'.dmg',shell = True)
 subprocess.check_call(r'hdiutil create artisan-mac-' + VERSION + r'.dmg -volname "artisan" -fs HFS+ -srcfolder "dist"',shell = True)
 # otool -L dist/Artisan.app/Contents/MacOS/Artisan
+
+# brew install create-dmg
+#subprocess.check_call(r'create-dmg \
+#  --volname "Artisan" \
+#  --volicon "Hello World.icns" \
+#  --window-pos 200 120 \
+#  --window-size 600 300 \
+#  --icon-size 100 \
+#  --icon "Hello World.app" 175 120 \
+#  --hide-extension "Hello World.app" \
+#  --app-drop-link 425 120 \
+#  "dist/Hello World.dmg" \
+#  "dist/dmg/"

@@ -321,7 +321,7 @@ Palette = Tuple[
     List[int],    # 3: event button visibility (same length as event button actions)
     List[str],    # 4: event button actions (same length as event button actions)
     List[str],    # 5: event button labels (same length as event button actions)
-    List[str],    # 6: event button descriptons (same length as event button actions)
+    List[str],    # 6: event button descriptions (same length as event button actions)
     List[str],    # 7: event button colors (same length as event button actions)
     List[str],    # 8: event button text colors (same length as event button actions)
     List[int],    # 9: slider visibilities; len=self.eventsliders
@@ -476,7 +476,7 @@ class RecentRoast(TypedDict, total=False):
     plus_coffee_label:Optional[str]
     plus_blend_label:Optional[str]
     plus_blend_spec:Optional['Blend']
-    plus_blend_spec_labels: List[str]
+    plus_blend_spec_labels: Optional[List[str]]
 
 class SerialSettings(TypedDict):
     port: str

@@ -265,6 +265,16 @@ for fn in [
     r'includes\roast-template.htm',
     r'includes\ranking-template.htm',
     r'includes\jquery-1.11.1.min.js',
+    r'includes\android-chrome-192x192.png',
+    r'includes\android-chrome-512x512.png',
+    r'includes\apple-touch-icon.png',
+    r'includes\browserconfig.xml',
+    r'includes\favicon-16x16.png',
+    r'includes\favicon-32x32.png',
+    r'includes\favicon.ico',
+    r'includes\mstile-150x150.png',
+    r'includes\safari-pinned-tab.svg',
+    r'includes\site.webmanifest',
     r'includes\logging.yaml',
     ]:
   copy_file(fn, TARGET)

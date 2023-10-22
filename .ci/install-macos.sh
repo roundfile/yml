@@ -27,37 +27,32 @@ if [ -n "${PYUPGRADE_V:-}" ]; then
     source ${VIRTUAL_ENV}/bin/activate
     deactivate
     # brew update Python
-    brew update && brew upgrade python
+    brew update
+    brew upgrade python # no "brew cleanup" here, not to delete libs needed by curl!
     # relink Python
     brew unlink python@${PYTHON_V} && brew link --force --overwrite python@${PYTHON_V}
     hash -r
     brew install jq
     # add path
-#    export PATH="$(brew --prefix)/Cellar/python@${PYTHON_V}/${PYUPGRADE_V}/bin:${PATH}"
     export PATH="$(brew --cellar python@${PYTHON_V})/$(brew info --json python@${PYTHON_V} | jq -r '.[0].installed[0].version')/bin:${PATH}"
-    echo "Here 123"
     echo $PATH
     which python3
     python3 --version
-    echo "VIRTUAL_ENV"
-    echo $VIRTUAL_ENV
+    brew reinstall openssl # needed to get the ssl certificates properly installed for artisan.plus communication
 
     # create new venv
-#remove?    python3 -m venv /Users/appveyor/venv${PYUPGRADE_V}
-#remove?    source /Users/appveyor/venv${PYUPGRADE_V}/bin/activate
+    python3 -m venv /Users/appveyor/venv${PYUPGRADE_V}
+    source /Users/appveyor/venv${PYUPGRADE_V}/bin/activate
     # update symbolic link to point to our new venv
-#remove?    ln -vfns /Users/appveyor/venv${PYUPGRADE_V} /Users/appveyor/venv${PYTHON_V}
-#replace?    export PATH=/Users/appveyor/venv${PYUPGRADE_V}/bin:${PATH} # not exported?
-    export PATH=/usr/local/Cellar/python@3.11/3.11.4_1/bin:${PATH}
+    ln -vfns /Users/appveyor/venv${PYUPGRADE_V} /Users/appveyor/venv${PYTHON_V}
+    export PATH=/Users/appveyor/venv${PYUPGRADE_V}/bin:${PATH} # not exported?
 fi
 
-echo "Here 456"
 hash -r
 uname -srv
 which python3
 python3 --version
-echo "VIRTUAL_ENV"
-echo $VIRTUAL_ENV
+openssl version -a
 
 # to work around a wget open ssl issue: dyld: Library not loaded: /usr/local/opt/openssl/lib/libssl.1.0.0.dylib
 # however for now we settled to use curl instead to download the upload script

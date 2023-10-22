@@ -21,7 +21,7 @@ import numpy
 import logging
 
 from typing import Dict, Tuple, Optional, TYPE_CHECKING
-from typing_extensions import Final  # Python <=3.7
+from typing import Final  # Python <=3.7
 
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # pylint: disable=unused-import
@@ -51,7 +51,7 @@ class tphasescanvas(FigureCanvas):
 
     __slots__ = [ 'aw', 'dpi_offset', 'barheight', 'm', 'g', 'data', 'fig', 'ax' , 'tight_layout_params' ]
 
-    def __init__(self, dpi, aw:'ApplicationWindow') -> None:
+    def __init__(self, dpi:int, aw:'ApplicationWindow') -> None:
         self.aw = aw
         self.dpi_offset = -30 # set the dpi to 30% less than the user selected dpi
         # values that define the bars and spacing
@@ -62,10 +62,10 @@ class tphasescanvas(FigureCanvas):
         self.data:Optional[Tuple] = None  # the phases data per profile
         # the canvas
         self.fig = Figure(figsize=(1, 1), frameon=False, dpi=dpi+self.dpi_offset)
-#        self.fig.set_constrained_layout(True)
         # as alternative to the experimental constrained_layout we could use tight_layout as for them main canvas:
         self.tight_layout_params: Final[Dict[str, float]] = {'pad':.3,'h_pad':0.0,'w_pad':0.0} # slightly less space for axis labels
-        self.fig.set_tight_layout(self.tight_layout_params)
+#        self.fig.set_tight_layout(self.tight_layout_params)
+        self.fig.set_layout_engine('tight', **self.tight_layout_params)
         #
         super().__init__(self.fig)
         self.ax:Optional['Axes'] = None
@@ -90,7 +90,7 @@ class tphasescanvas(FigureCanvas):
                     with warnings.catch_warnings():
                         warnings.simplefilter('ignore')
                         self.fig.canvas.draw()
-                        self.fig.canvas.update()
+#                        self.fig.canvas.update()
                     FigureCanvas.updateGeometry(self)  #@UndefinedVariable
                 self.aw.scroller.setMaximumHeight(self.sizeHint().height())
             except Exception as e:  # pylint: disable=broad-except
@@ -98,7 +98,7 @@ class tphasescanvas(FigureCanvas):
 
     # data is expected to be a None or a list of tuples of the form
     #   (label, total_time, (phase1_time, phase2_time, phase3_time), active, color)
-    # each time value in the tripple is in seconds and can be 0 if corresponding phase is missing
+    # each time value in the triple is in seconds and can be 0 if corresponding phase is missing
     # active is of type bool indicating the state of the corresponding profile
     # aligned is of type bool indicating that the profile is aligned to the current selected alignment target
     # color is a regular color string like '#00b950'
@@ -227,7 +227,7 @@ class tphasescanvas(FigureCanvas):
             # set the graph axis limits
             x,_ = self.fig.get_size_inches()
             self.fig.set_size_inches(x, (i-1)*0.35 + 0.445, forward=True)
-            self.ax.set_ylim([-0.5, i-0.5]) # 0 to number of entries but shifted by one half to get rid of borders
+            self.ax.set_ylim((-0.5, i-0.5)) # 0 to number of entries but shifted by one half to get rid of borders
 
 #            # add legend
 #            phases_names = [QApplication.translate('Button','Drying Phase'), QApplication.translate('Button','Maillard Phase'),
@@ -245,7 +245,7 @@ class tphasescanvas(FigureCanvas):
             # if no profiles are given we set the canvas height to 0
             QSettings().setValue('MainSplitter',self.aw.splitter.saveState())
             if self.ax is not None:
-                self.ax.set_ylim([0, 0])
+                self.ax.set_ylim((0, 0))
             #self.fig.set_size_inches(0,0, forward=True) # this one crashes numpy on Windows and seems not needed
             self.aw.scroller.setMaximumHeight(0)
             self.aw.scroller.setVisible(False)
