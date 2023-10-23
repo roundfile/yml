@@ -23,12 +23,12 @@ environment:
   PYUPGRADE_V: 3.11.5 # causes ssl problems failing to connect to plus
 
   matrix:
-  - job_name: windows_legacy
-    appveyor_build_worker_image: Visual Studio 2019
-  - job_name: windows
-    appveyor_build_worker_image: Visual Studio 2022
-  - job_name: macos
-    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
+#  - job_name: windows_legacy
+#    appveyor_build_worker_image: Visual Studio 2019
+#  - job_name: windows
+#    appveyor_build_worker_image: Visual Studio 2022
+#  - job_name: macos
+#    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
   - job_name: linux
     appveyor_build_worker_image: Ubuntu2004
 
@@ -106,8 +106,8 @@ for:
 #  test_script:
 #    - cmd: python -m unittest discover
 
-  artifacts:
-    - path: 'generated-win-legacy.zip'
+#  artifacts:
+#    - path: 'generated-win-legacy.zip'
 #    - path: 'src\artisan-*.zip'
 
   deploy_script:
@@ -176,8 +176,8 @@ for:
 #  test_script:
 #    - cmd: python -m unittest discover
 
-  artifacts:
-    - path: 'generated-win.zip'
+#  artifacts:
+#    - path: 'generated-win.zip'
 #    - path: 'src\artisan-*.zip'
 
   deploy_script:
@@ -288,8 +288,8 @@ for:
 #  test_script:
 #    - QT_QPA_PLATFORM=offscreen python -m unittest discover -s src
 
-  artifacts:
-    - path: 'generated-linux.zip'
+#  artifacts:
+#    - path: 'generated-linux.zip'
 #    - path: 'src/artisan-*.deb'
 #    - path: 'src/artisan-*.rpm'
 #    - path: 'src/artisan-*.AppImage'
