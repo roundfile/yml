@@ -479,15 +479,15 @@ class tgraphcanvas(FigureCanvas):
 
         # used by BTbreak
         self.btbreak_params:BTBreakParams = {
-            'd_drop': -0.34
-            'd_charge': -0.67
-            'tight': 3
-            'loose': 5
-            'f': 2.5
-            'maxdpre': 6.4
-            'f_dtwice': 1.5
-            'dpre_dpost_diff': 0.78  # 1.4
-            'offset_charge': 0.5
+            'd_drop': -0.34,
+            'd_charge': -0.67,
+            'tight': 3,
+            'loose': 5,
+            'f': 2.5,
+            'maxdpre': 6.4,
+            'f_dtwice': 1.5,
+            'dpre_dpost_diff': 0.78,
+            'offset_charge': 0.5,
             'offset_drop': 0.2
         }
 
