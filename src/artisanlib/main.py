@@ -210,7 +210,7 @@ if TYPE_CHECKING:
     from openpyxl.worksheet.worksheet import Worksheet # pylint: disable=unused-import
     import numpy.typing as npt # pylint: disable=unused-import
     from PyQt6.QtWidgets import QTableWidgetItem, QTableWidget, QScrollBar # pylint: disable=unused-import
-    from PyQt6.QtGui import QStyleHints, QClipboard, QKeyEvent, QMouseEvent, QDropEvent, QDragEnterEvent # pylint: disable=unused-import
+    from PyQt6.QtGui import QStyleHints, QClipboard, QKeyEvent, QMouseEvent, QDropEvent, QDragEnterEvent, QCloseEvent # pylint: disable=unused-import
     from PyQt6.QtCore import QObject # noqa: F401 # pylint: disable=unused-import
     from matplotlib.backend_bases import Event as MplEvent
 
@@ -552,7 +552,7 @@ try:
 
     settingsRelocated:bool = False
     # copy settings from legacy to new if newsettings do not exist, legacysettings do exist, and were not previously copied
-    if not newsettings.contains('Mode') and legacysettings.contains('Mode') and legacysettings.value('_settingsCopied') != 1:
+    if not newsettings.contains('Mode') and legacysettings.contains('Mode') and legacysettings.contains('_settingsCopied') and legacysettings.value('_settingsCopied') != 1:
         settingsRelocated = True
         # copy Artisan settings
         for key in legacysettings.allKeys():
@@ -634,38 +634,6 @@ if platform.system().startswith('Windows'):
 #            app.setAttribute(Qt.ApplicationAttribute.AA_UseHighDpiPixmaps)
 #    except Exception as e: # pylint: disable=broad-except
 #        pass
-
-
-
-
-#def __dependencies_for_freezing():
-#    # pylint: disable=import-error,no-name-in-module,unused-import
-#    from scipy.sparse.csgraph import _validation # @UnresolvedImport @UnusedImport
-#    from scipy.special import _ufuncs_cxx # @UnresolvedImport @UnusedImport
-#    from scipy import integrate # @UnresolvedImport @UnusedImport
-#    from scipy import interpolate # @UnresolvedImport @UnusedImport
-##    from scipy.optimize import curve_fit # @UnresolvedImport @UnusedImport
-#    # to make bbfreeze on Linux and py2exe on Win/Py3 happy with scipy > 0.17.0
-#    import scipy.linalg.cython_blas # @UnresolvedImport @UnusedImport
-#    import scipy.linalg.cython_lapack # @UnresolvedImport @UnusedImport
-#    import scipy.special.cython_special # @UnresolvedImport @UnusedImport
-#
-#    import appdirs # @UnresolvedImport @UnusedImport
-#    import packaging # @UnresolvedImport @UnusedImport
-#    import packaging.version # @UnresolvedImport @UnusedImport
-#    import packaging.specifiers # @UnresolvedImport @UnusedImport
-#    import packaging.markers # @UnresolvedImport @UnusedImport
-#    import packaging.requirements # @UnresolvedImport @UnusedImport
-#
-#    import PyQt5.QtSvg  # @UnusedImport
-#    import PyQt5.QtXml  # @UnusedImport
-#    import PyQt5.QtDBus # needed for QT5 builds  # @UnusedImport
-#    import PyQt5.QtPrintSupport # needed for by platform plugin libqcocoa  # @UnusedImport
-#
-#    # for gevent bundling
-#    from gevent import signal as gevent_signal, core, resolver_thread, resolver_ares, socket, threadpool, thread, threading as gevent_threading, select, subprocess as gevent_subprocess, pywsgi, server, hub # @UnusedImport @Reimport
-#
-#del __dependencies_for_freezing
 
 from artisanlib.s7port import s7port
 from artisanlib.wsport import wsport
@@ -1367,6 +1335,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
     updateMessageLogSignal = pyqtSignal()
     updateSerialLogSignal = pyqtSignal()
     updateErrorLogSignal = pyqtSignal()
+    establishQuantifiedEventSignal = pyqtSignal(int,float)
 
     __slots__ = [ 'locale_str', 'app', 'superusermode', 'sample_loop_running', 'time_stopped', 'plus_account', 'plus_remember_credentials', 'plus_email', 'plus_language', 'plus_subscription',
         'plus_paidUntil', 'plus_rlimit', 'plus_used', 'plus_readonly', 'appearance', 'mpl_fontproperties', 'full_screen_mode_active', 'processingKeyEvent', 'quickEventShortCut',
@@ -1406,7 +1375,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         'buttonONOFF', 'buttonSTARTSTOP', 'buttonFCs', 'buttonFCe', 'buttonSCs', 'buttonSCe', 'buttonRESET', 'buttonCHARGE', 'buttonDROP',
         'buttonCONTROL', 'buttonEVENT', 'buttonSVp5', 'buttonSVp10', 'buttonSVp20', 'buttonSVm20', 'buttonSVm10', 'buttonSVm5', 'buttonDRY',
         'buttonCOOL', 'lcd1', 'lcd2', 'lcd3', 'lcd4', 'lcd5',
-        'lcd6', 'lcd7', 'label2', 'label3', 'label4', 'label5', 'label6', 'label7', 'nLCDs', 'extraLCD1', 'extraLCD2', 'extraLCDlabel1', 'extraLCDlabel2',
+        'lcd6', 'lcd7', 'label2', 'label3', 'label4', 'label5', 'label6', 'label7', 'extraLCD1', 'extraLCD2', 'extraLCDlabel1', 'extraLCDlabel2',
         'extraLCDframe1', 'extraLCDframe2', 'extraLCDvisibility1', 'extraLCDvisibility2', 'extraCurveVisibility1', 'extraCurveVisibility2',
         'extraDelta1', 'extraDelta2', 'extraFill1', 'extraFill2', 'channel_tare_values', 'messagehist', 'eventlabel', 'eNumberSpinBox',
         'lineEvent', 'etypeComboBox', 'valueEdit', 'etimeline', 'buttonminiEvent', 'buttonlist', 'buttonStates', 'lastbuttonpressed', 'buttonlistmaxlen',
@@ -1583,6 +1552,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             except Exception: # pylint: disable=broad-except
                 pass
 
+        self.nLCDS: Final[int] = 10 # maximum number of LCDs and extra devices (2x10 => 20 in total!)
 
         self.qmc:tgraphcanvas = tgraphcanvas(self.main_widget, self.dpi, locale, self)
         self.qmc.setMinimumHeight(150)
@@ -1769,7 +1739,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         self.eventquantifiercoarse:List[int] = [0]*self.eventsliders # 1: quantify in 10 steps, 2: quantify in steps of 5, otherwise quantify in steps of 1
         self.eventquantifieraction:List[int] = [0]*self.eventsliders
         self.clusterEventsFlag:bool = False
-        self.eventquantifierlinspaces:List['npt.NDArray[numpy.floating]'] = [self.computeLinespace(0),self.computeLinespace(1),self.computeLinespace(2),self.computeLinespace(3)]
+        self.eventquantifierlinspaces:List['npt.NDArray[numpy.double]'] = [self.computeLinespace(0),self.computeLinespace(1),self.computeLinespace(2),self.computeLinespace(3)]
         self.eventquantifierthresholdfine:float = .5 # original: 1.5, changed to 0.5 for Probat Probatone # for slider stepsize 1
         self.eventquantifierthresholdmed:float = .5
         self.eventquantifierthresholdcoarse:float = .5 # for slider stepsize 10
@@ -3201,7 +3171,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         self.label7.setText(f"<big><b>{QApplication.translate('Label', 'PID %')}</b></big>")
 
         #extra LCDs
-        self.nLCDS: Final[int] = 10 # maximum number of LCDs and extra devices
         self.extraLCD1:List[MyQLCDNumber] = []
         self.extraLCD2:List[MyQLCDNumber] = []
         self.extraLCDlabel1:List[QLabel] = []
@@ -3985,6 +3954,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         self.updateMessageLogSignal.connect(self.updateMessageLog)
         self.updateSerialLogSignal.connect(self.updateSerialLog)
         self.updateErrorLogSignal.connect(self.updateErrorLog)
+        self.establishQuantifiedEventSignal.connect(self.establishQuantifiedEventSlot)
 
         self.notificationManager:Optional[NotificationManager] = None
         if not self.app.artisanviewerMode:
@@ -4345,7 +4315,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
     def setCanvasColor(self, c:str) -> None: # pylint: disable=no-self-use # used as slot
         try:
             QColor(c) # test if color is valid
-            self.qmc.palette['canvas_alt'] = self.qmc.palette['canvas']
+            if 'canvas_alt' not in self.qmc.palette:
+                self.qmc.palette['canvas_alt'] = self.qmc.palette['canvas']
             self.qmc.palette['canvas'] = c
             self.updateCanvasColors()
             self.qmc.redraw()
@@ -4421,7 +4392,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 
     # takes a fit from numpy.polyfit and renders it as string to be copied as symbolic formula
     @staticmethod
-    def fit2str(fit:Optional['npt.NDArray[numpy.floating]']) -> str:
+    def fit2str(fit:Optional['npt.NDArray[numpy.double]']) -> str:
         s = ''
         if fit is not None:
             sign = '+'
@@ -5128,6 +5099,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     org_roasterheating = self.qmc.roasterheating
                     # reset roaster_setup_default to ensure we do not offer a default from a previously loaded machine setup
                     self.qmc.roastersize_setup_default = 0
+                    self.qmc.roasterheating_setup_default = 0
+                    # also reset roastersize_setup to have the machine setup work as after a reset on each call
+                    self.qmc.roastersize_setup = 0
+                    self.qmc.roasterheating_setup = 0
                     #
                     self.loadSettings(fn=action.data()[0],remember=False,machine=True,reload=False)
                     res:bool
@@ -5237,7 +5212,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                         resi:Optional[int]
                         if self.qmc.roasterheating_setup == 0:
                             dlg:ArtisanComboBoxDialog = ArtisanComboBoxDialog(self, self, QApplication.translate('Message',
-                                    'Machine'),QApplication.translate('Label', 'Heating'),self.qmc.heating_types,0)
+                                    'Machine'),QApplication.translate('Label', 'Heating'),self.qmc.heating_types,self.qmc.roasterheating_setup_default)
                             resi = dlg.idx if dlg.exec() else None
                         else:
                             resi = self.qmc.roasterheating_setup
@@ -5731,7 +5706,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             colorPairsToCheck = self.getcolorPairsToCheck()
             self.checkColors(colorPairsToCheck)
 
-
+    # called from within the sample loop thread!
     def process_active_quantifiers(self):
         # called every sampling interval
         for i in range(4):
@@ -5768,7 +5743,20 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                                 if (self.float2float((v + 10.0) / 10.0)) != lv:
                                     # we set the last value to be used for relative +- button action as base
                                     self.extraeventsactionslastvalue[i] = int(round(v))
-                                    self.qmc.quantifiedEvent.append([i,v])
+                                    self.establishQuantifiedEventSignal.emit(i,v)
+
+    # signalled from the sampling thread via process_active_quantifiers, but runs in the GUI thread (required for this moveslider call!)
+    @pyqtSlot(int,float)
+    def establishQuantifiedEventSlot(self, event_type:int, event_value:float) -> None:
+        try:
+            self.moveslider(event_type, event_value)
+            if self.qmc.flagstart:
+                evalue = self.float2float((event_value + 10.0) / 10.0)
+                self.qmc.eventRecordActionSignal.emit(event_type, evalue, 'Q'+self.qmc.eventsvalues(evalue), False) # don't call updategraphics!
+            if self.qmc.flagon and self.eventquantifieraction[event_type]:
+                self.fireslideractionSignal.emit(event_type)
+        except Exception as e: # pylint: disable=broad-except
+            _log.exception(e)
 
     def updateSliderColors(self):
         self.sliderLCD1.setStyleSheet(f'font-weight: bold; color: {self.qmc.EvalueColor[0]};')
@@ -6237,7 +6225,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         self.adjustPIDsv(-5)
 
     # compute the 12 (if step size is 10) or 21 (if step size is 5) or 102 (if step size is 1) event quantifier linespace for type n in [0,3]
-    def computeLinespace(self, n:int) -> 'npt.NDArray[numpy.floating]':
+    def computeLinespace(self, n:int) -> 'npt.NDArray[numpy.double]':
         if self.eventquantifiercoarse[n] == 1: # step size 10
             num = int(round((self.eventslidermax[n] - self.eventslidermin[n])/10.)) + 1
         elif self.eventquantifiercoarse[n] == 2: # step size 5
@@ -6337,7 +6325,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         ioi_maxdelta = ''
         ioi_abcprime = ''
         maxdeltas_seg = numpy.empty(0)
-        deltatimes_seg:'npt.NDArray[numpy.floating]' = numpy.empty(0)
+        deltatimes_seg:'npt.NDArray[numpy.double]' = numpy.empty(0)
         timeindexs_seg:'npt.NDArray[numpy.integer]' = numpy.empty(0, dtype=numpy.integer)
         segment_rmse_deltas = numpy.empty(0) #segment root mean square error (difference)
         segment_mse_deltas = numpy.empty(0)  #segment mean square error (difference)
@@ -6877,10 +6865,30 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             rcParams['font.family'] = ['Dijkstra']
             rcParams['axes.unicode_minus'] = False
             self.set_mpl_fontproperties(getResourcePath() + 'dijkstra.ttf')
+        elif self.qmc.graphfont == 10:
+            # font xkcd Script selected
+            # https://github.com/ipython/xkcd-font/
+            rcParams['axes.unicode_minus'] = False
+            rcParams['font.size'] = 14.0
+            if platform.system() == 'Linux':
+                rcParams['font.family'] = ['xkcd Script']
+            else:
+                rcParams['font.family'] = ['xkcd Script', 'Comic Sans MS']
+            self.set_mpl_fontproperties(getResourcePath() + 'xkcd-script.ttf')
+        elif self.qmc.graphfont == 11:
+            # font Comic Neue selected
+            # http://comicneue.com/
+            rcParams['axes.unicode_minus'] = False
+            rcParams['font.size'] = 12.0
+            if platform.system() == 'Linux':
+                rcParams['font.family'] = ['Comic Neue']
+            else:
+                rcParams['font.family'] = ['Comic Neue', 'Comic Sans MS']
+            self.set_mpl_fontproperties(getResourcePath() + 'ComicNeue-Regular.ttf')
         elif self.qmc.graphfont == 1 or platform.system() == 'Linux': # no Comic on Linux!
             # font Humor selected
             rcParams['axes.unicode_minus'] = False
-            rcParams['font.size'] = 16.0
+            rcParams['font.size'] = 15.0
             if platform.system() == 'Linux':
                 rcParams['font.family'] = ['Humor Sans']
             else:
@@ -6893,7 +6901,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             rcParams['font.family'] = ['Comic Sans MS','Humor Sans']
             self.mpl_fontproperties = mpl.font_manager.FontProperties()
         if redraw:
-            self.qmc.redraw(recomputeAllDeltas=False, forceRenewAxis=True)
+            self.qmc.redraw(recomputeAllDeltas=False, forceRenewAxis=True, re_smooth_background=True)
 
     def set_mpl_fontproperties(self,fontpath):
         if os.path.exists(fontpath):
@@ -9324,7 +9332,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                                             #self.lastbuttonpressed = -1 # action triggers reset which resets all button states
                                             self.qmc.toggleRecorderSignal.emit()
                                         elif event == 'CHARGE':
-                                            self.qmc.markChargeSignal.emit(0)
+                                            self.qmc.markChargeDelaySignal.emit(0)
                                         elif event == 'DRY':
                                             self.qmc.markDRYSignal.emit(False)
                                         elif event == 'FCs':
@@ -9477,11 +9485,12 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                             elif cs.startswith('loadBackground(') and cs.endswith(')'):
                                 try:
                                     try:
-                                        fp = str(eval(cs[len('loadBackground('):-1])) # pylint: disable=eval-used
+                                        # note we use here c instead of cs as we do not want _ or $ symbols to be substituted here
+                                        fp = str(eval(c[len('loadBackground('):-1])) # pylint: disable=eval-used
                                     except Exception: # pylint: disable=broad-except
                                         fp = str(cs[len('loadBackground('):-1])
                                     self.loadBackgroundSignal.emit(fp)
-                                    self.sendmessage(f'Artisan Command: {cs}')
+                                    self.sendmessage(f'Artisan Command: {c}')
                                 except Exception as e: # pylint: disable=broad-except
                                     _log.exception(e)
                             # clearBackground
@@ -9501,9 +9510,9 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                                     # might be a label
                                     try:
                                         label = str(eval(cs[len('alarmset('):-1])) # pylint: disable=eval-used
-                                        p = self.qmc.findAlarmSet(label)
-                                        if p is not None:
-                                            self.qmc.alarmsetSignal.emit(p)
+                                        pp:Optional[int] = self.qmc.findAlarmSet(label)
+                                        if pp is not None:
+                                            self.qmc.alarmsetSignal.emit(pp)
                                             self.sendmessage(f'Artisan Command: {cs}')
                                     except Exception as e: # pylint: disable=broad-except
                                         _log.exception(e)
@@ -10232,7 +10241,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 
     # this should only be called from within the main GUI thread (and never from the sampling thread!)
     @pyqtSlot(str,bool,str)
-    def sendmessage(self,message,append=True,style=None):
+    def sendmessage(self,message:str,append:bool = True, style:Optional[str] = None) -> None:
         if isinstance(threading.current_thread(), threading._MainThread): # type: ignore # pylint: disable=protected-access
             # we are running in the main thread thus we can call sendmessage_internal via a QTimer to avoid redraw issues
             QTimer.singleShot(2,lambda : self.sendmessage_internal(message,append,style))
@@ -10844,8 +10853,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         if self.qmc.l_subtitle is not None and self.qmc.ax is not None:
             if self.qmc.backgroundprofile is not None and self.qmc.backgroundPlaybackEvents:
                 self.qmc.l_subtitle.set_color(self.qmc.palette['title_focus'])
-            else:
+            elif self.qmc.background:
                 self.qmc.l_subtitle.set_color(self.qmc.palette['title'])
+            else:
+                self.qmc.l_subtitle.set_color(self.qmc.palette['title_hidden'])
             self.qmc.ax.draw_artist(self.qmc.l_subtitle)
             if self.qmc.ax.figure is not None:
                 self.qmc.ax.figure.canvas.blit()
@@ -11043,26 +11054,18 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     if self.keyboardmoveflag and self.qmc.flagstart:
                         self.moveKbutton('left')
                     elif self.qmc.background and self.qmc.backgroundKeyboardControlFlag:
-                        self.qmc.movebackground('left',self.qmc.backgroundmovespeed)
-                        self.qmc.backmoveflag = 0 # do not align background automatically during redraw!
-                        self.qmc.redraw(recomputeAllDeltas=True,sampling=self.qmc.flagon)
+                        self.qmc.moveBackgroundSignal.emit('left',self.qmc.backgroundmovespeed)
                 elif k == 16777236:               #RIGHT (moves background right / moves button selection right)
                     if self.keyboardmoveflag and self.qmc.flagstart:
                         self.moveKbutton('right')
                     elif self.qmc.background and self.qmc.backgroundKeyboardControlFlag:
-                        self.qmc.movebackground('right',self.qmc.backgroundmovespeed)
-                        self.qmc.backmoveflag = 0 # do not align background automatically during redraw!
-                        self.qmc.redraw(recomputeAllDeltas=True,sampling=self.qmc.flagon)
+                        self.qmc.moveBackgroundSignal.emit('right',self.qmc.backgroundmovespeed)
                 elif k == 16777235:               #UP (moves background up)
                     if self.qmc.background and self.qmc.backgroundKeyboardControlFlag:
-                        self.qmc.movebackground('up',self.qmc.backgroundmovespeed)
-                        self.qmc.backmoveflag = 0 # do not align background automatically during redraw!
-                        self.qmc.redraw(recomputeAllDeltas=False,sampling=self.qmc.flagon)
+                        self.qmc.moveBackgroundSignal.emit('up',self.qmc.backgroundmovespeed)
                 elif k == 16777237:               #DOWN (moves background down)
                     if self.qmc.background and self.qmc.backgroundKeyboardControlFlag:
-                        self.qmc.movebackground('down',self.qmc.backgroundmovespeed)
-                        self.qmc.backmoveflag = 0 # do not align background automatically during redraw!
-                        self.qmc.redraw(recomputeAllDeltas=False,sampling=self.qmc.flagon)
+                        self.qmc.moveBackgroundSignal.emit('down',self.qmc.backgroundmovespeed)
                 elif k == 65:                     #A (automatic save)
                     if not self.app.artisanviewerMode and self.qmc.flagon and not self.qmc.designerflag and self.comparator is None:
                         self.automaticsave()
@@ -12037,7 +12040,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 # we avoid the reset within setProfile as we just did a reset and do not want to confuse the ExtraDeviceSettingsBackup
                 res = self.setProfile(filename,obj,quiet=quiet,reset=False)
             if res:
-                self.qmc.backmoveflag = 1 # this ensures that an already loaded profile gets aligned to the one just loading
                 #update etypes combo box
                 self.etypeComboBox.clear()
                 self.etypeComboBox.addItems(self.qmc.etypes)
@@ -12380,7 +12382,9 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 self.loadbackground(filename)
                 self.qmc.background = not self.qmc.hideBgafterprofileload
                 self.autoAdjustAxis()
-                self.qmc.timealign(redraw=True, recompute=True)
+                self.qmc.timealign(redraw=False)
+                self.qmc.redraw()
+
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
                 self.deleteBackground() # delete a loaded background if any
@@ -12451,14 +12455,21 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 else:
                     self.qmc.temp2Bdelta = [False]*len(names2x)
 
+                # we fill_gaps for all background curves on load, not to have to re-compute those on most redraws
+                t1 = fill_gaps(t1)
+                t2 = fill_gaps(t2)
+                for e,_ in enumerate(t1x):
+                    t1x[e] = fill_gaps(t1x[e])
+                    t2x[e] = fill_gaps(t2x[e])
+
                 # we resample the temperatures to regular interval timestamps
                 if tb is not None and tb:
                     tb_lin = numpy.linspace(tb[0],tb[-1],len(tb))
                 else:
                     tb_lin = None
                 decay_smoothing_p = not self.qmc.optimalSmoothing
-                b1 = self.qmc.smooth_list(tb,fill_gaps(t1),window_len=self.qmc.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=tb_lin)
-                b2 = self.qmc.smooth_list(tb,fill_gaps(t2),window_len=self.qmc.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=tb_lin)
+                b1 = self.qmc.smooth_list(tb,t1,window_len=self.qmc.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=tb_lin)
+                b2 = self.qmc.smooth_list(tb,t2,window_len=self.qmc.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=tb_lin)
 
                 self.qmc.extraname1B,self.qmc.extraname2B = names1x,names2x
                 b1x = []
@@ -12477,14 +12488,14 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                         else:
                             tx_lin = None
                         if (self.qmc.xtcurveidx > 0 and n3 == i and self.qmc.xtcurveidx % 2) or (self.qmc.ytcurveidx > 0 and n4 == i and self.qmc.ytcurveidx % 2):
-                            b1x.append(self.qmc.smooth_list(tx,fill_gaps(t1x[i]),window_len=self.qmc.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=tx_lin))
-                            b2x.append(numpy.array(fill_gaps(t2x[i])))
+                            b1x.append(self.qmc.smooth_list(tx,t1x[i],window_len=self.qmc.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=tx_lin))
+                            b2x.append(numpy.array(t2x[i]))
                         else:
-                            b1x.append(numpy.array(fill_gaps(t1x[i])))
-                            b2x.append(self.qmc.smooth_list(tx,fill_gaps(t2x[i]),window_len=self.qmc.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=tx_lin))
+                            b1x.append(numpy.array(t1x[i]))
+                            b2x.append(self.qmc.smooth_list(tx,t2x[i],window_len=self.qmc.curvefilter,decay_smoothing=decay_smoothing_p,a_lin=tx_lin))
                     else:
-                        b1x.append(numpy.array(fill_gaps(t1x[i])))
-                        b2x.append(numpy.array(fill_gaps(t2x[i])))
+                        b1x.append(numpy.array(t1x[i]))
+                        b2x.append(numpy.array(t2x[i]))
                 # NOTE: parallel assignment after time intensive smoothing is necessary to avoid redraw failure!
                 self.qmc.stemp1B,self.qmc.stemp2B,self.qmc.stemp1BX,self.qmc.stemp2BX = b1,b2,b1x,b2x
                 self.qmc.backgroundEvents = profile['specialevents']
@@ -12525,6 +12536,11 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     self.qmc.backgroundFlavors = self.qmc.backgroundFlavors[:(l-1)]
                 if 'etypes' in profile:
                     self.qmc.Betypes = [decodeLocalStrict(x) for x in profile['etypes']]
+                    if 'default_etypes' in profile:
+                        default_etypes = profile['default_etypes']
+                        for i, _ in enumerate(self.qmc.Betypes):
+                            if default_etypes[i]:
+                                self.qmc.Betypes[i] = self.qmc.etypesdefault[i]
                 if 'timeindex' in profile:
                     self.qmc.timeindexB = [max(0,v) if i>0 else max(-1,v) for i,v in enumerate(profile['timeindex'])]          #if new profile found with variable timeindex
                     if self.qmc.phasesfromBackgroundflag:
@@ -13045,7 +13061,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 obj = json_load(infile)
                 res = self.setProfile(filename,obj)
             if res:
-                self.qmc.backmoveflag = 1 # this ensures that an already loaded profile gets aligned to the one just loading
                 #update etypes combo box
                 self.etypeComboBox.clear()
                 self.etypeComboBox.addItems(self.qmc.etypes)
@@ -13356,7 +13371,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             finally:
                 if res:
                     self.autoAdjustAxis()
-                    self.qmc.backmoveflag = 1 # this ensures that an already loaded profile gets aligned to the one just loading
                     self.qmc.redraw()
 
             if error_msg != '':
@@ -14036,6 +14050,13 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
     def setProfile(self, filename:Optional[str], profile:'ProfileData', quiet:bool = False, reset:bool = True) -> bool: # pyright: ignore [reportGeneralTypeIssues] # Code is too complex to analyze; reduce complexity by refactoring into subroutines or reducing conditional code paths
         try:
             updateRender = False
+            # if missing, current etypes are used. Empty entries are replaced by their defaults translated using the current locale
+            profile_etypes = ([decodeLocalStrict(x) for x in profile['etypes']] if 'etypes' in profile else self.qmc.etypes)
+            if 'default_etypes' in profile:
+                default_etypes = profile['default_etypes']
+                for i, _ in enumerate(profile_etypes):
+                    if default_etypes[i]:
+                        profile_etypes[i] = self.qmc.etypesdefault[i]
             #extra devices load and check
             if profile and 'extratimex' in profile:
                 if 'extradevices' in profile:
@@ -14053,7 +14074,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     try:
                         profiledev = ''.join([str(profile['extradevices']), str(profile['extraname1']), str(profile['extraname2']),
                                             str(profile['extramathexpression1']), str(profile['extramathexpression2']),
-                                            str(profile['etypes'][:4])
+                                            str(profile_etypes[:4])
                                             ])
                     except Exception: # pylint: disable=broad-except
                         profiledev = ''
@@ -14090,7 +14111,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     # we remove the extra device elements that do not fit
                         if reply == QMessageBox.StandardButton.No:
                             #if (len(self.qmc.extradevices) < len(profile["extradevices"])):
-                            l =len(self.qmc.extradevices)
+                            l = len(self.qmc.extradevices)
                             profile['extratimex'] = profile['extratimex'][:l]
                             profile['extratemp1'] = profile['extratemp1'][:l]
                             profile['extratemp2'] = profile['extratemp2'][:l]
@@ -14467,7 +14488,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.consolidateSpecialEvents() # we ensure that all 4 lists holding the special events are of equal length
 
             if 'etypes' in profile:
-                self.qmc.etypes = [decodeLocalStrict(x) for x in profile['etypes']]
+                self.qmc.etypes = profile_etypes
 
             if updateRender:
                 # etypes might have been changed thus we need to update the slider labels
@@ -14490,6 +14511,15 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 self.qmc.cuppingnotes = ''
             if 'timex' in profile:
                 self.qmc.timex = profile['timex']
+
+            # ensure that extra timex and temp lists are as long as the main timex
+            for i, _ in enumerate(self.qmc.extratimex):
+                if not isinstance(self.qmc.extratimex[i], list) or len(self.qmc.extratimex[i]) != len(self.qmc.timex):
+                    self.qmc.extratimex[i] = self.qmc.timex
+                if not isinstance(self.qmc.extratemp1[i], list) or len(self.qmc.extratemp1[i]) != len(self.qmc.timex):
+                    self.qmc.extratemp1[i] = [-1]*len(self.qmc.timex)
+                if not isinstance(self.qmc.extratemp2[i], list) or len(self.qmc.extratemp2[i]) != len(self.qmc.timex):
+                    self.qmc.extratemp2[i] = [-1]*len(self.qmc.timex)
 
             # alarms
             if self.qmc.loadalarmsfromprofile and filename is not None:
@@ -14744,6 +14774,17 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 ndec_arr = numpy.array([ndec(x) for x in bt])
                 avgDecimal = numpy.average(ndec_arr)
                 maxDecimal = numpy.amax(ndec_arr)
+                
+                # Calculate the resolution from the BT values
+                # Sort the numbers in ascending order  #dave
+                # Calculate the differences between successive numbers  #dave
+                # Find the smallest non-zero difference  #dave
+                # Exception if there are no non-zero differences
+                try:
+                    resolution = numpy.min(numpy.diff(numpy.sort(bt))[numpy.nonzero(numpy.diff(numpy.sort(bt)))])
+                except Exception: # pylint: disable=broad-except  #dave
+                    resolution = float('nan')  #dave
+                    
                 str_modeChanged = ''
                 if profileMode in {'C', 'F'} and self.qmc.mode != profileMode:
                     str_modeChanged = '*Result not reliable, the temperature mode was changed'
@@ -14797,6 +14838,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     f'Profile quality metrics'
                     f'\n  Title: {self.qmc.title}'
                     f'\n  Meter: {meter}'
+                    f'\n  Resolution: {resolution:.2E} {str_modeChanged}'
                     f'\n  Average decimals: {avgDecimal:.2f} {str_modeChanged}'
                     f'\n  Max decimals: {maxDecimal:.2f} {str_modeChanged}'
                     f'\n  Total Samples: {totalSamples}'
@@ -15242,7 +15284,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             profile['specialeventstype'] = self.qmc.specialeventstype
             profile['specialeventsvalue'] = self.qmc.specialeventsvalue
             profile['specialeventsStrings'] = [encodeLocalStrict(ses) for ses in self.qmc.specialeventsStrings]
-            profile['etypes'] = [encodeLocalStrict(et) for et in self.qmc.etypes]
+            profile['default_etypes'] = [item == self.qmc.etypesdefault[i] for i, item in enumerate(self.qmc.etypes)]
+            profile['etypes'] = [encodeLocalStrict(et) for et in self.qmc.etypes[:]]
             profile['roastingnotes'] = encodeLocalStrict(self.qmc.roastingnotes)
             profile['cuppingnotes'] = encodeLocalStrict(self.qmc.cuppingnotes)
             profile['timex'] = [self.float2float(x,10) for x in self.qmc.timex]
@@ -15883,7 +15926,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 # create a new event
                 nv:float = self.qmc.eventsExternal2InternalValue(new_value)
                 if record and self.qmc.flagstart:
-                    self.qmc.eventRecordActionSignal.emit(etype,nv,'')
+                    self.qmc.eventRecordActionSignal.emit(etype,nv,'',True)
 
     # kaleidoSendMessageAwait() sends out the message to the machine, awaits the reply and creates a corresponding event entry
     @pyqtSlot(str,str,int,int)
@@ -16248,7 +16291,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.qmc.curvefitoffset = toInt(settings.value('curvefitoffset',int(self.qmc.curvefitoffset)))
             self.qmc.segmentsamplesthreshold = toInt(settings.value('segmentsamplesthreshold',int(self.qmc.segmentsamplesthreshold)))
             self.qmc.segmentdeltathreshold = self.float2float(toFloat(settings.value('segmentdeltathreshold',self.qmc.segmentdeltathreshold)),4)
-            self.qmc.projectFlag = bool(toBool(settings.value('projectFlag',self.qmc.projectFlag)))
+            if settings.contains('projectFlag'): # deprecated flag controlling both projections
+                self.qmc.ETprojectFlag = self.qmc.BTprojectFlag = bool(toBool(settings.value('projectFlag')))
+            self.qmc.ETprojectFlag = bool(toBool(settings.value('ETprojectFlag',self.qmc.ETprojectFlag)))
+            self.qmc.BTprojectFlag = bool(toBool(settings.value('BTprojectFlag',self.qmc.BTprojectFlag)))
             self.qmc.projectDeltaFlag = bool(toBool(settings.value('projectDeltaFlag',self.qmc.projectDeltaFlag)))
             self.qmc.projectionmode = toInt(settings.value('projectionmode',int(self.qmc.projectionmode)))
             self.qmc.AUCbegin = toInt(settings.value('AUCbegin',int(self.qmc.AUCbegin)))
@@ -16810,6 +16856,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             # we set the default in-weight from the given last_batchsize
             self.qmc.weight = (self.qmc.last_batchsize,self.qmc.weight[1],self.qmc.weight[2])
             self.qmc.roasterheating_setup = toInt(settings.value('roasterheating_setup',self.qmc.roasterheating_setup))
+            self.qmc.roasterheating_setup_default = toInt(settings.value('roasterheating_setup_default',self.qmc.roasterheating_setup_default))
             self.qmc.drumspeed_setup = toString(settings.value('drumspeed_setup',self.qmc.drumspeed_setup))
 
 #--- BEGIN GROUP EnergyUse
@@ -17159,6 +17206,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.qmc.compareDeltaET = bool(toBool(settings.value('compareDeltaET',self.qmc.compareDeltaET)))
             self.qmc.compareDeltaBT = bool(toBool(settings.value('compareDeltaBT',self.qmc.compareDeltaBT)))
             self.qmc.compareMainEvents = bool(toBool(settings.value('compareMainEvents',self.qmc.compareMainEvents)))
+            self.qmc.compareExtraCurves1 = [toBool(x) for x in toList(settings.value('compareExtraCurves1',self.qmc.compareExtraCurves1))]
+            self.qmc.compareExtraCurves2 = [toBool(x) for x in toList(settings.value('compareExtraCurves2',self.qmc.compareExtraCurves2))]
             self.qmc.compareBBP = bool(toBool(settings.value('compareBBP',self.qmc.compareBBP)))
             self.qmc.compareRoast = bool(toBool(settings.value('compareRoast',self.qmc.compareRoast)))
             self.qmc.autosaveflag = toInt(settings.value('autosaveflag',self.qmc.autosaveflag))
@@ -17693,12 +17742,14 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.qmc.adderror((QApplication.translate('Error Message','Exception:') + ' fetchCurveStyles() {0}').format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     #Saves the settings when closing application. See the oppposite settingsLoad()
-    def closeEvent(self,event):
+    @pyqtSlot('QCloseEvent')
+    def closeEvent(self, event:Optional['QCloseEvent'] = None) -> None:
         res = self.closeApp()
-        if res:
-            event.accept()
-        else:
-            event.ignore()
+        if event is not None:
+            if res:
+                event.accept()
+            else:
+                event.ignore()
 
     # returns OS name, version and architecture as strings
     # ex: "macOS", "11.6",
@@ -17821,7 +17872,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     pass
 
             #save mode
-            self.settingsSetValue(settings, default_settings, 'Mode',self.qmc.mode, read_defaults)
+            if not read_defaults:
+                settings.setValue('Mode',self.qmc.mode) # 'Mode' is always stored as it is used to discriminate the ViewerSettings (see _settingsCopied)
 
             if filename is not None and not read_defaults:
                 # only add those on exporting settings (those are never read by Artisan)
@@ -17943,7 +17995,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.settingsSetValue(settings, default_settings, 'segmentsamplesthreshold',self.qmc.segmentsamplesthreshold, read_defaults)
             self.settingsSetValue(settings, default_settings, 'segmentdeltathreshold',self.qmc.segmentdeltathreshold, read_defaults)
             #projection
-            self.settingsSetValue(settings, default_settings, 'projectFlag',self.qmc.projectFlag, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'ETprojectFlag',self.qmc.ETprojectFlag, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'BTprojectFlag',self.qmc.BTprojectFlag, read_defaults)
             self.settingsSetValue(settings, default_settings, 'projectDeltaFlag',self.qmc.projectDeltaFlag, read_defaults)
             self.settingsSetValue(settings, default_settings, 'projectionmode',self.qmc.projectionmode, read_defaults)
             #save AUC
@@ -18590,6 +18643,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.settingsSetValue(settings, default_settings, 'compareDeltaET',self.qmc.compareDeltaET, read_defaults)
             self.settingsSetValue(settings, default_settings, 'compareDeltaBT',self.qmc.compareDeltaBT, read_defaults)
             self.settingsSetValue(settings, default_settings, 'compareMainEvents',self.qmc.compareMainEvents, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'compareExtraCurves1',self.qmc.compareExtraCurves1, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'compareExtraCurves2',self.qmc.compareExtraCurves2, read_defaults)
             self.settingsSetValue(settings, default_settings, 'compareBBP',self.qmc.compareBBP, read_defaults)
             self.settingsSetValue(settings, default_settings, 'compareRoast',self.qmc.compareRoast, read_defaults)
             self.settingsSetValue(settings, default_settings, 'autosaveflag',self.qmc.autosaveflag, read_defaults)
@@ -18915,10 +18970,11 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 flagKeepON = self.qmc.flagKeepON
                 self.qmc.flagKeepON = False # temporarily turn keepOn off
                 self.stopActivities()
-                self.qmc.flagKeepON = flagKeepON
                 if unsaved_changes:
+                    self.qmc.safesaveflag = False
                     # in case we have unsaved changes and the user decided to discard those, we first reset to have the correct settings (like axis limits) saved
-                    self.qmc.reset(redraw=False,soundOn=False,sampling=False,keepProperties=False,fireResetAction=False)
+                    self.qmc.reset(redraw=False,soundOn=False,keepProperties=False,fireResetAction=False)
+                self.qmc.flagKeepON = flagKeepON
                 if QApplication.queryKeyboardModifiers() != Qt.KeyboardModifier.AltModifier:
                     self.closeEventSettings() # it takes quite some time to write the >1000 setting items
 #                gc.collect() # this takes quite some time
@@ -20968,8 +21024,9 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             if ok:
                 if self.html_loader is not None and self.pdf_page_layout is not None:
                     page = self.html_loader.page()
-                    page.pdfPrintingFinished.connect(printing_finished) # type: ignore # "Callable[[str, bool], None]" has no attribute "connect"
-                    page.printToPdf(pdf_file, self.pdf_page_layout)
+                    if page is not None:
+                        page.pdfPrintingFinished.connect(printing_finished) # type: ignore # "Callable[[str, bool], None]" has no attribute "connect"
+                        page.printToPdf(pdf_file, self.pdf_page_layout)
                 else:
                     self.pdf_rendering = False
             else:
@@ -21549,8 +21606,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 index = i
         return index
 
-    def checkTop(self, offset, p0, p1, p2, p3, p4, p5, twice=False):
-#        _log.info('PRINT checkTop(%s,%s,%s,%s,%s,%s,%s,%s)',offset,p0,p1,p2,p3,p4,p5,twice)
+    def checkTop(self, d, offset, p0, p1, p2, p3, p4, p5, twice=False):
         d1 = p0 - p1
         d2 = p1 - p2
         #--
@@ -21558,35 +21614,44 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         d4 = p5 - p4
         dpre = (d1 + d2) / 2.0
         dpost = (d3 + d4) / 2.0
-        if self.qmc.mode == 'C':
-            f = 2.5
-            d = -0.67 #-0.55 # minimum temperature delta of the two legs after the event to prevent too early recognition based on noise
-            maxdpre = 6.4 # limit the difference between pre and post to catch the case where temp before the event rises strong
-        else:
-            f = 2.8 * 1.8
-            d = -1.2 #-0,99 # minimum temperature delta of the two legs after the event to prevent too early recognition based on noise
-            maxdpre = 11.52
+
+        f = self.qmc.btbreak_params['f']
+        maxdpre = self.qmc.btbreak_params['maxdpre']
+        f_dtwice = self.qmc.btbreak_params['f_dtwice']
+        dpre_dpost_diff = self.qmc.btbreak_params['dpre_dpost_diff']
+
+        if self.qmc.mode == 'F':
+            f = f * 1.8
+            d = d * 1.8  # minimum temperature delta of the two legs after the event to prevent too early recognition based on noise
+            maxdpre = maxdpre * 1.8
+            dpre_dpost_diff * 1.8
+
         if twice:
-            d = d*1.5
-#        _log.info('PRINT checkTop => %s, %s, %s, %s => %s | %s | %s', d3, d4, abs(dpost), (offset + (f * abs(dpre))), dpre, dpost, -dpre - dpost)
-#        return bool(d3 < .0 and d4 < .0 and (abs(dpost) > (offset + (f * abs(dpre))))) # v2.8
+            d = d * f_dtwice
+
         # improved variant requesting for a certain minimum delta between the reading of interest and the next two post event legs:
-        return bool(d3 < d and d4 < d and ((abs(dpost) > min(maxdpre, offset + (f * abs(dpre)))) or (dpost < 0 and dpre < 0 and (-dpre - dpost) > 1.4)))
+        return bool(d3 < d and d4 < d and ((abs(dpost) > min(maxdpre, offset + (f * abs(dpre)))) 
+                                           or (dpost < 0 and dpre < 0 and (-dpre - dpost) > dpre_dpost_diff)))
 
     # returns True if a BT break at i-2 is detected
     # i the index of the last reading to be considered to proof that i-2 (or i-4) is the index of the BT break
     # idea:
     # . average delta before i-2 is not negative
     # . average delta after i-2 is negative and twice as high (absolute) as the one before
-    def BTbreak(self,i,offset):
-#        _log.info('PRINT BTbreak(%s,%s) => %s',i,offset,self.qmc.temp2[i])
-        if len(self.qmc.timex)>5 and i < len(self.qmc.timex):
-            if self.checkTop(offset,self.qmc.temp2[i-5],self.qmc.temp2[i-4],self.qmc.temp2[i-3],self.qmc.temp2[i-2],self.qmc.temp2[i-1],self.qmc.temp2[i]):
-#                _log.info('PRINT BTbreak tight success')
-                return 3
-            if len(self.qmc.timex)>10 and self.checkTop(offset,self.qmc.temp2[i-10],self.qmc.temp2[i-8],self.qmc.temp2[i-6],self.qmc.temp2[i-4],self.qmc.temp2[i-2],self.qmc.temp2[i],twice=True):
-                return 5
-#                _log.info('PRINT BTbreak loose success')
+    def BTbreak(self,i,event):
+        if event in ['DROP','drop']:
+            offset = self.qmc.btbreak_params['offset_drop']
+            d = self.qmc.btbreak_params['d_drop']
+        else: #CHARGE
+            offset = self.qmc.btbreak_params['offset_charge']
+            d = self.qmc.btbreak_params['d_charge']
+            
+        #dave -- must revisit the i>5 term!!!
+        if len(self.qmc.timex)>5 and i>5 and i < len(self.qmc.timex):  #'i>5' prevents reading temp2[-1] or worse whe using BTbreak post recording
+            if self.checkTop(d,offset,self.qmc.temp2[i-5],self.qmc.temp2[i-4],self.qmc.temp2[i-3],self.qmc.temp2[i-2],self.qmc.temp2[i-1],self.qmc.temp2[i]):
+                return self.qmc.btbreak_params['tight']
+            if len(self.qmc.timex)>10 and i>10 and self.checkTop(d,offset,self.qmc.temp2[i-10],self.qmc.temp2[i-8],self.qmc.temp2[i-6],self.qmc.temp2[i-4],self.qmc.temp2[i-2],self.qmc.temp2[i],twice=True):
+                return self.qmc.btbreak_params['loose']
         return 0
 
     # this can be used to find the CHARGE index as well as the DROP index by using
@@ -21653,11 +21718,9 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                                 self.qmc.AUCguideTime = ts + roots[0]*60 # takes the first positive root and calculates the time in seconds until the target AUC is reached
                             if self.qmc.l_AUCguide is not None:
                                 if self.qmc.AUCguideTime > 0 and self.qmc.AUCguideTime < self.qmc.endofx:
-#                                    self.qmc.l_AUCguide.set_data([self.qmc.AUCguideTime,self.qmc.AUCguideTime], [self.qmc.ylimit_min, self.qmc.ylimit])
                                     self.qmc.l_AUCguide.set_xdata(self.qmc.AUCguideTime)
                                     self.qmc.l_AUCguide.set_visible(True)
                                 else:
-#                                    self.qmc.l_AUCguide.set_data([],[])
                                     self.qmc.l_AUCguide.set_visible(False)
 
     def AUCstartidx(self, timeindex, TPindex):
@@ -22803,7 +22866,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         self.qmc.backgroundEvents, self.qmc.backgroundEtypes = [],[]
         self.qmc.backgroundEvalues, self.qmc.backgroundEStrings,self.qmc.backgroundFlavors = [],[],[]
         self.qmc.timeindexB = [-1,0,0,0,0,0,0,0]
-        self.qmc.backmoveflag = 1
         self.qmc.TP_time_B_loaded = None
         self.qmc.AUCbackground = -1
         self.qmc.l_background_annotations = []
@@ -22818,7 +22880,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         t2 = self.qmc.temp2
         self.qmc.temp2 = self.qmc.temp1
         self.qmc.temp1 = t2
-        self.qmc.redraw(recomputeAllDeltas=True,smooth=True)
+        self.qmc.redraw(recomputeAllDeltas=True)
         self.qmc.fileDirtySignal.emit()
 
     @pyqtSlot()
@@ -23390,7 +23452,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     _log.exception(e)
                 if res:
                     self.orderEvents()
-                    self.qmc.backmoveflag = 1 # this ensures that an already loaded profile gets aligned to the one just loading
                     #update etypes combo box
                     self.etypeComboBox.clear()
                     self.etypeComboBox.addItems(self.qmc.etypes)
@@ -23424,7 +23485,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 res = self.setProfile(filename,obj)
 
             if res:
-                self.qmc.backmoveflag = 1 # this ensures that an already loaded profile gets aligned to the one just loading
                 #update etypes combo box
                 self.etypeComboBox.clear()
                 self.etypeComboBox.addItems(self.qmc.etypes)
@@ -24378,10 +24438,9 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 restoreF = True
                 self.qmc.convertTemperature('C', silent=True, setdefaultaxes=False)
                 smooth=True
-                sampling=False
                 decay_smoothing_p = not self.qmc.optimalSmoothing
                 recomputeAllDeltas = True
-                self.qmc.smoothETBT(smooth,recomputeAllDeltas,sampling,decay_smoothing_p)
+                self.qmc.smoothETBT(smooth,recomputeAllDeltas,decay_smoothing_p)
                 self.qmc.smoothETBTBkgnd(recomputeAllDeltas,decay_smoothing_p)
             else:
                 restoreF = False
@@ -24795,7 +24854,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 
     @pyqtSlot()
     @pyqtSlot(bool)
-    def roastCompare(self,_=False):
+    def roastCompare(self,_:bool = False) -> None:
         if self.comparator is not None:
             self.comparator.close()
         else:
@@ -24803,10 +24862,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             background = (self.qmc.backgroundpath if self.qmc.background else None)
             if self.qmc.reset():
                 filenames = []
-                if background is not None and background.strip() != '':
-                    filenames.append(background)
                 if foreground is not None and foreground.strip() != '':
                     filenames.append(foreground)
+                if background is not None and background.strip() != '':
+                    filenames.append(background)
                 if len(filenames) == 0:
                     filenames = self.reportFiles()
                 if filenames and len(filenames) > 0:
@@ -24972,7 +25031,7 @@ sys.excepthook = excepthook
 # the following avoids the "No document could be created" dialog and the Console message
 # "The Artisan Profile type doesn't map to any NSDocumentClass." on startup (since pyobjc-core 3.1.1)
 if sys.platform.startswith('darwin'):
-    from Cocoa import NSDocument # type: ignore # @UnresolvedImport # pylint: disable=import-error
+    from Cocoa import NSDocument # type: ignore # @UnresolvedImport # pylint: disable=import-error,no-name-in-module
     class Document(NSDocument): # type: ignore # pylint: disable= too-few-public-methods
 #        def windowNibName(self):
 #            return None #"Document"
@@ -25033,7 +25092,7 @@ def initialize_locale(my_app:Artisan) -> str:
 
     if len(locale) == 0:
         if platform.system() == 'Darwin':
-            from Cocoa import NSUserDefaults # type: ignore  # @UnresolvedImport # pylint: disable=import-error
+            from Cocoa import NSUserDefaults # type: ignore  # @UnresolvedImport # pylint: disable=import-error,no-name-in-module
             defs = NSUserDefaults.standardUserDefaults()
             langs = defs.objectForKey_('AppleLanguages')
             if langs.objectAtIndex_(0)[:7] == 'zh_Hans':
@@ -25104,8 +25163,6 @@ def initialize_locale(my_app:Artisan) -> str:
 
 def main() -> None:
 
-    locale_str = initialize_locale(app)
-    _log.info('locale: %s',locale_str)
 
     # suppress all Qt messages
     qInstallMessageHandler(qt_message_handler)
@@ -25121,6 +25178,9 @@ def main() -> None:
         if not viewersettings.contains('Mode'):
             artisanviewerFirstStart = True
         del viewersettings
+
+    locale_str = initialize_locale(app)
+    _log.info('locale: %s',locale_str)
 
     appWindow = ApplicationWindow(locale=locale_str, WebEngineSupport=QtWebEngineSupport, artisanviewerFirstStart=artisanviewerFirstStart)
 
@@ -25222,7 +25282,7 @@ def main() -> None:
                     appWindow.qmc.backgroundprofile_moved_y = 0
             if not appWindow.lastLoadedBackground and not appWindow.lastLoadedProfile:
                 # redraw once to get geometry right
-                appWindow.qmc.redraw(False,sampling=False,smooth=appWindow.qmc.optimalSmoothing)
+                appWindow.qmc.redraw(False)
     except Exception as e: # pylint: disable=broad-except
         _log.exception(e)
 

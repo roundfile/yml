@@ -27,7 +27,7 @@ if TYPE_CHECKING:
     from artisanlib.types import RecentRoast, BTU
     from artisanlib.ble import BleInterface # noqa: F401 # pylint: disable=unused-import
     from PyQt6.QtWidgets import QLayout, QAbstractItemView, QCompleter # pylint: disable=unused-import
-    from PyQt6.QtGui import QClipboard # pylint: disable=unused-import
+    from PyQt6.QtGui import QClipboard, QCloseEvent # pylint: disable=unused-import
     from PyQt6.QtCore import QObject # pylint: disable=unused-import
 
 # import artisan.plus modules
@@ -445,7 +445,8 @@ class volumeCalculatorDlg(ArtisanDialog):
         self.parent_dialog.volume_percent()
         self.closeEvent(None)
 
-    def closeEvent(self,_):
+    @pyqtSlot('QCloseEvent')
+    def closeEvent(self,_:Optional['QCloseEvent'] = None) -> None:
         if self.aw.largeScaleLCDs_dialog is not None:
             self.aw.largeScaleLCDs_dialog.updateWeightUnit()
 
@@ -634,8 +635,8 @@ class editGraphDlg(ArtisanResizeablDialog):
             else:
                 #find when dry phase ends
                 dryEndIndex = self.aw.findDryEnd(TP_index)
-            self.charge_idx = self.aw.findBTbreak(0,dryEndIndex,offset=0.5)
-            self.drop_idx = self.aw.findBTbreak(dryEndIndex,offset=0.2)
+            self.charge_idx = self.aw.findBTbreak(0,dryEndIndex,offset=self.aw.qmc.offset_charge)
+            self.drop_idx = self.aw.findBTbreak(dryEndIndex,offset=self.aw.qmc.offset_drop)
             if self.drop_idx not in (0, self.aw.qmc.timeindex[6]):
                 drop_str = stringfromseconds(self.aw.qmc.timex[self.drop_idx]-self.aw.qmc.timex[self.aw.qmc.timeindex[0]])
         drylabel = QLabel('<b>' + QApplication.translate('Label', 'DRY END') + '</b>')
@@ -2525,7 +2526,8 @@ class editGraphDlg(ArtisanResizeablDialog):
 
     # triggered if dialog is closed via its windows close box
     # and called from accept if dialog is closed via OK
-    def closeEvent(self, _):
+    @pyqtSlot('QCloseEvent')
+    def closeEvent(self, _:Optional['QCloseEvent'] = None) -> None:
         self.disconnecting = True
         if self.ble is not None:
             try:
@@ -5260,7 +5262,8 @@ class tareDlg(ArtisanDialog):
         self.close()
         super().accept()
 
-    def closeEvent(self,_):
+    @pyqtSlot('QCloseEvent')
+    def closeEvent(self,_:Optional['QCloseEvent'] = None) -> None:
         self.saveTareTable()
         # update popup
         self.tarePopup.tarePopupEnabled = False

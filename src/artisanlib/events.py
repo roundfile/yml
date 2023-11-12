@@ -24,6 +24,7 @@ from typing import Final  # Python <=3.7
 if TYPE_CHECKING:
     from artisanlib.types import Palette
     from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
+    from PyQt6.QtGui import QCloseEvent # pylint: disable=unused-import
 
 from artisanlib.util import uchr, comma2dot
 from artisanlib.dialogs import ArtisanResizeablDialog, ArtisanDialog
@@ -2029,7 +2030,7 @@ class EventsDlg(ArtisanResizeablDialog):
 #        self.E2sizeSpinBox.setDisabled(False)
 #        self.E3sizeSpinBox.setDisabled(False)
 #        self.E4sizeSpinBox.setDisabled(False)
-        self.aw.qmc.redraw(recomputeAllDeltas=False,smooth=False)
+        self.aw.qmc.redraw(recomputeAllDeltas=False)
 
     @pyqtSlot(float)
     def setElinealpha0(self,_):
@@ -3373,7 +3374,7 @@ class EventsDlg(ArtisanResizeablDialog):
             self.aw.qmc.adderror((QApplication.translate('Error Message', 'Exception:') + ' updatetypes(): {0}').format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     @pyqtSlot('QCloseEvent')
-    def closeEvent(self,_):
+    def closeEvent(self,_:Optional['QCloseEvent'] = None) -> None:
         self.closeHelp()
         settings = QSettings()
         #save window geometry

@@ -45,7 +45,7 @@ if TYPE_CHECKING:
     from yoctopuce.yocto_current import YCurrent # type: ignore # pylint: disable=unused-import
     from yoctopuce.yocto_temperature import YTemperature # type: ignore # pylint: disable=unused-import
     from yoctopuce.yocto_api import YMeasure # type: ignore # pylint: disable=unused-import
-    from PyQt6.QtGui import QCloseEvent # pylint: disable=unused-import
+#    from PyQt6.QtGui import QCloseEvent # pylint: disable=unused-import
 
 
 
@@ -1565,7 +1565,7 @@ class serialport:
             try:
                 event_flag:int = sid & 15 # last 4 bits of the sid
                 if event_flag == 1 and self.aw.qmc.timeindex[0] == -1:
-                    self.aw.qmc.markChargeNoactionSignal.emit(True) # CHARGE
+                    self.aw.qmc.markChargeSignal.emit(True) # CHARGE
                 elif event_flag == 2 and self.aw.qmc.TPalarmtimeindex is None:
                     self.aw.qmc.markTPSignal.emit() # TP
                 elif event_flag == 3 and self.aw.qmc.timeindex[1] == 0:
@@ -2038,11 +2038,12 @@ class serialport:
         except Exception: # pylint: disable=broad-except
             pass
 
-    def closeEvent(self,_:'QCloseEvent') -> None:
-        try:
-            self.closeport()
-        except Exception: # pylint: disable=broad-except
-            pass
+#    @pyqtSlot('QCloseEvent')
+#    def closeEvent(self,_:'QCloseEvent') -> None:
+#        try:
+#            self.closeport()
+#        except Exception: # pylint: disable=broad-except
+#            pass
 
     @staticmethod
     def binary(n, digits=8):
@@ -6065,6 +6066,7 @@ class serialport:
                         #OK. NOW SET FILTER
                         self.SP.reset_input_buffer()
                         self.SP.reset_output_buffer()
+#                        filt =  ','.join(map(str,self.aw.ser.ArduinoFILT))
                         filt =  ','.join([str(f) for f in self.aw.ser.ArduinoFILT])
                         command = 'FILT;' + filt + '\n'   #Set filters
                         self.SP.write(str2cmd(command))

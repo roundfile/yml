@@ -188,6 +188,7 @@ class ProfileData(TypedDict, total=False):
     specialeventstype: List[int]
     specialeventsvalue: List[float]
     specialeventsStrings: List[str]
+    default_etypes: List[bool]
     etypes: List[str]
     cuppingnotes: str
     roastingnotes: str
@@ -286,7 +287,7 @@ class ProfileData(TypedDict, total=False):
     plus_sync_record_hash: str
 
 
-class ExtraDeviceSettings(TypedDict): #, total=False):
+class ExtraDeviceSettings(TypedDict):
     extradevices           : List[int]
     extradevicecolor1      : List[str]
     extradevicecolor2      : List[str]
@@ -485,3 +486,16 @@ class SerialSettings(TypedDict):
     stopbits: int
     parity: str
     timeout: float
+
+class BTBreakParams(TypedDict):
+    offset_charge: float
+    offset_drop: float
+    d_drop: float
+    d_charge: float
+    tight: int
+    loose: int
+    f: float
+    maxdpre: float
+    f_dtwice: float
+    dpre_dpost_diff: float
+    d_offset_charge: float

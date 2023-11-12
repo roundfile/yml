@@ -18,11 +18,12 @@
 import os
 import sys
 import logging
-from typing import Dict, Union, List, TYPE_CHECKING
+from typing import Dict, Union, List, Optional, TYPE_CHECKING
 from typing import Final  # Python <=3.7
 
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
+    from PyQt6.QtGui import QCloseEvent # pylint: disable=unused-import
 
 from artisanlib.util import deltaLabelUTF8, comma2dot
 from artisanlib.dialogs import ArtisanResizeablDialog
@@ -35,18 +36,23 @@ try:
     from PyQt6.QtGui import QColor, QIntValidator # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtWidgets import (QApplication, QWidget, QLabel, QLineEdit, QComboBox, QDialogButtonBox, # @UnusedImport @Reimport  @UnresolvedImport
                 QTableWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QPushButton, QSizePolicy, QSpinBox, # @UnusedImport @Reimport  @UnresolvedImport
-                QTableWidgetSelectionRange, QTimeEdit, QTabWidget, QGridLayout, QGroupBox, QHeaderView) # @UnusedImport @Reimport  @UnresolvedImport
+                QTableWidgetSelectionRange, QTimeEdit, QTabWidget, QGridLayout, QGroupBox, QHeaderView, QStyledItemDelegate) # @UnusedImport @Reimport  @UnresolvedImport
 except ImportError:
     from PyQt5.QtCore import (Qt, pyqtSlot, QSettings, QTimer) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtGui import QColor, QIntValidator # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QApplication, QWidget, QLabel, QLineEdit, QComboBox, QDialogButtonBox, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
                 QTableWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QPushButton, QSizePolicy, QSpinBox, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
-                QTableWidgetSelectionRange, QTimeEdit, QTabWidget, QGridLayout, QGroupBox, QHeaderView) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
+                QTableWidgetSelectionRange, QTimeEdit, QTabWidget, QGridLayout, QGroupBox, QHeaderView, QStyledItemDelegate) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
 
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
 
+
+class AlignDelegate(QStyledItemDelegate):
+    def initStyleOption(self, option, index):
+        super().initStyleOption(option, index)
+        option.displayAlignment = Qt.AlignmentFlag.AlignCenter
 
 class AlarmDlg(ArtisanResizeablDialog):
     def __init__(self, parent:QWidget, aw:'ApplicationWindow', activeTab:int = 0) -> None:
@@ -714,7 +720,7 @@ class AlarmDlg(ArtisanResizeablDialog):
         self.aw.AlarmDlg_activeTab = self.TabWidget.currentIndex()
         self.accept()
 
-    def closeEvent(self, _):
+    def closeEvent(self, _:Optional['QCloseEvent'] = None) -> None:
         self.closealarms()
 
     def savealarms(self):
@@ -867,6 +873,13 @@ class AlarmDlg(ArtisanResizeablDialog):
             typeComboBox.setCurrentIndex(3)
         #7: condition
         condComboBox = MyQComboBox()
+        delegate = AlignDelegate(condComboBox)
+        condComboBox.setItemDelegate(delegate)
+        condComboBox.setEditable(True)
+        condComboBoxLineEdit = condComboBox.lineEdit()
+        if condComboBoxLineEdit is not None:
+            condComboBoxLineEdit.setReadOnly(True)
+            condComboBoxLineEdit.setAlignment(Qt.AlignmentFlag.AlignCenter)
         condComboBox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
 #        condComboBox.addItems([QApplication.translate('ComboBox','below'),
 #                               QApplication.translate('ComboBox','above')])

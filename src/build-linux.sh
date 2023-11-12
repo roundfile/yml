@@ -142,32 +142,7 @@ mkdir dist/Icons
 find includes/Icons -name '.*.aset' -exec rm -r {} \;
 cp -R includes/Icons/* dist/Icons
 
-mkdir dist/_internal/yoctopuce
-mkdir dist/_internal/yoctopuce/cdll
-cp ${PYTHONSITEPKGS}/yoctopuce/cdll/*64.so dist/_internal/yoctopuce/cdll
-
-#cp /usr/lib/libsnap7.so dist
-cp ${PYTHONSITEPKGS}/snap7/lib/libsnap7.so dist/_internal
-
-
 # remove automatically collected PyQt6 libs that are not used to save space
-# THIS GOT REPLACED BY THE FOR LOOP BELOW
-#rm -f dist/_internal/libQt6Multimedia*.*
-#rm -f dist/_internal/libQt6Quick3D*.*
-#rm -f dist/_internal/libQt6QuickC*.*
-#rm -f dist/_internal/libQt6QuickD*.*
-#rm -f dist/_internal/libQt6QuickD*.*
-#rm -f dist/_internal/libQt6QuickL*.*
-#rm -f dist/_internal/libQt6QuickP*.*
-#rm -f dist/_internal/libQt6QuickT*.*
-#rm -f dist/_internal/libQt6QuickS*.*
-#rm -f dist/_internal/libQt6RemoteObjects*.*
-#rm -f dist/_internal/libQt6Sensors*.*
-#rm -f dist/_internal/libQt6SerialPort*.*
-#rm -f dist/_internal/libQt6ShaderTools*.*
-#rm -f dist/_internal/libQt6Sql*.*
-#rm -f dist/_internal/libQt6Test*.*
-
 # with pyinstaller 6.0 it seems not to needed any longer to remove unused Qt libs:
 #keep_qt_modules="libQt6Core libQt6Gui libQt6Widgets libQt6Svg libQt6PrintSupport
 # libQt6Network libQt6DBus libQt6Bluetooth libQt6Concurrent libQt6WebEngineWidgets
@@ -188,7 +163,7 @@ cp ${PYTHONSITEPKGS}/snap7/lib/libsnap7.so dist/_internal
 #    fi
 #done
 
-# remove libQt5 libs
+# remove Qt5 libs
 rm -rf dist/_internal/libQt5*
 rm -rf dist/_internal/PyQt5
 
