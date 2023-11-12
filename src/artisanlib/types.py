@@ -487,7 +487,7 @@ class SerialSettings(TypedDict):
     parity: str
     timeout: float
 
-class BTBreakParams(TypedDict):
+class BTBreakParams(TypedDict, total=False):
     offset_charge: float
     offset_drop: float
     d_drop: float
@@ -498,4 +498,3 @@ class BTBreakParams(TypedDict):
     maxdpre: float
     f_dtwice: float
     dpre_dpost_diff: float
-    d_offset_charge: float

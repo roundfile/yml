@@ -21621,10 +21621,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         dpre_dpost_diff = self.qmc.btbreak_params['dpre_dpost_diff']
 
         if self.qmc.mode == 'F':
-            f = f * 1.8
-            d = d * 1.8  # minimum temperature delta of the two legs after the event to prevent too early recognition based on noise
-            maxdpre = maxdpre * 1.8
-            dpre_dpost_diff * 1.8
+            f *= 1.8
+            d *= 1.8
+            maxdpre *= 1.8
+            dpre_dpost_diff *= 1.8
 
         if twice:
             d = d * f_dtwice
@@ -21638,6 +21638,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
     # idea:
     # . average delta before i-2 is not negative
     # . average delta after i-2 is negative and twice as high (absolute) as the one before
+    # d is minimum temperature delta of the two legs after the event to prevent too early recognition based on noise
     def BTbreak(self,i,event):
         if event in ['DROP','drop']:
             offset = self.qmc.btbreak_params['offset_drop']
@@ -21647,7 +21648,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             d = self.qmc.btbreak_params['d_charge']
             
         #dave -- must revisit the i>5 term!!!
-        if len(self.qmc.timex)>5 and i>5 and i < len(self.qmc.timex):  #'i>5' prevents reading temp2[-1] or worse whe using BTbreak post recording
+        if len(self.qmc.timex)>5 and i>5 and i < len(self.qmc.timex):  #'i>5' prevents reading temp2[-1] or worse when using BTbreak post recording
             if self.checkTop(d,offset,self.qmc.temp2[i-5],self.qmc.temp2[i-4],self.qmc.temp2[i-3],self.qmc.temp2[i-2],self.qmc.temp2[i-1],self.qmc.temp2[i]):
                 return self.qmc.btbreak_params['tight']
             if len(self.qmc.timex)>10 and i>10 and self.checkTop(d,offset,self.qmc.temp2[i-10],self.qmc.temp2[i-8],self.qmc.temp2[i-6],self.qmc.temp2[i-4],self.qmc.temp2[i-2],self.qmc.temp2[i],twice=True):
