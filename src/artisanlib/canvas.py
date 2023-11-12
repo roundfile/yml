@@ -477,7 +477,7 @@ class tgraphcanvas(FigureCanvas):
         self.temp_decay_weights:Optional[List[int]] = None
 
         # used by BTbreak
-        self.btbreak_params:BTBreakParams = {}
+        self.btbreak_params:BTBreakParams() = {}
         self.btbreak_params['d_drop'] = -0.34
         self.btbreak_params['d_charge'] = -0.67
         self.btbreak_params['tight'] = 3
