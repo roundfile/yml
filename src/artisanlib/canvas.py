@@ -66,6 +66,7 @@ from artisanlib.time import ArtisanTime
 from artisanlib.filters import LiveMedian
 from artisanlib.dialogs import ArtisanMessageBox
 from artisanlib.types import SerialSettings
+from artisanlib.types import BTBreakParams
 
 # import artisan.plus module
 from plus.util import roastLink
@@ -306,7 +307,7 @@ class tgraphcanvas(FigureCanvas):
         'segmentpickflag', 'segmentdeltathreshold', 'segmentsamplesthreshold', 'stats_summary_rect', 'title_text', 'title_artist', 'title_width',
         'background_title_width', 'xlabel_text', 'xlabel_artist', 'xlabel_width', 'lazyredraw_on_resize_timer', 'mathdictionary_base',
         'ambient_pressure_sampled', 'ambient_humidity_sampled', 'ambientTemp_sampled', 'backgroundmovespeed', 'chargeTimerPeriod', 'flavors_default_value',
-        'fmt_data_ON', 'l_subtitle', 'projectDeltaFlag', 'weight_units', 'BTBreakParams']
+        'fmt_data_ON', 'l_subtitle', 'projectDeltaFlag', 'weight_units']
 
 
     def __init__(self, parent:QWidget, dpi:int, locale:str, aw:'ApplicationWindow') -> None:
@@ -477,17 +478,18 @@ class tgraphcanvas(FigureCanvas):
         self.temp_decay_weights:Optional[List[int]] = None
 
         # used by BTbreak
-        self.btbreak_params:BTBreakParams() = {}
-        self.btbreak_params['d_drop'] = -0.34
-        self.btbreak_params['d_charge'] = -0.67
-        self.btbreak_params['tight'] = 3
-        self.btbreak_params['loose'] = 5
-        self.btbreak_params['f'] = 2.5
-        self.btbreak_params['maxdpre'] = 6.4
-        self.btbreak_params['f_dtwice'] = 1.5
-        self.btbreak_params['dpre_dpost_diff'] = 0.78  # 1.4
-        self.btbreak_params['offset_charge'] = 0.5
-        self.btbreak_params['offset_drop'] = 0.2
+        self.btbreak_params:BTBreakParams = {
+            'd_drop': -0.34
+            'd_charge': -0.67
+            'tight': 3
+            'loose': 5
+            'f': 2.5
+            'maxdpre': 6.4
+            'f_dtwice': 1.5
+            'dpre_dpost_diff': 0.78  # 1.4
+            'offset_charge': 0.5
+            'offset_drop': 0.2
+        }
 
         self.flavorlabels = list(self.artisanflavordefaultlabels)
         #Initial flavor parameters.
