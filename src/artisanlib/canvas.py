@@ -306,7 +306,7 @@ class tgraphcanvas(FigureCanvas):
         'segmentpickflag', 'segmentdeltathreshold', 'segmentsamplesthreshold', 'stats_summary_rect', 'title_text', 'title_artist', 'title_width',
         'background_title_width', 'xlabel_text', 'xlabel_artist', 'xlabel_width', 'lazyredraw_on_resize_timer', 'mathdictionary_base',
         'ambient_pressure_sampled', 'ambient_humidity_sampled', 'ambientTemp_sampled', 'backgroundmovespeed', 'chargeTimerPeriod', 'flavors_default_value',
-        'fmt_data_ON', 'l_subtitle', 'projectDeltaFlag', 'weight_units', 'btbreak_params']
+        'fmt_data_ON', 'l_subtitle', 'projectDeltaFlag', 'weight_units', 'BTBreakParams']
 
 
     def __init__(self, parent:QWidget, dpi:int, locale:str, aw:'ApplicationWindow') -> None:
