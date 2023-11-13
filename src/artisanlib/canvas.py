@@ -307,7 +307,7 @@ class tgraphcanvas(FigureCanvas):
         'segmentpickflag', 'segmentdeltathreshold', 'segmentsamplesthreshold', 'stats_summary_rect', 'title_text', 'title_artist', 'title_width',
         'background_title_width', 'xlabel_text', 'xlabel_artist', 'xlabel_width', 'lazyredraw_on_resize_timer', 'mathdictionary_base',
         'ambient_pressure_sampled', 'ambient_humidity_sampled', 'ambientTemp_sampled', 'backgroundmovespeed', 'chargeTimerPeriod', 'flavors_default_value',
-        'fmt_data_ON', 'l_subtitle', 'projectDeltaFlag', 'weight_units']
+        'fmt_data_ON', 'l_subtitle', 'projectDeltaFlag', 'weight_units', 'btbreak_params']
 
 
     def __init__(self, parent:QWidget, dpi:int, locale:str, aw:'ApplicationWindow') -> None:
@@ -488,8 +488,7 @@ class tgraphcanvas(FigureCanvas):
             'f_dtwice': 1.5,
             'dpre_dpost_diff': 0.78,
             'offset_charge': 0.5,
-            'offset_drop': 0.2
-        }
+            'offset_drop': 0.2}
 
         self.flavorlabels = list(self.artisanflavordefaultlabels)
         #Initial flavor parameters.
