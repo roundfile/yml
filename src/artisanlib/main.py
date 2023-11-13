@@ -4108,7 +4108,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.qmc.BTcurve = not self.qmc.BTcurve
         else:
             self.qmc.ETcurve = not self.qmc.ETcurve
-        self.qmc.redraw(recomputeAllDeltas=False)
+        self.qmc.redraw_keep_view(recomputeAllDeltas=False)
 
     @pyqtSlot()
     def toggleBTCurve(self) -> None:
@@ -4119,7 +4119,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         # we reset the cached main event annotation positions as those annotations are now rendered on the other curve
         self.qmc.l_annotations_dict = {}
         # and redraw
-        self.qmc.redraw(recomputeAllDeltas=False)
+        self.qmc.redraw_keep_view(recomputeAllDeltas=False)
 
     @pyqtSlot()
     def toggleDeltaETCurve(self) -> None:
@@ -4127,7 +4127,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.qmc.DeltaBTflag = not self.qmc.DeltaBTflag
         else:
             self.qmc.DeltaETflag = not self.qmc.DeltaETflag
-        self.qmc.redraw(recomputeAllDeltas=False)
+        self.qmc.redraw_keep_view(recomputeAllDeltas=False)
 
     @pyqtSlot()
     def toggleDeltaBTCurve(self) -> None:
@@ -4135,7 +4135,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.qmc.DeltaETflag = not self.qmc.DeltaETflag
         else:
             self.qmc.DeltaBTflag = not self.qmc.DeltaBTflag
-        self.qmc.redraw(recomputeAllDeltas=False)
+        self.qmc.redraw_keep_view(recomputeAllDeltas=False)
 
     @pyqtSlot()
     def toggleExtraCurve1(self) -> None:
@@ -4146,7 +4146,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.extraCurveVisibility1[i] = not self.extraCurveVisibility1[i]
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
-        self.qmc.redraw(recomputeAllDeltas=False)
+        self.qmc.redraw_keep_view(recomputeAllDeltas=False)
 
     @pyqtSlot()
     def toggleExtraCurve2(self) -> None:
@@ -4157,7 +4157,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.extraCurveVisibility2[i] = not self.extraCurveVisibility2[i]
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
-        self.qmc.redraw(recomputeAllDeltas=False)
+        self.qmc.redraw_keep_view(recomputeAllDeltas=False)
 
     def addLanguage(self, locale:str, menu_entry:str) -> None:
         languageAction = QAction(menu_entry, self)
@@ -12456,11 +12456,12 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     self.qmc.temp2Bdelta = [False]*len(names2x)
 
                 # we fill_gaps for all background curves on load, not to have to re-compute those on most redraws
-                t1 = fill_gaps(t1)
-                t2 = fill_gaps(t2)
-                for e,_ in enumerate(t1x):
-                    t1x[e] = fill_gaps(t1x[e])
-                    t2x[e] = fill_gaps(t2x[e])
+                if self.qmc.interpolateDropsflag:
+                    t1 = fill_gaps(t1)
+                    t2 = fill_gaps(t2)
+                    for e,_ in enumerate(t1x):
+                        t1x[e] = fill_gaps(t1x[e])
+                        t2x[e] = fill_gaps(t2x[e])
 
                 # we resample the temperatures to regular interval timestamps
                 if tb is not None and tb:
@@ -16714,6 +16715,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.qmc.filterDropOut_tmin = toInt(settings.value('minLimit',self.qmc.filterDropOut_tmin))
             self.qmc.filterDropOut_tmax = toInt(settings.value('maxLimit',self.qmc.filterDropOut_tmax))
             self.qmc.foregroundShowFullflag = bool(toBool(settings.value('foregroundShowFullflag',self.qmc.foregroundShowFullflag)))
+            self.qmc.interpolateDropsflag = bool(toBool(settings.value('interpolateDropsflag',self.qmc.interpolateDropsflag)))
 
 #--- BEGIN GROUP RoC
             settings.beginGroup('RoC')
@@ -18317,6 +18319,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.settingsSetValue(settings, default_settings, 'minLimit',self.qmc.filterDropOut_tmin, read_defaults)
             self.settingsSetValue(settings, default_settings, 'maxLimit',self.qmc.filterDropOut_tmax, read_defaults)
             self.settingsSetValue(settings, default_settings, 'foregroundShowFullflag',self.qmc.foregroundShowFullflag, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'interpolateDropsflag',self.qmc.interpolateDropsflag, read_defaults)
 
 #--- BEGIN GROUP RoC
             settings.beginGroup('RoC')
@@ -20296,7 +20299,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 
                                 temp = [convertTemp(t,rd['temp_unit'],self.qmc.mode) for t in rd['temp']]
                                 timex = rd['timex']
-                                stemp = self.qmc.smooth_list(timex,fill_gaps(temp),window_len=self.qmc.curvefilter,decay_smoothing=not self.qmc.optimalSmoothing)
+                                stemp = self.qmc.smooth_list(timex,
+                                    (fill_gaps(temp) if self.qmc.interpolateDropsflag else temp),
+                                    window_len=self.qmc.curvefilter,
+                                    decay_smoothing=not self.qmc.optimalSmoothing)
                                 charge = max(0,rd['charge_idx']) # start of visible data
                                 drop = rd['drop_idx'] # end of visible data
                                 stemp = numpy.concatenate((
@@ -20338,7 +20344,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                                 if self.qmc.DeltaBTflag and self.qmc.delta_ax is not None:
                                     tx = numpy.array(timex)
                                     cf = self.qmc.curvefilter #*2 # we smooth twice as heavy for PID/RoR calculation as for normal curve smoothing
-                                    t1 = self.qmc.smooth_list(timex,fill_gaps(temp),window_len=cf,decay_smoothing=not self.qmc.optimalSmoothing)
+                                    t1 = self.qmc.smooth_list(timex,(fill_gaps(temp) if self.qmc.interpolateDropsflag else temp),window_len=cf,decay_smoothing=not self.qmc.optimalSmoothing)
                                     if len(t1)>10 and len(tx) > 10:
                                         # we start RoR computation 10 readings after CHARGE to avoid this initial peak
                                         RoR_start = min(rd['charge_idx']+10,len(tx)-1)
@@ -21620,6 +21626,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         f_dtwice = self.qmc.btbreak_params['f_dtwice']
         dpre_dpost_diff = self.qmc.btbreak_params['dpre_dpost_diff']
 
+        #scale parameters for temperature units
         if self.qmc.mode == 'F':
             f *= 1.8
             d *= 1.8
@@ -21648,30 +21655,12 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             d = self.qmc.btbreak_params['d_charge']
             
         #dave -- must revisit the i>5 term!!!
-        if len(self.qmc.timex)>5 and i>5 and i < len(self.qmc.timex):  #'i>5' prevents reading temp2[-1] or worse when using BTbreak post recording
+        if len(self.qmc.timex)>5 and i>4 and i < len(self.qmc.timex):  #'i>4' prevents reading temp2[-1] or worse when using BTbreak post recording
             if self.checkTop(d,offset,self.qmc.temp2[i-5],self.qmc.temp2[i-4],self.qmc.temp2[i-3],self.qmc.temp2[i-2],self.qmc.temp2[i-1],self.qmc.temp2[i]):
                 return self.qmc.btbreak_params['tight']
             if len(self.qmc.timex)>10 and i>10 and self.checkTop(d,offset,self.qmc.temp2[i-10],self.qmc.temp2[i-8],self.qmc.temp2[i-6],self.qmc.temp2[i-4],self.qmc.temp2[i-2],self.qmc.temp2[i],twice=True):
                 return self.qmc.btbreak_params['loose']
         return 0
-
-    # this can be used to find the CHARGE index as well as the DROP index by using
-    # 0 or the DRY index as start index, respectively
-    def findBTbreak(self,start_index=0,end_index=0,offset=0.5):
-        result = 0
-        # determine average deltaBT wrt. the two previous measurements
-        # the deltaBT values wrt. the next two measurements must by twice as high and negative
-        # then our current measurement is the one of CHARGE/DROP
-        for i in range(start_index,len(self.qmc.timex)):
-            if end_index and i > end_index:
-                break
-            if i>3:
-                o = offset if self.qmc.mode == 'C' else offset * 1.8
-                b = self.BTbreak(i,o)
-                if b > 0:
-                    result = i + 1 - b
-                    break
-        return result
 
     # updates AUC guide (expected time to hit target AUC; self.qmc.AUCguideTime) based on current AUC, target, base, and RoR
     def updateAUCguide(self):
