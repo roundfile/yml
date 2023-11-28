@@ -5,8 +5,7 @@
 from pathlib import Path
 import csv
 import logging
-from typing import List, TYPE_CHECKING
-from typing import Final  # Python <=3.7
+from typing import Final, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from artisanlib.types import ProfileData # pylint: disable=unused-import
@@ -16,23 +15,9 @@ try:
 except ImportError:
     from PyQt5.QtWidgets import QApplication # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
-from artisanlib.util import fill_gaps
+from artisanlib.util import replace_duplicates
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
-
-def replace_duplicates(data):
-    lv = -1
-    data_core = []
-    for v in data:
-        if v == lv:
-            data_core.append(-1)
-        else:
-            data_core.append(v)
-            lv = v
-    # reconstruct first and last reading
-    if len(data)>0:
-        data_core[-1] = data[-1]
-    return fill_gaps(data_core, interpolate_max=100)
 
 # returns a dict containing all profile information contained in the given IKAWA CSV file
 def extractProfileGiesenCSV(file,aw):

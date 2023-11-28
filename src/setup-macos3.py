@@ -75,6 +75,8 @@ DATA_FILES = [
         r'includes/SourceHanSansKR-Regular.otf',
         r'includes/SourceHanSansTW-Regular.otf',
         r'includes/dijkstra.ttf',
+        r'includes/ComicNeue-Regular.ttf',
+        r'includes/xkcd-script.ttf',
         r'includes/Machines',
         r'includes/Themes',
         r'includes/Icons',
@@ -114,7 +116,7 @@ OPTIONS = {
     'optimize':  2,
     'compressed': True,
     'iconfile': 'artisan.icns',
-    'arch': 'universal2', # 'universal2', 'x86_64',
+    'arch': 'x86_64', # 'universal2', 'x86_64',
     'matplotlib_backends': '-', # '-' for imported or explicit "Qt5Agg, PDF, PS, SVG"
     'includes': ['serial', 'charset_normalizer.md__mypyc'],
     'excludes' :  ['tkinter','curses',

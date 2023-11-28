@@ -18,8 +18,7 @@
 import sys
 import platform
 import logging
-from typing import List, Optional, cast, TYPE_CHECKING
-from typing import Final  # Python <=3.7
+from typing import Final, List, Optional, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from artisanlib.types import Palette
@@ -1745,10 +1744,11 @@ class EventsDlg(ArtisanResizeablDialog):
                                 ld = d
                                 lt = t
                                 # add to event table
-                                self.aw.qmc.specialevents.append(self.aw.qmc.time2index(timex[ii]))
-                                self.aw.qmc.specialeventstype.append(i)
-                                self.aw.qmc.specialeventsStrings.append('Q'+ self.aw.qmc.eventsvalues(float(d+1)))
-                                self.aw.qmc.specialeventsvalue.append(float(d+1))
+                                self.aw.qmc.addEvent(
+                                    self.aw.qmc.time2index(timex[ii]),
+                                    i,
+                                    'Q'+ self.aw.qmc.eventsvalues(float(d+1)),
+                                    float(d+1))
                                 self.aw.qmc.fileDirty()
                     redraw = True
         if self.aw.clusterEventsFlag:
@@ -2662,9 +2662,9 @@ class EventsDlg(ArtisanResizeablDialog):
             self.aw.extraeventbuttontextcolor[visualIndex] = self.extraeventbuttontextcolor[i]
 
         #Apply Event Button Changes
+        self.aw.update_extraeventbuttons_visibility()
         self.aw.realignbuttons()
         self.aw.settooltip() # has to be done after realignbuttons() to have set the aw.buttonlist correctly!
-        self.aw.update_extraeventbuttons_visibility()
 
     @pyqtSlot()
     def setlabeleventbutton(self):

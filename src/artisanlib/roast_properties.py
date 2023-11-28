@@ -19,15 +19,14 @@ import sys
 import math
 import platform
 import logging
-from typing import Optional, List, Tuple, Dict, cast, Any, TYPE_CHECKING
-from typing import Final  # Python <=3.7
+from typing import Final, Optional, List, Tuple, Dict, cast, Any, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
     from artisanlib.types import RecentRoast, BTU
     from artisanlib.ble import BleInterface # noqa: F401 # pylint: disable=unused-import
     from PyQt6.QtWidgets import QLayout, QAbstractItemView, QCompleter # pylint: disable=unused-import
-    from PyQt6.QtGui import QClipboard, QCloseEvent # pylint: disable=unused-import
+    from PyQt6.QtGui import QClipboard, QCloseEvent, QKeyEvent # pylint: disable=unused-import
     from PyQt6.QtCore import QObject # pylint: disable=unused-import
 
 # import artisan.plus modules
@@ -347,17 +346,18 @@ class volumeCalculatorDlg(ArtisanDialog):
             _log.exception(e)
 
     #keyboard presses. There must not be widgets (pushbuttons, comboboxes, etc) in focus in order to work
-    def keyPressEvent(self,event):
-        key = int(event.key())
-        if key == 16777220 and self.scale_connected: # ENTER key pressed
-            v = self.retrieveWeight()
-            if v and v != 0:
-                if self.unitvolumeEdit.hasFocus():
-                    self.unitvolumeEdit.setText(f'{self.aw.float2float(v):g}')
-                elif self.coffeeinweightEdit.hasFocus():
-                    self.coffeeinweightEdit.setText(f'{self.aw.float2float(v):g}')
-                elif self.coffeeoutweightEdit.hasFocus():
-                    self.coffeeoutweightEdit.setText(f'{self.aw.float2float(v):g}')
+    def keyPressEvent(self, event: Optional['QKeyEvent']) -> None:
+        if event is not None:
+            key = int(event.key())
+            if key == 16777220 and self.scale_connected: # ENTER key pressed
+                v = self.retrieveWeight()
+                if v and v != 0:
+                    if self.unitvolumeEdit.hasFocus():
+                        self.unitvolumeEdit.setText(f'{self.aw.float2float(v):g}')
+                    elif self.coffeeinweightEdit.hasFocus():
+                        self.coffeeinweightEdit.setText(f'{self.aw.float2float(v):g}')
+                    elif self.coffeeoutweightEdit.hasFocus():
+                        self.coffeeoutweightEdit.setText(f'{self.aw.float2float(v):g}')
 
     def widgetWeight(self,widget):
         w = self.retrieveWeight()
@@ -2369,7 +2369,7 @@ class editGraphDlg(ArtisanResizeablDialog):
                 else:
                     self.plus_coffee_selected_label = None
                 if 'plus_blend_spec' in rr:
-                    self.plus_blend_selected_label = rr['plus_blend_label']
+                    self.plus_blend_selected_label = (rr['plus_blend_label'] if 'plus_blend_label' in rr else None)
                     self.plus_blend_selected_spec = rr['plus_blend_spec']
                     if 'plus_blend_spec_labels' in rr:
                         self.plus_blend_selected_spec_labels = rr['plus_blend_spec_labels']
@@ -2587,27 +2587,28 @@ class editGraphDlg(ArtisanResizeablDialog):
         return (1./density) * weight * 1000
 
     #keyboard presses. There must not be widgets (pushbuttons, comboboxes, etc) in focus in order to work
-    def keyPressEvent(self, event):
-        key = int(event.key())
-        #print(key)
-        modifiers = event.modifiers()
-        control_modifier = modifiers == Qt.KeyboardModifier.ControlModifier # command/apple k on macOS, CONTROL on Windows
-        if event.matches(QKeySequence.StandardKey.Copy) and self.TabWidget.currentIndex() == 3: # datatable
-            self.aw.copy_cells_to_clipboard(self.datatable,adjustment=1)
-            self.aw.sendmessage(QApplication.translate('Message','Data table copied to clipboard'))
-        if key == 16777220 and self.aw.scale.device is not None and self.aw.scale.device != '' and self.aw.scale.device != 'None': # ENTER key pressed and scale connected
-            if self.weightinedit.hasFocus():
-                self.inWeight(True,overwrite=True) # we don't add to current reading but overwrite
-            elif self.weightoutedit.hasFocus():
-                self.outWeight(True,overwrite=True) # we don't add to current reading but overwrite
-        if key == 76 and control_modifier and self.TabWidget.currentIndex() == 0: #ctrl L on Roast tab => open volume calculator
-            self.volumeCalculatorTimer(True)
-        if key == 73 and control_modifier and self.TabWidget.currentIndex() == 0: #ctrl I on Roast tab => send scale weight to in-weight field
-            self.inWeight(True)
-        if key == 79 and control_modifier and self.TabWidget.currentIndex() == 0: #ctrl O on Roast tab => send scale weight to out-weight field
-            self.outWeight(True)
-        if key == 80 and control_modifier and self.TabWidget.currentIndex() == 0: #ctrl P on Roast tab => send scale weight to in-weight field
-            self.resetScaleSet()
+    def keyPressEvent(self, event: Optional['QKeyEvent']) -> None:
+        if event is not None:
+            key = int(event.key())
+            #print(key)
+            modifiers = event.modifiers()
+            control_modifier = modifiers == Qt.KeyboardModifier.ControlModifier # command/apple k on macOS, CONTROL on Windows
+            if event.matches(QKeySequence.StandardKey.Copy) and self.TabWidget.currentIndex() == 3: # datatable
+                self.aw.copy_cells_to_clipboard(self.datatable,adjustment=1)
+                self.aw.sendmessage(QApplication.translate('Message','Data table copied to clipboard'))
+            if key == 16777220 and self.aw.scale.device is not None and self.aw.scale.device != '' and self.aw.scale.device != 'None': # ENTER key pressed and scale connected
+                if self.weightinedit.hasFocus():
+                    self.inWeight(True,overwrite=True) # we don't add to current reading but overwrite
+                elif self.weightoutedit.hasFocus():
+                    self.outWeight(True,overwrite=True) # we don't add to current reading but overwrite
+            if key == 76 and control_modifier and self.TabWidget.currentIndex() == 0: #ctrl L on Roast tab => open volume calculator
+                self.volumeCalculatorTimer(True)
+            if key == 73 and control_modifier and self.TabWidget.currentIndex() == 0: #ctrl I on Roast tab => send scale weight to in-weight field
+                self.inWeight(True)
+            if key == 79 and control_modifier and self.TabWidget.currentIndex() == 0: #ctrl O on Roast tab => send scale weight to out-weight field
+                self.outWeight(True)
+            if key == 80 and control_modifier and self.TabWidget.currentIndex() == 0: #ctrl P on Roast tab => send scale weight to in-weight field
+                self.resetScaleSet()
 
     @pyqtSlot(int)
     def tareChanged(self, i:int) -> None:
@@ -2711,6 +2712,7 @@ class editGraphDlg(ArtisanResizeablDialog):
             # hack to access the Qt automatic translation of the Help button
             db_help = QDialogButtonBox(QDialogButtonBox.StandardButton.Help)
             help_button: Optional[QPushButton] = db_help.button(QDialogButtonBox.StandardButton.Help)
+            help_text_translated:str = 'Help'
             if help_button is not None:
                 help_text_translated = help_button.text()
             self.energy_ui.helpButton.setText(help_text_translated)
@@ -2753,6 +2755,7 @@ class editGraphDlg(ArtisanResizeablDialog):
             # hack to access the Qt automatic translation of the RestoreDefaults button
             db = QDialogButtonBox(QDialogButtonBox.StandardButton.RestoreDefaults)
             defaults_button: Optional[QPushButton] = db.button(QDialogButtonBox.StandardButton.RestoreDefaults)
+            defaults_button_text_translated:str = 'Restore Defaults'
             if defaults_button is not None:
                 defaults_button_text_translated = defaults_button.text()
             self.energy_ui.loadsDefaultsButtons.setText(defaults_button_text_translated)
@@ -4000,9 +4003,9 @@ class editGraphDlg(ArtisanResizeablDialog):
             except Exception: # pylint: disable=broad-except
                 pass
             deltaBT = QTableWidgetItem(deltaBT_str)
-
             deltaET.setTextAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignVCenter)
             deltaBT.setTextAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignVCenter)
+            text:str = ''
             if i in self.aw.qmc.specialevents:
                 index = self.aw.qmc.specialevents.index(i)
                 text = QApplication.translate('Table', '#{0} {1}{2}').format(str(index+1),self.aw.qmc.etypesf(self.aw.qmc.specialeventstype[index])[0],self.aw.qmc.eventsvalues(self.aw.qmc.specialeventsvalue[index]))
@@ -4041,8 +4044,6 @@ class editGraphDlg(ArtisanResizeablDialog):
                 elif i == self.aw.qmc.timeindex[7] and i != 0:
                     tableitem.setBackground(QColor('orange'))
                     text = QApplication.translate('Table', 'COOL')
-                else:
-                    text = ''
             Rtime.setText(text + ' ' + Rtime.text())
 
             self.datatable.setItem(i,1,ET)
@@ -4185,19 +4186,22 @@ class editGraphDlg(ArtisanResizeablDialog):
                     try:
                         timez = self.eventtable.cellWidget(i,0)
                         assert isinstance(timez, QLineEdit)
+                        time_idx: int
                         if self.aw.qmc.timeindex[0] > -1:
-                            self.aw.qmc.specialevents[i] = self.aw.qmc.time2index(self.aw.qmc.timex[self.aw.qmc.timeindex[0]]+ stringtoseconds(str(timez.text())))
+                            time_idx = self.aw.qmc.time2index(self.aw.qmc.timex[self.aw.qmc.timeindex[0]]+ stringtoseconds(str(timez.text())))
                         else:
-                            self.aw.qmc.specialevents[i] = self.aw.qmc.time2index(stringtoseconds(str(timez.text())))
+                            time_idx = self.aw.qmc.time2index(stringtoseconds(str(timez.text())))
                         description = self.eventtable.cellWidget(i,3)
                         assert isinstance(description, QLineEdit)
-                        self.aw.qmc.specialeventsStrings[i] = description.text()
                         etype = self.eventtable.cellWidget(i,4)
                         assert isinstance(etype, MyQComboBox)
-                        self.aw.qmc.specialeventstype[i] = etype.currentIndex()
                         evalue = self.eventtable.cellWidget(i,5)
                         assert isinstance(evalue, QLineEdit)
-                        self.aw.qmc.specialeventsvalue[i] = self.aw.qmc.str2eventsvalue(str(evalue.text()))
+                        self.aw.qmc.setEvent(i,
+                            time_idx,
+                            etype.currentIndex(),
+                            description.text(),
+                            self.aw.qmc.str2eventsvalue(evalue.text()))
                     except Exception: # pylint: disable=broad-except
                         pass
             except Exception as e: # pylint: disable=broad-except
@@ -4319,10 +4323,7 @@ class editGraphDlg(ArtisanResizeablDialog):
             self.aw.qmc.profileDataSemaphore.acquire(1)
             nevents = len(self.aw.qmc.specialevents)
             if nevents:
-                self.aw.qmc.specialevents = []
-                self.aw.qmc.specialeventstype = []
-                self.aw.qmc.specialeventsStrings = []
-                self.aw.qmc.specialeventsvalue = []
+                self.aw.qmc.clearEvents()
         except Exception as e:  # pylint: disable=broad-except
             _log.exception(e)
         finally:
@@ -4373,10 +4374,11 @@ class editGraphDlg(ArtisanResizeablDialog):
     def addEventTable(self,_=False):
         if len(self.aw.qmc.timex):
             self.saveEventTable()
-            self.aw.qmc.specialevents.append(len(self.aw.qmc.timex)-1)   #qmc.specialevents holds indexes in qmx.timex. Initialize event index
-            self.aw.qmc.specialeventstype.append(0)
-            self.aw.qmc.specialeventsStrings.append(str(len(self.aw.qmc.specialevents)))
-            self.aw.qmc.specialeventsvalue.append(0)
+            self.aw.qmc.addEvent(
+                    len(self.aw.qmc.timex)-1,   #qmc.specialevents holds indexes in qmx.timex. Initialize event index
+                    0,
+                    str(len(self.aw.qmc.specialevents)),
+                    0)
             self.createEventTable(force=True)
             self.aw.qmc.redraw(recomputeAllDeltas=False)
             message = QApplication.translate('Message','Event #{0} added').format(str(len(self.aw.qmc.specialevents)))
@@ -4384,22 +4386,6 @@ class editGraphDlg(ArtisanResizeablDialog):
         else:
             message = QApplication.translate('Message','No profile found')
             self.aw.sendmessage(message)
-
-    def deleteEventRows(self,rows):
-        specialevents = []
-        specialeventstype = []
-        specialeventsStrings = []
-        specialeventsvalue = []
-        for r, se in enumerate(self.aw.qmc.specialevents):
-            if r not in rows:
-                specialevents.append(se)
-                specialeventstype.append(self.aw.qmc.specialeventstype[r])
-                specialeventsStrings.append(self.aw.qmc.specialeventsStrings[r])
-                specialeventsvalue.append(self.aw.qmc.specialeventsvalue[r])
-        self.aw.qmc.specialevents = specialevents
-        self.aw.qmc.specialeventstype = specialeventstype
-        self.aw.qmc.specialeventsStrings = specialeventsStrings
-        self.aw.qmc.specialeventsvalue = specialeventsvalue
 
     @pyqtSlot(bool)
     def deleteEventTable(self,_=False):
@@ -4411,15 +4397,11 @@ class editGraphDlg(ArtisanResizeablDialog):
                 rows = []
                 for s in selected:
                     top = s.topRow()
-                    for x in range(s.rowCount()):
-                        rows.append(top + x)
-                self.deleteEventRows(rows)
+                    rows.extend(list(range(top,top+s.rowCount())))
+                self.aw.qmc.deleteEvents(rows)
                 message = QApplication.translate('Message',' Events #{0} deleted').format(str([r+1 for r in rows]))
             else:
-                self.aw.qmc.specialevents.pop()
-                self.aw.qmc.specialeventstype.pop()
-                self.aw.qmc.specialeventsStrings.pop()
-                self.aw.qmc.specialeventsvalue.pop()
+                self.aw.qmc.popEvent()
                 message = QApplication.translate('Message',' Event #{0} deleted').format(str(len(self.aw.qmc.specialevents)+1))
             self.aw.qmc.fileDirty()
             self.createEventTable(force=True)

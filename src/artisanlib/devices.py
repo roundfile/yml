@@ -20,8 +20,7 @@ import time as libtime
 import re
 import platform
 import logging
-from typing import Optional, List, Tuple, TYPE_CHECKING
-from typing import Final  # Python <=3.7
+from typing import Final, Optional, List, Tuple, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
@@ -147,10 +146,12 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         help_button = db_help.button(QDialogButtonBox.StandardButton.Help)
         if help_button is not None:
             help_text_translated = help_button.text()
-            helpprogrambutton =  QPushButton(help_text_translated)
-            self.setButtonTranslations(helpprogrambutton,'Help',QApplication.translate('Button','Help'))
-            helpprogrambutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-            helpprogrambutton.clicked.connect(self.showhelpprogram)
+        else:
+            help_text_translated = QApplication.translate('Button','Help')
+        helpprogrambutton =  QPushButton(help_text_translated)
+        self.setButtonTranslations(helpprogrambutton,'Help',QApplication.translate('Button','Help'))
+        helpprogrambutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        helpprogrambutton.clicked.connect(self.showhelpprogram)
         selectoutprogrambutton =  QPushButton(QApplication.translate('Button','Select'))
         selectoutprogrambutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         selectoutprogrambutton.clicked.connect(self.loadoutprogramname)
@@ -271,11 +272,13 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         db_reset_button = db_reset.button(QDialogButtonBox.StandardButton.Reset)
         if db_reset_button is not None:
             reset_text_translated = db_reset_button.text()
-            resetButton =  QPushButton(reset_text_translated)
-            self.setButtonTranslations(resetButton,'Reset',QApplication.translate('Button','Reset'))
-            resetButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-            resetButton.setMinimumWidth(100)
-            resetButton.clicked.connect(self.resetextradevices)
+        else:
+            reset_text_translated = QApplication.translate('Button','Reset')
+        resetButton = QPushButton(reset_text_translated)
+        self.setButtonTranslations(resetButton,'Reset',QApplication.translate('Button','Reset'))
+        resetButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        resetButton.setMinimumWidth(100)
+        resetButton.clicked.connect(self.resetextradevices)
         extradevHelpButton = QPushButton(help_text_translated)
         self.setButtonTranslations(extradevHelpButton,'Help',QApplication.translate('Button','Help'))
         extradevHelpButton.setMinimumWidth(100)
@@ -3090,7 +3093,36 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ##########################
                 ####  DEVICE 151 is +S7_1112 but +DEVICE cannot be set as main device
                 ##########################
-
+                ##########################
+                elif meter == 'Phidget DAQ1200 01':
+                    self.aw.qmc.device = 152
+                    message = QApplication.translate('Message','Device set to {0}').format(meter)
+                ##########################
+                ##########################
+                ####  DEVICE 153 is +Phidget DAQ1200 23 but +DEVICE cannot be set as main device
+                ##########################
+                ##########################
+                elif meter == 'Phidget DAQ1300 01':
+                    self.aw.qmc.device = 154
+                    message = QApplication.translate('Message','Device set to {0}').format(meter)
+                ##########################
+                ##########################
+                ####  DEVICE 155 is +Phidget DAQ1300 23 but +DEVICE cannot be set as main device
+                ##########################
+                ##########################
+                elif meter == 'Phidget DAQ1301 01':
+                    self.aw.qmc.device = 156
+                    message = QApplication.translate('Message','Device set to {0}').format(meter)
+                ##########################
+                ##########################
+                ####  DEVICE 157 is +Phidget DAQ1301 23 but +DEVICE cannot be set as main device
+                ##########################
+                ##########################
+                ####  DEVICE 158 is +Phidget DAQ1301 45 but +DEVICE cannot be set as main device
+                ##########################
+                ##########################
+                ####  DEVICE 159 is +Phidget DAQ1301 67 but +DEVICE cannot be set as main device
+                ##########################
 
                 # ADD DEVICE:
 
@@ -3261,7 +3293,15 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 1, # 148
                 1, # 149
                 7, # 150
-                1  # 110
+                1, # 151
+                1, # 152
+                1, # 153
+                1, # 154
+                1, # 155
+                1, # 156
+                1, # 157
+                1, # 158
+                1  # 159
                 ]
             #init serial settings of extra devices
             for i, _ in enumerate(self.aw.qmc.extradevices):

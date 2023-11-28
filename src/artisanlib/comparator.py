@@ -22,21 +22,19 @@ from matplotlib import ticker, transforms
 import matplotlib.patheffects as PathEffects
 from matplotlib import rcParams
 import logging
-from typing import Sequence, List, Union, Tuple, Optional, Literal, Callable, cast, TYPE_CHECKING
-from typing_extensions import TypedDict  # Python <=3.7
-from typing import Final
+from typing import Final, TypedDict, Sequence, List, Union, Tuple, Optional, Literal, Callable, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
     from artisanlib.types import ProfileData # pylint: disable=unused-import
     from matplotlib.lines import Line2D # pylint: disable=unused-import
     from matplotlib.backend_bases import PickEvent # pylint: disable=unused-import
-    import matplotlib as mpl # pylint: disable=unused-import
+    from matplotlib.legend import Legend # pylint: disable=unused-import
     from PyQt6.QtWidgets import QLayoutItem, QLayout, QScrollBar # pylint: disable=unused-import
     from PyQt6.QtGui import QStandardItem, QKeyEvent, QDropEvent, QDragEnterEvent, QCloseEvent # pylint: disable=unused-import
     from PyQt6.QtCore import QMimeData # pylint: disable=unused-import
 
-from artisanlib.util import deltaLabelUTF8, decodeLocal, stringfromseconds, fromFtoCstrict, fromCtoFstrict, fill_gaps
+from artisanlib.util import deltaLabelUTF8, decodeLocal, decodeLocalStrict, stringfromseconds, fromFtoCstrict, fromCtoFstrict, fill_gaps
 from artisanlib.suppress_errors import suppress_stdout_stderr
 from artisanlib.dialogs import ArtisanDialog
 from artisanlib.widgets import MyQComboBox
@@ -163,7 +161,7 @@ class RoastProfile:
         #
         self.etypes:List[str] = self.aw.qmc.etypes[:-1]
         if 'etypes' in profile:
-            self.etypes = profile['etypes'][:4]
+            self.etypes = [decodeLocalStrict(et) for et in profile['etypes'][:4]]
             if 'default_etypes' in profile:
                 default_etypes = profile['default_etypes']
                 for i, _ in enumerate(self.etypes):
@@ -174,9 +172,9 @@ class RoastProfile:
         if 'timex' in profile:
             self.timex = profile['timex']
         if 'temp1' in profile:
-            self.temp1 = fill_gaps(profile['temp1'])
+            self.temp1 = (fill_gaps(profile['temp1']) if self.aw.qmc.interpolateDropsflag else profile['temp1'])
         if 'temp2' in profile:
-            self.temp2 = fill_gaps(profile['temp2'])
+            self.temp2 = (fill_gaps(profile['temp2']) if self.aw.qmc.interpolateDropsflag else profile['temp2'])
         if 'timeindex' in profile:
             for i,ti in enumerate(profile['timeindex']):
                 if i < len(self.timeindex):
@@ -204,15 +202,15 @@ class RoastProfile:
                         else:
                             self.extratimex.append(self.timex)
                         if len(xtemp1[i]) == len(self.timex):
-                            self.extratemp1.append(fill_gaps(xtemp1[i]))
+                            self.extratemp1.append(fill_gaps(xtemp1[i]) if self.aw.qmc.interpolateDropsflag else xtemp1[i])
                         else:
                             self.extratemp1.append([-1.]*len(self.timex))
                         if len(xtemp2[i]) == len(self.timex):
-                            self.extratemp2.append(fill_gaps(xtemp2[i]))
+                            self.extratemp2.append(fill_gaps(xtemp2[i]) if self.aw.qmc.interpolateDropsflag else xtemp2[i])
                         else:
                             self.extratemp2.append([-1.]*len(self.timex))
-                    self.extraname1 = [n.format(self.etypes[0],self.etypes[1],self.etypes[2],self.etypes[3]) for n in xname1] # we apply event name substitutions
-                    self.extraname2 = [n.format(self.etypes[0],self.etypes[1],self.etypes[2],self.etypes[3]) for n in xname2] # we apply event name substitutions
+                    self.extraname1 = [decodeLocalStrict(n).format(self.etypes[0],self.etypes[1],self.etypes[2],self.etypes[3]) for n in xname1] # we apply event name substitutions
+                    self.extraname2 = [decodeLocalStrict(n).format(self.etypes[0],self.etypes[1],self.etypes[2],self.etypes[3]) for n in xname2] # we apply event name substitutions
                     self.extraDelta1 = delta1
                     self.extraDelta2 = delta2
         # temperature conversion
@@ -676,16 +674,16 @@ class RoastProfile:
         for ll in [self.l_temp1,self.l_temp2]:
             if ll is not None:
                 ll.set_transform(tempTransZero) # we reset the transformation to avoid a double shift along the timeaxis
-                ll.set_xdata([x-offset if x is not None else None for x in self.timex])
+                ll.set_xdata([x-offset if x is not None else None for x in self.timex]) # pyright: ignore[reportGeneralTypeIssues]
 
         # shifting the extra curves
         for i, (ll1, ll2) in enumerate(zip(self.l_extratemp1,self.l_extratemp2)):
             if ll1 is not None:
                 ll1.set_transform(deltaTransZero if self.extraDelta1[i] else tempTransZero) # we reset the transformation to avoid a double shift along the timeaxis
-                ll1.set_xdata([x-offset if x is not None else None for x in self.extratimex[i]])
+                ll1.set_xdata([x-offset if x is not None else None for x in self.extratimex[i]]) # pyright: ignore[reportGeneralTypeIssues]
             if ll2 is not None:
                 ll2.set_transform(deltaTransZero if self.extraDelta2[i] else tempTransZero) # we reset the transformation to avoid a double shift along the timeaxis
-                ll2.set_xdata([x-offset if x is not None else None for x in self.extratimex[i]])
+                ll2.set_xdata([x-offset if x is not None else None for x in self.extratimex[i]]) # pyright: ignore[reportGeneralTypeIssues]
 
         # shifting the delta curves does not work for some curves that hold many points resulting some at the end being not displayed
         # thus we update the xdata explicitly below
@@ -696,7 +694,7 @@ class RoastProfile:
         for ll in [self.l_delta1,self.l_delta2]:
             if ll is not None:
                 ll.set_transform(deltaTransZero) # we reset the transformation to avoid a double shift along the timeaxis
-                ll.set_xdata([x-offset if x is not None else None for x in self.timex])
+                ll.set_xdata([x-offset if x is not None else None for x in self.timex]) # pyright: ignore[reportGeneralTypeIssues]
 
 #        # update RoR clippings
 #        self.l_delta1_clipping.set_transform(self.getDeltaTrans())
@@ -960,7 +958,7 @@ class roastCompareDlg(ArtisanDialog):
         # align line
         self.l_align:Optional['Line2D'] = None
         # legend
-        self.legend:Optional['mpl.legend.Legend'] = None
+        self.legend:Optional['Legend'] = None
         self.legendloc_pos:Optional[Tuple[float,float]] = None
         # table
         self.profileTable = CompareTableWidget()

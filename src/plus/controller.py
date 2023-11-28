@@ -37,8 +37,7 @@ import os
 import platform
 import threading
 import logging
-from typing import Optional, TYPE_CHECKING
-from typing import Final # Python <=3.7
+from typing import Final, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
@@ -84,7 +83,7 @@ def start(app_window:'ApplicationWindow') -> None:
 
 # toggles between connected and disconnected modes. If connected and
 # not is_synced() send current data to server
-def toggle(app_window):
+def toggle(app_window:'ApplicationWindow') -> None:
     _log.debug('toggle()')
     config.app_window = app_window
     if config.app_window is not None and config.app_window.plus_account is None:  # @UndefinedVariable

@@ -13,10 +13,10 @@ once.
 # updatet to PyQt6, by Marko Luther 2021
 
 import sys
-from typing import Dict, Optional
+from typing import Dict, Optional, List
 
 try:
-    from PyQt6.QtCore import Qt, QEvent, QTimer, pyqtSignal # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt6.QtCore import Qt, QEvent, QTimer, pyqtSignal, QSize # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtGui import ( QStandardItemModel,  # @UnusedImport @Reimport  @UnresolvedImport
         QPalette, QFontMetrics, QBrush, QColor, QPixmap, QIcon # @UnusedImport @Reimport  @UnresolvedImport
     )
@@ -26,7 +26,7 @@ try:
         QStyleOptionMenuItem, QStyleOptionViewItem, QStylePainter, QWidget # @UnusedImport @Reimport  @UnresolvedImport
     )
 except ImportError:
-    from PyQt5.QtCore import Qt, QEvent, QTimer, pyqtSignal # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt5.QtCore import Qt, QEvent, QTimer, pyqtSignal, QSize # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtGui import ( QStandardItemModel, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
         QPalette, QFontMetrics, QBrush, QColor, QPixmap, QIcon # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     )
@@ -86,23 +86,23 @@ class CheckComboBox(QComboBox): # pyright: ignore [reportGeneralTypeIssues] # Ar
 
         def paint(self, painter, option, index):
             menuopt = self._getMenuStyleOption(option, index)
+            style:Optional[QStyle] = QApplication.style()
             if option.widget is not None:
                 style = option.widget.style()
-            else:
-                style = QApplication.style()
-            style.drawControl(QStyle.ControlElement.CE_MenuItem, menuopt, painter,
-                              option.widget)
+            if style is not None:
+                style.drawControl(QStyle.ControlElement.CE_MenuItem, menuopt, painter,
+                                  option.widget)
 
         def sizeHint(self, option, index):
             menuopt = self._getMenuStyleOption(option, index)
+            style:Optional[QStyle] = QApplication.style()
             if option.widget is not None:
                 style = option.widget.style()
-            else:
-                style = QApplication.style()
-            return style.sizeFromContents(
-                QStyle.ContentsType.CT_MenuItem, menuopt, menuopt.rect.size(),
-                option.widget
-            )
+            if style is not None:
+                return style.sizeFromContents(
+                    QStyle.ContentsType.CT_MenuItem, menuopt, menuopt.rect.size(),
+                    option.widget)
+            return QSize()
 
         def _getMenuStyleOption(self, option, index):
             menuoption = QStyleOptionMenuItem()
@@ -308,7 +308,7 @@ class CheckComboBox(QComboBox): # pyright: ignore [reportGeneralTypeIssues] # Ar
         option.currentIcon = QIcon()
         painter.drawControl(QStyle.ControlElement.CE_ComboBoxLabel, option)
 
-    def itemCheckState(self, index):
+    def itemCheckState(self, index:int) -> Qt.CheckState:
         """Return the check state for item at `index`
         Parameters
         ----------
@@ -322,7 +322,7 @@ class CheckComboBox(QComboBox): # pyright: ignore [reportGeneralTypeIssues] # Ar
             return Qt.CheckState(state)
         return Qt.CheckState.Unchecked
 
-    def setItemCheckState(self, index, state):
+    def setItemCheckState(self, index:int, state:Qt.CheckState) -> None:
         """Set the check state for item at `index` to `state`.
         Parameters
         ----------
@@ -331,7 +331,7 @@ class CheckComboBox(QComboBox): # pyright: ignore [reportGeneralTypeIssues] # Ar
         """
         self.setItemData(index, state, Qt.ItemDataRole.CheckStateRole)
 
-    def checkedIndices(self):
+    def checkedIndices(self) -> List[int]:
         """Return a list of indices of all checked items.
         Returns
         -------
@@ -340,7 +340,7 @@ class CheckComboBox(QComboBox): # pyright: ignore [reportGeneralTypeIssues] # Ar
         return [i for i in range(self.count())
                 if self.itemCheckState(i) == Qt.CheckState.Checked]
 
-    def setPlaceholderText(self, text):
+    def setPlaceholderText(self, text:Optional[str]) -> None:
         """Set the placeholder text.
         This text is displayed on the checkbox when there are no checked
         items.
@@ -348,11 +348,11 @@ class CheckComboBox(QComboBox): # pyright: ignore [reportGeneralTypeIssues] # Ar
         ----------
         text : str
         """
-        if self.__placeholderText != text:
+        if text is not None and self.__placeholderText != text:
             self.__placeholderText = text
             self.update()
 
-    def placeholderText(self):
+    def placeholderText(self) -> str:
         """Return the placeholder text.
         Returns
         -------
@@ -381,7 +381,7 @@ class CheckComboBox(QComboBox): # pyright: ignore [reportGeneralTypeIssues] # Ar
 
         super().keyPressEvent(event)
 
-    def __updateItemDelegate(self):
+    def __updateItemDelegate(self) -> None:
         opt = QStyleOptionComboBox()
         opt.initFrom(self)
         style = self.style()
@@ -391,7 +391,7 @@ class CheckComboBox(QComboBox): # pyright: ignore [reportGeneralTypeIssues] # Ar
             else:
                 self.setItemDelegate(CheckComboBox.ComboItemDelegate(self))
 
-def example():
+def example() -> int:
     app = QApplication(list(sys.argv))
     cb = CheckComboBox(placeholderText='None')
     model = cb.model()
