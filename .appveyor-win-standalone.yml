@@ -58,8 +58,8 @@ for:
     - cmd: echo Windows Legacy Install
 
     # pull library versions from requirments file
-    - ps: $env:PYINSTALLER_VER = Select-String -Path ./src/requirements-win-legacy.txt 'pyinstaller==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value}
-    - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements-win-legacy.txt 'libusb==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value}
+    - ps: $env:PYINSTALLER_VER = Select-String -Path ./src/requirements.txt 'pyinstaller==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value}
+    - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements.txt 'libusb==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value}
 
     # update path env var
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
@@ -116,8 +116,8 @@ for:
     - ps: Write-Host $env:PYTHON_PATH
 
     # pull library versions from requirments file
-    - ps: $env:PYINSTALLER_VER = Select-String -Path ./src/requirements-win.txt 'pyinstaller==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value}
-    - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements-win.txt 'libusb==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value}
+    - ps: $env:PYINSTALLER_VER = Select-String -Path ./src/requirements.txt 'pyinstaller==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value}
+    - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements.txt 'libusb==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value}
 
     # update path env var
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
