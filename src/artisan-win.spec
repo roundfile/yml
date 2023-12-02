@@ -117,7 +117,8 @@ hiddenimports_list=['charset_normalizer.md__mypyc', # part of requests 2.28.2 # 
                             'scipy._lib.messagestream',
                             'pywintypes',
                             'win32cred',
-                            'win32timezone'
+                            'win32timezone',
+                            'pyusb'
                             ]
 # Add the hidden imports not required by legacy Windows.
 if not ARTISAN_LEGACY=='True':
@@ -233,7 +234,7 @@ copy_file(YOCTO_BIN + r'\yapi64.dll', TARGET + '_internal\yoctopuce\cdll')
 # copy Snap7 lib
 copy_file(SNAP7_BIN + r'\snap7.dll', TARGET)
 
-copy libusb0.1 lib
+# copy libusb0.1 lib
 
 copy_file(LIBUSB_BIN + r'\libusb0.dll', TARGET)
 
