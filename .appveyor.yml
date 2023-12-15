@@ -29,8 +29,8 @@ environment:
     appveyor_build_worker_image: Visual Studio 2022
 #  - job_name: macos
 #    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
-  - job_name: linux
-    appveyor_build_worker_image: Ubuntu2004
+#  - job_name: linux
+#    appveyor_build_worker_image: Ubuntu2004
 
 
 # Generic build number, later set to commit hash by init
@@ -128,7 +128,7 @@ for:
     QT_PATH: "C:/qt/6.5.1/msvc2019_64"  #there is no msvc2022_64 under /qt*
     PYQT: "6"
     PYUIC: "pyuic6.exe"
-    BUILD_PYINSTALLER: "True"
+    BUILD_PYINSTALLER: "False"
     ARTISAN_LEGACY: "False"
     VC_REDIST: "https://aka.ms/vs/17/release/vc_redist.x64.exe"  #redistributable for VS 2015-2022
     VCVARSALL: "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvarsall.bat"
