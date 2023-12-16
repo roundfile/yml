@@ -19,7 +19,7 @@
 ######
 # the following commented package versions are read by appveyor.yml and downloaded outside of pip.
 #
-# pyinstaller==6.2.0; platform_system='Windows'
+# pyinstaller==6.3.0; platform_system='Windows'
 # libusb==1.2.7.3; platform_system='Windows'  #1.2.6.0
 # libusb==1.0.26;  platform_system='Linux'
 #
