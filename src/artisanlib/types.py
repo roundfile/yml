@@ -488,13 +488,28 @@ class SerialSettings(TypedDict):
     timeout: float
 
 class BTBreakParams(TypedDict, total=False):
-    offset_charge: float
-    offset_drop: float
-    d_drop: float
-    d_charge: float
+    delay: List[List[float]]
+    d_drop: List[List[float]]
+    d_charge: List[List[float]]
+    offset_charge: List[List[float]]
+    offset_drop: List[List[float]]
+    dpre_dpost_diff: List[List[float]]
     tight: int
     loose: int
     f: float
     maxdpre: float
     f_dtwice: float
-    dpre_dpost_diff: float
+
+class AlarmSet(TypedDict):
+    label: str
+    flags: List[int]
+    guards: List[int]
+    negguards: List[int]
+    times: List[int]
+    offsets: List[int]
+    sources: List[int]
+    conditions: List[int]
+    temperatures: List[float]
+    actions: List[int]
+    beeps: List[int]
+    alarmstrings: List[str]

@@ -9,7 +9,7 @@ import base64
 import csv
 import re
 import logging
-from typing import Final, Optional, List, Tuple, Callable, ClassVar, Generator, TYPE_CHECKING
+from typing import Final, Optional, List, Tuple, Callable, ClassVar, Any, Generator, TYPE_CHECKING
 
 
 if TYPE_CHECKING:
@@ -27,20 +27,22 @@ try:
 except ImportError:
     # BLE not available on older Windows/PyQt5 platforms
     pass
-from proto import IkawaCmd_pb2 # type: ignore
+from proto import IkawaCmd_pb2 # type:ignore[unused-ignore]
 
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
 
 
-def url_to_profile(url:str) -> IkawaCmd_pb2.RoastProfile: # pylint: disable=no-member
+def url_to_profile(url:str, log_data:bool = False) -> IkawaCmd_pb2.RoastProfile: # pylint: disable=no-member
     url += '=='
     base64_bytes = url.encode('ascii')
     message_bytes = base64.b64decode(base64_bytes)
+    if log_data:
+        _log.info('ikawa profile: %s',message_bytes)
     return IkawaCmd_pb2.RoastProfile().FromString(message_bytes) # pylint: disable=no-member
 
 def extractProfileIkawaURL(url:QUrl, aw:'ApplicationWindow') -> 'ProfileData':
-    ikawa_profile = url_to_profile(url.query())
+    ikawa_profile = url_to_profile(url.query(), log_data=aw.qmc.device_logging)
     res:ProfileData = {} # the interpreted data set
     res['samplinginterval'] = 1.0
 
@@ -60,7 +62,7 @@ def extractProfileIkawaURL(url:QUrl, aw:'ApplicationWindow') -> 'ProfileData':
     extra6:List[float] = []
     timeindex:List[int] = [-1,0,0,0,0,0,0,0] #CHARGE index init set to -1 as 0 could be an actual index used
 
-    fan_points:List = list(ikawa_profile.fan_points)
+    fan_points:List[Any] = list(ikawa_profile.fan_points)
     for idx, p in enumerate(ikawa_profile.temp_points):
         if idx != 0:
             # add additional fan_point before this temp point
@@ -373,6 +375,8 @@ try: # BLE not available on some platforms
             self.dataReceived:QWaitCondition = QWaitCondition()
             self.receiveTimeout:int = 400
 
+            self.log_data = False
+
             self.connected_state:bool = False
 
             self.ET:float = -1
@@ -396,7 +400,7 @@ try: # BLE not available on some platforms
 
             self.seq:Generator[int, None, None] = self.seqNum() # message sequence number generator
 
-            self.ble:BleInterface = BleInterface(
+            self.ble:BleInterface = BleInterface(  # type:ignore[unused-ignore]
                 [(IKAWA_BLE.IKAWA_SERVICE_UUID, [IKAWA_BLE.IKAWA_SEND_CHAR_UUID, IKAWA_BLE.IKAWA_RECEIVE_CHAR_UUID])],
                 self.processData,
                 sendStop = self.sendStop,
@@ -466,7 +470,8 @@ try: # BLE not available on some platforms
         def reset(self) -> None:
             self.rcv_buffer = None
 
-        def start(self) -> None:
+        def start(self, log_data:bool = False) -> None:
+            self.log_data = log_data
             self.reset()
             # start BLE loop
             self.ble.deviceDisconnected.connect(self.ble_scan_failed)
@@ -497,6 +502,9 @@ try: # BLE not available on some platforms
                             payload = message[:-2]
                             # clear the buffer
                             self.rcv_buffer = None
+                            # log payload
+                            if self.log_data:
+                                _log.info('ikawa payload: %s',payload)
                             # verify CRC
                             if crc == self.crc16(payload, 65535):
                                 try:
