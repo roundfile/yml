@@ -31,20 +31,31 @@
     # pip install -r requirements.txt
     ```
 
-6. Build derived artifacts
+[comment] # (Removing this section for now.  To restore delete the comment lines and the blank lines immeditely above them.)
 
-    macOS/Linux
-    ```
-    # ./build-derived.sh
-    ```
-    Windows
-
-    ```
-    > build-derived-win.bat
-    ```
+[comment] # (6. Build derived artifacts)
 
 
-7. Start Artisan
+[comment] # (    macOS/Linux)
+
+[comment] # (    ```)
+
+[comment] # (    # ./build-derived.sh)
+
+[comment] # (    ```)
+
+[comment] # (    Windows)
+
+
+[comment] # (    ```)
+
+[comment] # (    > build-derived-win.bat)
+
+[comment] # (    ```)
+
+[comment] # (When restoring change the nu,ber below to '7')
+
+6. Start Artisan
 
    ```
    # python3 artisan.py
