@@ -21,8 +21,9 @@ from struct import unpack
 from multiprocessing import Pipe
 import threading
 from platform import system
-import usb.core # type: ignore
-import usb.util # type: ignore
+#import usb.core # type: ignore
+#import usb.util # type: ignore
+import libusb_package
 
 import array
 
@@ -82,7 +83,7 @@ class AillioR1:
         self.simulated = False
         self.AILLIO_DEBUG = debug
         self.__dbg('init')
-        self.usbhandle:Optional[usb.core.Device] = None # type:ignore[no-any-unimported,unused-ignore]
+        self.usbhandle:Optional[libusb_package.Device] = None # type:ignore[no-any-unimported,unused-ignore]
         self.bt:float = 0
         self.dt:float = 0
         self.heater:float = 0
@@ -124,10 +125,10 @@ class AillioR1:
             return
         if self.usbhandle is not None:
             return
-        self.usbhandle = usb.core.find(idVendor=self.AILLIO_VID,
+        self.usbhandle = libusb_package.find(idVendor=self.AILLIO_VID,
                                        idProduct=self.AILLIO_PID)
         if self.usbhandle is None:
-            self.usbhandle = usb.core.find(idVendor=self.AILLIO_VID,
+            self.usbhandle = libusb_package.find(idVendor=self.AILLIO_VID,
                                            idProduct=self.AILLIO_PID_REV3)
         if self.usbhandle is None:
             raise OSError('not found or no permission')
