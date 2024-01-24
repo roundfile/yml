@@ -1,4 +1,4 @@
-# ABOUT 
+# ABOUT
 # Appveyor CI configuration to build Artisan install packages
 #     for Windows, Windows legacy, macOS, and Linux
 #
@@ -179,15 +179,16 @@ for:
 #    - path: 'generated-win.zip'
     - path: 'src\artisan-*.zip'
 
-  deploy:
-      - provider: Environment
-        name: Artifacts # selectively deploy to artifacts
-        on:
-          appveyor_pull_request_number: true # deploy only pull request builds to artifacts
-
   #deploy_script:
-  after_deploy:
+  before_deploy:
     - cmd: bash ../.ci/upload.sh artisan-*.zip
+
+  deploy:
+    - provider: Environment
+      name: Artifacts # selectively deploy to artifacts
+      on:
+        appveyor_pull_request_number: true # deploy only pull request builds to artifacts
+
 
 #  # uncomment this section for remote desktop connection to build image
 #  on_finish:
