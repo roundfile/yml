@@ -179,19 +179,31 @@ for:
 #    - path: 'generated-win.zip'
     - path: 'src\artisan-*.zip'
 
+  after_build:
+    - ps: |
+        if ($env:APPVEYOR_PULL_REQUEST_NUMBER) {
+          Write-Host "**** This is a pull request. Uploading artifacts to AppVeyor..."
+          # Upload artifacts for pull requests to AppVeyor
+          appveyor PushArtifact bin\Release\*.*
+        } elseif ($env:APPVEYOR_REPO_BRANCH -eq "master") {
+          Write-Host "**** This is a build of the master branch. Executing custom deployment script..."
+          # Execute your custom bash deployment script for builds of the master branch
+          sh: bash bash ../.ci/upload.sh artisan-*.zip
+        }
+
 #  deploy_script:
 #    - cmd: bash ../.ci/upload.sh artisan-*.zip
 
-  deploy:
-    - provider: Script
-      script: bash ../.ci/upload.sh artisan-*.zip
-      on:
-        branch: master  # release from master branch only
-
-    - provider: Environment
-      name: Artifacts # deploy pull request builds to artifacts
-      on:
-        appveyor_pull_request_number: true # deploy only pull request builds to artifacts
+#  deploy:
+#    - provider: Script
+#      cript: bash ../.ci/upload.sh artisan-*.zip
+#      on:
+#        branch: master  # release from master branch only
+#
+#    - provider: Environment
+#      name: Artifacts # deploy pull request builds to artifacts
+#      on:
+#        appveyor_pull_request_number: true # deploy only pull request builds to artifacts
 
 
 #  # uncomment this section for remote desktop connection to build image
