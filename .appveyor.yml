@@ -178,11 +178,20 @@ for:
   artifacts:
 #    - path: 'generated-win.zip'
     - path: 'src\artisan-*.zip'
+
+#  deploy_script:
+#    - cmd: bash ../.ci/upload.sh artisan-*.zip
+
+  deploy:
+    - provider: Script
+      script: bash ../.ci/upload.sh artisan-*.zip
+      on:
+        branch: master  # release from master branch only
+
+    - provider: Environment
+      name: Artifacts # deploy pull request builds to artifacts
       on:
         appveyor_pull_request_number: true # deploy only pull request builds to artifacts
-
-  deploy_script:
-    - cmd: bash ../.ci/upload.sh artisan-*.zip
 
 
 #  # uncomment this section for remote desktop connection to build image
