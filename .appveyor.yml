@@ -23,14 +23,14 @@ environment:
   PYUPGRADE_V: 3.11.5
 
   matrix:
-  - job_name: windows_legacy
-    appveyor_build_worker_image: Visual Studio 2019
+#  - job_name: windows_legacy
+#    appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
     appveyor_build_worker_image: Visual Studio 2022
-  - job_name: macos
-    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
-  - job_name: linux
-    appveyor_build_worker_image: Ubuntu2004
+#  - job_name: macos
+#    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
+#  - job_name: linux
+#    appveyor_build_worker_image: Ubuntu2004
 
 
 # Generic build number, later set to commit hash by init
@@ -175,11 +175,18 @@ for:
 #  test_script:
 #    - cmd: python -m unittest discover
 
-#  artifacts:
+  artifacts:
 #    - path: 'generated-win.zip'
-#    - path: 'src\artisan-*.zip'
+    - path: 'src\artisan-*.zip'
 
-  deploy_script:
+  deploy:
+      - provider: Environment
+        name: Artifacts # selectively deploy to artifacts
+        on:
+          appveyor_pull_request_number: true # deploy only pull request builds to artifacts
+
+  #deploy_script:
+  after_deploy:
     - cmd: bash ../.ci/upload.sh artisan-*.zip
 
 #  # uncomment this section for remote desktop connection to build image
