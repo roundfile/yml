@@ -47,7 +47,7 @@ init:
   - ps: |
       $env:artifact_prefix = 'disable_artifact'
       if ($env:APPVEYOR_PULL_REQUEST_NUMBER -gt 0) {
-        $env:artifact_prefix = 'artisan'
+        $env:artifact_prefix = 'artisan' 
       }
 
 branches:
