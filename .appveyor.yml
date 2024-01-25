@@ -179,7 +179,7 @@ for:
 #    - path: 'generated-win.zip'
     - path: 'src\artisan-*.zip'
 
-  after_build:
+  before_deploy:
     - ps: |
         if ($env:APPVEYOR_PULL_REQUEST_NUMBER) {
           Write-Host "**** This is a pull request. Uploading artifacts to AppVeyor..."
