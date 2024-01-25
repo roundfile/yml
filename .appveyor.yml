@@ -46,7 +46,7 @@ init:
   # Env used to enable artifact upload for PR builds by providing a valid file path 
   - ps: |
       $env:artifact_prefix = 'disable_artifact'
-      if ($env:APPVEYOR_PULL_REQUEST_NUMBER -gt 0) {
+      if ($env:APPVEYOR_PULL_REQUEST_NUMBER -eq $true) {
         $env:artifact_prefix = 'artisan'
       }
 
