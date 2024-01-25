@@ -182,8 +182,7 @@ for:
   artifacts:
 #    - path: 'generated-win.zip'
 #    - path: 'src\artisan-*.zip'
-    - path: src
-      name: '%artifact_prefix%-*.zip'
+    - path: 'src\%artifact_prefix%-*.zip'
 #      type: zip
 
 #  before_deploy:
