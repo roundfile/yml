@@ -34,6 +34,8 @@ for file in "$@"
 do
     if [ ! -e "$file" ]
         then echo "$file is missing, giving up." >&2; exit 1
+    else                          #dave
+        echo "Found file $file"   #dave
     fi
 done
 
