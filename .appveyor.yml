@@ -43,7 +43,11 @@ clone_depth: 1
 init:
   # Sets the commit hash to "build version number" shown in appveyor build status, the build number keeps it unique
   - ps: Update-AppveyorBuild -Version "$($env:APPVEYOR_REPO_COMMIT.substring(0,7)) ($env:APPVEYOR_BUILD_NUMBER)"
-
+  - ps: |
+      $env:artifact_prefix = 'disable_artifact'
+      if ($env:APPVEYOR_REPO_TAG -eq 'true') {
+        $env:artifact_prefix = 'artisan'
+      }
 branches:
   only:
     - master
@@ -177,17 +181,33 @@ for:
 
   artifacts:
 #    - path: 'generated-win.zip'
-    - path: 'src\artisan-*.zip'
+#    - path: 'src\artisan-*.zip'
+    - path: src\$(configuration)
+      name: '%artifact_suffix%-*.zip'
+#      type: zip
 
-  deploy:
-      - provider: Environment
-        name: Artifacts # selectively deploy to artifacts
-        on:
-          appveyor_pull_request_number: true # deploy only pull request builds to artifacts
+#  before_deploy:
+#    - ps: |
+#        if ($env:APPVEYOR_PULL_REQUEST_NUMBER) {
+#          Write-Host "**** This is a pull request. Uploading artifacts to AppVeyor..."
+#          # Upload artifacts for pull requests to AppVeyor
+#          appveyor PushArtifact bin\Release\*.*
+#        }
 
-  #deploy_script:
-  after_deploy:
+  deploy_script:
     - cmd: bash ../.ci/upload.sh artisan-*.zip
+
+#  deploy:
+#    - provider: Script
+#      cript: bash ../.ci/upload.sh artisan-*.zip
+#      on:
+#        branch: master  # release from master branch only
+#
+#    - provider: Environment
+#      name: Artifacts # deploy pull request builds to artifacts
+#      on:
+#        appveyor_pull_request_number: true # deploy only pull request builds to artifacts
+
 
 #  # uncomment this section for remote desktop connection to build image
 #  on_finish:
