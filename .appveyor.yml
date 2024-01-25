@@ -141,7 +141,7 @@ for:
     - cmd: echo Windows Install
     
     - ps: Write-Host $env:APPVEYOR_PULL_REQUEST_NUMBER
-    - ps: Write-Host $env:$env:artifact_prefix
+    - ps: Write-Host $env:artifact_prefix
 
     # derive the python path from the version number
     - ps: $env:PYTHON_PATH = "C:/Python$($env:PYTHON_V -replace '\.','')-x64"
