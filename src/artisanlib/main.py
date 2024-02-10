@@ -229,7 +229,7 @@ except Exception: # pylint: disable=broad-except
 
 from artisanlib.util import (appFrozen, uchr, decodeLocal, decodeLocalStrict, encodeLocal, encodeLocalStrict, s2a, fill_gaps,
         deltaLabelPrefix, deltaLabelUTF8, deltaLabelBigPrefix, stringfromseconds, stringtoseconds,
-        fromFtoC, fromFtoCstrict, fromCtoF, fromCtoFstrict, RoRfromFtoCstrict, RoRfromCtoFstrict,
+        fromFtoCstrict, fromCtoFstrict, RoRfromFtoCstrict, RoRfromCtoFstrict,
         convertRoR, convertRoRstrict, convertTemp, path2url, toInt, toString, toList, toFloat,
         toBool, toStringList, removeAll, application_name, application_viewer_name, application_organization_name,
         application_organization_domain, getDataDirectory, getAppPath, getResourcePath, debugLogLevelToggle,
@@ -623,8 +623,9 @@ if multiprocessing.current_process().name == 'MainProcess':
         str(__revision__),
         str(__build__),
     )
-    _log.info('platform: %s',str(platform.platform()))
-    _log.info('exec: %s', str(sys.executable))
+    _log.info('date: %s', datetime.datetime.now(datetime.timezone.utc))
+    _log.info('platform: %s',platform.platform())
+    _log.info('exec: %s', sys.executable)
 else:
     _log.info('child process loaded')
 
@@ -1450,7 +1451,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         # and s a string of length 0 (no digit yet), length 1 (if first digit is typed) or 2 (both digits are typed) indicating the value (00-99)
 
         # html2pdf() state:
-        self.html_loader:Optional[QWebEngineView] = None # pyright:ignore[reportUnboundVariable] # holds the QWebEngineView during HTML2PDF generation in self.html2pdf()
+        self.html_loader:Optional[QWebEngineView] = None # pyright:ignore[reportPossiblyUnboundVariable] # holds the QWebEngineView during HTML2PDF generation in self.html2pdf()
         self.pdf_page_layout:Optional[QPageLayout] = None # holds the QPageLayout used during HTML2PDF generation in self.html2pdf()
         self.pdf_rendering:bool = False # True while PDF is rendered by QWebEngineView
 
@@ -4027,7 +4028,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         verticalScroller: Optional['QScrollBar'] = self.scroller.verticalScrollBar()
         if verticalScroller is not None:
             val = verticalScroller.value()
-            if hasattr(event, 'button') and event.button == 'down': # pyright: ignore[reportGeneralTypeIssues]
+            if hasattr(event, 'button') and event.button == 'down': # pyright: ignore[reportAttributeAccessIssue]
                 verticalScroller.setValue(val+10)
             else:
                 verticalScroller.setValue(val-10)
@@ -4142,11 +4143,13 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 
     @pyqtSlot()
     def toggleDeltaBTCurve(self) -> None:
+        twoAxis_before = self.qmc.twoAxisMode()
         if self.qmc.swapdeltalcds:
             self.qmc.DeltaETflag = not self.qmc.DeltaETflag
         else:
             self.qmc.DeltaBTflag = not self.qmc.DeltaBTflag
-        self.qmc.redraw_keep_view(recomputeAllDeltas=False)
+        twoAxis_after = self.qmc.twoAxisMode()
+        self.qmc.redraw_keep_view(recomputeAllDeltas=False,forceRenewAxis=twoAxis_before != twoAxis_after)
 
     @pyqtSlot()
     def toggleExtraCurve1(self) -> None:
@@ -4433,7 +4436,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
     def eventFilter(self, obj:Optional['QObject'], event:Optional[QEvent]) -> bool:
         # pylint: disable=c-extension-no-member
         try:
-            if event is not None and event.type() == QEvent.Type.ApplicationPaletteChange and self.app is not None and sys.platform.startswith('darwin') and QVersionNumber.fromString(qVersion())[0] < QVersionNumber(6,5,0) and darkdetect.isDark() != self.app.darkmode: # pyright:ignore[reportGeneralTypeIssues,reportUnboundVariable] # "isDark" is not a known member of module "darkdetect"
+            if event is not None and event.type() == QEvent.Type.ApplicationPaletteChange and self.app is not None and sys.platform.startswith('darwin') and QVersionNumber.fromString(qVersion())[0] < QVersionNumber(6,5,0) and darkdetect.isDark() != self.app.darkmode: # pyright:ignore[reportAttributeAccessIssue,reportPossiblyUnboundVariable] # "isDark" is not a known member of module "darkdetect"
                     # called if the palette changed (switch between dark and light mode on macOS Legacy builds)
                 self.app.darkmode = not self.app.darkmode
                 self.updateCanvasColors()
@@ -4949,7 +4952,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             if hasattr(action, 'data'):
                 rr = action.data()
                 if 'background' in rr and rr['background'] is not None and rr['background'] != '':
-                    background_UUID = (rr['roastUUID'] if 'roastUUID' in rr else None)
+                    background_UUID = rr.get('roastUUID', None)
                     self.qmc.resetlinecountcaches()
                     if self.loadbackgroundUUID(rr['background'],background_UUID):
                         try:
@@ -10268,7 +10271,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             if active_window is not None:
                 fw = active_window.focusWidget()
                 if fw is not None and hasattr(fw, 'cut') and callable(getattr(fw, 'cut')): # noqa: B009
-                    fw.cut() # pyright: ignore[reportGeneralTypeIssues]
+                    fw.cut() # pyright: ignore[reportAttributeAccessIssue]
         except Exception: # pylint: disable=broad-except
             pass # not every QWidget has a cut method
 
@@ -10280,7 +10283,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             if active_window is not None:
                 fw = active_window.focusWidget()
                 if fw is not None and hasattr(fw, 'copy') and callable(getattr(fw, 'copy')): # noqa: B009
-                    fw.copy() # pyright: ignore[reportGeneralTypeIssues]
+                    fw.copy() # pyright: ignore[reportAttributeAccessIssue]
         except Exception: # pylint: disable=broad-except
             pass # not every QWidget has a copy method
 
@@ -10292,7 +10295,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             if active_window is not None:
                 fw = active_window.focusWidget()
                 if fw is not None and hasattr(fw, 'paste') and callable(getattr(fw, 'paste')): # noqa: B009
-                    fw.paste() # pyright: ignore[reportGeneralTypeIssues]
+                    fw.paste() # pyright: ignore[reportAttributeAccessIssue]
         except Exception: # pylint: disable=broad-except
             pass # not every QWidget has a paste method
 
@@ -12489,18 +12492,18 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     #otherwise it would incorrectly convert the uploaded phases
                     if m == 'F' and self.qmc.mode == 'C':
                         # we have to convert all temperatures from F to C
-                        t1 = [fromFtoC(t) for t in t1]
-                        t2 = [fromFtoC(t) for t in t2]
+                        t1 = [fromFtoCstrict(t) for t in t1]
+                        t2 = [fromFtoCstrict(t) for t in t2]
                         for e, _ in enumerate(t1x):
-                            t1x[e] = [fromFtoC(t) for t in t1x[e]]
-                            t2x[e] = [fromFtoC(t) for t in t2x[e]]
+                            t1x[e] = [fromFtoCstrict(t) for t in t1x[e]]
+                            t2x[e] = [fromFtoCstrict(t) for t in t2x[e]]
                     if m == 'C' and self.qmc.mode == 'F':
                         # we have to convert all temperatures from C to F
-                        t1 = [fromCtoF(t) for t in t1]
-                        t2 = [fromCtoF(t) for t in t2]
+                        t1 = [fromCtoFstrict(t) for t in t1]
+                        t2 = [fromCtoFstrict(t) for t in t2]
                         for e,_ in enumerate(t1x):
-                            t1x[e] = [fromCtoF(t) for t in t1x[e]]
-                            t2x[e] = [fromCtoF(t) for t in t2x[e]]
+                            t1x[e] = [fromCtoFstrict(t) for t in t1x[e]]
+                            t2x[e] = [fromCtoFstrict(t) for t in t2x[e]]
 
                 names1x = [decodeLocalStrict(x) for x in profile['extraname1']]
                 names2x = [decodeLocalStrict(x) for x in profile['extraname2']]
@@ -12610,9 +12613,13 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     if self.qmc.phasesfromBackgroundflag:
                         # adjust phases by DryEnd and FCs events from background profile
                         if self.qmc.timeindexB[1] and len(self.qmc.timeindexB) > 1 and len(self.qmc.temp2B) > self.qmc.timeindexB[1]:
-                            self.qmc.phases[1] = int(round(self.qmc.temp2B[self.qmc.timeindexB[1]])) # pyright: ignore[reportGeneralTypeIssues]
+                            val = self.qmc.temp2B[self.qmc.timeindexB[1]]
+                            if val is not None:
+                                self.qmc.phases[1] = int(round(val))
                         if self.qmc.timeindexB[2] and len(self.qmc.timeindexB) > 2 and len(self.qmc.temp2B) > self.qmc.timeindexB[2]:
-                            self.qmc.phases[2] = int(round(self.qmc.temp2B[self.qmc.timeindexB[2]])) # pyright: ignore[reportGeneralTypeIssues]
+                            val = self.qmc.temp2B[self.qmc.timeindexB[2]]
+                            if val is not None:
+                                self.qmc.phases[2] = int(round(val))
                 elif 'startend' in profile:
                     startendB = profile['startend']
                     varCB = profile['cracks']
@@ -14166,11 +14173,11 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 
                         # Shift+Alt modifier allows to overwrite extra devices (as was default in v2.4.6)
                         if QApplication.queryKeyboardModifiers() == Qt.KeyboardModifier.AltModifier | Qt.KeyboardModifier.ShiftModifier:
-                            string = QApplication.translate("Message","To fully load this profile the extra device configuration needs to be modified.\n\nOverwrite your extra device definitions using the values from the profile?\n\nIt is advisable to save your current settings beforehand via menu Help >> Save Settings.")
+                            string = QApplication.translate('Message','To fully load this profile the extra device configuration needs to be modified.\n\nOverwrite your extra device definitions using the values from the profile?\n\nIt is advisable to save your current settings beforehand via menu Help >> Save Settings.')
                             if quiet:
                                 reply = QMessageBox.StandardButton.Yes
                             else:
-                                reply = QMessageBox.question(self, QApplication.translate("Message", "Found a different set of extra devices"), string,
+                                reply = QMessageBox.question(self, QApplication.translate('Message', 'Found a different set of extra devices'), string,
                                         QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel, QMessageBox.StandardButton.No)
 
                         if reply == QMessageBox.StandardButton.Yes:
@@ -17592,7 +17599,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
     def getColor(line:Any) -> Any:
         c = line.get_color()
         if isinstance(c, (str, tuple)):
-            return mpl.colors.rgb2hex(c) # pyright:ignore[reportGeneralTypeIssues] # tuple items expected to be of type float
+            return mpl.colors.rgb2hex(c) # pyright:ignore[reportAttributeAccessIssue] # tuple items expected to be of type float
         return c
 
     def fetchCurveStyles(self) -> None:
@@ -19248,15 +19255,15 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             'weight_in_num': weight_in_num,
             'weight_out_num': weight_out_num,
             'weight_loss_num': weight_loss_num,
-            'whole_color': (data['whole_color'] if 'whole_color' in data else 0),
-            'ground_color': (data['ground_color'] if 'ground_color' in data else 0),
-            'color_system': (data['color_system'] if 'color_system' in data else ''),
-            'roastertype': (data['roastertype'] if 'roastertype' in data else ''),
-            'roastersize': (data['roastersize'] if 'roastersize' in data else 0),
-            'beansize_min': (data['beansize_min'] if 'beansize_min' in data else 0),
-            'beansize_max': (data['beansize_max'] if 'beansize_max' in data else 0),
-            'roastingnotes': (data['roastingnotes'] if 'roastingnotes' in data else ''),
-            'cuppingnotes': (data['cuppingnotes'] if 'cuppingnotes' in data else '')
+            'whole_color': data.get('whole_color', 0),
+            'ground_color': data.get('ground_color', 0),
+            'color_system': data.get('color_system', ''),
+            'roastertype': data.get('roastertype', ''),
+            'roastersize': data.get('roastersize', 0),
+            'beansize_min': data.get('beansize_min', 0),
+            'beansize_max': data.get('beansize_max', 0),
+            'roastingnotes': data.get('roastingnotes', ''),
+            'cuppingnotes': data.get('cuppingnotes', '')
         }
         return res
 
@@ -19832,8 +19839,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         res['MAI_percent'] = (f"{data['MAI_percent']:.1f}{('%' if units else '')}" if 'MAI_percent' in data else '')
         res['DEV_percent_num'] = (f"{data['DEV_percent']:.1f}" if 'DEV_percent' in data else '0')
         res['DEV_percent'] = (f"{data['DEV_percent']:.1f}{('%' if units else '')}" if 'DEV_percent' in data else '')
-        res['AUC_num'] = (data['AUC'] if 'AUC' in data else '0')
-        res['AUC'] = (data['AUC'] if 'AUC' in data else '')
+        res['AUC_num'] = data.get('AUC', '0')
+        res['AUC'] = data.get('AUC', '')
         res['energy_num'] = (f"{data['energy']:.1f}" if 'energy' in data else '0')
         res['energy'] = (f"{data['energy']:.1f}{'kWh' if units else ''}" if 'energy' in data else '')
         res['co2_num'] = (f"{data['co2']:.1f}" if 'co2' in data else '0')
@@ -20862,9 +20869,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                         weight_unit = self.qmc.weight[2]
                         volume_unit = self.qmc.volume[2]
                         temperature_unit = self.qmc.mode
-                        cnum = col_ = 0
+                        col_ = 0
                         for i, rdf in enumerate(ranking_data_fields):
-                            cnum += 1
                             name:str = rdf[field_index.index('name')]
                             units:str = rdf[field_index.index('units')]
                             if units == 'temp':
@@ -20879,13 +20885,13 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                                 suffix = f' {units}'
                             else:
                                 suffix = ''
-                            cell = ws.cell(column=cnum, row=1, value=f'{name}{suffix}')
+                            cell = ws.cell(column=i+1, row=1, value=f'{name}{suffix}')
                             cell.font = bf
                             cell.alignment = Alignment(horizontal='center')
                             width = len(name + suffix) + 2.
                             if width > widths[i]:
                                 widths[i] = width
-                                ws.column_dimensions[get_column_letter(cnum)].width = width
+                                ws.column_dimensions[get_column_letter(i+1)].width = width
 
                         # write data
                         c = 1
@@ -21132,7 +21138,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 libtime.sleep(0.001)
             self.pdf_rendering = True
             if self.html_loader is None:
-                self.html_loader = QWebEngineView() # pyright:ignore[reportUnboundVariable]
+                self.html_loader = QWebEngineView() # pyright:ignore[reportPossiblyUnboundVariable]
                 self.html_loader.setZoomFactor(1)
             if self.pdf_page_layout is None:
                 # lazy imports
@@ -22076,7 +22082,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         except Exception: # pylint: disable=broad-except
             pass
         try:
-            yocto_version = YAPI.GetAPIVersion() # pyright:ignore[reportUnboundVariable]
+            yocto_version = YAPI.GetAPIVersion() # type:ignore[reportPossibleUnboundVariable,unused-ignore]
             otherlibs += ', Yoctopuce ' + yocto_version
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
