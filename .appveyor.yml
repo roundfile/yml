@@ -157,9 +157,9 @@ for:
     # run the install script
     - cmd: .ci/install-win.bat
     
-    - cmd: python -m pip freeze
-    - cmd: echo %PATH%
-    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+#    - cmd: python -m pip freeze
+#    - cmd: echo %PATH%
+#    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
   build_script:
     - cmd: echo Windows Build
