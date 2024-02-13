@@ -67,35 +67,35 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     cd ..
     echo ***** Start build pyinstaller v%PYINSTALLER_VER% wheel
 )
-rem     rem redirect standard output to lower the noise in the logs
-rem     python -m build --wheel > NUL
-rem     if not exist dist/pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 130)
-rem     echo ***** Finished build pyinstaller v%PYINSTALLER_VER% wheel
-rem     rem
-rem     rem install pyinstaller
-rem     echo ***** Start install pyinstaller v%PYINSTALLER_VER%
-rem     python -m pip install -q dist/pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
-rem     cd ..
-rem ) else (
-rem      python -m pip install -q pyinstaller==%PYINSTALLER_VER%
-rem )
-rem echo ***** Finished install pyinstaller v%PYINSTALLER_VER%
-rem 
-rem ::
-rem :: download and install required libraries not available on pip
-rem ::
-rem echo curl vc_redist.x64.exe
-rem curl -L -O %VC_REDIST%
-rem if not exist vc_redist.x64.exe (exit /b 140)
-rem 
-rem ::
-rem :: copy the snap7 binary
-rem ::
-rem copy "%PYTHON_PATH%\Lib\site-packages\snap7\lib\snap7.dll" "C:\Windows"
-rem if not exist "C:\Windows\snap7.dll" (exit /b 150)
-rem 
-rem ::
-rem :: show set of libraries are installed
-rem ::
-rem echo **** pip freeze ****
-rem python -m pip freeze
+    rem redirect standard output to lower the noise in the logs
+    python -m build --wheel > NUL
+    if not exist dist/pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 130)
+    echo ***** Finished build pyinstaller v%PYINSTALLER_VER% wheel
+    rem
+    rem install pyinstaller
+    echo ***** Start install pyinstaller v%PYINSTALLER_VER%
+    python -m pip install -q dist/pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
+    cd ..
+) else (
+     python -m pip install -q pyinstaller==%PYINSTALLER_VER%
+)
+echo ***** Finished install pyinstaller v%PYINSTALLER_VER%
+
+::
+:: download and install required libraries not available on pip
+::
+echo curl vc_redist.x64.exe
+curl -L -O %VC_REDIST%
+if not exist vc_redist.x64.exe (exit /b 140)
+
+::
+:: copy the snap7 binary
+::
+copy "%PYTHON_PATH%\Lib\site-packages\snap7\lib\snap7.dll" "C:\Windows"
+if not exist "C:\Windows\snap7.dll" (exit /b 150)
+
+::
+:: show set of libraries are installed
+::
+echo **** pip freeze ****
+python -m pip freeze
