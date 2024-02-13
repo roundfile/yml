@@ -225,12 +225,12 @@ if not ARTISAN_LEGACY=='True':
 
 # YOCTO HACK BEGIN: manually copy over the dlls
 make_dir(TARGET + '_internal\yoctopuce\cdll')
-copy_file(YOCTO_BIN + r'\yapi.dll', TARGET + '_internal\yoctopuce\cdll')
-copy_file(YOCTO_BIN + r'\yapi64.dll', TARGET + '_internal\yoctopuce\cdll')
+copy_file(YOCTO_BIN + '\\yapi.dll', TARGET + '_internal\yoctopuce\cdll')
+copy_file(YOCTO_BIN + '\\yapi64.dll', TARGET + '_internal\yoctopuce\cdll')
 # YOCTO HACK END
 
 # copy Snap7 lib
-copy_file(SNAP7_BIN + r'\snap7.dll', TARGET)
+copy_file(SNAP7_BIN + '\\snap7.dll', TARGET)
 
 for fn in [
     'artisan.png',
@@ -240,39 +240,39 @@ for fn in [
     'artisanTheme.ico',
     'artisanSettings.ico',
     'artisanWheel.ico',
-    r'includes\Humor-Sans.ttf',
-    r'includes\dijkstra.ttf',
-    r'includes\ComicNeue-Regular.ttf',
-    r'includes\xkcd-script.ttf',
-    r'includes\WenQuanYiZenHei-01.ttf',
-    r'includes\WenQuanYiZenHeiMonoMedium.ttf',
-    r'includes\SourceHanSansCN-Regular.otf',
-    r'includes\SourceHanSansHK-Regular.otf',
-    r'includes\SourceHanSansJP-Regular.otf',
-    r'includes\SourceHanSansKR-Regular.otf',
-    r'includes\SourceHanSansTW-Regular.otf',
-    r'includes\alarmclock.eot',
-    r'includes\alarmclock.svg',
-    r'includes\alarmclock.ttf',
-    r'includes\alarmclock.woff',
-    r'includes\artisan.tpl',
-    r'includes\bigtext.js',
-    r'includes\sorttable.js',
-    r'includes\report-template.htm',
-    r'includes\roast-template.htm',
-    r'includes\ranking-template.htm',
-    r'includes\jquery-1.11.1.min.js',
-    r'includes\android-chrome-192x192.png',
-    r'includes\android-chrome-512x512.png',
-    r'includes\apple-touch-icon.png',
-    r'includes\browserconfig.xml',
-    r'includes\favicon-16x16.png',
-    r'includes\favicon-32x32.png',
-    r'includes\favicon.ico',
-    r'includes\mstile-150x150.png',
-    r'includes\safari-pinned-tab.svg',
-    r'includes\site.webmanifest',
-    r'includes\logging.yaml',
+    'includes\Humor-Sans.ttf',
+    'includes\dijkstra.ttf',
+    'includes\ComicNeue-Regular.ttf',
+    'includes\xkcd-script.ttf',
+    'includes\WenQuanYiZenHei-01.ttf',
+    'includes\WenQuanYiZenHeiMonoMedium.ttf',
+    'includes\SourceHanSansCN-Regular.otf',
+    'includes\SourceHanSansHK-Regular.otf',
+    'includes\SourceHanSansJP-Regular.otf',
+    'includes\SourceHanSansKR-Regular.otf',
+    'includes\SourceHanSansTW-Regular.otf',
+    'includes\alarmclock.eot',
+    'includes\alarmclock.svg',
+    'includes\alarmclock.ttf',
+    'includes\alarmclock.woff',
+    'includes\artisan.tpl',
+    'includes\bigtext.js',
+    'includes\sorttable.js',
+    'includes\report-template.htm',
+    'includes\roast-template.htm',
+    'includes\ranking-template.htm',
+    'includes\jquery-1.11.1.min.js',
+    'includes\android-chrome-192x192.png',
+    'includes\android-chrome-512x512.png',
+    'includes\apple-touch-icon.png',
+    'includes\browserconfig.xml',
+    'includes\favicon-16x16.png',
+    'includes\favicon-32x32.png',
+    'includes\favicon.ico',
+    'includes\mstile-150x150.png',
+    'includes\safari-pinned-tab.svg',
+    'includes\site.webmanifest',
+    'includes\logging.yaml',
     ]:
   copy_file(fn, TARGET)
 
