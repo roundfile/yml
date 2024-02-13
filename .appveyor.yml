@@ -18,7 +18,7 @@
 # Include "skip ci" in the commit message to prevent this build process from running
 environment:
   # Set the Appveyor Python version for windows, macos and linux here. Does not affect windows_legacy.
-  PYTHON_V: 3.11
+  PYTHON_V: 3.12
   # Upgrade to specific version (for platforms supporting upgrade). Upgrade skipped if env var is missing or blank.
   PYUPGRADE_V: 3.11.5
 
@@ -158,6 +158,7 @@ for:
     - cmd: .ci/install-win.bat
     
     - cmd: python -m pip freeze
+    - cmd: echo %PATH%
     - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
   build_script:
