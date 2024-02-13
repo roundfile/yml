@@ -67,7 +67,6 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     cd ..
     echo ***** Start build pyinstaller v%PYINSTALLER_VER% wheel
 )
-echo %VIRTUAL_ENV%
 rem     rem redirect standard output to lower the noise in the logs
 rem     python -m build --wheel > NUL
 rem     if not exist dist/pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl (exit /b 130)
