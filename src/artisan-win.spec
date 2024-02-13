@@ -76,7 +76,7 @@ block_cipher = None
 
 import os
 if os.environ.get('APPVEYOR'):
-    ARTISAN_SRC = r'C:\projects\artisan\src'
+    ARTISAN_SRC = r'C:/projects/artisan/src'
     PYTHON = os.environ.get('PYTHON_PATH')
     PYQT = os.environ.get('PYQT')
     QT_TRANSL = os.environ.get('QT_TRANSL')
@@ -92,21 +92,21 @@ logging.info("** ARTISAN_LEGACY: %s", ARTISAN_LEGACY)
 logging.info("** QT_TRANSL: %s",QT_TRANSL)
 
 ##
-TARGET = 'dist\\' + NAME + '\\'
-PYTHON_PACKAGES = PYTHON + r'\Lib\site-packages'
-PYQT_QT = PYTHON_PACKAGES + r'\PyQt' + PYQT + r'\Qt'
-PYQT_QT_BIN = PYQT_QT + r'\bin'
+TARGET = 'dist/' + NAME + '/'
+PYTHON_PACKAGES = PYTHON + r'/Lib/site-packages'
+PYQT_QT = PYTHON_PACKAGES + r'/PyQt' + PYQT + r'/Qt'
+PYQT_QT_BIN = PYQT_QT + r'/bin'
 PYQT_QT_TRANSLATIONS = QT_TRANSL
-YOCTO_BIN = PYTHON_PACKAGES + r'\yoctopuce\cdll'
-SNAP7_BIN = r'C:\Windows'
+YOCTO_BIN = PYTHON_PACKAGES + r'/yoctopuce/cdll'
+SNAP7_BIN = r'C:/Windows'
 
 from PyInstaller.utils.hooks import is_module_satisfies
 if is_module_satisfies('scipy >= 1.3.2'):
-    SCIPY_BIN = PYTHON_PACKAGES + r'\scipy\.libs'
+    SCIPY_BIN = PYTHON_PACKAGES + r'/scipy/.libs'
 else:
-    SCIPY_BIN = PYTHON_PACKAGES + r'\scipy\extra-dll'
+    SCIPY_BIN = PYTHON_PACKAGES + r'/scipy/extra-dll'
 
-#os.system(PYTHON + r'\Scripts\pylupdate5 artisan.pro')
+#os.system(PYTHON + r'/Scripts/pylupdate5 artisan.pro')
 
 hiddenimports_list=['charset_normalizer.md__mypyc', # part of requests 2.28.2 # see https://github.com/pyinstaller/pyinstaller-hooks-contrib/issues/534
                             'matplotlib.backends.backend_pdf',
@@ -162,21 +162,21 @@ coll = COLLECT(exe,
 
 
 # assumes the Microsoft Visual C++ 2015 Redistributable Package (x64), vc_redist.x64.exe, is located above the source directory
-copy_file(r'..\vc_redist.x64.exe', TARGET)
+copy_file(r'../vc_redist.x64.exe', TARGET)
 
 copy_file('README.txt',TARGET)
-copy_file(r'..\LICENSE', TARGET + r'\LICENSE.txt')
+copy_file(r'../LICENSE', TARGET + r'/LICENSE.txt')
 #os.system('copy qt-win.conf ' + TARGET + 'qt.conf')
 make_dir(TARGET + 'Wheels')
-make_dir(TARGET + r'Wheels\Cupping')
-make_dir(TARGET + r'Wheels\Other')
-make_dir(TARGET + r'Wheels\Roasting')
-copy_file(r'Wheels\Cupping\*', TARGET + r'Wheels\Cupping')
-copy_file(r'Wheels\Other\*', TARGET + r'Wheels\Other')
-copy_file(r'Wheels\Roasting\*', TARGET + r'Wheels\Roasting')
+make_dir(TARGET + r'Wheels/Cupping')
+make_dir(TARGET + r'Wheels/Other')
+make_dir(TARGET + r'Wheels/Roasting')
+copy_file(r'Wheels/Cupping/*', TARGET + r'Wheels/Cupping')
+copy_file(r'Wheels/Other/*', TARGET + r'Wheels/Other')
+copy_file(r'Wheels/Roasting/*', TARGET + r'Wheels/Roasting')
 
 make_dir(TARGET + 'translations')
-copy_file(r'translations\*.qm', TARGET + 'translations')
+copy_file(r'translations/*.qm', TARGET + 'translations')
 for tr in [
     'qtbase_ar.qm',
     'qtbase_de.qm',
@@ -200,7 +200,7 @@ for tr in [
 #    'qtconnectivity_ko.qm',
 #    'qtconnectivity_tr.qm',
     ]:
-    copy_file(QT_TRANSL + '\\' + tr, TARGET + 'translations',False)
+    copy_file(QT_TRANSL + '/' + tr, TARGET + 'translations',False)
 # Add the translations not available in PyQt5 for legacy Windows.
 if not ARTISAN_LEGACY=='True':
     for tr in [
@@ -217,20 +217,20 @@ if not ARTISAN_LEGACY=='True':
 #        'qtconnectivity_pt_BR.qm',
 #        'qtconnectivity_zh_CN.qm',
         ]:
-        copy_file(QT_TRANSL + '\\' + tr, TARGET + 'translations',False)
+        copy_file(QT_TRANSL + '/' + tr, TARGET + 'translations',False)
 
 
 # this directory no longer exists
-#remove_dir(TARGET + 'mpl-data\sample_data',False)
+#remove_dir(TARGET + 'mpl-data/sample_data',False)
 
 # YOCTO HACK BEGIN: manually copy over the dlls
-make_dir(TARGET + '_internal\yoctopuce\cdll')
-copy_file(YOCTO_BIN + '\\yapi.dll', TARGET + '_internal\yoctopuce\cdll')
-copy_file(YOCTO_BIN + '\\yapi64.dll', TARGET + '_internal\yoctopuce\cdll')
+make_dir(TARGET + '_internal/yoctopuce/cdll')
+copy_file(YOCTO_BIN + r'/yapi.dll', TARGET + '_internal/yoctopuce/cdll')
+copy_file(YOCTO_BIN + r'/yapi64.dll', TARGET + '_internal/yoctopuce/cdll')
 # YOCTO HACK END
 
 # copy Snap7 lib
-copy_file(SNAP7_BIN + '\\snap7.dll', TARGET)
+copy_file(SNAP7_BIN + r'/snap7.dll', TARGET)
 
 for fn in [
     'artisan.png',
@@ -240,47 +240,47 @@ for fn in [
     'artisanTheme.ico',
     'artisanSettings.ico',
     'artisanWheel.ico',
-    'includes\Humor-Sans.ttf',
-    'includes\dijkstra.ttf',
-    'includes\ComicNeue-Regular.ttf',
-    'includes\xkcd-script.ttf',
-    'includes\WenQuanYiZenHei-01.ttf',
-    'includes\WenQuanYiZenHeiMonoMedium.ttf',
-    'includes\SourceHanSansCN-Regular.otf',
-    'includes\SourceHanSansHK-Regular.otf',
-    'includes\SourceHanSansJP-Regular.otf',
-    'includes\SourceHanSansKR-Regular.otf',
-    'includes\SourceHanSansTW-Regular.otf',
-    'includes\alarmclock.eot',
-    'includes\alarmclock.svg',
-    'includes\alarmclock.ttf',
-    'includes\alarmclock.woff',
-    'includes\artisan.tpl',
-    'includes\bigtext.js',
-    'includes\sorttable.js',
-    'includes\report-template.htm',
-    'includes\roast-template.htm',
-    'includes\ranking-template.htm',
-    'includes\jquery-1.11.1.min.js',
-    'includes\android-chrome-192x192.png',
-    'includes\android-chrome-512x512.png',
-    'includes\apple-touch-icon.png',
-    'includes\browserconfig.xml',
-    'includes\favicon-16x16.png',
-    'includes\favicon-32x32.png',
-    'includes\favicon.ico',
-    'includes\mstile-150x150.png',
-    'includes\safari-pinned-tab.svg',
-    'includes\site.webmanifest',
-    'includes\logging.yaml',
+    r'includes/Humor-Sans.ttf',
+    r'includes/dijkstra.ttf',
+    r'includes/ComicNeue-Regular.ttf',
+    r'includes/xkcd-script.ttf',
+    r'includes/WenQuanYiZenHei-01.ttf',
+    r'includes/WenQuanYiZenHeiMonoMedium.ttf',
+    r'includes/SourceHanSansCN-Regular.otf',
+    r'includes/SourceHanSansHK-Regular.otf',
+    r'includes/SourceHanSansJP-Regular.otf',
+    r'includes/SourceHanSansKR-Regular.otf',
+    r'includes/SourceHanSansTW-Regular.otf',
+    r'includes/alarmclock.eot',
+    r'includes/alarmclock.svg',
+    r'includes/alarmclock.ttf',
+    r'includes/alarmclock.woff',
+    r'includes/artisan.tpl',
+    r'includes/bigtext.js',
+    r'includes/sorttable.js',
+    r'includes/report-template.htm',
+    r'includes/roast-template.htm',
+    r'includes/ranking-template.htm',
+    r'includes/jquery-1.11.1.min.js',
+    r'includes/android-chrome-192x192.png',
+    r'includes/android-chrome-512x512.png',
+    r'includes/apple-touch-icon.png',
+    r'includes/browserconfig.xml',
+    r'includes/favicon-16x16.png',
+    r'includes/favicon-32x32.png',
+    r'includes/favicon.ico',
+    r'includes/mstile-150x150.png',
+    r'includes/safari-pinned-tab.svg',
+    r'includes/site.webmanifest',
+    r'includes/logging.yaml',
     ]:
   copy_file(fn, TARGET)
 
 make_dir(TARGET + 'Machines')
-xcopy_files('includes\Machines', TARGET + 'Machines')
+xcopy_files('includes/Machines', TARGET + 'Machines')
 
 make_dir(TARGET + 'Themes')
-xcopy_files('includes\Themes', TARGET + 'Themes')
+xcopy_files('includes/Themes', TARGET + 'Themes')
 
 make_dir(TARGET + 'Icons')
-xcopy_files('includes\Icons', TARGET + 'Icons')
+xcopy_files('includes/Icons', TARGET + 'Icons')
