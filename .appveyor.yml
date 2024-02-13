@@ -157,7 +157,7 @@ for:
     # run the install script
     - cmd: .ci/install-win.bat
     
-    - ps: echo $Env:VIRTUAL_ENV
+    - cmd: echo %VIRTUAL_ENV%
     - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
   build_script:
