@@ -37,7 +37,7 @@ python -V
 ::
 :: Upgrade the Python version to PYUPGRADE_WIN_V when the environment variable exists. 
 ::
-if NOT %PYUPGRADE_WIN_V% == "" (
+if NOT "%PYUPGRADE_WIN_V%" == "" (
     echo ***** Upgrading from Python %PREV_PYTHON_V% to %PYUPGRADE_WIN_V%
     echo *** Downloading Python install exe
     curl -L -O https://www.python.org/ftp/python/%PYUPGRADE_WIN_V%/python-%PYUPGRADE_WIN_V%-amd64.exe
