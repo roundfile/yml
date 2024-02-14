@@ -284,6 +284,8 @@ for:
 #    - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements.txt 'libusb==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value}
     - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements.txt "libusb==([\d\.]*).*platform_system='Linux'" -List | ForEach-Object {$_.Matches.Groups[1].Value}
     - ps: Write-Host "LIBUSB_VER= $env:LIBUSB_VER"
+    - ps: $env:DOTENV_VER = Select-String -Path ./src/requirements.txt "dotenv==([\d\.]*).*platform_system='Linux'" -List | ForEach-Object {$_.Matches.Groups[1].Value}
+    - ps: Write-Host "DOTENV_VER= $env:DOTENV_VER"
 
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
