@@ -35,6 +35,18 @@ echo Python Version
 python -V
 
 ::
+:: Upgrade the Python version to PYUPGRADE_V when the environment variable exists. 
+::
+if %PYUPGRADE_V% != "" (
+    echo ***** Upgrading Python to %PYUPGRADE_V%
+    curl -L -O https://www.python.org/ftp/python/%PYUPGRADE_V%/python-%PYUPGRADE_V%-amd64.exe
+    python-%PYUPGRADE_V%-amd64.exe /quiet PrependPath=1 Include_doc=0 Include_debug=0 Include_tcltk=0 Include_test=0 
+    if not exist %PYTHON_PATH%\python.exe (exit /b 90)
+    echo ***** Upgraded Python Version
+    python -V
+)
+
+::
 :: get pip up to date
 ::
 python -m pip install --upgrade pip

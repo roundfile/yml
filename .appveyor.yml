@@ -18,9 +18,9 @@
 # Include "skip ci" in the commit message to prevent this build process from running
 environment:
   # Set the Appveyor Python version for windows, macos and linux here. Does not affect windows_legacy.
-  PYTHON_V: 3.12
+  PYTHON_V: 3.11
   # Upgrade to specific version (for platforms supporting upgrade). Upgrade skipped if env var is missing or blank.
-  PYUPGRADE_V: 3.11.5
+  PYUPGRADE_V: 3.12.2
 
   matrix:
 #  - job_name: windows_legacy
@@ -139,6 +139,10 @@ for:
 
   install:
     - cmd: echo Windows Install
+
+    # Update the Python version when PYUPGRADE_V is set.  The upgrade happens in install-win.bat
+    # Note that the paths below may not exist yet.
+    - ps: if (Test-Path env:PYUPGRADE_V) {$env:PYTHON_V = ($env:PYUPGRADE_V -split '\.')[0..1] -join '.'}
 
     # derive the python path from the version number
     - ps: $env:PYTHON_PATH = "C:/Python$($env:PYTHON_V -replace '\.','')-x64"
