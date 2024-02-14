@@ -281,7 +281,6 @@ for:
     - chmod +x .ci/*.sh
 
     # pull library versions from requirments file
-#    - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements.txt 'libusb==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value}
     - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements.txt "libusb==([\d\.]*).*platform_system='Linux'" -List | ForEach-Object {$_.Matches.Groups[1].Value}
     - ps: Write-Host "LIBUSB_VER= $env:LIBUSB_VER"
     - ps: $env:DOTENV_VER = Select-String -Path ./src/requirements.txt "dotenv==([\d\.]*).*platform_system='Linux'" -List | ForEach-Object {$_.Matches.Groups[1].Value}
@@ -293,6 +292,9 @@ for:
 
     # run the install script
     - .ci/install-linux.sh
+
+    - sh: export APPVEYOR_SSH_BLOCK=true
+    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
 
   build_script:
     - echo "Linux Build"
