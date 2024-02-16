@@ -31,7 +31,9 @@ sudo apt-get install -y -q fakeroot
 
 # add libs not installed by default on Qt5.15/Qt6 any longer
 #sudo apt-get install -y -q libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 libxcb-cursor0
-sudo apt-get install -y -q libfuse3-3 libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 libxcb-cursor0
+sudo apt-get install -y -q libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 libxcb-cursor0
+
+sudo apt-get install -y -q libfuse2
 
 gem install dotenv -v ${DOTENV_VER}
 #gem install fpm -v 1.12.0 # Linux build fails using 1.13.0
