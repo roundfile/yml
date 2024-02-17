@@ -41,7 +41,7 @@ gem install fpm # Linux build fails using 1.13.0
 pip install --upgrade pip
 pip install -r src/requirements.txt | sed '/^Ignoring/d'
 
-.ci/install-libusb.sh
+#dave .ci/install-libusb.sh
 
 # show set of libraries are installed
 echo "**** pip freeze ****"

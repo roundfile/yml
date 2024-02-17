@@ -103,6 +103,7 @@ darkdetect==0.8.0; sys_platform=='darwin' and platform_release<'20.0' # detect i
 ###
 distro==1.9.0; platform_system=='Linux'
 SecretStorage==3.3.3; platform_system=='Linux'
+libusb-package==1.0.26.2; platform_system=='Linux'  #dave
 ### NOTES:
 ### keyring on Linux needs the GnomeKeyring package installed for plus to remember the passwords
 ### via # sudo apt install gnome-keyring
