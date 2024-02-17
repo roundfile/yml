@@ -26,6 +26,7 @@ hiddenimports_list=[
 a = Analysis(['artisan.py'],
 	pathex=[path],
 	binaries=BINARIES,
+	datas=[('/usr/lib/x86_64-linux-gnu/libusb-1.0.so.0', '.'),],
 	datas=[],
 	hookspath=[],
 	runtime_hooks=[],
