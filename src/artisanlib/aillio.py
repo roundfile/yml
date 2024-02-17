@@ -21,14 +21,13 @@ from struct import unpack
 from multiprocessing import Pipe
 import threading
 from platform import system
-#import usb.core # type: ignore
-#import usb.util # type: ignore
+import usb.core # type: ignore
+import usb.util # type: ignore
 
 import array
 
-#if system().startswith('Windows'):
-#    import libusb_package # pyright:ignore[reportMissingImports] # pylint: disable=import-error
-import libusb_package # pyright:ignore[reportMissingImports] # pylint: disable=import-error
+if system().startswith('Windows'):
+    import libusb_package # pyright:ignore[reportMissingImports] # pylint: disable=import-error
 
 #import requests
 #from requests_file import FileAdapter # type: ignore # @UnresolvedImport
