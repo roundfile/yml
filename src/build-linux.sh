@@ -19,7 +19,9 @@
 set -e  # reduced logging
 
 
+echo $LD_LIBRARY_PATH
 export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+echo $LD_LIBRARY_PATH
 export PATH=$PATH:$HOME/.local/bin
 
 if [ ! -z $APPVEYOR ]; then
