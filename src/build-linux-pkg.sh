@@ -102,7 +102,7 @@ mv *.deb ${NAME}.deb
 #mv ./out/*.AppImage ${NAME}.AppImage
 
 #ls -lh *.deb *.rpm
-ls -lh *.deb/usr/share/artisan/_internal/lib*
+ls -lh *.deb
 
 # Check that the packaged files are above an expected size
 #basename=${NAME}
