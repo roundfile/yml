@@ -24,7 +24,7 @@ python3 --version
 echo ${VIRTUAL_ENV}
 
 export APPVEYOR_SSH_BLOCK=true
-#curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
 
 
 sudo apt-get update -y -q --allow-releaseinfo-change
@@ -49,3 +49,6 @@ pip install -r src/requirements.txt | sed '/^Ignoring/d'
 # show set of libraries are installed
 echo "**** pip freeze ****"
 pip freeze
+
+echo "_*_*_*_* APPVEYOR_SSH_BLOCK"
+echo APPVEYOR_SSH_BLOCK
