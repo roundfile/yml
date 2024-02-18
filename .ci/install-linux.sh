@@ -23,6 +23,10 @@ python3 --version
 
 echo ${VIRTUAL_ENV}
 
+# PAUSE BUILD FOR SSH ACCESS
+if [ ! -z $HOTDEBUG ]; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi
+
+
 sudo apt-get update -y -q --allow-releaseinfo-change
 #sudo apt-get install -y -q ruby-full build-essential p7zip-full rpm gdb libudev-dev qt5-default
 sudo apt-get install -y -q ruby-full build-essential p7zip-full rpm gdb libudev-dev

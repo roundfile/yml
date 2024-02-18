@@ -279,6 +279,8 @@ for:
   install:
     - echo "Linux Install"
     - chmod +x .ci/*.sh
+        
+    - sh: export HOTDEBUG="Comment to disable"
     - sh: export APPVEYOR_SSH_BLOCK=true
 
     # pull library versions from requirments file
@@ -314,6 +316,8 @@ for:
 #    - QT_QPA_PLATFORM=offscreen python -m unittest discover -s src
 
   artifacts:
+    - path: 'src/build/artisan-linux/xref-artisan-linux.html
+    - path: 'src/build/artisan-linux/warn-artisan-linux.txt
 #    - path: 'generated-linux.zip'
 #    - path: 'src/%artifact_prefix%-*.deb'
 #    - path: 'src/%artifact_prefix%-*.rpm'

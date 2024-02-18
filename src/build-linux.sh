@@ -19,7 +19,7 @@
 set -e  # reduced logging
 
 
-export LD_LIBRARY_PATH=$LD_LIBTRARY_PATH:/usr/local/lib
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 export PATH=$PATH:$HOME/.local/bin
 
 if [ ! -z $APPVEYOR ]; then
@@ -67,8 +67,8 @@ mv dist/artisan dist/artisan.d
 mv dist/artisan.d/* dist
 rm -rf dist/artisan.d
 
-# PAUSE BUILD FOR SSH ACCESSexport APPVEYOR_SSH_BLOCK=true
-curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+# PAUSE BUILD FOR SSH ACCESS
+if [ ! -z $HOTDEBUG ]; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi
 
 # copy translations
 mkdir dist/translations
@@ -152,8 +152,8 @@ mkdir dist/Icons
 find includes/Icons -name '.*.aset' -exec rm -r {} \;
 cp -R includes/Icons/* dist/Icons
 
-# PAUSE BUILD FOR SSH ACCESSexport APPVEYOR_SSH_BLOCK=true
-curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+# PAUSE BUILD FOR SSH ACCESS
+if [ ! -z $HOTDEBUG ]; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi
 
 # remove automatically collected PyQt6 libs that are not used to save space
 # with pyinstaller 6.0 it seems not to needed any longer to remove unused Qt libs:
