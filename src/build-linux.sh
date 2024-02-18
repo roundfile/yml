@@ -58,6 +58,8 @@ fi
 
 pyinstaller -y --log-level=INFO artisan-linux.spec
 
+exit 0
+
 mv dist/artisan dist/artisan.d
 mv dist/artisan.d/* dist
 rm -rf dist/artisan.d
@@ -171,8 +173,6 @@ rm -rf dist/_internal/PyQt5
 
 rm -rf dist/_internal/PyQt6/Qt6/translations
 rm -rf dist/_internal/PyQt6/Qt6/qml/QtQuick3D
-
-exit 0
 
 # remove automatically collected libs that might break things on some installations (eg. Ubuntu 16.04)
 # so it is better to rely on the system installed once
