@@ -172,6 +172,8 @@ rm -rf dist/_internal/PyQt5
 rm -rf dist/_internal/PyQt6/Qt6/translations
 rm -rf dist/_internal/PyQt6/Qt6/qml/QtQuick3D
 
+exit 0
+
 # remove automatically collected libs that might break things on some installations (eg. Ubuntu 16.04)
 # so it is better to rely on the system installed once
 # see https://github.com/gridsync/gridsync/issues/47 and https://github.com/gridsync/gridsync/issues/43
@@ -184,5 +186,5 @@ rm -f dist/_internal/libgio-2.0.so.0
 rm -f dist/_internal/libz.so.1 # removing this lib seems to break the build on some RPi Buster version
 rm -f dist/_internal/libglib-2.0.so.0 # removed for v1.6 and later
 
-#rm -f libusb-1.0.so.0
-rm -f dist/_internal/libusb-1.0.so.0
+rm -f libusb-1.0.so.0
+#rm -f dist/_internal/libusb-1.0.so.0
