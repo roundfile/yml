@@ -279,6 +279,7 @@ for:
   install:
     - echo "Linux Install"
     - chmod +x .ci/*.sh
+    - sh: export APPVEYOR_SSH_BLOCK=true
 
     # pull library versions from requirments file
     - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements.txt "libusb==([\d\.]*).*platform_system='Linux'" -List | ForEach-Object {$_.Matches.Groups[1].Value}
@@ -292,7 +293,7 @@ for:
 
     # Allow ssh connection.  Delete build.lock to continue with ssh connection.  Repeat export to pause again.
 #    - sh: export APPVEYOR_SSH_BLOCK=true
-    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+#    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
 
     # run the install script
     - .ci/install-linux.sh

@@ -23,10 +23,6 @@ python3 --version
 
 echo ${VIRTUAL_ENV}
 
-export APPVEYOR_SSH_BLOCK=true
-curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
-
-
 sudo apt-get update -y -q --allow-releaseinfo-change
 #sudo apt-get install -y -q ruby-full build-essential p7zip-full rpm gdb libudev-dev qt5-default
 sudo apt-get install -y -q ruby-full build-essential p7zip-full rpm gdb libudev-dev
@@ -49,6 +45,3 @@ pip install -r src/requirements.txt | sed '/^Ignoring/d'
 # show set of libraries are installed
 echo "**** pip freeze ****"
 pip freeze
-
-echo "_*_*_*_* APPVEYOR_SSH_BLOCK"
-echo APPVEYOR_SSH_BLOCK

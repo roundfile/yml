@@ -67,7 +67,7 @@ mv dist/artisan dist/artisan.d
 mv dist/artisan.d/* dist
 rm -rf dist/artisan.d
 
-export APPVEYOR_SSH_BLOCK=true
+# PAUSE BUILD FOR SSH ACCESSexport APPVEYOR_SSH_BLOCK=true
 curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
 
 # copy translations
@@ -152,7 +152,7 @@ mkdir dist/Icons
 find includes/Icons -name '.*.aset' -exec rm -r {} \;
 cp -R includes/Icons/* dist/Icons
 
-export APPVEYOR_SSH_BLOCK=true
+# PAUSE BUILD FOR SSH ACCESSexport APPVEYOR_SSH_BLOCK=true
 curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
 
 # remove automatically collected PyQt6 libs that are not used to save space
