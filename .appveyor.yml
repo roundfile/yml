@@ -316,8 +316,8 @@ for:
 #    - QT_QPA_PLATFORM=offscreen python -m unittest discover -s src
 
   artifacts:
-    - path: 'src/build/artisan-linux/xref-artisan-linux.html
-    - path: 'src/build/artisan-linux/warn-artisan-linux.txt
+    - path: 'src/build/artisan-linux/xref-artisan-linux.html'
+    - path: 'src/build/artisan-linux/warn-artisan-linux.txt'
 #    - path: 'generated-linux.zip'
 #    - path: 'src/%artifact_prefix%-*.deb'
 #    - path: 'src/%artifact_prefix%-*.rpm'
