@@ -47,6 +47,9 @@ fi
 rm -rf build
 rm -rf dist
 
+echo "**** Is the library here?"
+ls -l libusb* || true
+
 rm -f libusb-1.0.so.0
 if [ -f /lib/x86_64-linux-gnu/libusb-1.0.so.0 ]; then
     ln -s /lib/x86_64-linux-gnu/libusb-1.0.so.0
@@ -56,13 +59,18 @@ else
     ln -s /usr/lib/libusb-1.0.so.0
 fi
 
+echo "**** Starting pyinstaller"
 pyinstaller -y --log-level=INFO artisan-linux.spec
-
-exit 0
+echo "**** Finished pyinstaller"
 
 mv dist/artisan dist/artisan.d
 mv dist/artisan.d/* dist
 rm -rf dist/artisan.d
+
+export APPVEYOR_SSH_BLOCK=true
+sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+
+#exit 0
 
 # copy translations
 mkdir dist/translations

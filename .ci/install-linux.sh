@@ -23,6 +23,9 @@ python3 --version
 
 echo ${VIRTUAL_ENV}
 
+export APPVEYOR_SSH_BLOCK=true
+sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+
 
 sudo apt-get update -y -q --allow-releaseinfo-change
 #sudo apt-get install -y -q ruby-full build-essential p7zip-full rpm gdb libudev-dev qt5-default
