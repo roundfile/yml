@@ -13,7 +13,7 @@
 # the GNU General Public License for more details.
 #
 # AUTHOR
-# Dave Baxter, Marko Luther 2023
+# Dave Baxter, Marko Luther, Rui Paulo 2023
 
 #set -ex
 set -e  # reduced logging
@@ -52,14 +52,14 @@ rm -rf dist
 echo "**** Is the library here?"
 ls -l libusb* || true
 
-#rm -f libusb-1.0.so.0
-#if [ -f /lib/x86_64-linux-gnu/libusb-1.0.so.0 ]; then
-#    ln -s /lib/x86_64-linux-gnu/libusb-1.0.so.0
-#elif [ -f /lib/arm-linux-gnueabihf/libusb-1.0.so.0 ]; then
-#    ln -s /lib/arm-linux-gnueabihf/libusb-1.0.so.0
-#else
-#    ln -s /usr/lib/libusb-1.0.so.0
-#fi
+rm -f libusb-1.0.so.0
+if [ -f /lib/x86_64-linux-gnu/libusb-1.0.so.0 ]; then
+    ln -s /lib/x86_64-linux-gnu/libusb-1.0.so.0
+elif [ -f /lib/arm-linux-gnueabihf/libusb-1.0.so.0 ]; then
+    ln -s /lib/arm-linux-gnueabihf/libusb-1.0.so.0
+else
+    ln -s /usr/lib/libusb-1.0.so.0
+fi
 
 echo "**** Starting pyinstaller"
 pyinstaller -y --log-level=INFO artisan-linux.spec

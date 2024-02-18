@@ -280,7 +280,7 @@ for:
     - echo "Linux Install"
     - chmod +x .ci/*.sh
         
-    - sh: export HOTDEBUG=true
+#    - sh: export HOTDEBUG=true
     - sh: export APPVEYOR_SSH_BLOCK=true
 
     # pull library versions from requirments file
