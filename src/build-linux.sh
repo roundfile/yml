@@ -20,7 +20,7 @@ set -e  # reduced logging
 
 
 echo $LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/lib/x86_64-linux-gnu
 echo $LD_LIBRARY_PATH
 export PATH=$PATH:$HOME/.local/bin
 
