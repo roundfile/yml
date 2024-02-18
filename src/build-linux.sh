@@ -68,7 +68,7 @@ mv dist/artisan.d/* dist
 rm -rf dist/artisan.d
 
 # PAUSE BUILD FOR SSH ACCESS
-if [ ! -z $HOTDEBUG ]; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi
+if [ ! -z $HOTDEBUG ]; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e - ; fi
 
 # copy translations
 mkdir dist/translations
