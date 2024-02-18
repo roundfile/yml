@@ -40,9 +40,9 @@ else
     export QT_PATH=$PYTHON_PATH/PyQt5/Qt
 fi
 
-echo "************* build derived files **************"
-./build-derived.sh linux  #generate the derived files
-if [ $? -ne 0 ]; then echo "Failed in build-derived.sh"; exit $?; else (echo "** Finished build-derived.sh"); fi
+#echo "************* build derived files **************"
+#./build-derived.sh linux  #generate the derived files
+#if [ $? -ne 0 ]; then echo "Failed in build-derived.sh"; exit $?; else (echo "** Finished build-derived.sh"); fi
 
 rm -rf build
 rm -rf dist

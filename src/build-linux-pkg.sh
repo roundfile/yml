@@ -117,5 +117,5 @@ ls -lh *.deb
 #        exit 1
 #    else
 #        echo "**** Success: $filename is larger than minimum $min_size bytes"
-    fi
-done
+#    fi
+#done
