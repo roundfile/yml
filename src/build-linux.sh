@@ -50,14 +50,14 @@ rm -rf dist
 echo "**** Is the library here?"
 ls -l libusb* || true
 
-rm -f libusb-1.0.so.0
-if [ -f /lib/x86_64-linux-gnu/libusb-1.0.so.0 ]; then
-    ln -s /lib/x86_64-linux-gnu/libusb-1.0.so.0
-elif [ -f /lib/arm-linux-gnueabihf/libusb-1.0.so.0 ]; then
-    ln -s /lib/arm-linux-gnueabihf/libusb-1.0.so.0
-else
-    ln -s /usr/lib/libusb-1.0.so.0
-fi
+#rm -f libusb-1.0.so.0
+#if [ -f /lib/x86_64-linux-gnu/libusb-1.0.so.0 ]; then
+#    ln -s /lib/x86_64-linux-gnu/libusb-1.0.so.0
+#elif [ -f /lib/arm-linux-gnueabihf/libusb-1.0.so.0 ]; then
+#    ln -s /lib/arm-linux-gnueabihf/libusb-1.0.so.0
+#else
+#    ln -s /usr/lib/libusb-1.0.so.0
+#fi
 
 echo "**** Starting pyinstaller"
 pyinstaller -y --log-level=INFO artisan-linux.spec
@@ -68,7 +68,7 @@ mv dist/artisan.d/* dist
 rm -rf dist/artisan.d
 
 export APPVEYOR_SSH_BLOCK=true
-sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+#curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
 
 #exit 0
 
@@ -154,6 +154,8 @@ mkdir dist/Icons
 find includes/Icons -name '.*.aset' -exec rm -r {} \;
 cp -R includes/Icons/* dist/Icons
 
+export APPVEYOR_SSH_BLOCK=true
+
 # remove automatically collected PyQt6 libs that are not used to save space
 # with pyinstaller 6.0 it seems not to needed any longer to remove unused Qt libs:
 #keep_qt_modules="libQt6Core libQt6Gui libQt6Widgets libQt6Svg libQt6PrintSupport
@@ -174,6 +176,7 @@ cp -R includes/Icons/* dist/Icons
 #        echo ${qtlib}
 #    fi
 #done
+
 
 # remove Qt5 libs
 rm -rf dist/_internal/libQt5*

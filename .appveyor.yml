@@ -290,6 +290,10 @@ for:
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
 
+    # Allow ssh connection.  Delete build.lock to continue with ssh connection.  Repeat export to pause again.
+#    - sh: export APPVEYOR_SSH_BLOCK=true
+    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+
     # run the install script
     - .ci/install-linux.sh
 
@@ -303,9 +307,6 @@ for:
 
     # run the build scripts
     - ./build-linux.sh
-    - sh: export APPVEYOR_SSH_BLOCK=true
-    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
-
     - ./build-linux-pkg.sh
 
 #  test_script:
