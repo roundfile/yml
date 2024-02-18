@@ -60,17 +60,17 @@ rm -rf usr/share/pixmaps/._*
 rm -rf usr/share/applications/._*
 
 echo "**fpm rpm"
-fpm -s dir -t rpm -n artisan --license GPL3 -m "Marko Luther <marko.luther@gmx.net>"  -p .. \
---vendor "Artisan GitHub" \
---url "https://github.com/artisan-roaster-scope/artisan" \
---description "This program or software helps coffee roasters record, analyze, and control
-roast profiles. With the help of a thermocouple data logger, or a
-proportional–integral–derivative controller (PID controller), this software
-offers roasting metrics to help make decisions that influence the final coffee
-flavor." \
---after-install DEBIAN/postinst \
---before-remove DEBIAN/prerm \
--v ${VERSION} --prefix / usr etc
+#fpm -s dir -t rpm -n artisan --license GPL3 -m "Marko Luther <marko.luther@gmx.net>"  -p .. \
+#--vendor "Artisan GitHub" \
+#--url "https://github.com/artisan-roaster-scope/artisan" \
+#--description "This program or software helps coffee roasters record, analyze, and control
+#roast profiles. With the help of a thermocouple data logger, or a
+#proportional–integral–derivative controller (PID controller), this software
+#offers roasting metrics to help make decisions that influence the final coffee
+#flavor." \
+#--after-install DEBIAN/postinst \
+#--before-remove DEBIAN/prerm \
+#-v ${VERSION} --prefix / usr etc
 
 # Allow FPM to write some temporary files
 fakeroot chmod o+w .
@@ -92,16 +92,17 @@ cd ..
 mv *.rpm ${NAME}.rpm
 mv *.deb ${NAME}.deb
 
-export ARCH=x86_64
-echo "**Create AppImage by using the pkg2appimage tool"
-# Create AppImage by using the pkg2appimage tool
-wget -c https://github.com/$(wget -q https://github.com/roundfile/pkg2appimage/releases/expanded_assets/continuous -O - | grep "pkg2appimage-.*-x86_64.AppImage" | head -n 1 | cut -d '"' -f 2)
-chmod +x ./pkg2appimage-*.AppImage
-ARCH=x86_64 ./pkg2appimage-*.AppImage artisan-AppImage.yml
+#export ARCH=x86_64
+#echo "**Create AppImage by using the pkg2appimage tool"
+## Create AppImage by using the pkg2appimage tool
+#wget -c https://github.com/$(wget -q https://github.com/roundfile/pkg2appimage/releases/expanded_assets/continuous -O - | grep "pkg2appimage-.*-x86_64.AppImage" | head -n 1 | cut -d '"' -f 2)
+#chmod +x ./pkg2appimage-*.AppImage
+#ARCH=x86_64 ./pkg2appimage-*.AppImage artisan-AppImage.yml
+#
+#mv ./out/*.AppImage ${NAME}.AppImage
 
-mv ./out/*.AppImage ${NAME}.AppImage
-
-ls -lh *.deb *.rpm
+#ls -lh *.deb *.rpm
+ls -lh *.deb/./usr/share/artisan/_internal/libusb*
 
 # Check that the packaged files are above an expected size
 basename=${NAME}
