@@ -20,7 +20,7 @@ set -e  # reduced logging
 
 
 echo $LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib:/usr/lib/x86_64-linux-gnu
+export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/local/lib:$LD_LIBRARY_PATH
 echo $LD_LIBRARY_PATH
 export PATH=$PATH:$HOME/.local/bin
 
@@ -52,14 +52,15 @@ rm -rf dist
 echo "**** Is the library here?"
 ls -l libusb* || true
 
-rm -f libusb-1.0.so.0
-if [ -f /lib/x86_64-linux-gnu/libusb-1.0.so.0 ]; then
-    ln -s /lib/x86_64-linux-gnu/libusb-1.0.so.0
-elif [ -f /lib/arm-linux-gnueabihf/libusb-1.0.so.0 ]; then
-    ln -s /lib/arm-linux-gnueabihf/libusb-1.0.so.0
-else
-    ln -s /usr/lib/libusb-1.0.so.0
-fi
+#dave - TODO check that builds really are valid without this
+#rm -f libusb-1.0.so.0
+#if [ -f /lib/x86_64-linux-gnu/libusb-1.0.so.0 ]; then
+#    ln -s /lib/x86_64-linux-gnu/libusb-1.0.so.0
+#elif [ -f /lib/arm-linux-gnueabihf/libusb-1.0.so.0 ]; then
+#    ln -s /lib/arm-linux-gnueabihf/libusb-1.0.so.0
+#else
+#    ln -s /usr/lib/libusb-1.0.so.0
+#fi
 
 echo "**** Starting pyinstaller"
 pyinstaller -y --log-level=INFO artisan-linux.spec
