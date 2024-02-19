@@ -78,6 +78,7 @@ for:
 
   install:
     - cmd: echo Windows Legacy Install
+    - ps: $env:blockRdp = $true
 
     # generate the path to PyQt translations files
     - ps: $env:QT_TRANSL = "$env:PYTHON_PATH/Lib/site-packages/PyQt5/Qt5/translations"
