@@ -35,9 +35,9 @@ echo Python Version
 python -V
 
 :: Pause CI with RDP
-call powershell -Command if ($blockRdp -eq $true) {iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))}
-
-
+:: call powershell -Command if ($blockRdp -eq $true) {iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))}
+:: call powershell -EncodedCommand aQBmACAAKAAkAGIAbABvAGMAawBSAGQAcAAgAC0AZQBxACAAJAB0AHIAdQBlACkAIAB7AGkAZQB4ACAAKAAoAG4AZQB3AC0AbwBiAGoAZQBjAHQAIABuAGUAdAAuAHcAZQBiAGMAbABpAGUAbgB0ACkALgBEAG8AdwBuAGwAbwBhAGQAUwB0AHIAaQBuAGcAKAAnAGgAdAB0AHAAcwA6AC8ALwByAGEAdwAuAGcAaQB0AGgAdQBiAHUAcwBlAHIAYwBvAG4AdABlAG4AdAAuAGMAbwBtAC8AYQBwAHAAdgBlAHkAbwByAC8AYwBpAC8AbQBhAHMAdABlAHIALwBzAGMAcgBpAHAAdABzAC8AZQBuAGEAYgBsAGUALQByAGQAcAAuAHAAcwAxACcAKQApAH0A
+call powershell -EncodedCommand aQBlAHgAIAAoACgAbgBlAHcALQBvAGIAagBlAGMAdAAgAG4AZQB0AC4AdwBlAGIAYwBsAGkAZQBuAHQAKQAuAEQAbwB3AG4AbABvAGEAZABTAHQAcgBpAG4AZwAoACcAaAB0AHQAcABzADoALwAvAHIAYQB3AC4AZwBpAHQAaAB1AGIAdQBzAGUAcgBjAG8AbgB0AGUAbgB0AC4AYwBvAG0ALwBhAHAAcAB2AGUAeQBvAHIALwBjAGkALwBtAGEAcwB0AGUAcgAvAHMAYwByAGkAcAB0AHMALwBlAG4AYQBiAGwAZQAtAHIAZABwAC4AcABzADEAJwApACkA
 ::
 :: Upgrade the Python version to PYUPGRADE_WIN_V when the environment variable exists. 
 ::
