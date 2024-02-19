@@ -35,7 +35,7 @@ echo Python Version
 python -V
 
 :: Pause CI with RDP
-powershell -Command if ($blockRdp -eq $true) {iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))}
+call powershell -Command if ($blockRdp -eq $true) {iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))}
 
 
 ::
