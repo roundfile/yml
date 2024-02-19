@@ -24,7 +24,7 @@ python3 --version
 echo ${VIRTUAL_ENV}
 
 # PAUSE BUILD FOR SSH ACCESS
-if [ ! -z $HOTDEBUG ]; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi
+if [ ! -z APPVEYOR_SSH_BLOCK ]; then if APPVEYOR_SSH_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi;fi
 
 
 sudo apt-get update -y -q --allow-releaseinfo-change

@@ -70,7 +70,7 @@ mv dist/artisan.d/* dist
 rm -rf dist/artisan.d
 
 # PAUSE BUILD FOR SSH ACCESS
-if [ ! -z $HOTDEBUG ]; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e - ; fi
+if [ ! -z APPVEYOR_SSH_BLOCK ]; then if APPVEYOR_SSH_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi;fi
 
 # copy translations
 mkdir dist/translations
@@ -155,7 +155,7 @@ find includes/Icons -name '.*.aset' -exec rm -r {} \;
 cp -R includes/Icons/* dist/Icons
 
 # PAUSE BUILD FOR SSH ACCESS
-if [ ! -z $HOTDEBUG ]; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi
+if [ ! -z APPVEYOR_SSH_BLOCK ]; then if APPVEYOR_SSH_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi;fi
 
 # remove automatically collected PyQt6 libs that are not used to save space
 # with pyinstaller 6.0 it seems not to needed any longer to remove unused Qt libs:

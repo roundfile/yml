@@ -20,18 +20,18 @@ environment:
   # Set the Appveyor Python version for windows, macos and linux here. Does not affect windows_legacy.
   PYTHON_V: 3.12
   # Upgrade to specific version (for platforms supporting upgrade). Upgrade skipped if env var is missing or blank.
-  #PYUPGRADE_WIN_V: 3.11.6
+  PYUPGRADE_WIN_V: 3.11.6
   #PYUPGRADE_MACOS_V: 3.12.2
 
   matrix:
 #  - job_name: windows_legacy
 #    appveyor_build_worker_image: Visual Studio 2019
-  - job_name: windows
-    appveyor_build_worker_image: Visual Studio 2022
+#  - job_name: windows
+#    appveyor_build_worker_image: Visual Studio 2022
 #  - job_name: macos
 #    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
-#  - job_name: linux
-#    appveyor_build_worker_image: Ubuntu2204
+  - job_name: linux
+    appveyor_build_worker_image: Ubuntu2204
 
 
 # Generic build number, later set to commit hash by init
@@ -280,7 +280,6 @@ for:
     - echo "Linux Install"
     - chmod +x .ci/*.sh
         
-#    - sh: export HOTDEBUG=true
     - sh: export APPVEYOR_SSH_BLOCK=true
 
     # pull library versions from requirments file
