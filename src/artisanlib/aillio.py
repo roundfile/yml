@@ -27,9 +27,9 @@ import usb.util # type: ignore
 import array
 
 #if system().startswith('Linux'):
-import usb.backend.libusb1 
-backend = usb.backend.libusb1.get_backend(find_library=lambda x: "/usr/lib/x86_64-linux-gnu/libusb-1.0.so")
-dev     = usb.core.find(..., backend=backend)
+#import usb.backend.libusb1 
+#backend = usb.backend.libusb1.get_backend(find_library=lambda x: "/usr/lib/x86_64-linux-gnu/libusb-1.0.so")
+#dev     = usb.core.find(..., backend=backend)
 
 
 if system().startswith('Windows'):
@@ -135,10 +135,10 @@ class AillioR1:
             return
         if not system().startswith('Windows'):
             self.usbhandle = usb.core.find(idVendor=self.AILLIO_VID,
-                                           idProduct=self.AILLIO_PID, backend=backend)
+                                           idProduct=self.AILLIO_PID)
             if self.usbhandle is None:
                 self.usbhandle = usb.core.find(idVendor=self.AILLIO_VID,
-                                               idProduct=self.AILLIO_PID_REV3, backend=backend)
+                                               idProduct=self.AILLIO_PID_REV3)
         else:
             self.usbhandle = libusb_package.find(idVendor=self.AILLIO_VID, # pyright:ignore[reportPossiblyUnboundVariable]
                                                  idProduct=self.AILLIO_PID)
