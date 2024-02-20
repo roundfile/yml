@@ -26,8 +26,11 @@ import usb.util # type: ignore
 
 import array
 
-if system().startswith('Linux'):
-    import usb.backend.libusb1
+#if system().startswith('Linux'):
+import usb.backend.libusb1
+backend = usb.backend.libusb1.get_backend(find_library=lambda x: "/usr/lib/libusb-1.0.so")
+dev     = usb.core.find(..., backend=backend)
+
 
 if system().startswith('Windows'):
     import libusb_package # pyright:ignore[reportMissingImports] # pylint: disable=import-error
