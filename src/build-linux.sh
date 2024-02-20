@@ -202,5 +202,5 @@ rm -f dist/_internal/libglib-2.0.so.0 # removed for v1.6 and later
 rm -f libusb-1.0.so.0
 #rm -f dist/_internal/libusb-1.0.so.0
 
-mv dist/_internal/libusb-1.0.so.0 dist/_internal/libusb-1.0.so.0HIDDEN
-#rm -f dist/_internal/libusb-1.0.so.0
+#mv dist/_internal/libusb-1.0.so.0 dist/_internal/libusb-1.0.so.0HIDDEN
+rm -f dist/_internal/libusb-1.0.so.0
