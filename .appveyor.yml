@@ -327,7 +327,7 @@ for:
   deploy_script:
     - ../.ci/upload.sh artisan-*.deb
 #    - ../.ci/upload.sh artisan-*.rpm
-#    - ../.ci/upload.sh artisan-*.AppImage
+    - ../.ci/upload.sh artisan-*.AppImage
 
 #  # uncomment this section for ssh connection to build image
 #  on_finish:
