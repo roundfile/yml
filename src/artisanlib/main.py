@@ -25414,8 +25414,8 @@ def main() -> None:
         # "UserWarning: Glyph 231 (\N{LATIN SMALL LETTER C WITH CEDILLA}) missing from current font."
         logging.captureWarnings(True)
         with warnings.catch_warnings():
-            warnings.simplefilter('ignore')
-            with suppress_stdout_stderr():
+#            warnings.simplefilter('ignore')
+#            with suppress_stdout_stderr():
                 app.exec()
         # alternative:
         # ret = app.exec()
