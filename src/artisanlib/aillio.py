@@ -26,6 +26,9 @@ import usb.util # type: ignore
 
 import array
 
+if system().startswith('Linux'):
+    import usb.backend.libusb1
+
 if system().startswith('Windows'):
     import libusb_package # pyright:ignore[reportMissingImports] # pylint: disable=import-error
 
