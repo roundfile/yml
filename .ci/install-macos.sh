@@ -21,6 +21,10 @@ set -e # reduced logging
 echo "** Running install-macos.sh"
 #.ci/silence.sh brew update # this seems to help to work around some homebrew issues; and fails on others
 
+if [ ! -z $APPVEYOR_SSH_BLOCK ]; then if $APPVEYOR_SSH_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-vnc.sh' | bash -e -;fi;fi
+if [ ! -z $APPVEYOR_SSH_BLOCK ]; then if $APPVEYOR_SSH_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-vnc.sh' | bash -e -;fi;fi
+exit 1
+
 # upgrade Python version when PYUPGRADE_MACOS_V exists and has a value
 if [ -n "${PYUPGRADE_MACOS_V:-}" ]; then
     # first deactivate current venv

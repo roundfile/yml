@@ -27,10 +27,10 @@ environment:
   matrix:
 #  - job_name: windows_legacy
 #    appveyor_build_worker_image: Visual Studio 2019
-  - job_name: windows
-    appveyor_build_worker_image: Visual Studio 2022
-#  - job_name: macos
-#    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
+#  - job_name: windows
+#    appveyor_build_worker_image: Visual Studio 2022
+  - job_name: macos
+    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
 #  - job_name: linux
 #    appveyor_build_worker_image: Ubuntu2204
 
@@ -51,6 +51,9 @@ init:
       if ([bool]$env:APPVEYOR_PULL_REQUEST_NUMBER -eq $true) {
         $env:artifact_prefix = 'artisan' 
       }
+  - sh: export APPVEYOR_VNC_BLOCK=true
+  - sh: export APPVEYOR_RDP_BLOCK=true
+  - sh: export APPVEYOR_SSH_BLOCK=true
 
 branches:
   only:

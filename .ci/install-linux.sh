@@ -25,7 +25,7 @@ echo ${VIRTUAL_ENV}
 
 # PAUSE BUILD FOR SSH ACCESS
 if [ ! -z $APPVEYOR_SSH_BLOCK ]; then if $APPVEYOR_SSH_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi;fi
-
+exit 1
 
 sudo apt-get update -y -q --allow-releaseinfo-change
 #sudo apt-get install -y -q ruby-full build-essential p7zip-full rpm gdb libudev-dev qt5-default
