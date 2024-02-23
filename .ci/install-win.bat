@@ -35,7 +35,7 @@ echo Python Version
 python -V
 
 :: Pause CI with RDP
-PowerShell.exe -NoProfile -ExecutionPolicy Bypass -Command "if ($env:blockRdp -eq $true) {$blockRdp = $true; & iex ((new-object net.webclient).DownloadString(\"https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1\"))}"
+PowerShell.exe -NoProfile -ExecutionPolicy Bypass -Command "if ($env:blockRdp -eq $true) {$blockRdp = $true; & iex ((new-object net.webclient).DownloadString(\"https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1\"))}" &
 
 exit /b 999
 
