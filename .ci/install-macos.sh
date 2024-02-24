@@ -22,6 +22,7 @@ echo "** Running install-macos.sh"
 #.ci/silence.sh brew update # this seems to help to work around some homebrew issues; and fails on others
 
 if [ ! -z $APPVEYOR_SSH_BLOCK ]; then if $APPVEYOR_SSH_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-vnc.sh' | bash -e -;fi;fi
+which python3
 if [ ! -z $APPVEYOR_SSH_BLOCK ]; then if $APPVEYOR_SSH_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-vnc.sh' | bash -e -;fi;fi
 exit 1
 
