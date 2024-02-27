@@ -18,6 +18,8 @@ body:
             A sample profile *.alog file, renamed to *.alog.txt is attached
         - label: >
             A settings file (Help>> Save Settings) *.aset, renamed to *.aset.txt is attached
+        - label: >
+            No files are attached
         
   - type: dropdown
     id: version
@@ -29,7 +31,7 @@ body:
         - 2.10.1
         - 2.10.0
         - 2.8.4
-        - Other - put in Description
+        - Other - include in Description
       default: 0
     validations:
       required: true
