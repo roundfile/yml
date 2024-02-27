@@ -17,29 +17,6 @@ body:
         - label: >
             A settings file (Help>> Save Settings) *.aset, renamed to *.aset.txt is attached
         
-  - type: textarea
-    attributes:
-      label: Problem Description
-      description: A clear and concise description of what the problem is.
-    validations:
-      required: true
-
-  - type: textarea
-    attributes:
-      label: To Reproduce
-      description: Steps to reproduce the behavior.
-      value: >
-        1. ...
-
-        2. ...
-
-        3. ...
-
-  - type: textarea
-    attributes:
-      label: Screenshots
-      description: If applicable, add screenshots to help explain your problem.
-
   - type: input
     attributes:
       label: Artisan Version
@@ -54,7 +31,7 @@ body:
       description: Go to "Help>> About", the number in brackets (). 
       placeholder: "Example: 4b4b3fa"
     validations:
-      required: true
+      required: false
 
   - type: input
     attributes:
@@ -62,7 +39,7 @@ body:
       description: Mac/Windows/Linux + OS version.
       placeholder: "Example: macOS 10.15.3"
     validations:
-      required: true
+      required: false
 
   - type: input
     attributes:
@@ -70,7 +47,34 @@ body:
       description: What is connected to Artisan.
       placeholder: "Example: Probatone 5"
     validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: Problem Description
+      description: A clear and concise description of what the problem is.
+    validations:
       required: true
+
+  - type: textarea
+    attributes:
+      label: Steps To Reproduce
+      description: Steps to reproduce the behavior.
+      value: >
+        1. ...
+
+        2. ...
+
+        3. ...
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain your problem.
+    validations:
+      required: false
 
   - type: textarea
     id: logs
@@ -94,3 +98,5 @@ body:
 
 
         <!-- # Or drag and drop the log file and delete the above detail part. -->
+    validations:
+      required: false
