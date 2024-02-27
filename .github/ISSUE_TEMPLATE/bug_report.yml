@@ -1,7 +1,7 @@
-name: "\U0001F41E Bug Report"
-description: Create a bug report to help us improve Artisan
-title: "BUG: "
-labels: ["bug"]
+name: "Problem Report"
+description: Create a problem report to help us improve Artisan
+title: ""
+labels: [""]
 
 body:
   - type: markdown
@@ -10,7 +10,7 @@ body:
 
   - type: checkboxes
     attributes:
-      label: Before you hit SUBMIT please check
+      label: Before you hit SUBMIT please check.  To attach a file simply drag and drop it onto this report. 
       options:
         - label: >
             A sample profile *.alog file, renamed to *alog.txt is attached
@@ -37,7 +37,7 @@ body:
     attributes:
       label: Computer OS and Version
       description: Mac/Windows/Linux + OS version.
-      placeholder: "Example: macOS 10.15.3"
+      placeholder: "Example: macOS 10.15.3 or Windows 11"
     validations:
       required: false
 
@@ -52,7 +52,7 @@ body:
   - type: textarea
     attributes:
       label: Problem Description
-      description: A clear and concise description of what the problem is.
+      description: A clear and concise description of the problem.  Include steps to reproduce.  Drag and drop files and screenshots here.
     validations:
       required: true
 
@@ -69,34 +69,3 @@ body:
     validations:
       required: false
 
-  - type: textarea
-    attributes:
-      label: Screenshots
-      description: If applicable, add screenshots to help explain your problem.
-    validations:
-      required: false
-
-  - type: textarea
-    id: logs
-    attributes:
-      label: Error Log
-      description: >
-        From flow type 'open log location' and find log file with the corresponding date containing the error info.
-      value: >
-        <details>
-
-
-        ```shell
-
-
-        Replace this line with the important log contents.
-
-
-        ```
-
-        </details>
-
-
-        <!-- # Or drag and drop the log file and delete the above detail part. -->
-    validations:
-      required: false
