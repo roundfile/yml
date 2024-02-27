@@ -9,7 +9,9 @@ body:
 
   - type: checkboxes
     attributes:
-      label: Before you hit SUBMIT please check.  To attach a file simply drag and drop it onto the "Problem Description" field below. 
+      label: |
+        The following files help us to quickly solve your issue.  To attach a file simply drag and drop it onto the "Problem Description" field below. 
+        Before you hit SUBMIT please check.
       options:
         - label: >
             A sample profile *.alog file, renamed to *alog.txt is attached
