@@ -1,6 +1,6 @@
 name: "Problem Report"
 description: Create a problem report to help us improve Artisan
-title: "-"
+title: "[Bug: ]"
 labels: []
 
 body:
@@ -17,6 +17,18 @@ body:
         - label: >
             A settings file (Help>> Save Settings) *.aset, renamed to *.aset.txt is attached
         
+  - type: dropdown
+    id: version
+    attributes:
+      label: Artisan Version
+      description: Go to "Help>> About".
+      options:
+        - 2.10.1
+        - 2.10.0
+        - 2.8.4
+        - Other - put in description
+      default: 0
+      
   - type: input
     attributes:
       label: Artisan Version
