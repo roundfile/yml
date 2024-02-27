@@ -4,16 +4,19 @@ description: Create a problem report to help us improve Artisan
 body:
   - type: markdown
     attributes:
-      value: Thanks for taking the time to fill out this bug report!
+      value: |
+        Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.
 
   - type: checkboxes
     attributes:
-      label: Before you hit SUBMIT please check.  To attach a file simply drag and drop it onto this report. 
+      label: Before you hit SUBMIT please check.  To attach a file simply drag and drop it onto the "Problem Description" field below. 
       options:
         - label: >
             A sample profile *.alog file, renamed to *alog.txt is attached
         - label: >
             A settings file (Help>> Save Settings) *.aset, renamed to *.aset.txt is attached
+    validations:
+      required: true
         
   - type: dropdown
     id: version
@@ -25,11 +28,19 @@ body:
         - 2.10.1
         - 2.10.0
         - 2.8.4
-        - Other - put in description
+        - Other - put in Description
       default: 0
     validations:
       required: true
       
+#  - type: input
+#    attributes:
+#      label: Artisan Version
+#      description: Go to "Help>> About". 
+#      placeholder: "Example: 2.10.2"
+#    validations:
+#      required: true
+
   - type: input
     attributes:
       label: Artisan Build Number
@@ -38,7 +49,7 @@ body:
     validations:
       required: false
 
-  - type: input
+  #- type: input
     attributes:
       label: Computer OS and Version
       description: Mac/Windows/Linux + OS version.
@@ -57,14 +68,14 @@ body:
   - type: textarea
     attributes:
       label: Problem Description
-      description: A clear and concise description of the problem.  Include steps to reproduce.  Drag and drop files and screenshots here.
+      description: A clear and concise description of the problem with steps to reproduce.  Drag and drop files and screenshots here.
     validations:
       required: true
 
   - type: textarea
     attributes:
-      label: Steps To Reproduce
-      description: Steps to reproduce the behavior.
+      label: Important! Steps To Reproduce
+      description: Detailed steps to reproduce the behavior if not included in the description.
       value: >
         1. ...
 
