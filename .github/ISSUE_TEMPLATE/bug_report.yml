@@ -1,5 +1,5 @@
-name: "Problem Report"
-description: Create a problem report to help us improve Artisan.  If you have a question please create a [Discussion](https://github.com/roundfile/yml/discussions)
+name: "Bug Report"
+description: Create a bug report to help us improve Artisan.  If you have a question please create a Discussion.
 
 body:
   - type: markdown
@@ -79,11 +79,11 @@ body:
       label: Important! Steps To Reproduce
       description: Detailed steps to reproduce the behavior if not included in the description.
       value: >
-        1. ...
+        Step 1. ...
 
-        2. ...
+        Step 2. ...
 
-        3. ...
+        Step 3. ...
     validations:
       required: false
 
