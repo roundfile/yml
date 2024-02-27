@@ -1,7 +1,7 @@
 name: "Problem Report"
 description: Create a problem report to help us improve Artisan
-title: "abc"
-labels: ["123"]
+title: "Problem Report"
+labels: []
 
 body:
   - type: markdown
