@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.
+        **Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.**
 
   - type: checkboxes
     attributes:
