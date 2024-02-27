@@ -5,9 +5,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        **Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.
+        **Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.**
         
-        The following files help us to quickly solve your issue.  To attach a file simply drag and drop it onto the "Problem Description" field below. **
+        **The following files help us to quickly solve your issue.  To attach a file simply drag and drop it onto the "Problem Description" field below. **
 
   - type: checkboxes
     attributes:
