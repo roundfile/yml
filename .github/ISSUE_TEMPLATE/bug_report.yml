@@ -21,20 +21,13 @@ body:
       label: Artisan Version
       description: Go to "Help>> About".
       options:
+        - 
         - 2.10.1
         - 2.10.0
         - 2.8.4
         - Other - put in description
       default: 1
       
-  - type: input
-    attributes:
-      label: Artisan Version
-      description: Go to "Help>> About". 
-      placeholder: "Example: 2.10.1"
-    validations:
-      required: true
-
   - type: input
     attributes:
       label: Artisan Build Number
