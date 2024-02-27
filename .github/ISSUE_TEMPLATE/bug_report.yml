@@ -7,7 +7,8 @@ body:
       value: |
         **Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.**
         
-        **The following files help us to quickly solve your issue.  To attach a file simply drag and drop it onto the "Problem Description" field below. **
+        *The following files help us to quickly solve your issue.  To attach a file simply drag and drop it onto the "Problem Description" field below.*
+      render: markdown
 
   - type: checkboxes
     attributes:
@@ -15,10 +16,10 @@ body:
       options:
         - label: >
             A sample profile *.alog file, renamed to *alog.txt is attached
+            required: false
         - label: >
             A settings file (Help>> Save Settings) *.aset, renamed to *.aset.txt is attached
-    validations:
-      required: true
+            required: false
         
   - type: dropdown
     id: version
