@@ -6,12 +6,16 @@ body:
     attributes:
       value: |
         **Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.**
+        
+        
 
   - type: checkboxes
     attributes:
-      label: Before you hit SUBMIT please check.
-      description: The following files help us to quickly solve your issue.  To attach a file simply drag and drop it onto the "Problem Description" field below.options:
-      options:   
+      label: |
+        The following files help us to quickly solve your issue.  To attach a file simply drag and drop it onto the "Problem Description" field below.
+        Before you hit SUBMIT please check.
+        
+      options:
         - label: >
             A sample profile *.alog file, renamed to *.alog.txt is attached
         - label: >
