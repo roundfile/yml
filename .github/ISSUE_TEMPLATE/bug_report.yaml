@@ -1,0 +1,96 @@
+name: "\U0001F41E Bug Report"
+description: Create a bug report to help us improve Artisan
+title: "BUG: "
+labels: ["bug"]
+
+body:
+  - type: markdown
+    attributes:
+      value: Thanks for taking the time to fill out this bug report!
+
+  - type: checkboxes
+    attributes:
+      label: Before you hit SUBMIT please check
+      options:
+        - label: >
+            A sample profile *.alog file, renamed to *alog.txt is attached
+        - label: >
+            A settings file (Help>> Save Settings) *.aset, renamed to *.aset.txt is attached
+        
+  - type: textarea
+    attributes:
+      label: Problem Description
+      description: A clear and concise description of what the problem is.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: To Reproduce
+      description: Steps to reproduce the behavior.
+      value: >
+        1. ...
+
+        2. ...
+
+        3. ...
+
+  - type: textarea
+    attributes:
+      label: Screenshots
+      description: If applicable, add screenshots to help explain your problem.
+
+  - type: input
+    attributes:
+      label: Artisan Version
+      description: Go to "Help>> About". 
+      placeholder: "Example: 2.10.1"
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Artisan Build Number
+      description: Go to "Help>> About", the number in brackets (). 
+      placeholder: "Example: 4b4b3fa"
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Computer OS and Version
+      description: Mac/Windows/Linux + OS version.
+      placeholder: "Example: macOS 10.15.3"
+    validations:
+      required: true
+
+  - type: input
+    attributes:
+      label: Connected devices or roasting machine
+      description: What is connected to Artisan.
+      placeholder: "Example: Probatone 5"
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Error Log
+      description: >
+        From flow type 'open log location' and find log file with the corresponding date containing the error info.
+      value: >
+        <details>
+
+
+        ```shell
+
+
+        Replace this line with the important log contents.
+
+
+        ```
+
+        </details>
+
+
+        <!-- # Or drag and drop the log file and delete the above detail part. -->
