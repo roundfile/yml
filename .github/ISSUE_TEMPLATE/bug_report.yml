@@ -1,7 +1,5 @@
 name: "Problem Report"
 description: Create a problem report to help us improve Artisan
-title: "[Bug: ]"
-labels: []
 
 body:
   - type: markdown
@@ -27,7 +25,7 @@ body:
         - 2.10.0
         - 2.8.4
         - Other - put in description
-      default: 0
+      default: 1
       
   - type: input
     attributes:
