@@ -1,5 +1,5 @@
 name: "Problem Report"
-description: Create a problem report to help us improve Artisan
+description: Create a problem report to help us improve Artisan.  If you have a question please create a [Discussion](https://github.com/roundfile/yml/discussions)
 
 body:
   - type: markdown
@@ -55,7 +55,7 @@ body:
     attributes:
       label: Computer OS and Version
       description: Mac/Windows/Linux + OS version.
-      placeholder: "Example: macOS 10.15.3 or Windows 11"
+      placeholder: "Example: macOS 10.15.3"
     validations:
       required: false
 
