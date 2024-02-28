@@ -71,7 +71,7 @@ body:
     attributes:
       label: Important! Steps To Reproduce
       description: Detailed steps to reproduce the behavior if not included in the description.
-      value: >
+      placeholder: >
         Step 1. ...
 
         Step 2. ...
