@@ -196,6 +196,7 @@ except Exception: # pylint: disable=broad-except
             except Exception as e: # pylint: disable=broad-except
                 print('ERROR: failed to locate libusb')
                 print(e)
+                os._exit(1)
 
 
 
