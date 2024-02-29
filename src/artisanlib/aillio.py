@@ -21,8 +21,8 @@ from struct import unpack
 from multiprocessing import Pipe
 import threading
 from platform import system
-import usb.core # type: ignore
-import usb.util # type: ignore
+import usb.core # type: ignore[import-untyped]
+import usb.util # type: ignore[import-untyped]
 
 import array
 
@@ -55,6 +55,13 @@ if TYPE_CHECKING:
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
 
+
+def _load_library(find_library:Any = None) -> Any:
+    import usb.libloader # type: ignore[import-untyped, unused-ignore] # pylint: disable=redefined-outer-name
+    return usb.libloader.load_locate_library(
+                ('usb-1.0', 'libusb-1.0', 'usb'),
+                'cygusb-1.0.dll', 'Libusb 1',
+                find_library=find_library, check_symbols=('libusb_init',))
 
 class AillioR1:
     AILLIO_VID = 0x0483
@@ -129,6 +136,7 @@ class AillioR1:
             return
         if not system().startswith('Windows'):
             backend = None
+
             if system().startswith('Linux'):
                 # we prefer a system installed libusb-1.0 shared lib if available on Linux (incl. RPi),
                 # especially since libusb-1.0.so is from removed from the AppImage installer
@@ -137,10 +145,14 @@ class AillioR1:
                 # on macOS libusb is never pre-installed thus we always take the bundled one
                 import os
                 for shared_libusb_path in [
+                        '/usr/lib/x86_64-linux-gnu/libusb-1.0.so',
                         '/usr/lib/x86_64-linux-gnu/libusb-1.0.so.0',
+                        '/usr/lib/aarch64-linux-gnu/libusb-1.0.so'
                         '/usr/lib/aarch64-linux-gnu/libusb-1.0.so.0']:
                     if os.path.isfile(shared_libusb_path):
-                        from usb.backend.libusb1 import get_backend  # type: ignore[import-untyped]
+                        import usb.backend.libusb1 as libusb10 # type: ignore[import-untyped, unused-ignore]
+                        libusb10._load_library = _load_library # pylint: disable=protected-access # overwrite the overwrite of the pyinstaller runtime hook pyi_rth_usb.py
+                        from usb.backend.libusb1 import get_backend  # type: ignore[import-untyped, unused-ignore]
                         backend = get_backend(find_library=lambda _,shared_libusb_path=shared_libusb_path: shared_libusb_path)
                         break
             self.usbhandle = usb.core.find(idVendor=self.AILLIO_VID,

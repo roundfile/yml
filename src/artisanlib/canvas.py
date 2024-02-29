@@ -111,6 +111,7 @@ from matplotlib.projections.polar import PolarAxes
 from matplotlib.text import Annotation, Text
 from matplotlib.lines import Line2D
 from matplotlib.offsetbox import DraggableAnnotation
+from matplotlib.colors import to_hex, to_rgba
 
 from artisanlib.phidgets import PhidgetManager
 from Phidget22.VoltageRange import VoltageRange # type: ignore
@@ -865,6 +866,9 @@ class tgraphcanvas(FigureCanvas):
                        '+Phidget DAQ1301 45',       #158
                        '+Phidget DAQ1301 67',       #159
                        f'+IKAWA {deltaLabelUTF8}Humidity/{deltaLabelUTF8}Humidity Dir.' #160
+                       '+Omega HH309 34',           #161
+                       'Digi-Sense 20250-07',       #162
+                       'Extech 42570'               #163
                        ]
 
         # ADD DEVICE:
@@ -1453,9 +1457,10 @@ class tgraphcanvas(FigureCanvas):
         self.optimalSmoothing:bool = False
         self.polyfitRoRcalc:bool = False
 
-        self.patheffects = 1
-        self.graphstyle = 0
-        self.graphfont = 0
+        self.patheffects:int = 1
+        self.glow:int = 0
+        self.graphstyle:int = 0
+        self.graphfont:int = 0
 
         #variables to configure the 8 default buttons
         # button = 0:CHARGE, 1:DRY_END, 2:FC_START, 3:FC_END, 4:SC_START, 5:SC_END, 6:DROP, 7:COOL_END;
@@ -1952,7 +1957,7 @@ class tgraphcanvas(FigureCanvas):
         self.minmaxLimits:bool = False
         self.dropSpikes:bool = False
         self.dropDuplicates:bool = False
-        self.dropDuplicatesLimit:float = 0.3
+        self.dropDuplicatesLimit:float = 0.54
 
         # self.median_filter_factor: factor used for MedianFilter on both, temperature and RoR curves
         self.median_filter_factor:Final[int] = 5 # k=3 is conservative seems not to catch all spikes in all cases; k=5 and k=7 seems to be ok; 13 might be the maximum; k must be odd!
@@ -2938,6 +2943,7 @@ class tgraphcanvas(FigureCanvas):
             pass
 
     def onclick(self, event:'MouseEvent') -> None:
+        self.aw.setFocus() # we set the focus to the ApplicationWindow on clicking the MPL canvas to (re-)gain focus while the event minieditor is open
         try:
             if self.ax is None:
                 return
@@ -4456,11 +4462,6 @@ class tgraphcanvas(FigureCanvas):
                                             self.delta_ax.set_ylim(zlim_new)
                                             self.ax_background = None
 
-                        if self.patheffects:
-                            rcParams['path.effects'] = [PathEffects.withStroke(linewidth=self.patheffects, foreground=self.palette['background'])]
-                        else:
-                            rcParams['path.effects'] = []
-
                         ##### updated canvas
                         try:
                             if not self.block_update:
@@ -4572,8 +4573,6 @@ class tgraphcanvas(FigureCanvas):
                             self.adderror((QApplication.translate('Error Message','Exception:') + ' updategraphics() {0}').format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
                         #####
-                        if self.patheffects:
-                            rcParams['path.effects'] = []
 
                         #update phase lcds
                         self.aw.updatePhasesLCDs()
@@ -6836,7 +6835,6 @@ class tgraphcanvas(FigureCanvas):
         window_len:int = 7, window:str = 'hanning', decay_weights:Optional[List[int]] = None, decay_smoothing:bool = False,
         re_sample:bool = True, back_sample:bool = True, a_lin:Optional['npt.NDArray[numpy.double]'] = None,
         delta:bool=False) -> 'npt.NDArray[numpy.double]':
-
         # 1. re-sample
         if re_sample:
             if a_lin is None or len(a_lin) != len(a):
@@ -6885,7 +6883,7 @@ class tgraphcanvas(FigureCanvas):
                             result.append(v)
                         else:
                             result.append(numpy.average(seq,axis=0,weights=w)) # works only if len(seq) = len(w)
-                    res = numpy.array(res)
+                    res = numpy.array(result)
                     # postCond: len(res) = len(b)
             else:
                 # optimal smoothing (the default)
@@ -7021,10 +7019,7 @@ class tgraphcanvas(FigureCanvas):
         fontprop_small = self.aw.mpl_fontproperties.copy()
         fontsize = 'x-small'
         fontprop_small.set_size(fontsize)
-        if self.patheffects:
-            rcParams['path.effects'] = [PathEffects.withStroke(linewidth=self.patheffects, foreground=self.palette['background'])]
-        else:
-            rcParams['path.effects'] = []
+        path_effects = self.line_path_effects(False, self.patheffects, self.aw.light_background_p, self.patheffects) # don't glow annotations!
         #annotate temp
         fmtstr = '%.1f' if self.LCDdecimalplaces else '%.0f'
         xytext: Optional[Tuple[float, float]]
@@ -7043,7 +7038,8 @@ class tgraphcanvas(FigureCanvas):
                             arrowprops={'arrowstyle':'-','color':self.palette['text'],'alpha':a},
                             fontsize=fontsize,
                             alpha=a,
-                            fontproperties=fontprop_small)
+                            fontproperties=fontprop_small,
+                            path_effects=path_effects)
         try:
             temp_anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
             if draggable:
@@ -7059,9 +7055,14 @@ class tgraphcanvas(FigureCanvas):
             xytext = self.l_annotations_dict[draggable_anno_key][1].xyann
         else:
             xytext = (x+e,y - ydown)
-        time_anno = self.ax.annotate(time_str,xy=(x,y),xytext=xytext,
-                             color=self.palette['text'],arrowprops={'arrowstyle':'-','color':self.palette['text'],'alpha':a},
-                             fontsize=fontsize,alpha=a,fontproperties=fontprop_small)
+        time_anno = self.ax.annotate(time_str,
+                        xy=(x,y),
+                        xytext=xytext,
+                        color=self.palette['text'],
+                        arrowprops={'arrowstyle':'-','color':self.palette['text'],'alpha':a},
+                        fontsize=fontsize,alpha=a,
+                        fontproperties=fontprop_small,
+                        path_effects=path_effects)
         try:
             time_anno.set_in_layout(False)  # remove text annotations from tight_layout calculation
             if draggable:
@@ -7069,8 +7070,6 @@ class tgraphcanvas(FigureCanvas):
                 time_anno.set_picker(self.aw.draggable_text_box_picker)
         except Exception: # pylint: disable=broad-except # mpl before v3.0 do not have this set_in_layout() function
             pass
-        if self.patheffects:
-            rcParams['path.effects'] = []
         if draggable and draggable_anno_key is not None:
             self.l_annotations_dict[draggable_anno_key] = [temp_anno, time_anno]
         return [temp_anno, time_anno]
@@ -7180,7 +7179,12 @@ class tgraphcanvas(FigureCanvas):
                             anno_artists += time_temp_annos
                         #add a water mark if FCs
                         if timeindex[2] and not timeindex2 and self.watermarksflag:
-                            self.ax.axvspan(timex[timeindex[2]],timex[tidx], facecolor=self.palette['watermarks'], alpha=0.2)
+                            self.ax.axvspan(
+                                    timex[timeindex[2]],
+                                    timex[tidx],
+                                    facecolor=self.palette['watermarks'],
+                                    alpha=0.2,
+                                    path_effects=[])
                 #Add 2Cs markers
                 if timeindex[4]:
                     tidx = timeindex[4]
@@ -7211,7 +7215,12 @@ class tgraphcanvas(FigureCanvas):
                             anno_artists += time_temp_annos
                         #do water mark if SCs
                         if timeindex[4] and not timeindex2 and self.watermarksflag:
-                            self.ax.axvspan(timex[timeindex[4]],timex[tidx], facecolor=self.palette['watermarks'], alpha=0.2)
+                            self.ax.axvspan(
+                                timex[timeindex[4]],
+                                timex[tidx],
+                                facecolor=self.palette['watermarks'],
+                                alpha=0.2,
+                                path_effects=[])
                 #Add DROP markers
                 if timeindex[6]:
                     tidx = timeindex[6]
@@ -7247,14 +7256,24 @@ class tgraphcanvas(FigureCanvas):
                             anno_artists += fake_anno
                     #do water mark if FCs, but no FCe nor SCs nor SCe
                     if timeindex[2] and not timeindex[3] and not timeindex[4] and not timeindex[5] and not timeindex2 and self.watermarksflag:
-                        fc_artist = self.ax.axvspan(timex[timeindex[2]],timex[tidx], facecolor=self.palette['watermarks'], alpha=0.2)
+                        fc_artist = self.ax.axvspan(
+                            timex[timeindex[2]],
+                            timex[tidx],
+                            facecolor=self.palette['watermarks'],
+                            alpha=0.2,
+                            path_effects=[])
                         try:
                             fc_artist.set_in_layout(False) # remove title from tight_layout calculation
                         except Exception: # pylint: disable=broad-except # set_in_layout not available in mpl<3.x
                             pass
                     #do water mark if SCs, but no SCe
                     if timeindex[4] and not timeindex[5] and not timeindex2 and self.watermarksflag:
-                        sc_artist = self.ax.axvspan(timex[timeindex[4]],timex[tidx], facecolor=self.palette['watermarks'], alpha=0.2)
+                        sc_artist = self.ax.axvspan(
+                            timex[timeindex[4]],
+                            timex[tidx],
+                            facecolor=self.palette['watermarks'],
+                            alpha=0.2,
+                            path_effects=[])
                         try:
                             sc_artist.set_in_layout(False) # remove title from tight_layout calculation
                         except Exception: # pylint: disable=broad-except # set_in_layout not available in mpl<3.x
@@ -7272,7 +7291,14 @@ class tgraphcanvas(FigureCanvas):
                     # we simply set it to twice as wide and trust that the clipping will cut of the part not within the axis system
                     endidx = 2*max(self.timex[-1],self.endofx,self.ax.get_xlim()[0],self.ax.get_xlim()[1])
                     if timex[tidx] < endidx and self.watermarksflag:
-                        cool_mark = self.ax.axvspan(timex[tidx],endidx, facecolor=self.palette['rect4'], ec='none', alpha=0.3, clip_on=True, lw=None)
+                        cool_mark = self.ax.axvspan(
+                            timex[tidx],endidx,
+                            facecolor=self.palette['rect4'],
+                            ec='none',
+                            alpha=0.3,
+                            clip_on=True,
+                            lw=None,
+                            path_effects=[])
                         try:
                             cool_mark.set_in_layout(False) # remove title from tight_layout calculation
                         except Exception: # pylint: disable=broad-except # set_in_layout not available in mpl<3.x
@@ -7619,6 +7645,23 @@ class tgraphcanvas(FigureCanvas):
     def resizeListStrict(lst:List[Any], ln:int) -> List[Any]:
         return (lst + [-1]*(ln-len(lst)))[:ln]
 
+    @functools.lru_cache(maxsize=50) # noqa: B019 # pylint: disable=W1518 #for Python >= 3.9 can use @functools.cache; Not relevant here, as qmc is only created once: [B019] Use of `functools.lru_cache` or `functools.cache` on methods can lead to memory leaks
+    def line_path_effects(self, glow:int, patheffects:int, light_background:bool, linewidth:float) -> List[PathEffects.AbstractPathEffect]:
+        path_effects:List[PathEffects.AbstractPathEffect] = []
+        if patheffects:
+            path_effects.append(PathEffects.Stroke(linewidth=linewidth+self.patheffects,foreground=self.palette['background']))
+        if glow:
+            glow_alpha = (0.03 if light_background else 0.13)
+            path_effects.extend(
+                [
+                    PathEffects.Stroke(linewidth=linewidth+6,alpha=glow_alpha/1.5),
+                    PathEffects.Stroke(linewidth=linewidth+3,alpha=glow_alpha),
+                    PathEffects.Stroke(linewidth=linewidth+2,alpha=glow_alpha),
+                    PathEffects.Stroke(linewidth=linewidth+1,alpha=glow_alpha)
+                ])
+        path_effects.append(PathEffects.Normal())
+        return path_effects
+
     def drawET(self, temp:'npt.NDArray[numpy.double]') -> None:
         if self.ETcurve and self.ax is not None:
             try:
@@ -7627,7 +7670,6 @@ class tgraphcanvas(FigureCanvas):
             except Exception: # pylint: disable=broad-except
                 pass
             # don't draw -1:
-#            temp = [r if r !=-1 else None for r in temp]
             temp = numpy.ma.masked_where(temp == -1, temp) # type:ignore[no-untyped-call]
             self.l_temp1, = self.ax.plot(
                 self.timex,
@@ -7635,7 +7677,7 @@ class tgraphcanvas(FigureCanvas):
                 markersize=self.ETmarkersize,
                 marker=self.ETmarker,
                 sketch_params=None,
-                path_effects=[PathEffects.withStroke(linewidth=self.ETlinewidth+self.patheffects,foreground=self.palette['background'])],
+                path_effects = self.line_path_effects(self.glow, self.patheffects, self.aw.light_background_p, self.ETlinewidth),
                 linewidth=self.ETlinewidth,
                 linestyle=self.ETlinestyle,
                 drawstyle=self.ETdrawstyle,
@@ -7650,7 +7692,6 @@ class tgraphcanvas(FigureCanvas):
             except Exception: # pylint: disable=broad-except
                 pass
             # don't draw -1:
-#            temp = [r if r !=-1 else None for r in temp]
             temp = numpy.ma.masked_where(temp == -1, temp) # type:ignore[no-untyped-call]
             self.l_temp2, = self.ax.plot(
                 self.timex,
@@ -7658,12 +7699,12 @@ class tgraphcanvas(FigureCanvas):
                 markersize=self.BTmarkersize,
                 marker=self.BTmarker,
                 sketch_params=None,
-                path_effects=[PathEffects.withStroke(linewidth=self.BTlinewidth+self.patheffects,foreground=self.palette['background'])],
-                linewidth=self.BTlinewidth,
-                linestyle=self.BTlinestyle,
-                drawstyle=self.BTdrawstyle,
-                color=self.palette['bt'],
-                label=self.aw.arabicReshape(QApplication.translate('Label', 'BT')))
+                path_effects = self.line_path_effects(self.glow, self.patheffects, self.aw.light_background_p, self.BTlinewidth),
+                linewidth = self.BTlinewidth,
+                linestyle = self.BTlinestyle,
+                drawstyle = self.BTdrawstyle,
+                color = self.palette['bt'],
+                label = self.aw.arabicReshape(QApplication.translate('Label', 'BT')))
 
     def drawDeltaET(self, trans:Transform, start:int, end:int) -> None:
         if self.DeltaETflag and self.ax is not None:
@@ -7687,7 +7728,7 @@ class tgraphcanvas(FigureCanvas):
                     markersize=self.ETdeltamarkersize,
                     marker=self.ETdeltamarker,
                     sketch_params=None,
-                    path_effects=[PathEffects.withStroke(linewidth=self.ETdeltalinewidth+self.patheffects,foreground=self.palette['background'])],
+                    path_effects = self.line_path_effects(self.glow, self.patheffects, self.aw.light_background_p, self.ETdeltalinewidth),
                     linewidth=self.ETdeltalinewidth,
                     linestyle=self.ETdeltalinestyle,
                     drawstyle=self.ETdeltadrawstyle,
@@ -7714,7 +7755,7 @@ class tgraphcanvas(FigureCanvas):
                     markersize=self.BTdeltamarkersize,
                     marker=self.BTdeltamarker,
                     sketch_params=None,
-                    path_effects=[PathEffects.withStroke(linewidth=self.BTdeltalinewidth+self.patheffects,foreground=self.palette['background'])],
+                    path_effects = self.line_path_effects(self.glow, self.patheffects, self.aw.light_background_p, self.BTdeltalinewidth),
                     linewidth=self.BTdeltalinewidth,
                     linestyle=self.BTdeltalinestyle,
                     drawstyle=self.BTdeltadrawstyle,
@@ -7888,7 +7929,6 @@ class tgraphcanvas(FigureCanvas):
 
                     decay_smoothing_p = (not self.optimalSmoothing) or self.flagon
 
-                    rcParams['path.effects'] = []
                     scale = 1 if self.graphstyle == 1 else 0
                     length = 700 # 100 (128 the default)
                     randomness = 12 # 2 (16 default)
@@ -7903,8 +7943,11 @@ class tgraphcanvas(FigureCanvas):
                     rcParams['ytick.major.width'] = 1
                     rcParams['ytick.minor.width'] = 1
 
-                    rcParams['xtick.color'] = self.palette['xlabel']
-                    rcParams['ytick.color'] = self.palette['ylabel']
+                    xlabel_alpha_color = to_hex(to_rgba(self.palette['xlabel'], 0.47), keep_alpha=True)
+                    ylabel_alpha_color = to_hex(to_rgba(self.palette['ylabel'], 0.47), keep_alpha=True)
+
+                    rcParams['xtick.color'] = xlabel_alpha_color
+                    rcParams['ytick.color'] = ylabel_alpha_color
 
                     #rcParams['text.antialiased'] = True
 
@@ -8080,10 +8123,10 @@ class tgraphcanvas(FigureCanvas):
                             right=False,
                             labelright=False)
 
-                    self.ax.spines['top'].set_color('0.40')
-                    self.ax.spines['bottom'].set_color('0.40')
-                    self.ax.spines['left'].set_color('0.40')
-                    self.ax.spines['right'].set_color('0.40')
+                    self.ax.spines['top'].set_color(xlabel_alpha_color)
+                    self.ax.spines['bottom'].set_color(xlabel_alpha_color)
+                    self.ax.spines['left'].set_color(ylabel_alpha_color)
+                    self.ax.spines['right'].set_color(ylabel_alpha_color)
 
                     self.ax.spines.top.set_visible(self.xgrid != 0 and self.ygrid != 0 and self.zgrid != 0)
                     self.ax.spines.bottom.set_visible(self.xgrid != 0)
@@ -8149,12 +8192,8 @@ class tgraphcanvas(FigureCanvas):
 
                     if forceRenewAxis:
                         for label in self.ax.get_xticklabels() :
-        # labels not rendered in PDF exports on MPL 3.4 if fontproperties are set:
-        #                    label.set_fontproperties(prop)
                             label.set_fontsize('small')
                         for label in self.ax.get_yticklabels() :
-        # labels not rendered in PDF exports on MPL 3.4 if fontproperties are set:
-        #                    label.set_fontproperties(prop)
                             label.set_fontsize('small')
 
                     rcParams['path.sketch'] = (0,0,0)
@@ -8163,11 +8202,14 @@ class tgraphcanvas(FigureCanvas):
                     #draw water marks for dry phase region, mid phase region, and finish phase region
                     if self.watermarksflag:
                         rect1 = patches.Rectangle((0,self.phases[0]), width=1, height=(self.phases[1]-self.phases[0]),
-                                                  transform=trans, color=self.palette['rect1'],alpha=0.15)
+                                                  transform=trans, color=self.palette['rect1'],alpha=0.15,
+                                                  path_effects=[])
                         rect2 = patches.Rectangle((0,self.phases[1]), width=1, height=(self.phases[2]-self.phases[1]),
-                                                  transform=trans, color=self.palette['rect2'],alpha=0.15)
+                                                  transform=trans, color=self.palette['rect2'],alpha=0.15,
+                                                  path_effects=[])
                         rect3 = patches.Rectangle((0,self.phases[2]), width=1, height=(self.phases[3] - self.phases[2]),
-                                                  transform=trans, color=self.palette['rect3'],alpha=0.15)
+                                                  transform=trans, color=self.palette['rect3'],alpha=0.15,
+                                                  path_effects=[])
                         self.ax.add_patch(rect1)
                         self.ax.add_patch(rect2)
                         self.ax.add_patch(rect3)
@@ -8186,7 +8228,14 @@ class tgraphcanvas(FigureCanvas):
                         jump = 20.
                         for i in range(4):
                             if self.showEtypes[3-i]:
-                                rectEvent = patches.Rectangle((0,self.phases[0]-start-jump), width=1, height = step, transform=trans, color=self.palette['rect5'],alpha=.15)
+                                rectEvent = patches.Rectangle(
+                                    (0,self.phases[0]-start-jump),
+                                    width=1,
+                                    height = step,
+                                    transform=trans,
+                                    color=self.palette['rect5'],
+                                    alpha=.15,
+                                    path_effects=[])
                                 self.ax.add_patch(rectEvent)
                             if self.mode == 'C':
                                 jump -= 10.
@@ -8223,7 +8272,14 @@ class tgraphcanvas(FigureCanvas):
                                 else:
                                     color = self.palette[c1] #self.palette["rect1"] # green # the even ones
                                 if i != 10: # don't draw the first and the last bar in clamp mode
-                                    rectEvent = patches.Rectangle((0,barposition), width=1, height = step, transform=trans, color=color,alpha=.15)
+                                    rectEvent = patches.Rectangle(
+                                        (0,barposition),
+                                        width=1,
+                                        height = step,
+                                        transform=trans,
+                                        color=color,
+                                        alpha=.15,
+                                        path_effects=[])
                                     self.ax.add_patch(rectEvent)
                             self.eventpositionbars[jj] = barposition
                             jump -= small_step
@@ -8915,9 +8971,6 @@ class tgraphcanvas(FigureCanvas):
 
                         #END of Background
 
-                    if self.patheffects:
-                        rcParams['path.effects'] = [PathEffects.withStroke(linewidth=self.patheffects, foreground=self.palette['background'])]
-
                     self.handles = []
                     self.labels = []
                     self.legend_lines = []
@@ -8999,7 +9052,13 @@ class tgraphcanvas(FigureCanvas):
                                 if len(netypes[p]) > 1:
                                     for i in range(len(netypes[p])-1):
                                         #draw differentiating color bars between events and place then in a different height according with type
-                                        rect = patches.Rectangle((netypes[p][i], row[ltr]), width = (netypes[p][i+1]-netypes[p][i]), height = step, color = rotating_colors[i%2],alpha=0.5)
+                                        rect = patches.Rectangle(
+                                            (netypes[p][i], row[ltr]),
+                                            width = (netypes[p][i+1]-netypes[p][i]),
+                                            height = step,
+                                            color = rotating_colors[i%2],
+                                            alpha=0.5,
+                                            path_effects=[])
                                         self.ax.add_patch(rect)
 
                             # annotate event
@@ -9595,9 +9654,14 @@ class tgraphcanvas(FigureCanvas):
                                 if not self.flagstart and self.aw.extraFill1[i] > 0:
                                     self.ax.fill_between(self.extratimex[i], 0, visible_extratemp1,transform=trans,color=self.extradevicecolor1[i],alpha=self.aw.extraFill1[i]/100.,sketch_params=None)
                                 self.extratemp1lines.append(self.ax.plot(self.extratimex[i],visible_extratemp1,transform=trans,color=self.extradevicecolor1[i],
-                                    sketch_params=None,path_effects=[PathEffects.withStroke(linewidth=self.extralinewidths1[i]+self.patheffects,foreground=self.palette['background'])],
-                                    markersize=self.extramarkersizes1[i],marker=self.extramarkers1[i],linewidth=self.extralinewidths1[i],linestyle=self.extralinestyles1[i],
-                                    drawstyle=self.extradrawstyles1[i],label=extraname1_subst[i])[0])
+                                    sketch_params=None,
+                                    path_effects=self.line_path_effects(self.glow, self.patheffects, self.aw.light_background_p, self.extralinewidths1[i]),
+                                    markersize=self.extramarkersizes1[i],
+                                    marker=self.extramarkers1[i],
+                                    linewidth=self.extralinewidths1[i],
+                                    linestyle=self.extralinestyles1[i],
+                                    drawstyle=self.extradrawstyles1[i],
+                                    label=extraname1_subst[i])[0])
                         except Exception as ex: # pylint: disable=broad-except
                             _log.exception(ex)
                             _, _, exc_tb = sys.exc_info()
@@ -9633,8 +9697,14 @@ class tgraphcanvas(FigureCanvas):
                                 if not self.flagstart and self.aw.extraFill2[i] > 0:
                                     self.ax.fill_between(self.extratimex[i], 0, visible_extratemp2,transform=trans,color=self.extradevicecolor2[i],alpha=self.aw.extraFill2[i]/100.,sketch_params=None)
                                 self.extratemp2lines.append(self.ax.plot(self.extratimex[i],visible_extratemp2,transform=trans,color=self.extradevicecolor2[i],
-                                    sketch_params=None,path_effects=[PathEffects.withStroke(linewidth=self.extralinewidths2[i]+self.patheffects,foreground=self.palette['background'])],
-                                    markersize=self.extramarkersizes2[i],marker=self.extramarkers2[i],linewidth=self.extralinewidths2[i],linestyle=self.extralinestyles2[i],drawstyle=self.extradrawstyles2[i],label= extraname2_subst[i])[0])
+                                    sketch_params=None,
+                                    path_effects=self.line_path_effects(self.glow, self.patheffects, self.aw.light_background_p, self.extralinewidths2[i]),
+                                    markersize=self.extramarkersizes2[i],
+                                    marker=self.extramarkers2[i],
+                                    linewidth=self.extralinewidths2[i],
+                                    linestyle=self.extralinestyles2[i],
+                                    drawstyle=self.extradrawstyles2[i],
+                                    label= extraname2_subst[i])[0])
                         except Exception as ex: # pylint: disable=broad-except
                             _log.exception(ex)
                             _, _, exc_tb = sys.exc_info()
@@ -9782,7 +9852,6 @@ class tgraphcanvas(FigureCanvas):
 
                     #write legend
                     if self.legendloc and not self.flagon and len(self.timex) > 2:
-                        rcParams['path.effects'] = []
                         prop = self.aw.mpl_fontproperties.copy()
                         prop.set_size('x-small')
                         if len(self.handles) > 7:
@@ -9836,8 +9905,6 @@ class tgraphcanvas(FigureCanvas):
                         except Exception: # pylint: disable=broad-except
                             pass
 
-                        if self.patheffects:
-                            rcParams['path.effects'] = [PathEffects.withStroke(linewidth=self.patheffects, foreground=self.palette['background'])]
                     else:
                         self.legend = None
 
@@ -9890,9 +9957,6 @@ class tgraphcanvas(FigureCanvas):
                 ############  ready to plot ############
                 self.updateBackground() # update bitlblit backgrounds
                 #######################################
-
-                if self.patheffects:
-                    rcParams['path.effects'] = []
 
             except Exception as ex: # pylint: disable=broad-except
                 _log.exception(ex)
@@ -10500,8 +10564,17 @@ class tgraphcanvas(FigureCanvas):
                     pos_x = eventtext_end + border + start
 
                 pos_y = statsheight
-#               self.stats_summary_rect = patches.Rectangle((pos_x-margin,pos_y+margin),stats_textbox_width+2*margin,-stats_textbox_height-2*margin,linewidth=0.5,edgecolor=self.palette["grid"],facecolor=fc,fill=True,alpha=a,zorder=10)
-                self.stats_summary_rect = patches.Rectangle((pos_x-margin,pos_y - (stats_textbox_height + 2*margin)),stats_textbox_width+2*margin,stats_textbox_height+3*margin,linewidth=0.5,edgecolor=self.palette['grid'],facecolor=fc,fill=True,alpha=a,zorder=10)
+                self.stats_summary_rect = patches.Rectangle(
+                        (pos_x-margin,pos_y - (stats_textbox_height + 2*margin)),
+                        stats_textbox_width+2*margin,
+                        stats_textbox_height+3*margin,
+                        linewidth=0.5,
+                        edgecolor=self.palette['grid'],
+                        facecolor=fc,
+                        fill=True,
+                        alpha=a,
+                        zorder=10,
+                        path_effects=[])
                 self.ax.add_patch(self.stats_summary_rect)
 
                 text = self.ax.text(pos_x, pos_y, statstr, verticalalignment='top',linespacing=ls,
@@ -10608,6 +10681,9 @@ class tgraphcanvas(FigureCanvas):
             if self.step100temp is not None:
                 self.step100temp = int(round(fromCtoFstrict(self.step100temp)))
             self.AUCbase = int(round(fromCtoFstrict(self.AUCbase)))
+            self.dropDuplicatesLimit = fromCtoFstrict(100 + self.dropDuplicatesLimit) - fromCtoFstrict(100)
+            self.RoRlimitm = int(round(fromCtoFstrict(self.RoRlimitm)))
+            self.RoRlimit = int(round(fromCtoFstrict(self.RoRlimit)))
             self.alarmtemperature = [(fromCtoFstrict(t) if t != 500 else t) for t in self.alarmtemperature]
 #            # conv Arduino mode
 #            if self.aw:
@@ -10642,6 +10718,9 @@ class tgraphcanvas(FigureCanvas):
             if self.step100temp is not None:
                 self.step100temp = int(round(fromFtoCstrict(self.step100temp)))
             self.AUCbase = int(round(fromFtoCstrict(self.AUCbase)))
+            self.dropDuplicatesLimit = fromFtoCstrict(212 + self.dropDuplicatesLimit) - fromFtoCstrict(212)
+            self.RoRlimitm = int(round(fromFtoCstrict(self.RoRlimitm)))
+            self.RoRlimit = int(round(fromFtoCstrict(self.RoRlimit)))
             self.alarmtemperature = [(fromFtoCstrict(t) if t != 500 else t) for t in self.alarmtemperature]
 #            # conv Arduino mode
 #            self.aw.pidcontrol.conv2celsius()
@@ -14070,25 +14149,47 @@ class tgraphcanvas(FigureCanvas):
 
                     #Draw cool phase rectangle
                     if self.timeindex[7]:
-                        rect = patches.Rectangle((self.timex[self.timeindex[6]], statisticsheight), width = self.statisticstimes[4], height = statisticsbarheight,
-                                                color = self.palette['rect4'],alpha=0.5)
+                        rect = patches.Rectangle(
+                                (self.timex[self.timeindex[6]], statisticsheight),
+                                width = self.statisticstimes[4],
+                                height = statisticsbarheight,
+                                color = self.palette['rect4'],
+                                alpha=0.5,
+                                path_effects=[])
                         self.ax.add_patch(rect)
 
                     if self.timeindex[2]: # only if FCs exists
                         #Draw finish phase rectangle
                         #check to see if end of 1C exists. If so, use half between start of 1C and end of 1C. Otherwise use only the start of 1C
-                        rect = patches.Rectangle((self.timex[self.timeindex[2]], statisticsheight), width = self.statisticstimes[3], height = statisticsbarheight,
-                                                color = self.palette['rect3'],alpha=0.5)
+                        rect = patches.Rectangle(
+                                (self.timex[self.timeindex[2]], statisticsheight),
+                                width = self.statisticstimes[3],
+                                height = statisticsbarheight,
+                                color = self.palette['rect3'],
+                                alpha=0.5,
+                                path_effects=[])
                         self.ax.add_patch(rect)
 
                         # Draw mid phase rectangle
-                        rect = patches.Rectangle((self.timex[self.timeindex[0]]+self.statisticstimes[1], statisticsheight), width = self.statisticstimes[2], height = statisticsbarheight,
-                                              color = self.palette['rect2'],alpha=0.5)
+                        rect = patches.Rectangle(
+                                (self.timex[self.timeindex[0]]+self.statisticstimes[1],
+                                statisticsheight),
+                                width = self.statisticstimes[2],
+                                height = statisticsbarheight,
+                                color = self.palette['rect2'],
+                                alpha=0.5,
+                                path_effects=[])
                         self.ax.add_patch(rect)
 
                     # Draw dry phase rectangle
-                    rect = patches.Rectangle((self.timex[self.timeindex[0]], statisticsheight), width = self.statisticstimes[1], height = statisticsbarheight,
-                                              color = self.palette['rect1'],alpha=0.5)
+                    rect = patches.Rectangle(
+                            (self.timex[self.timeindex[0]],
+                            statisticsheight),
+                            width = self.statisticstimes[1],
+                            height = statisticsbarheight,
+                            color = self.palette['rect1'],
+                            alpha=0.5,
+                            path_effects=[])
                     self.ax.add_patch(rect)
 
                 fmtstr = '{0:.1f}' if self.LCDdecimalplaces else '{0:.0f}'

@@ -13,15 +13,13 @@
 # the GNU General Public License for more details.
 #
 # AUTHOR
-# Dave Baxter, Marko Luther, Rui Paulo 2023
+# Dave Baxter, Marko Luther 2023
 
 #set -ex
 set -e  # reduced logging
 
 
-echo $LD_LIBRARY_PATH
-export LD_LIBRARY_PATH=/usr/lib/x86_64-linux-gnu:/usr/local/lib:$LD_LIBRARY_PATH
-echo $LD_LIBRARY_PATH
+export LD_LIBRARY_PATH=$LD_LIBTRARY_PATH:/usr/local/lib
 export PATH=$PATH:$HOME/.local/bin
 
 if [ ! -z $APPVEYOR ]; then
@@ -42,36 +40,27 @@ else
     export QT_PATH=$PYTHON_PATH/PyQt5/Qt
 fi
 
-#echo "************* build derived files **************"
-#./build-derived.sh linux  #generate the derived files
-#if [ $? -ne 0 ]; then echo "Failed in build-derived.sh"; exit $?; else (echo "** Finished build-derived.sh"); fi
+echo "************* build derived files **************"
+./build-derived.sh linux  #generate the derived files
+if [ $? -ne 0 ]; then echo "Failed in build-derived.sh"; exit $?; else (echo "** Finished build-derived.sh"); fi
 
 rm -rf build
 rm -rf dist
 
-echo "**** Is the library here?"
-ls -l libusb* || true
+rm -f libusb-1.0.so.0
+if [ -f /lib/x86_64-linux-gnu/libusb-1.0.so.0 ]; then
+    ln -s /lib/x86_64-linux-gnu/libusb-1.0.so.0
+elif [ -f /lib/arm-linux-gnueabihf/libusb-1.0.so.0 ]; then
+    ln -s /lib/arm-linux-gnueabihf/libusb-1.0.so.0
+else
+    ln -s /usr/lib/libusb-1.0.so.0
+fi
 
-#dave - TODO check that builds really are valid without this
-#rm -f libusb-1.0.so.0
-#if [ -f /lib/x86_64-linux-gnu/libusb-1.0.so.0 ]; then
-#    ln -s /lib/x86_64-linux-gnu/libusb-1.0.so.0
-#elif [ -f /lib/arm-linux-gnueabihf/libusb-1.0.so.0 ]; then
-#    ln -s /lib/arm-linux-gnueabihf/libusb-1.0.so.0
-#else
-#    ln -s /usr/lib/libusb-1.0.so.0
-#fi
-
-echo "**** Starting pyinstaller"
 pyinstaller -y --log-level=INFO artisan-linux.spec
-echo "**** Finished pyinstaller"
 
 mv dist/artisan dist/artisan.d
 mv dist/artisan.d/* dist
 rm -rf dist/artisan.d
-
-# PAUSE BUILD FOR SSH ACCESS
-if [ ! -z $APPVEYOR_SSH_BLOCK ]; then if $APPVEYOR_SSH_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi;fi
 
 # copy translations
 mkdir dist/translations
@@ -155,9 +144,6 @@ mkdir dist/Icons
 find includes/Icons -name '.*.aset' -exec rm -r {} \;
 cp -R includes/Icons/* dist/Icons
 
-# PAUSE BUILD FOR SSH ACCESS
-if [ ! -z $APPVEYOR_SSH_BLOCK ]; then if $APPVEYOR_SSH_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi;fi
-
 # remove automatically collected PyQt6 libs that are not used to save space
 # with pyinstaller 6.0 it seems not to needed any longer to remove unused Qt libs:
 #keep_qt_modules="libQt6Core libQt6Gui libQt6Widgets libQt6Svg libQt6PrintSupport
@@ -179,7 +165,6 @@ if [ ! -z $APPVEYOR_SSH_BLOCK ]; then if $APPVEYOR_SSH_BLOCK; then curl -sflL 'h
 #    fi
 #done
 
-
 # remove Qt5 libs
 rm -rf dist/_internal/libQt5*
 rm -rf dist/_internal/PyQt5
@@ -200,7 +185,3 @@ rm -f dist/_internal/libz.so.1 # removing this lib seems to break the build on s
 rm -f dist/_internal/libglib-2.0.so.0 # removed for v1.6 and later
 
 rm -f libusb-1.0.so.0
-#rm -f dist/_internal/libusb-1.0.so.0
-
-#mv dist/_internal/libusb-1.0.so.0 dist/_internal/libusb-1.0.so.0HIDDEN
-rm -f dist/_internal/libusb-1.0.so.0

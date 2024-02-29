@@ -1,9 +1,7 @@
 # How to build Artisan install packages from source on GitHub.  
 
 ____
-{: .notice--info}
 **Important: Artisan is licensed under [The GNU General Public License](https://www.gnu.org/licenses/gpl-3.0.html).  Copies of Artisan and derivative works are subject to this license.  Be sure to review the license to understand your legal obligations.  Please respect them.**
-{: .notice--info} 
 ____
 
 ### Introduction

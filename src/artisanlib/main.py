@@ -1557,7 +1557,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         if settings.contains('dpi') and (not settings.contains('resetqsettings') or toInt(settings.value('resetqsettings',self.resetqsettings)) == 0) and QApplication.queryKeyboardModifiers() != Qt.KeyboardModifier.AltModifier:
             try:
                 dpi = toInt(settings.value('dpi',self.dpi))
-                if dpi >= 40:
+                if dpi >= 40: # pylint: disable=consider-using-min-builtin
                     self.dpi = dpi
             except Exception: # pylint: disable=broad-except
                 pass
@@ -3468,7 +3468,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         self.LCD2frame:ClickableLCDFrame = ClickableLCDFrame()
         self.LCD2frame.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.LCD2frame.customContextMenuRequested.connect(self.setTareET)
-        self.LCD2frame.left_clicked.connect(self.toggleETCurve)
+        self.LCD2frame.left_clicked.connect(self.toggleETlcdCurve)
         w = self.makeLCDbox(self.label2,self.lcd2,self.LCD2frame)
         LCDlayout.addWidget(w)
         LCDlayout.setAlignment(w,Qt.AlignmentFlag.AlignRight)
@@ -3476,20 +3476,20 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         self.LCD3frame:ClickableLCDFrame = ClickableLCDFrame()
         self.LCD3frame.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.LCD3frame.customContextMenuRequested.connect(self.setTareBT)
-        self.LCD3frame.left_clicked.connect(self.toggleBTCurve)
+        self.LCD3frame.left_clicked.connect(self.toggleBTlcdCurve)
         w = self.makeLCDbox(self.label3,self.lcd3,self.LCD3frame)
         LCDlayout.addWidget(w)
         LCDlayout.setAlignment(w,Qt.AlignmentFlag.AlignRight)
 
         self.LCD4frame:ClickableLCDFrame = ClickableLCDFrame()
-        self.LCD4frame.left_clicked.connect(self.toggleDeltaETCurve)
+        self.LCD4frame.left_clicked.connect(self.toggleDeltaETlcdCurve)
         w = self.makeLCDbox(self.label4,self.lcd4,self.LCD4frame)
         LCDlayout.addWidget(w)
         LCDlayout.setAlignment(w,Qt.AlignmentFlag.AlignRight)
         self.LCD4frame.setVisible(False) # by default this one is not visible
 
         self.LCD5frame:ClickableLCDFrame = ClickableLCDFrame()
-        self.LCD5frame.left_clicked.connect(self.toggleDeltaBTCurve)
+        self.LCD5frame.left_clicked.connect(self.toggleDeltaBTlcdCurve)
         w = self.makeLCDbox(self.label5,self.lcd5,self.LCD5frame)
         LCDlayout.addWidget(w)
         LCDlayout.setAlignment(w,Qt.AlignmentFlag.AlignRight)
@@ -4115,41 +4115,65 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
              self.extraCurveVisibility2) = self.qmc.curveVisibilityCache
 
     @pyqtSlot()
-    def toggleETCurve(self) -> None:
+    def toggleBTlcdCurve(self) -> None:
         if self.qmc.swaplcds:
-            self.qmc.BTcurve = not self.qmc.BTcurve
+            self.toggleETCurve()
         else:
-            self.qmc.ETcurve = not self.qmc.ETcurve
-        self.qmc.redraw_keep_view(recomputeAllDeltas=False)
+            self.toggleBTCurve()
 
     @pyqtSlot()
+    def toggleETlcdCurve(self) -> None:
+        if self.qmc.swaplcds:
+            self.toggleBTCurve()
+        else:
+            self.toggleETCurve()
+
     def toggleBTCurve(self) -> None:
-        if self.qmc.swaplcds:
-            self.qmc.ETcurve = not self.qmc.ETcurve
-        else:
+        if len(self.qmc.temp2) > 20:
+            # only if some data is given to have a visible clue
             self.qmc.BTcurve = not self.qmc.BTcurve
-        # we reset the cached main event annotation positions as those annotations are now rendered on the other curve
-        self.qmc.l_annotations_dict = {}
-        # and redraw
-        self.qmc.redraw_keep_view(recomputeAllDeltas=False)
+            # we reset the cached main event annotation positions as those annotations are now rendered on the other curve
+            self.qmc.l_annotations_dict = {}
+            # and redraw
+            self.qmc.redraw_keep_view(recomputeAllDeltas=False)
+
+    def toggleETCurve(self) -> None:
+        if len(self.qmc.temp1) > 20:
+            # only if some data is given to have a visible clue
+            self.qmc.ETcurve = not self.qmc.ETcurve
+            # we reset the cached main event annotation positions as those annotations are now rendered on the other curve
+            self.qmc.l_annotations_dict = {}
+            self.qmc.redraw_keep_view(recomputeAllDeltas=False)
 
     @pyqtSlot()
+    def toggleDeltaETlcdCurve(self) -> None:
+        if self.qmc.swapdeltalcds:
+            self.toggleDeltaBTCurve()
+        else:
+            self.toggleDeltaETCurve()
+
+    @pyqtSlot()
+    def toggleDeltaBTlcdCurve(self) -> None:
+        if self.qmc.swapdeltalcds:
+            self.toggleDeltaETCurve()
+        else:
+            self.toggleDeltaBTCurve()
+
     def toggleDeltaETCurve(self) -> None:
-        if self.qmc.swapdeltalcds:
-            self.qmc.DeltaBTflag = not self.qmc.DeltaBTflag
-        else:
+        if len(self.qmc.delta1) > 20:
+            # only if some data is given to have a visible clue
+            twoAxis_before = self.qmc.twoAxisMode()
             self.qmc.DeltaETflag = not self.qmc.DeltaETflag
-        self.qmc.redraw_keep_view(recomputeAllDeltas=False)
+            twoAxis_after = self.qmc.twoAxisMode()
+            self.qmc.redraw_keep_view(recomputeAllDeltas=False, forceRenewAxis=twoAxis_before != twoAxis_after)
 
-    @pyqtSlot()
     def toggleDeltaBTCurve(self) -> None:
-        twoAxis_before = self.qmc.twoAxisMode()
-        if self.qmc.swapdeltalcds:
-            self.qmc.DeltaETflag = not self.qmc.DeltaETflag
-        else:
+        if len(self.qmc.delta2) > 20:
+            # only if some data is given to have a visible clue
+            twoAxis_before = self.qmc.twoAxisMode()
             self.qmc.DeltaBTflag = not self.qmc.DeltaBTflag
-        twoAxis_after = self.qmc.twoAxisMode()
-        self.qmc.redraw_keep_view(recomputeAllDeltas=False,forceRenewAxis=twoAxis_before != twoAxis_after)
+            twoAxis_after = self.qmc.twoAxisMode()
+            self.qmc.redraw_keep_view(recomputeAllDeltas=False, forceRenewAxis=twoAxis_before != twoAxis_after)
 
     @pyqtSlot()
     def toggleExtraCurve1(self) -> None:
@@ -4157,7 +4181,9 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             sender = self.sender()
             assert isinstance(sender, ClickableLCDFrame)
             i = self.extraLCDframe1.index(sender)
-            self.extraCurveVisibility1[i] = not self.extraCurveVisibility1[i]
+            if len(self.qmc.extratemp1[i])>20:
+                # only if some data is given to have a visible clue
+                self.extraCurveVisibility1[i] = not self.extraCurveVisibility1[i]
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
         self.qmc.redraw_keep_view(recomputeAllDeltas=False)
@@ -4168,7 +4194,9 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             sender = self.sender()
             assert isinstance(sender, ClickableLCDFrame)
             i = self.extraLCDframe2.index(sender)
-            self.extraCurveVisibility2[i] = not self.extraCurveVisibility2[i]
+            if len(self.qmc.extratemp2[i])>20:
+                # only if some data is given to have a visible clue
+                self.extraCurveVisibility2[i] = not self.extraCurveVisibility2[i]
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
         self.qmc.redraw_keep_view(recomputeAllDeltas=False)
@@ -5624,6 +5652,13 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 self.sliderGrp34.addLayout(self.sliderGrpBox3x)
             self.eventsliderAlternativeLayout = alternativeLayout
 
+    # True if background color is light, otherwise false
+    @functools.cached_property
+    def light_background_p(self) -> bool:
+        background_color = self.qmc.palette['background']
+        return self.colorDifference('#ffffff', background_color) < self.colorDifference('#000000',background_color)
+
+
     def updateCanvasColors(self, checkColors:bool=True) -> None:
         canvas_color = self.qmc.palette['canvas']
         if canvas_color is not None and canvas_color != 'None' and not QColor.isValidColor(canvas_color):
@@ -5739,6 +5774,11 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         if checkColors:
             colorPairsToCheck = self.getcolorPairsToCheck()
             self.checkColors(colorPairsToCheck)
+
+
+        if hasattr(self, 'light_background_p'):
+            # reset the cached property self.light_background_p
+            del self.light_background_p
 
     # called from within the sample loop thread!
     def process_active_quantifiers(self) -> None:
@@ -7460,10 +7500,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 
     @pyqtSlot(int)
     def updateSVSliderLCD(self, v:int) -> None:
-        if v > self.pidcontrol.svSliderMax:
-            v = self.pidcontrol.svSliderMax
-        if v < self.pidcontrol.svSliderMin:
-            v = self.pidcontrol.svSliderMin
+        v = max(min(v, self.pidcontrol.svSliderMax), self.pidcontrol.svSliderMin)
         self.sliderLCDSV.display(v)
         if self.SVslidermoved:
             if self.sliderLCDSV.intValue() != self.sliderSV.value():
@@ -16009,8 +16046,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 if fire_slider_action:
                     self.fireslideractionSignal.emit(etype)
                 # create a new event
-                nv:float = self.qmc.eventsExternal2InternalValue(new_value)
                 if record and self.qmc.flagstart:
+                    nv:float = self.qmc.eventsExternal2InternalValue(new_value)
                     self.qmc.eventRecordActionSignal.emit(etype,nv,'',True)
 
     # kaleidoSendMessageAwait() sends out the message to the machine, awaits the reply and creates a corresponding event entry
@@ -16569,7 +16606,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.modbus.bytesize = toInt(settings.value('bytesize',self.modbus.bytesize))
             self.modbus.stopbits = toInt(settings.value('stopbits',self.modbus.stopbits))
             self.modbus.parity = s2a(toString(settings.value('parity',self.modbus.parity)))
-            self.modbus.timeout = self.float2float(toFloat(settings.value('timeout',self.modbus.timeout)))
+            self.modbus.timeout = max(0.3, self.float2float(toFloat(settings.value('timeout',self.modbus.timeout)))) # min serial MODBUS timeout is 300ms
             self.modbus.modbus_serial_extra_read_delay = toFloat(settings.value('modbus_serial_extra_read_delay',self.modbus.modbus_serial_extra_read_delay))
             self.modbus.serial_readRetries = toInt(settings.value('serial_readRetries',self.modbus.serial_readRetries))
             self.modbus.IP_timeout = self.float2float(toFloat(settings.value('IP_timeout',self.modbus.IP_timeout)))
@@ -16717,16 +16754,15 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.pidcontrol.svValue = toInt(settings.value('svValue',self.pidcontrol.svValue))
             self.pidcontrol.loadRampSoakFromBackground = bool(toBool(settings.value('loadRampSoakFromBackground',self.pidcontrol.loadRampSoakFromBackground)))
             self.pidcontrol.svLabel = toString(settings.value('svLabel',self.pidcontrol.svLabel))
-
-            self.sliderSV.blockSignals(True)
-            try:
-                if settings.contains('dutyMin'):
-                    self.pidcontrol.dutyMin = toInt(settings.value('dutyMin',self.pidcontrol.dutyMin))
-                if settings.contains('dutyMax'):
-                    self.pidcontrol.dutyMax = toInt(settings.value('dutyMax',self.pidcontrol.dutyMax))
-            finally:
-                self.sliderSV.blockSignals(False)
-
+            self.pidcontrol.dutyMin = toInt(settings.value('dutyMin',self.pidcontrol.dutyMin))
+            self.pidcontrol.dutyMax = toInt(settings.value('dutyMax',self.pidcontrol.dutyMax))
+            self.pidcontrol.positiveTargetRangeLimit = bool(toBool(settings.value('positiveTargetRangeLimit',self.pidcontrol.positiveTargetRangeLimit)))
+            self.pidcontrol.positiveTargetMin = toInt(settings.value('positiveTargetMin',self.pidcontrol.positiveTargetMin))
+            self.pidcontrol.positiveTargetMax = toInt(settings.value('positiveTargetMax',self.pidcontrol.positiveTargetMax))
+            self.pidcontrol.negativeTargetRangeLimit = bool(toBool(settings.value('negativeTargetRangeLimit',self.pidcontrol.negativeTargetRangeLimit)))
+            self.pidcontrol.negativeTargetMin = toInt(settings.value('negativeTargetMin',self.pidcontrol.negativeTargetMin))
+            self.pidcontrol.negativeTargetMax = toInt(settings.value('negativeTargetMax',self.pidcontrol.negativeTargetMax))
+            self.pidcontrol.derivative_filter = toInt(settings.value('derivative_filter',self.pidcontrol.derivative_filter))
             self.pidcontrol.activateSVSlider(self.pidcontrol.svSlider)
             self.pidcontrol.pidKp = toFloat(settings.value('pidKp',self.pidcontrol.pidKp))
             self.pidcontrol.pidKi = toFloat(settings.value('pidKi',self.pidcontrol.pidKi))
@@ -16848,6 +16884,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 #--- BEGIN GROUP Style
             settings.beginGroup('Style')
             self.qmc.patheffects = toInt(settings.value('patheffects',self.qmc.patheffects))
+            self.qmc.glow = toInt(settings.value('glow',self.qmc.glow))
             self.qmc.graphstyle = toInt(settings.value('graphstyle',self.qmc.graphstyle))
             self.qmc.graphfont = toInt(settings.value('graphfont',self.qmc.graphfont))
             if settings.contains('ETname'):
@@ -17599,7 +17636,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
     def getColor(line:Any) -> Any:
         c = line.get_color()
         if isinstance(c, (str, tuple)):
-            return mpl.colors.rgb2hex(c) # pyright:ignore[reportAttributeAccessIssue] # tuple items expected to be of type float
+            return mpl.colors.rgb2hex(c, keep_alpha=True) # pyright:ignore[reportAttributeAccessIssue] # tuple items expected to be of type float
         return c
 
     def fetchCurveStyles(self) -> None:
@@ -18354,6 +18391,13 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.settingsSetValue(settings, default_settings, 'svValue',self.pidcontrol.svValue, read_defaults)
             self.settingsSetValue(settings, default_settings, 'dutyMin',self.pidcontrol.dutyMin, read_defaults)
             self.settingsSetValue(settings, default_settings, 'dutyMax',self.pidcontrol.dutyMax, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'positiveTargetRangeLimit',self.pidcontrol.positiveTargetRangeLimit, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'positiveTargetMin',self.pidcontrol.positiveTargetMin, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'positiveTargetMax',self.pidcontrol.positiveTargetMax, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'negativeTargetRangeLimit',self.pidcontrol.negativeTargetRangeLimit, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'negativeTargetMin',self.pidcontrol.negativeTargetMin, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'negativeTargetMax',self.pidcontrol.negativeTargetMax, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'derivative_filter',self.pidcontrol.derivative_filter, read_defaults)
             self.settingsSetValue(settings, default_settings, 'pidKp',self.pidcontrol.pidKp, read_defaults)
             self.settingsSetValue(settings, default_settings, 'pidKi',self.pidcontrol.pidKi, read_defaults)
             self.settingsSetValue(settings, default_settings, 'pidKd',self.pidcontrol.pidKd, read_defaults)
@@ -18451,6 +18495,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 #--- BEGIN GROUP Style
             settings.beginGroup('Style')
             self.settingsSetValue(settings, default_settings, 'patheffects',self.qmc.patheffects, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'glow',self.qmc.glow, read_defaults)
             self.settingsSetValue(settings, default_settings, 'graphstyle',self.qmc.graphstyle, read_defaults)
             self.settingsSetValue(settings, default_settings, 'graphfont',self.qmc.graphfont, read_defaults)
             self.settingsSetValue(settings, default_settings, 'ETname', self.ETname, read_defaults)
@@ -22216,7 +22261,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.modbus.bytesize = int(str(dialog.modbus_bytesizeComboBox.currentText()))
             self.modbus.stopbits = int(str(dialog.modbus_stopbitsComboBox.currentText()))
             self.modbus.parity = str(dialog.modbus_parityComboBox.currentText())
-            self.modbus.timeout = self.float2float(toFloat(str(dialog.modbus_timeoutEdit.text())))
+            self.modbus.timeout = max(0.3, self.float2float(toFloat(str(dialog.modbus_timeoutEdit.text()))))  # minimum serial timeout should be 300ms
             try:
                 self.modbus.modbus_serial_extra_read_delay = toInt(dialog.modbus_Serial_delayEdit.text()) / 1000
             except Exception: # pylint: disable=broad-except
@@ -22472,7 +22517,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 dialog.setModal(False)
                 dialog.show()
                 dialog.setFixedSize(dialog.size())
-#                QApplication.processEvents()
         # Hottop
         elif self.qmc.device == 53:
             modifiers = QApplication.keyboardModifiers()
@@ -25414,8 +25458,8 @@ def main() -> None:
         # "UserWarning: Glyph 231 (\N{LATIN SMALL LETTER C WITH CEDILLA}) missing from current font."
         logging.captureWarnings(True)
         with warnings.catch_warnings():
-#            warnings.simplefilter('ignore')
-#            with suppress_stdout_stderr():
+            warnings.simplefilter('ignore')
+            with suppress_stdout_stderr():
                 app.exec()
         # alternative:
         # ret = app.exec()

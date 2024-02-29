@@ -20,31 +20,19 @@ hash -r
 uname -srv
 which python3
 python3 --version
-
-echo ${VIRTUAL_ENV}
-
-# PAUSE BUILD FOR SSH ACCESS
-if [ ! -z $APPVEYOR_SSH_BLOCK ]; then if $APPVEYOR_SSH_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi;fi
-exit 1
-
 sudo apt-get update -y -q --allow-releaseinfo-change
-#sudo apt-get install -y -q ruby-full build-essential p7zip-full rpm gdb libudev-dev qt5-default
-sudo apt-get install -y -q ruby-full build-essential p7zip-full rpm gdb libudev-dev
+sudo apt-get install -y -q ruby-dev build-essential p7zip-full rpm gdb libudev-dev libfuse2
 sudo apt-get install -y -q fakeroot
 
 # add libs not installed by default on Qt5.15/Qt6 any longer
-#sudo apt-get install -y -q libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 libxcb-cursor0
 sudo apt-get install -y -q libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xfixes0 libxcb-cursor0
 
-sudo apt-get install -y -q libfuse2
-
 gem install dotenv -v ${DOTENV_VER}
-#gem install fpm -v 1.12.0 # Linux build fails using 1.13.0
 gem install fpm # Linux build fails using 1.13.0
 pip install --upgrade pip
 pip install -r src/requirements.txt | sed '/^Ignoring/d'
 
-#dave .ci/install-libusb.sh
+.ci/install-libusb.sh
 
 # show set of libraries are installed
 echo "**** pip freeze ****"
