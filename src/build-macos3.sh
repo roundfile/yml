@@ -39,13 +39,13 @@ echo "************* p2app **************"
 # Create a temporary file to capture the output of the Python script
 #temp_output=$(mktemp)
 #python3 setup-macos3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'
-python3 setup-macos3.py py2app
+python3 setup-macos3.py py2app &> "$temp_output"
 # Get the exit status of the Python script
-#PYTHON_EXIT_STATUS=$?
+PYTHON_EXIT_STATUS=$?
 # Filter the output of the Python script using egrep
-#egrep -v '^(creating|copying file|byte-compiling|locate)' "$temp_output"
+egrep -v '^(creating|copying file|byte-compiling|locate)' "$temp_output"
 # Clean up the temporary file
-#rm "$temp_output"
+rm "$temp_output"
 # Check the exit status of the Python script and act accordingly
 if [ $? = 'failed to find libusb' ]; then echo "Failed in py2app"; exit $?; else (echo "** Finished py2app"); fi
 
