@@ -198,7 +198,7 @@ except Exception: # pylint: disable=broad-except
                 print('ERROR: failed to locate libusb')
                 print(e)
                 sys.exit(1)
-
+ 
 
 
 # for Qt
