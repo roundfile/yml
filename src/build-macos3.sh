@@ -36,7 +36,17 @@ if [ $? -ne 0 ]; then echo "Failed in build-derived.sh"; exit $?; else (echo "**
 rm -rf build dist
 sleep .3 # sometimes it takes a little for dist to get really empty
 echo "************* p2app **************"
-python3 setup-macos3.py py2app | egrep -v '^(foo)'
+# Create a temporary file to capture the output of the Python script
+temp_output=$(mktemp)
+#python3 setup-macos3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'
+python3 setup-macos3.py py2app > "$temp_output"
+# Get the exit status of the Python script
+PYTHON_EXIT_STATUS=$?
+# Filter the output of the Python script using egrep
+egrep -v '^(creating|copying file|byte-compiling|locate)' "$temp_output"
+# Clean up the temporary file
+rm "$temp_output"
+# Check the exit status of the Python script and act accordingly
 if [ $? -ne 0 ]; then echo "Failed in py2app"; exit $?; else (echo "** Finished py2app"); fi
 
 # Check that the packaged files are above an expected size
