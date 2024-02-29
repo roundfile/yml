@@ -39,7 +39,7 @@ echo "************* p2app **************"
 # Create a temporary file to capture the output of the Python script
 #temp_output=$(mktemp)
 #python3 setup-macos3.py py2app | egrep -v '^(creating|copying file|byte-compiling|locate)'
-python3 setup-macos3.py py2app > /dev/nul
+python3 setup-macos3.py py2app
 # Get the exit status of the Python script
 #PYTHON_EXIT_STATUS=$?
 # Filter the output of the Python script using egrep
