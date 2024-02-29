@@ -6,8 +6,6 @@ body:
     attributes:
       value: |
         **Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.**
-        
-        
 
   - type: checkboxes
     attributes:
@@ -71,7 +69,7 @@ body:
     attributes:
       label: Important! Steps To Reproduce
       description: Detailed steps to reproduce the behavior if not included in the description.
-      placeholder: |
+      value: >
         Step 1. ...
 
         Step 2. ...

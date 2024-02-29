@@ -51,9 +51,9 @@ init:
       if ([bool]$env:APPVEYOR_PULL_REQUEST_NUMBER -eq $true) {
         $env:artifact_prefix = 'artisan' 
       }
-  - sh: export APPVEYOR_VNC_BLOCK=true
-  - sh: export APPVEYOR_RDP_BLOCK=true
-  - sh: export APPVEYOR_SSH_BLOCK=true
+  - sh: export APPVEYOR_VNC_BLOCK=false
+  - sh: export APPVEYOR_RDP_BLOCK=false
+  - sh: export APPVEYOR_SSH_BLOCK=false
 
 branches:
   only:
