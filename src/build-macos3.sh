@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 # ABOUT
 # Build shell script for Artisan macOS CI builds
 #
