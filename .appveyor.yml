@@ -28,10 +28,10 @@ environment:
     appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
     appveyor_build_worker_image: Visual Studio 2022
-#  - job_name: macos
-#    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
-#  - job_name: linux
-#    appveyor_build_worker_image: Ubuntu2004
+  - job_name: macos
+    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
+  - job_name: linux
+    appveyor_build_worker_image: Ubuntu2204
 
 
 # Generic build number, later set to commit hash by init
@@ -106,19 +106,17 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the build script
-#    - cmd: build-win3-pi.bat
-    - cmd: build-win3-standalone-pi.bat
+    - cmd: build-win3-pi.bat
 
 #  test_script:
 #    - cmd: python -m unittest discover
 
   artifacts:
 #    - path: 'generated-win-legacy.zip'
-#    - path: 'src\%artifact_prefix%-*.zip'
-    - path: 'src\artisan*.exe'
+    - path: 'src\%artifact_prefix%-*.zip'
 
-#  deploy_script:
-#    - cmd: bash ../.ci/upload.sh artisan-*.zip
+  deploy_script:
+    - cmd: bash ../.ci/upload.sh artisan-*.zip
 
 #  # uncomment this section for remote desktop connection to build image
 #  on_finish:
@@ -183,19 +181,17 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the build script
-#    - cmd: build-win3-pi.bat
-    - cmd: build-win3-standalone-pi.bat
+    - cmd: build-win3-pi.bat
 
 #  test_script:
 #    - cmd: python -m unittest discover
 
   artifacts:
 #    - path: 'generated-win.zip'
-#    - path: 'src\%artifact_prefix%-*.zip'
-    - path: 'src\artisan*.exe'
+    - path: 'src\%artifact_prefix%-*.zip'
 
-#  deploy_script:
-#    - cmd: bash ../.ci/upload.sh artisan-*.zip
+  deploy_script:
+    - cmd: bash ../.ci/upload.sh artisan-*.zip
 
 #  # uncomment this section for remote desktop connection to build image
 #  on_finish:
@@ -242,9 +238,9 @@ for:
 #  test_script:
 #    - python -m unittest discover -s src
 
-#  artifacts:
+  artifacts:
 #    - path: 'generated-macos.zip'
-#    - path: 'src/artisan-*.dmg'
+    - path: 'src/%artifact_prefix%-*.dmg'
 
   deploy_script:
     # we upgrade libidn2 and curl to prevent issues caused by the previous python update
@@ -303,17 +299,16 @@ for:
 #  test_script:
 #    - QT_QPA_PLATFORM=offscreen python -m unittest discover -s src
 
-#  artifacts:
+  artifacts:
 #    - path: 'generated-linux.zip'
-#    - path: 'src/artisan-*.deb'
-#    - path: 'src/artisan-*.rpm'
-#    - path: 'src/artisan-*.AppImage'
+    - path: 'src/%artifact_prefix%-*.deb'
+    - path: 'src/%artifact_prefix%-*.rpm'
+    - path: 'src/%artifact_prefix%-*.AppImage'
 
   deploy_script:
     - ../.ci/upload.sh artisan-*.deb
     - ../.ci/upload.sh artisan-*.rpm
     - ../.ci/upload.sh artisan-*.AppImage
-
 
 #  # uncomment this section for ssh connection to build image
 #  on_finish:
