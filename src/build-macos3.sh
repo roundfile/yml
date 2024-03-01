@@ -36,20 +36,14 @@ if [ $? -ne 0 ]; then echo "Failed in build-derived.sh"; exit $?; else (echo "**
 rm -rf build dist
 sleep .3 # sometimes it takes a little for dist to get really empty
 echo "************* p2app **************"
-# Create a temporary file to capture the output of the Python script
-#temp_output=$(mktemp)
-{ python3 setup-macos3.py py2app 2>&1; } | egrep -v '^(creating|copying file|byte-compiling|locate)'
-#python3 setup-macos3.py py2app
-# Get the exit status of the Python script
-#PYTHON_EXIT_STATUS=$?
-echo "Got to here..."
-# Filter the output of the Python script using egrep
-#egrep -v '^(creating|copying file|byte-compiling|locate)' "$temp_output"
-# Clean up the temporary file
-#rm "$temp_output"
-#echo "Got to there"
+status=0
+status=$( {
+    python3 setup-macos3.py py2app 2>&1 | tee >(egrep -v '^(creating|copying file|byte-compiling|locate)' >/dev/tty) | {
+        grep 'ERROR:' && echo 1 || echo 0 
+    }
+} | tail -n 1 )
 # Check the exit status of the Python script and act accordingly
-#if [ $PYTHON_EXIT_STATUS = 'failed to find libusb' ]; then echo "Failed in py2app"; exit $?; else (echo "** Finished py2app"); fi
+if [ $status -ne 0 ]; then echo "Failed in py2app"; exit 1; else (echo "** Finished py2app"); fi
 
 # Check that the packaged files are above an expected size
 version=$(python3 -c "import artisanlib; print(artisanlib.__version__)")
