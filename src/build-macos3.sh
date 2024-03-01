@@ -36,14 +36,17 @@ if [ $? -ne 0 ]; then echo "Failed in build-derived.sh"; exit $?; else (echo "**
 rm -rf build dist
 sleep .3 # sometimes it takes a little for dist to get really empty
 echo "************* p2app **************"
-status=0
-status=$( {
-    python3 setup-macos3.py py2app 2>&1 | tee >(egrep -v '^(creating|copying file|byte-compiling|locate)' >/dev/tty) | {
-        grep 'ERROR:' && echo 1 || echo 0 
-    }
-} | tail -n 1 )
-# Check the exit status of the Python script and act accordingly
-if [ $status -ne 0 ]; then echo "Failed in py2app"; exit 1; else (echo "** Finished py2app"); fi
+#status=0
+#status=$( {
+#    python3 setup-macos3.py py2app 2>&1 | tee >(egrep -v '^(creating|copying file|byte-compiling|locate|ADD INFO|changefunc)' >/dev/tty) | {
+#        grep 'ERROR:' && echo 1 || echo 0
+#    }
+#} | tail -n 1 )
+## Check the exit status of the Python script and act accordingly
+#if [ $status -ne 0 ]; then echo "Failed in py2app"; exit 1; else (echo "** Finished py2app"); fi
+python3 setup-macos3.py py2app 2>&1 | egrep -v '^(creating|copying file|byte-compiling|locate|ADD INFO|changefunc)'
+if [ ${PIPESTATUS[0]} -ne 0 ]; then echo "Failed in py2app"; exit 1; else (echo "** Finished py2app"); fi
+
 
 # Check that the packaged files are above an expected size
 version=$(python3 -c "import artisanlib; print(artisanlib.__version__)")
