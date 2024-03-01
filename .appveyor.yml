@@ -115,7 +115,7 @@ for:
   artifacts:
 #    - path: 'generated-win-legacy.zip'
 #    - path: 'src\%artifact_prefix%-*.zip'
-    - path: 'src\artisan*.zip'
+    - path: 'src\artisan*.exe'
 
 #  deploy_script:
 #    - cmd: bash ../.ci/upload.sh artisan-*.zip
