@@ -81,7 +81,7 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     if not exist v%PYINSTALLER_VER%.zip (exit /b 100)
     7z x v%PYINSTALLER_VER%.zip
     del v%PYINSTALLER_VER%.zip
-    if %ERRORLEVEL% NEQ 1 (exit /b 110)
+    if %ERRORLEVEL% NEQ 0 (exit /b 110)
     if not exist pyinstaller-%PYINSTALLER_VER%/bootloader/ (exit /b 120)
     cd pyinstaller-%PYINSTALLER_VER%/bootloader
     rem
