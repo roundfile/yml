@@ -39,7 +39,7 @@ python -V
 echo ""************* build derived files **************"
 
 call build-derived-win.bat
-if ERRORLEVEL 1 (echo ** Failed in build-derived-win.bat & exit /b 1) else (echo ** Finished build-dependant-win.bat)
+if %ERRORLEVEL% NEQ 0 (echo ** Failed in build-derived-win.bat & exit /b 1) else (echo ** Finished build-dependant-win.bat)
 
 ::
 :: run pyinstaller and NSIS to generate the install .exe
@@ -56,7 +56,7 @@ create-version-file version-metadata.yml --outfile version_info-win.txt --versio
 :: Choose log-level from 'TRACE', 'DEBUG', 'INFO', 'WARN', 'DEPRECATION', 'ERROR', 'FATAL'
 echo **** Running pyinstaller
 pyinstaller --noconfirm --log-level=WARN artisan-win.spec
-if ERRORLEVEL 1 (echo ** Failed in pyinstaller & exit /b 1) else (echo ** Success)
+if %ERRORLEVEL% NEQ 0 (echo ** Failed in pyinstaller & exit /b 1) else (echo ** Success)
 
 ::
 :: Don't make assumptions as to where the 'makensis.exe' is - look in the obvious places
@@ -72,7 +72,7 @@ echo **** Running NSIS makensis.exe file date %NSIS_DATE%
 ::
 :: run NSIS to build the install .exe file
 %NSIS_EXE% /DPRODUCT_VERSION=%ARTISAN_VERSION%.%ARTISAN_BUILD% /DLEGACY=%ARTISAN_LEGACY% setup-install3-pi.nsi
-if ERRORLEVEL 1 (echo ** Failed in NSIS & exit /b 1) else (echo ** Success)
+if %ERRORLEVEL% NEQ 0 (echo ** Failed in NSIS & exit /b 1) else (echo ** Success)
 
 ::
 :: package the installation zip file
@@ -80,7 +80,7 @@ if ERRORLEVEL 1 (echo ** Failed in NSIS & exit /b 1) else (echo ** Success)
 if /i "%APPVEYOR%" == "True" (
     copy "..\LICENSE" "LICENSE.txt"
     7z a artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
-    if ERRORLEVEL 1 (echo ** Failed in 7z zipping the setup files & exit /b 1)
+    if %ERRORLEVEL% NEQ 0 (echo ** Failed in 7z zipping the setup files & exit /b 1)
 )
 
 ::
