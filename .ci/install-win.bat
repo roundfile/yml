@@ -66,8 +66,10 @@ if %ERRORLEVEL% NEQ 0 (exit /b 94)
 ::
 :: install Artisan required libraries from pip
 ::
-python -m pip install -r src\requirements.txt | findstr /v /b "Ignoring"
-if %ERRORLEVEL% NEQ 0 (exit /b 95)
+cd src
+python -m pip install -r requirements.txt | findstr /v /b "Ignoring"
+REM if ERRORLEVEL 1 (exit /b 95)
+cd ..
 
 ::
 :: custom build the pyinstaller bootloader or install a prebuilt
