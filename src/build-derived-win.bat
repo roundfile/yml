@@ -63,14 +63,14 @@ if not defined PYQT (
 :: convert help files from .xlsx to .py
 echo ************* help files **************
 python ..\doc\help_dialogs\Script\xlsx_to_artisan_help.py all
-if %ERRORLEVEL% NEQ 0 (echo ** Failed in xlsx_to_artisan_help.py & exit /b 1) else (echo ** Success)
+if ERRORLEVEL 1 (echo ** Failed in xlsx_to_artisan_help.py & exit /b 1) else (echo ** Success)
 
 :: convert .ui files to .py files
 echo ************* ui/uic **************
 for /r %%a IN (ui\*.ui) DO (
     echo %%~na
     %PYUIC% -o uic\%%~na.py ui\%%~na.ui
-    if %ERRORLEVEL% NEQ 0 (echo ** Failed in pyuic & exit /b 1)
+    if ERRORLEVEL 1 (echo ** Failed in pyuic & exit /b 1)
 )
 echo ** Success
 
@@ -79,24 +79,24 @@ echo ************* pylupdate **************
 if /i "%ARTISAN_LEGACY%" == "True" (
     echo *** Processing translation files defined in artisan.pro with pylupdate5.py
     %PYTHON_PATH%\Scripts\pylupdate5.exe artisan.pro
-    if %ERRORLEVEL% NEQ 0 (echo ** Failed in pylupdate5.py & exit /b 1) else (echo ** Success)
+    if ERRORLEVEL 1 (echo ** Failed in pylupdate5.py & exit /b 1) else (echo ** Success)
 ) else (
     echo *** Processing translation files with pylupdate6pro.py
     python pylupdate6pro.py
-    if %ERRORLEVEL% NEQ 0 (echo ** Failed in pylupdate6pro.py & exit /b 1) else (echo ** Success)
+    if ERRORLEVEL 1 (echo ** Failed in pylupdate6pro.py & exit /b 1) else (echo ** Success)
 )
 echo ************* lrelease **************
 cd translations
 for /r %%a IN (*.ts) DO (
     qt%PYQT%-tools lrelease %%~a
-    if %ERRORLEVEL% NEQ 0 (echo ** Failed in qt%PYQT%-tools lrelease step 2 & exit /b 1)
+    if ERRORLEVEL 1 (echo ** Failed in qt%PYQT%-tools lrelease step 2 & exit /b 1)
 )
 echo ** Success
 cd ..
 
 :: Zip the generated files
 7z a ..\generated-%ARTISAN_SPEC%.zip ..\doc\help_dialogs\Output_html\ help\ translations\ uic\
-if %ERRORLEVEL% NEQ 0 (echo ** Failed in 7z & exit /b 1) else (echo ** Success)
+if ERRORLEVEL 1 (echo ** Failed in 7z & exit /b 1) else (echo ** Success)
 ::
 ::  End of generating derived files
 ::

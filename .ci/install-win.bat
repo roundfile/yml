@@ -48,7 +48,7 @@ if NOT "%PYUPGRADE_WIN_V%" == "" (
         if not exist python-%PYUPGRADE_WIN_V%-amd64.exe (exit /b 80)
         echo *** Installing Python %PYUPGRADE_WIN_V%
         python-%PYUPGRADE_WIN_V%-amd64.exe /quiet PrependPath=1
-        if not exist %PYTHON_PATH%\python.exe (exit /b 85)
+        if not exist %PYTHON_PATH%\python.exe (exit /b 90)
         echo ***** Upgrade Complete
         echo Python Version
         python -V
@@ -59,17 +59,12 @@ if NOT "%PYUPGRADE_WIN_V%" == "" (
 :: get pip up to date
 ::
 python -m pip install --upgrade pip
-if %ERRORLEVEL% NEQ 0 (exit /b 90)
 python -m pip install wheel
-if %ERRORLEVEL% NEQ 0 (exit /b 94)
 
 ::
 :: install Artisan required libraries from pip
 ::
-cd src
-python -m pip install -r requirements.txt | findstr /v /b "Ignoring"
-REM if ERRORLEVEL 1 (exit /b 95)
-cd ..
+python -m pip install -r src\requirements.txt | findstr /v /b "Ignoring"
 
 ::
 :: custom build the pyinstaller bootloader or install a prebuilt
@@ -83,7 +78,7 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     if not exist v%PYINSTALLER_VER%.zip (exit /b 100)
     7z x v%PYINSTALLER_VER%.zip
     del v%PYINSTALLER_VER%.zip
-    if %ERRORLEVEL% NEQ 0 (exit /b 110)
+    if ERRORLEVEL 1 (exit /b 110)
     if not exist pyinstaller-%PYINSTALLER_VER%/bootloader/ (exit /b 120)
     cd pyinstaller-%PYINSTALLER_VER%/bootloader
     rem
@@ -100,7 +95,6 @@ if /i "%BUILD_PYINSTALLER%"=="True" (
     rem install pyinstaller
     echo ***** Start install pyinstaller v%PYINSTALLER_VER%
     python -m pip install -q dist/pyinstaller-%PYINSTALLER_VER%-py3-none-any.whl
-    if 
     cd ..
 ) else (
      python -m pip install -q pyinstaller==%PYINSTALLER_VER%
