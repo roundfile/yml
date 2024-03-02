@@ -64,7 +64,10 @@ python -m pip install wheel
 ::
 :: install Artisan required libraries from pip
 ::
+cd src
 python -m pip install -r src\requirements.txt | findstr /v /b "Ignoring"
+if %ERRORLEVEL% NEQ 0 (exit /b 110)
+cd ..
 
 ::
 :: custom build the pyinstaller bootloader or install a prebuilt
