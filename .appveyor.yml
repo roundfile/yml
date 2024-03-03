@@ -149,6 +149,10 @@ for:
             $env:PYTHON_V = ($env:PYUPGRADE_WIN_V -split '\.')[0..1] -join '.'
         }
 
+    - cmd: echo PREV_PYTHON_V = %PREV_PYTHON_V%
+    - cmd: echo PYTHON_V = %PYTHON_V%
+    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
     # derive the python path from the version number
     - ps: $env:PYTHON_PATH = "C:/Python$($env:PYTHON_V -replace '\.','')-x64"
     - ps: Write-Host $env:PYTHON_PATH
