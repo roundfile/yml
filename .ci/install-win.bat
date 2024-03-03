@@ -50,9 +50,10 @@ if NOT "%PYUPGRADE_WIN_V%" == "" (
         python-%PYUPGRADE_WIN_V%-amd64.exe /quiet PrependPath=1
         if not exist %PYTHON_PATH%\python.exe (exit /b 90)
         echo ***** Upgrade Complete
-        echo Python Version
-        python -V
     )
+    echo New Python Version
+    python -V
+    %PYTHON_PATH%\python.exe -V
 )
 
 ::
