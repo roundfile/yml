@@ -6,10 +6,10 @@ body:
     attributes:
       value: |
         **Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.**
-
+        The following files help us to quickly solve your issue.  To attach a file simply drag and drop it onto the "Problem Description" field below.  FOr files other than images you need to add a `.txt` suffix to the file name.
   - type: checkboxes
     attributes:
-      label: The following files help us to quickly solve your issue.  To attach a file simply drag and drop it onto the "Problem Description" field below.
+#      label: The following files help us to quickly solve your issue.  To attach a file simply drag and drop it onto the "Problem Description" field below.
       description: Before you hit SUBMIT please check.
       options:
         - label: >
