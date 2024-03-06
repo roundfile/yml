@@ -5,8 +5,9 @@ body:
   - type: markdown
     attributes:
       value: |
-        **Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.**
-        The following files help us to quickly solve your issue.  To attach a file simply drag and drop it onto the "Problem Description" field below.  For files other than images you need to add a `.txt` suffix to the file name.
+        **Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.**  
+        
+        Attach a sample profile (*.alog) file and your settings file (Help>> Save settings) to help us quickly solve your issue.  Rename these files gby addin `.txt` to the end of the file name.  Drag and drop the files onto the "Problem Description" field below.  Screenshots and other images may be dragged and dropped without being renamed.
 
   - type: textarea
     attributes:
