@@ -1,0 +1,80 @@
+name: "Bug Report"
+description: Create a bug report to help us improve Artisan.  If you have a question please create a Discussion.
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.**
+
+  - type: checkboxes
+    attributes:
+      label: The following files help us to quickly solve your issue.  To attach a file simply drag and drop it onto the "Problem Description" field below.
+      description: Before you hit SUBMIT please check.
+      options:
+        - label: >
+            A sample profile *.alog file, renamed to *.alog.txt is attached
+        - label: >
+            A settings file (Help>> Save Settings) *.aset, renamed to *.aset.txt is attached
+        - label: >
+            No files are attached
+        
+  - type: dropdown
+    attributes:
+      label: Artisan Version
+      description: Find in "Help>> About".
+      options:
+        - 
+        - 2.10.2
+        - 2.10.3 Continuous Build
+        - 2.10.0
+        - 2.8.4
+        - Other - include in Description
+      default: 0
+    validations:
+      required: true
+      
+#  - type: input
+#    attributes:
+#      label: Artisan Build Number
+#      description: Go to "Help>> About", the number in brackets (). 
+#      placeholder: "Example: 4b4b3fa"
+#    validations:
+#      required: false
+
+  - type: input
+    attributes:
+      label: Computer OS and Version
+      description: Mac/Windows/Linux + OS version.
+      placeholder: "Example: macOS 10.15.3"
+    validations:
+      required: false
+
+  - type: input
+    attributes:
+      label: Connected devices or roasting machine
+      description: What is connected to Artisan?
+      placeholder: "Example: Probatone 5"
+    validations:
+      required: false
+
+  - type: textarea
+    attributes:
+      label: Problem Description
+      description: A clear and concise description of the problem with steps to reproduce.  Drag and drop files and screenshots here.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Important! Steps To Reproduce
+      description: Detailed steps to reproduce the behavior if not included in the description.
+      value: >
+        Step 1. ...
+
+        Step 2. ...
+
+        Step 3. ...
+    validations:
+      required: false
+
