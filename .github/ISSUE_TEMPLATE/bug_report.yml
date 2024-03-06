@@ -7,18 +7,27 @@ body:
       value: |
         **Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.**
         The following files help us to quickly solve your issue.  To attach a file simply drag and drop it onto the "Problem Description" field below.  For files other than images you need to add a `.txt` suffix to the file name.
-  - type: checkboxes
+
+  - type: textarea
     attributes:
-      label: Files
-      description: Before you hit SUBMIT please check.
-      options:
-        - label: >
-            A sample profile *.alog file, renamed to *.alog.txt is attached
-        - label: >
-            A settings file (Help>> Save Settings) *.aset, renamed to *.aset.txt is attached
-        - label: >
-            No files are attached
-        
+      label: Problem Description
+      description: A clear and concise description of the problem with steps to reproduce.  Drag and drop files and screenshots here.
+    validations:
+      required: true
+
+  - type: textarea
+    attributes:
+      label: Steps To Reproduce
+      description: Detailed steps to reproduce the behavior if not included in the description.
+      value: >
+        Step 1. ...
+
+        Step 2. ...
+
+        Step 3. ...
+    validations:
+      required: false
+
   - type: dropdown
     attributes:
       label: Artisan Version
@@ -58,23 +67,15 @@ body:
     validations:
       required: false
 
-  - type: textarea
+  - type: checkboxes
     attributes:
-      label: Problem Description
-      description: A clear and concise description of the problem with steps to reproduce.  Drag and drop files and screenshots here.
-    validations:
-      required: true
-
-  - type: textarea
-    attributes:
-      label: Important! Steps To Reproduce
-      description: Detailed steps to reproduce the behavior if not included in the description.
-      value: >
-        Step 1. ...
-
-        Step 2. ...
-
-        Step 3. ...
-    validations:
-      required: false
-
+      label: Files
+      description: Before you hit SUBMIT please check the appropriate box(es).
+      options:
+        - label: >
+            A sample profile *.alog file, renamed to *.alog.txt is attached
+        - label: >
+            A settings file (Help>> Save Settings) *.aset, renamed to *.aset.txt is attached
+        - label: >
+            No files are attached
+        
