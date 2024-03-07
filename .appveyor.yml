@@ -31,7 +31,7 @@ environment:
 #  - job_name: macos
 #    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
   - job_name: linux
-    appveyor_build_worker_image: Ubuntu2204
+    appveyor_build_worker_image: Previous Ubuntu2204
 
 
 # Generic build number, later set to commit hash by init
@@ -221,7 +221,7 @@ for:
     MACOSX_DEPLOYMENT_TARGET: 11.0
     PYTHONSITEPKGS: /Users/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
     QT_PATH: ${PYTHONSITEPKGS}/PyQt6/Qt6
-#    QT_SRC_PATH: /Users/appveyor/Qt/6.4/macos
+    QT_SRC_PATH: /Users/appveyor/Qt/6.4/macos
     PYUIC: pyuic6
     PYLUPDATE: ./pylupdate6pro.py  #the dot slash is necessary
 
