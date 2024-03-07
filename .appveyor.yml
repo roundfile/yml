@@ -18,7 +18,7 @@
 # Include "skip ci" in the commit message to prevent this build process from running
 environment:
   # Set the Appveyor Python version for windows, macos and linux here. Does not affect windows_legacy.
-  PYTHON_V: 3.12
+  PYTHON_V: 3.11
   # Upgrade to specific version (for platforms supporting upgrade). Upgrade skipped if env var is missing or blank.
 #  PYUPGRADE_WIN_V: 3.12.2
   #PYUPGRADE_MACOS_V: 3.11.5
@@ -26,10 +26,10 @@ environment:
   matrix:
 #  - job_name: windows_legacy
 #    appveyor_build_worker_image: Visual Studio 2019
-  - job_name: windows
-    appveyor_build_worker_image: Visual Studio 2022
+#  - job_name: windows
+#    appveyor_build_worker_image: Visual Studio 2022
   - job_name: macos
-    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
+   appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
   - job_name: linux
     appveyor_build_worker_image: Ubuntu2204
 
@@ -229,6 +229,9 @@ for:
     - echo "MacOS Install"
     - chmod +x .ci/*.sh
 
+    - sh: export APPVEYOR_VNC_BLOCK=true
+    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
     - sed -i'' -e "s/__revision__ = '.*'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
@@ -279,7 +282,6 @@ for:
     fast_finish: false
 
   environment:
-    PYTHON_V: 3.11
     ARTISAN_OS: linux
     PYTHONSITEPKGS: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
     QT_PATH: $PYTHON_PATH/PyQt6/Qt6
@@ -290,6 +292,9 @@ for:
   install:
     - echo "Linux Install"
     - chmod +x .ci/*.sh
+
+    - sh: export APPVEYOR_SSH_BLOCK=true
+    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
 
     # pull library versions from requirments file
     - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements.txt "libusb==([\d\.]*).*platform_system='Linux'" -List | ForEach-Object {$_.Matches.Groups[1].Value}

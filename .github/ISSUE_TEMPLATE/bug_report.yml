@@ -7,7 +7,7 @@ body:
       value: |
         **Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.**  
         
-        To help us quickly solve your issue attach a sample profile `*.alog` file and your settings `*.aset` file (Help>> Save settings).
+        To help us quickly solve your issue attach a sample profile `*.alog` file and your settings `*.aset` file (Help>> Save settings).  Add screenshots if they help describe the problem.
         
         Rename these files by adding `.txt` to the end of the file name.  Drag and drop the files onto the "Problem Description" field below.  Screenshots and other images may be dragged and dropped without being renamed.
 
