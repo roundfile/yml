@@ -69,9 +69,11 @@ if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 echo "************* lrelease **************"
 echo "*** compiling translations"
 if [ -f "$QT_SRC_PATH/bin/lrelease" ]; then
+    echo "*** QT_SRC_PATH: $QT_SRC_PATH/bin/lrelease"
     $QT_SRC_PATH/bin/lrelease -verbose translations/*.ts
     if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 elif [[ $(type -P "$QTTOOLS") ]]; then
+    echo "*** QTTOOLS: $QTTOOLS/bin/lrelease"
     $QTTOOLS lrelease -verbose translations/*.ts
     if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 else
