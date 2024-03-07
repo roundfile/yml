@@ -28,8 +28,8 @@ environment:
 #    appveyor_build_worker_image: Visual Studio 2019
 #  - job_name: windows
 #    appveyor_build_worker_image: Visual Studio 2022
-  - job_name: macos
-    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
+#  - job_name: macos
+#    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
   - job_name: linux
     appveyor_build_worker_image: Ubuntu2204
 
@@ -282,10 +282,11 @@ for:
     fast_finish: false
 
   environment:
+    PYTHON_V: 3.12
     ARTISAN_OS: linux
     PYTHONSITEPKGS: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
     QT_PATH: $PYTHON_PATH/PyQt6/Qt6
-    QT_SRC_PATH: /home/appveyor/Qt/6.4/gcc_64
+    QT_SRC_PATH: /home/appveyor/Qt/6.6/gcc_64
     PYUIC: pyuic6
     PYLUPDATE: ./pylupdate6pro.py  #the dot slash is necessary
 
@@ -312,6 +313,8 @@ for:
 
     # run the install script
     - .ci/install-linux.sh
+
+    - sh: export APPVEYOR_SSH_BLOCK=true
 
   build_script:
     - echo "Linux Build"
