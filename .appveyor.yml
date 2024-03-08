@@ -42,6 +42,8 @@ skip_tags: true
 clone_depth: 1
 
 init:
+  - sh: export APPVEYOR_SSH_BLOCK=true`
+
   # Sets the commit hash to "build version number" shown in appveyor build status, the build number keeps it unique
   - ps: Update-AppveyorBuild -Version "$($env:APPVEYOR_REPO_COMMIT.substring(0,7)) ($env:APPVEYOR_BUILD_NUMBER)"
   # Env used to enable artifact upload for PR builds by providing a valid file name, invalid for REPO builds
