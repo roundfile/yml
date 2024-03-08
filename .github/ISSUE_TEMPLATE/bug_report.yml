@@ -7,9 +7,9 @@ body:
       value: |
         **Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.**  
         
-        To help us quickly solve your issue attach a sample profile `*.alog` file and your settings `*.aset` file (Help>> Save settings).  Add screenshots if they help describe the problem.
-        
-        Rename these files by adding `.txt` to the end of the file name.  Add the files to the "Problem Description" field below.  Do this by drag-and-drop, copy-paste, or clicking the link under the input field.  Screenshots and other images may be added without being renamed.
+        > To help us quickly solve your issue attach a sample profile `*.alog` file and your settings `*.aset` file (Help>> Save settings).  Add screenshots if they help describe the problem.
+        >
+        > Rename these files by adding `.txt` to the end of the file name.  Add the files to the "Problem Description" field below.  Do this by drag-and-drop, copy-paste, or clicking the link under the input field.  Screenshots and other images may be added without being renamed.
 
   - type: textarea
     attributes:
@@ -22,12 +22,18 @@ body:
     attributes:
       label: Steps To Reproduce
       description: Detailed steps to reproduce the behavior if not included in the description.
-      value: >
-        Step 1. ...
-
-        Step 2. ...
-
-        Step 3. ...
+      placeholder: |
+          Example:
+              1. Start Artisan after a factory reset
+              2. Open Config>> Events, go to Buttons tab
+              3. Click on Add
+              4. ....
+#      value: >
+#        Step 1. ...
+#
+#        Step 2. ...
+#
+#        Step 3. ...
     validations:
       required: false
 
