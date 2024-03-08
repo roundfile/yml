@@ -1,5 +1,5 @@
 name: "Bug Report"
-description: Create a bug report to help us improve Artisan.  If you have a question please create a Discussion.
+description: Create a bug report to help us improve Artisan.  If you have a question please create a [Discussion](https://github.com/roundfile/yml/discussions).
 
 body:
   - type: markdown
@@ -9,12 +9,12 @@ body:
         
         To help us quickly solve your issue attach a sample profile `*.alog` file and your settings `*.aset` file (Help>> Save settings).  Add screenshots if they help describe the problem.
         
-        Rename these files by adding `.txt` to the end of the file name.  Drag and drop the files onto the "Problem Description" field below.  Screenshots and other images may be dragged and dropped without being renamed.
+        Rename these files by adding `.txt` to the end of the file name.  Add the files to the "Problem Description" field below.  Do this by drag-and-drop, copy-paste, or clicking the link under the input field.  Screenshots and other images may be added without being renamed.
 
   - type: textarea
     attributes:
       label: Problem Description
-      description: A clear and concise description of the problem with steps to reproduce.  Drag and drop files and screenshots here.
+      description: A clear description of the problem with steps to reproduce.  Drag and drop files and screenshots here.
     validations:
       required: true
 
@@ -34,7 +34,7 @@ body:
   - type: dropdown
     attributes:
       label: Artisan Version
-      description: Find in "Help>> About".
+      description: Shown in the top window bar in "Help>> About".
       options:
         - 
         - 2.10.2
@@ -66,19 +66,21 @@ body:
     attributes:
       label: Connected devices or roasting machine
       description: What is connected to Artisan?
-      placeholder: "Example: Probatone 5"
+      placeholder: "Example: Cogen C6"
     validations:
       required: false
 
   - type: checkboxes
     attributes:
       label: Files
-      description: Before you hit SUBMIT please check the appropriate box(es).
+      description: Before you hit SUBMIT please check the appropriate boxes.
       options:
         - label: >
-            A sample profile *.alog file, renamed to *.alog.txt is attached
+            A sample profile *.alog file, renamed to *.alog.txt is attached.
         - label: >
-            A settings file (Help>> Save Settings) *.aset, renamed to *.aset.txt is attached
+            A settings file (Help>> Save Settings) *.aset, renamed to *.aset.txt is attached.
         - label: >
-            No files are attached
+            Screenshots are attached.
+        - label: >
+            No files are attached.
         
