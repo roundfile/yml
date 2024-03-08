@@ -83,7 +83,7 @@ elif [[ $(type -P "$QTTOOLS") ]]; then
 else
     echo "Error: $QT_SRC_PATH/bin/lrelease does not exist"
     echo "Error: $QTTOOLS does not exist"
-    echo ""$PATH"
+    echo "$PATH"
     exit 1
 fi
 
