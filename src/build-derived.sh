@@ -72,7 +72,7 @@ if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 
 # Pause Build Here For SSH Access
 echo $QTTOOLS
-if [ ! -z $APPVEYOR_SSH_BLOCK ]; then if $APPVEYOR_SSH_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi;fi
+#if [ ! -z $APPVEYOR_SSH_BLOCK ]; then if $APPVEYOR_SSH_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi;fi
     
 echo "************* lrelease **************"
 echo "*** compiling translations"
