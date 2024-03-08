@@ -66,9 +66,6 @@ echo "************* pylupdate **************"
 python3 $PYLUPDATE
 if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 
-# Pause Build Here For SSH Access
-echo $QTTOOLS
-#if [ ! -z $APPVEYOR_SSH_BLOCK ]; then if $APPVEYOR_SSH_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi;fi
     
 echo "************* lrelease **************"
 echo "*** compiling translations"
@@ -84,6 +81,10 @@ else
     echo "Error: $QT_SRC_PATH/bin/lrelease does not exist"
     echo "Error: $QTTOOLS does not exist"
     echo "$PATH"
+
+    # Pause Build Here For SSH Access
+    if [ ! -z $APPVEYOR_SSH_BLOCK ]; then if $APPVEYOR_SSH_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi;fi
+    
     exit 1
 fi
 
