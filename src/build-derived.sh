@@ -20,11 +20,7 @@
 
 PYUIC="${PYUIC:-pyuic6}"
 PYLUPDATE="${PYLUPDATE:-./pylupdate6pro.py}"
-if [[ "$OSTYPE" == 'linux-gnu' ]]; then
-    QTTOOLS=qt6-tools;
-else
-    QTTOOLS=qt6-tools;
-fi
+QTTOOLS=qt6-tools;
 
 # List of accepted arguments
 
@@ -76,19 +72,19 @@ echo $QTTOOLS
     
 echo "************* lrelease **************"
 echo "*** compiling translations"
-#if [ -f "$QT_SRC_PATH/bin/lrelease" ]; then
-#    echo "*** QT_SRC_PATH: $QT_SRC_PATH/bin/lrelease"
-#    $QT_SRC_PATH/bin/lrelease -verbose translations/*.ts
-#    if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
-#elif [[ $(type -P "$QTTOOLS") ]]; then
-    echo "*** QTTOOLS"
+if [ -f "$QT_SRC_PATH/bin/lrelease" ]; then
+    echo "*** QT_SRC_PATH: $QT_SRC_PATH/bin/lrelease"
+    $QT_SRC_PATH/bin/lrelease -verbose translations/*.ts
+    if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
+elif [[ $(type -P "$QTTOOLS") ]]; then
+    echo "*** using env QTTOOLS"
     $QTTOOLS lrelease -verbose translations/*.ts
     if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
-#else
-#    echo "Error: $QT_SRC_PATH/bin/lrelease does not exist"
-#    echo "Error: $QTTOOLS/bin/lrelease does not exist"
-#    exit 1
-#fi
+else
+    echo "Error: $QT_SRC_PATH/bin/lrelease does not exist"
+    echo "Error: $QTTOOLS/bin/lrelease does not exist"
+    exit 1
+fi
 
 if [ $# != 0 ]; then
     # create a zip with the generated files

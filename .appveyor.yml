@@ -223,7 +223,7 @@ for:
     MACOSX_DEPLOYMENT_TARGET: 11.0
     PYTHONSITEPKGS: /Users/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
     QT_PATH: ${PYTHONSITEPKGS}/PyQt6/Qt6
-    QT_SRC_PATH: /Users/appveyor/Qt/6.4/macos
+    QT_SRC_PATH: /Users/appveyor/Qt/6.6/macos
     PYUIC: pyuic6
     PYLUPDATE: ./pylupdate6pro.py  #the dot slash is necessary
 
@@ -288,7 +288,7 @@ for:
     ARTISAN_OS: linux
     PYTHONSITEPKGS: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
     QT_PATH: $PYTHON_PATH/PyQt6/Qt6
-    QT_SRC_PATH: /home/appveyor/Qt/6.6/gcc_64
+    QT_SRC_PATH: /home/appveyor/Qt/6.4/gcc_64
     PYUIC: pyuic6
     PYLUPDATE: ./pylupdate6pro.py  #the dot slash is necessary
 
@@ -296,8 +296,8 @@ for:
     - echo "Linux Install"
     - chmod +x .ci/*.sh
 
-    - sh: export APPVEYOR_SSH_BLOCK=true
-    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+#    - sh: export APPVEYOR_SSH_BLOCK=true
+#    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
 
     # pull library versions from requirments file
     - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements.txt "libusb==([\d\.]*).*platform_system='Linux'" -List | ForEach-Object {$_.Matches.Groups[1].Value}
