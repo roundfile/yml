@@ -34,7 +34,7 @@ body:
   - type: dropdown
     attributes:
       label: Artisan Version
-      description: Shown in the top window bar in "Help>> About".
+      description: Shown in the top window bar or in "Help>> About".
       options:
         - 
         - 2.10.2
