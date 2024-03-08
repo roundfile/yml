@@ -20,6 +20,11 @@ hash -r
 uname -srv
 which python3
 python3 --version
+
+#dave
+ls 
+ls Qt
+
 sudo apt-get update -y -q --allow-releaseinfo-change
 sudo apt-get install -y -q ruby-dev build-essential p7zip-full rpm gdb libudev-dev libfuse2
 sudo apt-get install -y -q fakeroot
