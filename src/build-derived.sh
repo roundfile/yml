@@ -73,8 +73,8 @@ if [ -f "$QT_SRC_PATH/bin/lrelease" ]; then
     echo "*** QT_SRC_PATH: $QT_SRC_PATH/bin/lrelease"
     $QT_SRC_PATH/bin/lrelease -verbose translations/*.ts
     if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
-elif [[ $(type -P "$QTTOOLS") ]]; then
-    echo "*** using env QTTOOLS"
+elif [ $(type -P "$QTTOOLS") ]; then
+    echo "*** using env QTTOOLS: $QTTOOLS"
     $QTTOOLS lrelease -verbose translations/*.ts
     if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 else
