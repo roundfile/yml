@@ -7,9 +7,7 @@ body:
       value: |
         **Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.**  
         
-        To help us quickly solve your issue attach a sample profile `*.alog` file and your settings `*.aset` file (Help>> Save settings).  Add screenshots if they help describe the problem.
-        
-        Rename these files by adding `.txt` to the end of the file name.  Add the files to the "Problem Description" field below.  Do this by drag-and-drop, copy-paste, or clicking the link under the input field.  Screenshots and other images may be added without being renamed.
+        To help us quickly solve your issue attach a sample profile `*.alog` file and your settings `*.aset` file (Help>> Save settings).  Add screenshots if they help describe the problem.  Rename these files by adding `.txt` to the end of the file name.  Add the files to the "Problem Description" field below.  Do this by drag-and-drop, copy-paste, or clicking the link under the input field.  Screenshots and other images may be added without being renamed.
 
   - type: textarea
     attributes:
