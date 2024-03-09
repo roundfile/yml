@@ -81,6 +81,7 @@ else
     echo "Error: $QT_SRC_PATH/bin/lrelease does not exist"
     echo "Error: $QTTOOLS does not exist"
     echo "$PATH"
+    $QTTOOLS lrelease -verbose translations/*.ts
 
     # Pause Build Here For SSH Access
     if [ ! -z $APPVEYOR_SSH_BLOCK ]; then if $APPVEYOR_SSH_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi;fi
