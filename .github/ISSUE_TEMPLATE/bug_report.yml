@@ -1,17 +1,24 @@
-name: "Bug Report"
+---
+name: Bug Report
 description: Create a bug report to help us improve Artisan.  If you have a question please create a Discussion.
-
+labels: ["kind:bug", "area:core", "needs-triage"]
 body:
   - type: markdown
     attributes:
-      value: |
-        **Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.**  
-        
-        To help us quickly solve your issue attach a sample profile `*.alog` file and your settings `*.aset` file (Help>> Save settings).  Add screenshots if they help describe the problem.  Rename these files by adding `.txt` to the end of the file name.  Add the files to the "Problem Description" field below.  Do this by drag-and-drop, copy-paste, or clicking the link under the input field.  Screenshots and other images may be added without being renamed.
+      # yamllint disable rule:line-length
+      value: "
+        <img src='https://github.com/artisan-roaster-scope/artisan/blob/master/src/artisan.png' align='left' width='80' height='80'>
+        **Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.**
+
+        To help us quickly solve your issue attach a sample profile `*.alog` file and your settings `*.aset` file (Help>> Save settings).
+        Add screenshots if they help describe the problem.  Rename these files by adding `.txt` to the end of the file name.
+        Add the files to the Problem Description field below.  Do this by drag-and-drop, copy-paste, or clicking the link 
+        under the input field.  Screenshots and other images may be added without being renamed.
+        <br clear='left'/>"
+      # yamllint enable rule:line-length
 
   - type: textarea
     attributes:
-      id: prob_descr
       label: Problem Description
       description: A clear description of the problem with steps to reproduce.  Drag and drop files and screenshots here.
     validations:
@@ -19,7 +26,6 @@ body:
 
   - type: textarea
     attributes:
-      id: steps_repro
       label: Steps To Reproduce
       description: Detailed steps to reproduce the behavior if not included in the description.
       placeholder: |
@@ -28,23 +34,11 @@ body:
               2. Open Config>> Events, go to Buttons tab
               3. Click on Add
               4. See error...
-#1. Go to '...'
-#2. Click on '....'
-#3. Scroll down to '....'
-#4. See error
-#
-#      value: >
-#        Step 1. ...
-#
-#        Step 2. ...
-#
-#        Step 3. ...
     validations:
       required: false
 
   - type: dropdown
     attributes:
-      id: version
       label: Artisan Version
       description: Shown in the top window bar or in "Help>> About".
       options:
@@ -68,7 +62,6 @@ body:
 
   - type: input
     attributes:
-      id: os
       label: Computer OS and Version
       description: Mac/Windows/Linux + OS version.
       placeholder: "Example: macOS 10.15.3"
@@ -77,7 +70,6 @@ body:
 
   - type: input
     attributes:
-      id: devices
       label: Connected devices or roasting machine
       description: What is connected to Artisan?
       placeholder: "Example: Cogen C6"
@@ -86,7 +78,6 @@ body:
 
   - type: checkboxes
     attributes:
-      id: checks
       label: Files
       description: Before you hit SUBMIT please check the appropriate boxes.
       options:
@@ -98,4 +89,103 @@ body:
             Screenshots are attached.
         - label: >
             No files are attached.
-        
+  - type: markdown
+    attributes:
+      value: "Thanks for completing our form!"
+      
+      
+      
+#name: Bug Report
+#description: Create a bug report to help us improve Artisan.  If you have a question please create a Discussion.
+#body:
+#  - type: markdown
+#    attributes:
+#      value: "
+#        **Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.**  
+#        
+#
+#        To help us quickly solve your issue attach a sample profile `*.alog` file and your settings `*.aset` file (Help>> Save settings).  Add screenshots if they help describe the problem.  Rename these files by adding `.txt` to the end of the file name.  Add the files to the "Problem Description" field below.  Do this by drag-and-drop, copy-paste, or clicking the link under the input field.  Screenshots and other images may be added without being renamed.
+#
+#  - type: textarea
+#    attributes:
+#      label: Problem Description
+#      description: A clear description of the problem with steps to reproduce.  Drag and drop files and screenshots here.
+#    validations:
+#      required: true
+#
+#  - type: textarea
+#    attributes:
+#      label: Steps To Reproduce
+#      description: Detailed steps to reproduce the behavior if not included in the description.
+#      placeholder: |
+#          Example:
+#              1. Start Artisan after a factory reset
+#              2. Open Config>> Events, go to Buttons tab
+#              3. Click on Add
+#              4. See error...
+##1. Go to '...'
+##2. Click on '....'
+##3. Scroll down to '....'
+##4. See error
+##
+##      value: >
+##        Step 1. ...
+##
+##        Step 2. ...
+##
+##        Step 3. ...
+#    validations:
+#      required: false
+#
+#  - type: dropdown
+#    attributes:
+#      label: Artisan Version
+#      description: Shown in the top window bar or in "Help>> About".
+#      options:
+#        - 
+#        - 2.10.2
+#        - 2.10.3 Continuous Build
+#        - 2.10.0
+#        - 2.8.4
+#        - Other - include in Description
+#      default: 0
+#    validations:
+#      required: true
+#      
+##  - type: input
+##    attributes:
+##      label: Artisan Build Number
+##      description: Go to "Help>> About", the number in brackets (). 
+##      placeholder: "Example: 4b4b3fa"
+##    validations:
+##      required: false
+#
+#  - type: input
+#    attributes:
+#      label: Computer OS and Version
+#      description: Mac/Windows/Linux + OS version.
+#      placeholder: "Example: macOS 10.15.3"
+#    validations:
+#      required: false
+#
+#  - type: input
+#    attributes:
+#      label: Connected devices or roasting machine
+#      description: What is connected to Artisan?
+#      placeholder: "Example: Cogen C6"
+#    validations:
+#      required: false
+#
+#  - type: checkboxes
+#    attributes:
+#      label: Files
+#      description: Before you hit SUBMIT please check the appropriate boxes.
+#      options:
+#        - label: >
+#            A sample profile *.alog file, renamed to *.alog.txt is attached.
+#        - label: >
+#            A settings file (Help>> Save Settings) *.aset, renamed to *.aset.txt is attached.
+#        - label: >
+#            Screenshots are attached.
+#        - label: >
+#            No files are attached.
