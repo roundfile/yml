@@ -7,7 +7,7 @@ body:
     attributes:
       # yamllint disable rule:line-length
       value: "
-        **Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.**
+        ### **Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.**
 
         <img src='https://github.com/artisan-roaster-scope/artisan/raw/master/src/artisan.png' align='left' width='90' height='90'>
         To help us quickly solve your issue attach a sample profile `*.alog` file and your settings `*.aset` file (Help>> Save settings).
@@ -40,7 +40,7 @@ body:
   - type: dropdown
     attributes:
       label: Artisan Version
-      description: Shown in the top window bar or in "Help>> About".
+      description: Shown in the top window bar or in 'Help>> About'.
       options:
         - 
         - 2.10.2 Current release
