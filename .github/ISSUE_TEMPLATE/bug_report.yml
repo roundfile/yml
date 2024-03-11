@@ -1,7 +1,7 @@
 ---
 name: Bug Report
 description: Create a bug report to help us improve Artisan.  If you have a question please create a Discussion.
-labels: ["kind:bug", "area:core", "needs-triage"]
+labels: []
 body:
   - type: markdown
     attributes:
@@ -9,7 +9,7 @@ body:
       value: "
         **Thanks for taking the time to fill out this bug report!  The Artisan team appreciates your support.**
 
-        <img src='../../src/artisan.png' align='left' width='80' height='80'>
+        <img src='https://github.com/artisan-roaster-scope/artisan/raw/master/src/artisan.png' align='left' width='80' height='80'>
         To help us quickly solve your issue attach a sample profile `*.alog` file and your settings `*.aset` file (Help>> Save settings).
         Add screenshots if they help describe the problem.  Rename these files by adding `.txt` to the end of the file name.
         Add the files to the 'Problem Description' field below.  Do this by drag-and-drop, copy-paste, or clicking the link 
