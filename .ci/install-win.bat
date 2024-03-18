@@ -38,17 +38,21 @@ python -V
 :: Upgrade the Python version to PYUPGRADE_WIN_V when the environment variable exists. 
 ::
 if NOT "%PYUPGRADE_WIN_V%" == "" (
-    echo ***** Upgrading from Python %PREV_PYTHON_V% to %PYUPGRADE_WIN_V%
-    echo *** Downloading Python install exe
-    curl -L -O https://www.python.org/ftp/python/%PYUPGRADE_WIN_V%/python-%PYUPGRADE_WIN_V%-amd64.exe
-    if not exist python-%PYUPGRADE_WIN_V%-amd64.exe (exit /b 80)
-    echo *** Installing Python %PYUPGRADE_WIN_V%
-    python-%PYUPGRADE_WIN_V%-amd64.exe /quiet PrependPath=1
-    if not exist %PYTHON_PATH%\python.exe (exit /b 90)
-    echo ***** Upgrade Complete
-    echo New Python Version
-    python -V
-    %PYTHON_PATH%\python.exe -V
+    if exist %PYTHON_PATH%\python.exe (
+        echo **** Python upgrade set to %PYUPGRADE_WIN_V%
+        echo **** Python version was changed from %PREV_PYTHON_V% to %PYUPGRADE_WIN_V%
+    ) else (
+        echo ***** Upgrading from Python %PREV_PYTHON_V% to %PYUPGRADE_WIN_V%
+        echo *** Downloading Python install exe
+        curl -L -O https://www.python.org/ftp/python/%PYUPGRADE_WIN_V%/python-%PYUPGRADE_WIN_V%-amd64.exe
+        if not exist python-%PYUPGRADE_WIN_V%-amd64.exe (exit /b 80)
+        echo *** Installing Python %PYUPGRADE_WIN_V%
+        python-%PYUPGRADE_WIN_V%-amd64.exe /quiet PrependPath=1
+        if not exist %PYTHON_PATH%\python.exe (exit /b 90)
+        echo ***** Upgrade Complete
+        echo Python Version
+        python -V
+    )
 )
 
 ::
@@ -60,10 +64,7 @@ python -m pip install wheel
 ::
 :: install Artisan required libraries from pip
 ::
-cd src
-python -m pip install -r requirements.txt | findstr /v /b "Ignoring"
-if %ERRORLEVEL% NEQ 0 (exit /b 110)
-cd ..
+python -m pip install -r src\requirements.txt | findstr /v /b "Ignoring"
 
 ::
 :: custom build the pyinstaller bootloader or install a prebuilt

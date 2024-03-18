@@ -16,15 +16,12 @@
 # AUTHOR
 # Dave Baxter, Marko Luther 2023
 
-# requires environment variables...
+echo "build-derived.sh"
 
+# required environment variables...
 PYUIC="${PYUIC:-pyuic6}"
 PYLUPDATE="${PYLUPDATE:-./pylupdate6pro.py}"
 QTTOOLS=qt6-tools;
-
-# List of accepted arguments
-
-echo "build-derived.sh"
 
 # Check if an argument was passed
 if [ $# != 0 ]; then
@@ -66,11 +63,10 @@ echo "************* pylupdate **************"
 python3 $PYLUPDATE
 if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 
-    
 echo "************* lrelease **************"
 echo "*** compiling translations"
 if [ -f "$QT_SRC_PATH/bin/lrelease" ]; then
-    echo "*** QT_SRC_PATH: $QT_SRC_PATH/bin/lrelease"
+    echo "*** using env QT_SRC_PATH: $QT_SRC_PATH/bin/lrelease"
     $QT_SRC_PATH/bin/lrelease -verbose translations/*.ts
     if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 elif [[ $(type -P "$QTTOOLS") ]]; then
@@ -79,13 +75,8 @@ elif [[ $(type -P "$QTTOOLS") ]]; then
     if [ $? -ne 0 ]; then exit $?; else echo "** Success"; fi
 else
     echo "Error: $QT_SRC_PATH/bin/lrelease does not exist"
-    echo "Error: $QTTOOLS does not exist"
-    echo "$PATH"
-    $QTTOOLS lrelease -verbose translations/*.ts
-
-    # Pause Build Here For SSH Access
-    if [ ! -z $APPVEYOR_SSH_BLOCK ]; then if $APPVEYOR_SSH_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi;fi
-    
+    echo "Error: $QTTOOLS does not exist on the path"
+    echo $PATH
     exit 1
 fi
 

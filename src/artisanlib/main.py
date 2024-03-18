@@ -47,6 +47,7 @@ from artisanlib import __release_sponsor_name__
 
 import os
 import sys  # @UnusedImport
+import getpass
 import ast
 import platform
 import math
@@ -62,6 +63,7 @@ import functools
 import dateutil.parser
 import copy as copyd
 import arabic_reshaper # type:ignore
+from pathlib import Path
 from bidi.algorithm import get_display # type:ignore
 
 # links CTR-C signals to the system default (ignore)
@@ -116,7 +118,7 @@ try:
     from PyQt6.QtGui import (QScreen, QPageLayout, QAction, QImageReader, QWindow, # @Reimport @UnresolvedImport @UnusedImport
                                 QKeySequence, QShortcut, # @Reimport @UnresolvedImport @UnusedImport
                                 QPixmap,QColor,QDesktopServices,QIcon, # @Reimport @UnresolvedImport @UnusedImport
-                                QRegularExpressionValidator,QDoubleValidator, QPainter, QCursor) # @Reimport @UnresolvedImport @UnusedImport
+                                QRegularExpressionValidator, QDoubleValidator, QPainter, QCursor) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt6.QtPrintSupport import (QPrinter,QPrintDialog) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt6.QtCore import (QLibraryInfo, QTranslator, QLocale, QFileInfo, PYQT_VERSION_STR, pyqtSignal, pyqtSlot, QtMsgType, # @Reimport @UnresolvedImport @UnusedImport
 #                              QSize, pyqtProperty, # type: ignore # @Reimport @UnresolvedImport @UnusedImport
@@ -142,7 +144,7 @@ except ImportError:
     from PyQt5.QtGui import (QScreen, QPageLayout, QImageReader, QWindow,  # type: ignore # @Reimport @UnresolvedImport @UnusedImport
                                 QKeySequence, # @Reimport @UnresolvedImport @UnusedImport
                                 QPixmap,QColor,QDesktopServices,QIcon, # @Reimport @UnresolvedImport @UnusedImport
-                                QRegularExpressionValidator,QDoubleValidator, QPainter, QCursor) # @Reimport @UnresolvedImport @UnusedImport
+                                QRegularExpressionValidator, QDoubleValidator, QPainter, QCursor) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt5.QtPrintSupport import (QPrinter,QPrintDialog) # type: ignore # @Reimport @UnresolvedImport @UnusedImport
     from PyQt5.QtCore import (QLibraryInfo, QTranslator, QLocale, QFileInfo, PYQT_VERSION_STR, pyqtSignal, pyqtSlot, QtMsgType, # type: ignore # @Reimport @UnresolvedImport @UnusedImport
                               qVersion, QVersionNumber, QTime, QTimer, QFile, QIODevice, QTextStream, QSettings, # @Reimport @UnresolvedImport @UnusedImport
@@ -212,7 +214,7 @@ if TYPE_CHECKING:
     from openpyxl.worksheet.worksheet import Worksheet # pylint: disable=unused-import
     import numpy.typing as npt # pylint: disable=unused-import
     from PyQt6.QtWidgets import QTableWidgetItem, QTableWidget, QScrollBar # pylint: disable=unused-import
-    from PyQt6.QtGui import QStyleHints, QClipboard, QKeyEvent, QMouseEvent, QDropEvent, QDragEnterEvent, QCloseEvent, QResizeEvent # pylint: disable=unused-import
+    from PyQt6.QtGui import QStyleHints, QClipboard, QKeyEvent, QMouseEvent, QDropEvent, QDragEnterEvent, QCloseEvent, QResizeEvent, QValidator # pylint: disable=unused-import
     from PyQt6.QtCore import QObject, QPermission, QMessageLogContext  # noqa: F401 # pylint: disable=unused-import
     from PyQt6.QtWebEngineCore import QWebEnginePage  # noqa: F401 # pylint: disable=unused-import
     from matplotlib.backend_bases import Event as MplEvent, MouseEvent # pylint: disable=unused-import
@@ -263,15 +265,23 @@ appGuid:Final[str] = '9068bd2fa8e54945a6be1f1a0a589e92'
 viewerAppGuid:Final[str] = '9068bd2fa8e54945a6be1f1a0a589e93'
 
 class Artisan(QtSingleApplication):
+
+    sendmessage2ArtisanInstanceSignal = pyqtSignal(str,str)
+    sendmessage2ArtisanViewerSignal = pyqtSignal(str)
+
     __slots__ = [ 'sentToBackground', 'plus_sync_cache_expiration', 'artisanviewerMode', 'darkmode', 'style_hints' ]
 
     def __init__(self, args:Any) -> None:
         super().__init__(appGuid, viewerAppGuid, args)
 
+        # with Qt.ConnectionType.QueuedConnection the signal is queued even if called from the same thread
+        self.sendmessage2ArtisanInstanceSignal.connect(self._sendMessage2ArtisanInstanceSlot, type=Qt.ConnectionType.QueuedConnection) # type: ignore
+        self.sendmessage2ArtisanViewerSignal.connect(self._sendMessage2ArtisanViewerSlot, type=Qt.ConnectionType.QueuedConnection) # type: ignore
+
         self.sentToBackground:Optional[float] = None # set to timestamp on putting app to background without any open dialog
         self.plus_sync_cache_expiration = 1*60 # how long a plus sync is valid in seconds
 
-        self.artisanviewerMode: bool = False
+        self.artisanviewerMode: bool = False # true if this is the ArtianViewer running
         if multiprocessing.current_process().name == 'MainProcess' and self.isRunning():
             self.artisanviewerMode = True
             if self.isRunningViewer():
@@ -358,9 +368,9 @@ class Artisan(QtSingleApplication):
                         import requests
                         query_url = QUrl(requests.utils.unquote(query.queryItemValue('url'))) # type: ignore # Module has no attribute "unquote"
                         if aw.comparator is not None:
-                            QTimer.singleShot(5,lambda: (aw.comparator.addProfileFromURL(aw.artisanURLextractor, query_url) if aw is not None and aw.comparator is not None else None))
+                            aw.comparatorAddProfileURLSignal.emit(query_url)
                         else:
-                            QTimer.singleShot(5,lambda: (aw.importExternalURL(aw.artisanURLextractor, url=query_url) if aw is not None else None))
+                            aw.importArtisanURLSignal.emit(query_url)
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
             elif url.scheme() == 'file':
@@ -370,27 +380,28 @@ class Artisan(QtSingleApplication):
                     url_query = url.query()
                 if url_query is None or url_query != 'background':
                     # by default we raise Artisan to the foreground
-                    QTimer.singleShot(20,self.activateWindow)
+                    self.activateWindowSignal.emit()
                 url.setQuery(None) # Argument 1 to "setQuery" of "QUrl" has incompatible type "None"; expected "str" # remove any query to get a valid file path
                 url.setFragment(None) # Argument 1 to "setFragment" of "QUrl" has incompatible type "None"; expected "str" # remove also any potential fragment
                 filename = url.toString(QUrl.UrlFormattingOption.PreferLocalFile)
                 qfile = QFileInfo(filename)
                 file_suffix = qfile.suffix()
+
                 if file_suffix == 'alog':
                     if aw.comparator is not None:
                         # add Artisan profile to the comparator selection
-                        QTimer.singleShot(20,lambda : (aw.comparator.addProfiles([filename]) if (aw is not None and aw.comparator is not None) else None))
+                        aw.comparatorAddProfileSignal.emit(filename)
                     # load Artisan profile on double-click on *.alog file
                     elif url_query is not None and url_query == 'template':
                         aw.loadBackgroundSignal.emit(filename)
                     else:
-                        QTimer.singleShot(20,lambda : (aw.loadFile(filename) if aw is not None else None))
-                elif file_suffix == 'alrm':
+                        aw.loadFileSignal.emit(filename)
+                elif file_suffix == 'alrm' and aw.app is not None and not aw.app.artisanviewerMode:
                     # load Artisan alarms on double-click on *.alrm file
-                    QTimer.singleShot(20,lambda : (aw.loadAlarms(filename) if aw is not None else None))
-                elif file_suffix == 'apal':
+                    aw.loadAlarmsSignal.emit(filename)
+                elif file_suffix == 'apal' and aw.app is not None and not aw.app.artisanviewerMode:
                     # load Artisan palettes on double-click on *.apal file
-                    QTimer.singleShot(20,lambda : (aw.getPalettes(filename, aw.buttonpalette) if aw is not None else None))
+                    aw.loadPalettesSignal.emit(filename)
 
         elif platform.system() == 'Windows' and not self.artisanviewerMode:
             msg = url.toString()  #here we don't want a local file, preserve the windows file:///
@@ -415,27 +426,30 @@ class Artisan(QtSingleApplication):
                 if not res:
                     # get the path of the artisan.exe file
                     if getattr(sys, 'frozen', False):
-                        #application_path = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
-                        application_path = os.path.dirname(sys.executable)  #dave
+                        application_path = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
                         application_path += '\\artisan.exe'
                     # or the artisan py file if running from source
                     else:
                         application_path = sys.argv[0]
                     application_path = re.sub(r'\\',r'/',application_path)
-                    _log.info("** application_path %s",application_path)  #dave
-                    _log.info("** os.path.dirname(sys.executable) %s",os.path.dirname(sys.executable))  #dave
                     # must start viewer without an argv else it thinks it was started from a link and sends back to artisan
                     os.startfile(application_path) # type:ignore[unused-ignore,attr-defined] # @UndefinedVariable # pylint: disable=maybe-no-member
-                    QTimer.singleShot(3000,lambda : self._sendMessage2ArtisanInstanceShot(message,instance_id))
+                    self.sendmessage2ArtisanInstanceSignal.emit(message,instance_id)
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
         else:
-            self._sendMessage2ArtisanInstance(message,instance_id)
+            self.sendmessage2ArtisanInstanceSignal.emit(message,instance_id)
 
-    def _sendMessage2ArtisanInstanceShot(self, message:str, instance_id:str) -> None:
+    @pyqtSlot(str, str)
+    def _sendMessage2ArtisanInstanceSlot(self, message:str, instance_id:str) -> None:
         self._sendMessage2ArtisanInstance(message, instance_id)
 
+    @pyqtSlot(str)
+    def _sendMessage2ArtisanViewerSlot(self, message:str) -> None:
+        self._sendMessage2ArtisanInstance(message, self._viewer_id)
+
     def _sendMessage2ArtisanInstance(self, message:str, instance_id:str) -> bool:
+        _log.debug('_sendMessage2ArtisanInstance(%s,%s)',message, instance_id)
         try:
             self._outSocket = QLocalSocket()
             self._outSocket.connectToServer(instance_id)
@@ -548,6 +562,8 @@ app = Artisan(app_args)
 # will be copied to the new settings location. Once settings exist under "artisan-scope" the legacy settings under "YourQuest" will
 # no longer be read or saved.  At start-up, versions of Artisan before to v2.0 will no longer share settings with versions v2.0 and after.
 # Settings can be shared among all versions of Artisan by explicitly saving and loading them using Help>Save/Load Settings.
+
+settingsRelocated:bool = False
 try:
     app.setApplicationName(application_name)                                #needed by QSettings() to store windows geometry in operating system
 
@@ -558,7 +574,6 @@ try:
     app.setOrganizationDomain(application_organization_domain)              #needed by QSettings() to store windows geometry in operating system
     newsettings = QSettings()
 
-    settingsRelocated:bool = False
     # copy settings from legacy to new if newsettings do not exist, legacysettings do exist, and were not previously copied
     if not newsettings.contains('Mode') and legacysettings.contains('Mode') and legacysettings.contains('_settingsCopied') and legacysettings.value('_settingsCopied') != 1:
         settingsRelocated = True
@@ -588,7 +603,7 @@ app.setOrganizationName(application_organization_name)                  #needed 
 app.setOrganizationDomain(application_organization_domain)              #needed by QSettings() to store windows geometry in operating system
 
 # replace revision string with git hash when running from source
-if not appFrozen() and __revision__ == '0':
+if not appFrozen() and __revision__ in {'', '0'}:
     try:
         from subprocess import run as subprocessrun
         uncommittedChanges = subprocessrun(['git','status', '--porcelain=v1'], capture_output=True, check=True).stdout  #number of uncommitted changes
@@ -1211,9 +1226,9 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
                 res = subscription_message_box.exec()
                 plus_link = plus.config.shop_base_url
                 if self.aw.plus_subscription == 'PRO':
-                    plus_link += '/shop/professional-roasters/'
+                    plus_link += '/professional-roasters'
                 elif self.aw.plus_subscription == 'HOME':
-                    plus_link += '/shop/home-roasters/'
+                    plus_link += '/home-roasters'
                 if res == QMessageBox.StandardButton.Yes:
                     QDesktopServices.openUrl(QUrl(plus_link, QUrl.ParsingMode.TolerantMode))
 #                box = QMessageBox(self)
@@ -1295,13 +1310,18 @@ class MyQDoubleValidator(QDoubleValidator): # pylint: disable=too-few-public-met
         super().__init__(bottom, top, decimals, lineedit)
         self.lineedit = lineedit
 
+    def validate(self, _s:Optional[str], p:int) -> 'Tuple[QValidator.State, str, int]':
+        return super().validate(self.lineedit.text(), p)
+
     def fixup(self, input_value: Optional[str]) -> Any: # -> str/None, but also Optional[str] is not accepted!?
         try:
             if input_value is not None:
-                self.lineedit.setText('0' if input_value == '' else comma2dot(input_value))
+                input_value = '0' if input_value == '' else comma2dot(input_value)
+                self.lineedit.setText(input_value)
     #            super().fixup(input_value)
         except Exception: # pylint: disable=broad-except
             pass
+
 
 ########################################################################################
 #################### MAIN APPLICATION WINDOW ###########################################
@@ -1349,6 +1369,12 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
     establishQuantifiedEventSignal = pyqtSignal(int,float)
     updateExtraEventButtonsVisibilitySignal = pyqtSignal()
     realignButtonsSignal = pyqtSignal()
+    loadAlarmsSignal = pyqtSignal(str)
+    loadFileSignal = pyqtSignal(str)
+    loadPalettesSignal = pyqtSignal(str)
+    importArtisanURLSignal = pyqtSignal(QUrl)
+    comparatorAddProfileURLSignal = pyqtSignal(QUrl)
+    comparatorAddProfileSignal = pyqtSignal(str)
 
     __slots__ = [ 'locale_str', 'app', 'superusermode', 'sample_loop_running', 'time_stopped', 'plus_account', 'plus_remember_credentials', 'plus_email', 'plus_language', 'plus_subscription',
         'plus_paidUntil', 'plus_rlimit', 'plus_used', 'plus_readonly', 'appearance', 'mpl_fontproperties', 'full_screen_mode_active', 'processingKeyEvent', 'quickEventShortCut',
@@ -3824,7 +3850,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 #        self.sliderLCDSV.setStyleSheet("font-weight: bold; color: %s;"%self.qmc.palette["text"])
         self.sliderLCDSV.setNumDigits(3)
         self.sliderLCDSV.setStyleSheet('font-weight: bold;')
-        self.sliderLCDSV.display(self.pidcontrol.svValue)
+        sv = max(min(self.pidcontrol.svValue, self.pidcontrol.svSliderMax), self.pidcontrol.svSliderMin)
+        self.sliderLCDSV.display(sv)
         sliderGrpSV = QVBoxLayout()
         sliderGrpSV.addWidget(self.sliderLCDSV)
         sliderGrpSV.addWidget(self.sliderSV)
@@ -3970,6 +3997,12 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         self.establishQuantifiedEventSignal.connect(self.establishQuantifiedEventSlot)
         self.updateExtraEventButtonsVisibilitySignal.connect(self.update_extraeventbuttons_visibility)
         self.realignButtonsSignal.connect(self.realignbuttons)
+        self.loadAlarmsSignal.connect(self.loadAlarms, type=Qt.ConnectionType.QueuedConnection)  # type: ignore
+        self.loadFileSignal.connect(self.loadFileSlot, type=Qt.ConnectionType.QueuedConnection)  # type: ignore
+        self.loadPalettesSignal.connect(self.loadPalettesSlot, type=Qt.ConnectionType.QueuedConnection)  # type: ignore
+        self.importArtisanURLSignal.connect(self.importArtisanURLSlot, type=Qt.ConnectionType.QueuedConnection)  # type: ignore
+        self.comparatorAddProfileURLSignal.connect(self.comparatorAddProfileURLSlot, type=Qt.ConnectionType.QueuedConnection)  # type: ignore
+        self.comparatorAddProfileSignal.connect(self.comparatorAddProfileSlot, type=Qt.ConnectionType.QueuedConnection)  # type: ignore
 
         self.notificationManager:Optional[NotificationManager] = None
         if not self.app.artisanviewerMode:
@@ -4343,7 +4376,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 #                message = QApplication.translate('Message', 'Artisan is free to use!<br><br>To keep it free and current please support us<br><br><a href="{0}">{0}</a><br><br>and book<br><br><a href="{1}">{1}</a><br><br>to suppress this dialog')
 #                message = message.format('https://artisan-scope.org/donate/', 'https://artisan.plus')
                 message = QApplication.translate('Message', 'Artisan is free to use!\n\nTo keep it free and current please support us with your donation and subscribe to artisan.plus to suppress this dialog!')
-                donate_message_box = QMessageBox(self)
+                donate_message_box = QMessageBox()
                 donate_message_box.setText(message)
                 donate_message_box.setIcon(QMessageBox.Icon.Information)
                 donate_message_box.setModal(True)
@@ -6860,12 +6893,11 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     mpl.rcParams['font.family'] = 'Arial Unicode MS'
                     self.mpl_fontproperties = FontProperties()
                 elif platform.system() == 'Linux':
+                    mpl.rcParams['font.family'] = ['DejaVu Sans','DejaVu Sans Mono'] # default; works for Greek
                     if self.locale_str == 'ar':
                         mpl.rcParams['font.family'] = ['DejaVu Sans','DejaVu Sans Mono','Times New Roman']
                     elif self.locale_str == 'ja':
                         mpl.rcParams['font.family'] = ['TakaoPGothic']
-                    elif self.locale_str == 'el':
-                        mpl.rcParams['font.family'] = ['DejaVu Sans','DejaVu Sans Mono']
                     elif self.locale_str == 'zh_CN':
                         mpl.rcParams['font.family'] = ['NanumGothic','DejaVu Sans Mono']
                     elif self.locale_str == 'zh_TW':
@@ -6941,7 +6973,16 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             else:
                 rcParams['font.family'] = ['xkcd Script', 'Comic Sans MS']
             self.set_mpl_fontproperties(getResourcePath() + 'xkcd-script.ttf')
-        elif self.qmc.graphfont == 11:
+        elif self.qmc.graphfont == 1:
+            # font Humor selected
+            rcParams['axes.unicode_minus'] = False
+            rcParams['font.size'] = 15.0
+            if platform.system() == 'Linux':
+                rcParams['font.family'] = ['Humor Sans']
+            else:
+                rcParams['font.family'] = ['Humor Sans', 'Comic Sans MS']
+            self.set_mpl_fontproperties(getResourcePath() + 'Humor-Sans.ttf')
+        elif self.qmc.graphfont == 11 or platform.system() == 'Linux': # no Comic on Linux, we subst it with Comic Neue
             # font Comic Neue selected
             # http://comicneue.com/
             rcParams['axes.unicode_minus'] = False
@@ -6951,15 +6992,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             else:
                 rcParams['font.family'] = ['Comic Neue', 'Comic Sans MS']
             self.set_mpl_fontproperties(getResourcePath() + 'ComicNeue-Regular.ttf')
-        elif self.qmc.graphfont == 1 or platform.system() == 'Linux': # no Comic on Linux!
-            # font Humor selected
-            rcParams['axes.unicode_minus'] = False
-            rcParams['font.size'] = 15.0
-            if platform.system() == 'Linux':
-                rcParams['font.family'] = ['Humor Sans']
-            else:
-                rcParams['font.family'] = ['Humor Sans', 'Comic Sans MS']
-            self.set_mpl_fontproperties(getResourcePath() + 'Humor-Sans.ttf')
         elif self.qmc.graphfont == 2 and platform.system() != 'Linux':
             # font Comic selected
             rcParams['axes.unicode_minus'] = True
@@ -11587,9 +11619,19 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             else:
                 density_loss = '0'
 
+            # strips trailing zero decimals from floats
+            # but keeps zeros without decimals
+            def drop_trailing_zero(s:str) -> str:
+                s = s.strip()
+                r = s.rstrip('0').rstrip('.')
+                if r == '':
+                    return s
+                return r
+
             # respect the Decimal Places setting (in Curves>> UI) for fields that are stored as float
+            # trailing zeros stripped
             def setdecimal(rawvalue:float) -> str:
-                return f'{rawvalue:.1f}' if self.qmc.LCDdecimalplaces else f'{rawvalue:.0f}'
+                return drop_trailing_zero(f'{rawvalue:.1f}' if self.qmc.LCDdecimalplaces else f'{rawvalue:.0f}')
 
             #note: fields are delimited only at the start, to avoid ambiguity the shortest similar field string
             #      must be last in the list.  Example, "date_time" must come before "date" in the list.
@@ -11609,21 +11651,21 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 ('operator',self.qmc.operator),
                 ('organization',self.qmc.organization),
                 ('machine',self.qmc.roastertype),
-                ('capacity',f'{self.qmc.roastersize}'),
+                ('capacity',drop_trailing_zero(f'{self.qmc.roastersize}')),
                 ('drumspeed',f'{self.qmc.drumspeed}'),
                 ('mode',self.qmc.mode),
                 ('test',setdecimal(cp['finish_phase_delta_temp']) if 'test' in cp else setdecimal(0.0)),
-                ('weightloss',f"{cp['weight_loss']}" if 'weight_loss' in cp else '0'),
-                ('volumegain',f"{cp['volume_gain']}" if 'volume_gain' in cp else '0'),
-                ('densityloss',density_loss),
-                ('moistureloss',f"{cp['moisture_loss']}" if 'moisture_loss' in cp else '0'),
+                ('weightloss',drop_trailing_zero(f"{cp['weight_loss']}") if 'weight_loss' in cp else '0'),
+                ('volumegain',drop_trailing_zero(f"{cp['volume_gain']}") if 'volume_gain' in cp else '0'),
+                ('densityloss',drop_trailing_zero(density_loss)),
+                ('moistureloss',drop_trailing_zero(f"{cp['moisture_loss']}") if 'moisture_loss' in cp else '0'),
                 ('weightunits',self.qmc.weight[2]),
-                ('weight',f'{self.qmc.weight[0]}'),
+                ('weight',drop_trailing_zero(f'{self.qmc.weight[0]}')),
                 ('volumeunits',self.qmc.volume[2]),
-                ('volume',f'{self.qmc.volume[0]}'),
+                ('volume',drop_trailing_zero(f'{self.qmc.volume[0]}')),
                 ('densityunits',f'{self.qmc.density[1]}_{self.qmc.density[3]}'),
-                ('density',f'{self.qmc.density[0]}'),
-                ('moisture',f'{self.qmc.moisture_greens}'),
+                ('density',drop_trailing_zero(f'{self.qmc.density[0]}')),
+                ('moisture',drop_trailing_zero(f'{self.qmc.moisture_greens}')),
                 ('beans_line',beansline),
                 ('beans_10',beansline[:10]),
                 ('beans_15',beansline[:15]),
@@ -11631,21 +11673,21 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 ('beans_25',beansline[:25]),
                 ('beans_30',beansline[:30]),
                 ('beans',beansline[:30]),   #deprecated, undocumented, remains here for hidden backward compatibility with v2.4RC
-                ('roastedweight',f'{self.float2float(float(self.qmc.weight[1]),1)}'),
-                ('roastedvolume',f'{self.float2float(float(self.qmc.volume[1]),1)}'),
-                ('roasteddensity',f'{self.float2float(float(self.qmc.density_roasted[0]),1)}'),
-                ('roastedmoisture',f'{self.float2float(float(self.qmc.moisture_roasted))}'),
+                ('roastedweight',drop_trailing_zero(f'{self.float2float(float(self.qmc.weight[1]),1)}')),
+                ('roastedvolume',drop_trailing_zero(f'{self.float2float(float(self.qmc.volume[1]),1)}')),
+                ('roasteddensity',drop_trailing_zero(f'{self.float2float(float(self.qmc.density_roasted[0]),1)}')),
+                ('roastedmoisture',drop_trailing_zero(f'{self.float2float(float(self.qmc.moisture_roasted))}')),
                 ('colorwhole',f'{self.qmc.whole_color}'),
                 ('colorground',f'{self.qmc.ground_color}'),
                 ('colorsystem',f'{self.qmc.color_systems[self.qmc.color_system_idx]}'),
                 ('screenmax',f'{self.qmc.beansize_max}'),
                 ('screenmin',f'{self.qmc.beansize_min}'),
-                ('greenstemp',f'{self.float2float(float(self.qmc.greens_temp))}'),
-                ('ambtemp',f"{cp['ambient_temperature']}" if 'ambient_temperature' in cp else '0'),
-                ('ambhumidity',f"{cp['ambient_humidity']}" if 'ambient_humidity' in cp else '0'),
-                ('ambpressure',f"{cp['ambient_pressure']}" if 'ambient_pressure' in cp else '0'),
-                ('aucbase',f"{cp['AUCbase']}" if 'AUCbase' in cp else '0'),
-                ('auc',f"{cp['AUC']}" if 'AUC' in cp else '0'),
+                ('greenstemp',drop_trailing_zero(f'{self.float2float(float(self.qmc.greens_temp))}')),
+                ('ambtemp',drop_trailing_zero(f"{cp['ambient_temperature']}") if 'ambient_temperature' in cp else '0'),
+                ('ambhumidity',drop_trailing_zero(f"{cp['ambient_humidity']}") if 'ambient_humidity' in cp else '0'),
+                ('ambpressure',drop_trailing_zero(f"{cp['ambient_pressure']}") if 'ambient_pressure' in cp else '0'),
+                ('aucbase',drop_trailing_zero(f"{cp['AUCbase']}") if 'AUCbase' in cp else '0'),
+                ('auc',drop_trailing_zero(f"{cp['AUC']}") if 'AUC' in cp else '0'),
                 ('chargeet',setdecimal(cp['CHARGE_ET']) if 'CHARGE_ET' in cp else setdecimal(0.0)),
                 ('chargebt',setdecimal(cp['CHARGE_BT']) if 'CHARGE_BT' in cp else setdecimal(0.0)),
                 ('fcset',setdecimal(cp['FCs_ET']) if 'FCs_ET' in cp else setdecimal(0.0)),
@@ -11676,10 +11718,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 ('cuppingnotes_25',cuppingnotesline[:25]),
                 ('cuppingnotes_30',cuppingnotesline[:30]),
 #                ("cuppingnotes",cuppingnotesline[:30]),
-                ('roastweight',f'{self.float2float(float(self.qmc.weight[1]),1)}'),            #deprecated, undocumented
-                ('roastvolume',f'{self.float2float(float(self.qmc.volume[1]),1)}'),            #deprecated, undocumented
-                ('roastdensity',f'{self.float2float(float(self.qmc.density_roasted[0]),1)}'),  #deprecated, undocumented
-                ('roastmoisture',f'{self.float2float(float(self.qmc.moisture_roasted))}'),     #deprecated, undocumented
+                ('roastweight',drop_trailing_zero(f'{self.float2float(float(self.qmc.weight[1]),1)}')),            #deprecated, undocumented
+                ('roastvolume',drop_trailing_zero(f'{self.float2float(float(self.qmc.volume[1]),1)}')),            #deprecated, undocumented
+                ('roastdensity',drop_trailing_zero(f'{self.float2float(float(self.qmc.density_roasted[0]),1)}')),  #deprecated, undocumented
+                ('roastmoisture',drop_trailing_zero(f'{self.float2float(float(self.qmc.moisture_roasted))}')),     #deprecated, undocumented
                 ('yyyy',self.qmc.roastdate.toString('yyyy')),
                 ('yy',self.qmc.roastdate.toString('yy')),
                 ('mmm',f"{encodeLocal(self.qmc.roastdate.toString('MMM'))}"),
@@ -11710,13 +11752,11 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 
             _ignorecase = re.IGNORECASE  # @UndefinedVariable
             #text between single quotes ' will show only when recording or for preview recording
-            fn = re.sub(r'{od}([^{od}]+){od}'.format(od=onDelim),  # noqa: UP032
-                r'\1',fn) if (previewmode==1 or (previewmode==0 and self.qmc.flagon)) else re.sub(r'{od}([^{od}]+){od}'.format(
-                    od=onDelim),r'',fn)
+            fn = re.sub(fr'{onDelim}([^{onDelim}]+){onDelim}',
+                r'\1',fn) if (previewmode==1 or (previewmode==0 and self.qmc.flagon)) else re.sub(fr'{onDelim}([^{onDelim}]+){onDelim}',r'',fn)
             #text between double quotes " will show only when flagon is False
-            fn = re.sub(r'{od}([^{od}]+){od}'.format(od=offDelim),  # noqa: UP032
-                r'\1',fn) if (previewmode==2 or (previewmode==0 and not self.qmc.flagon)) else re.sub(r'{od}([^{od}]+){od}'.format(
-                    od=offDelim),r'',fn)
+            fn = re.sub(fr'{offDelim}([^{offDelim}]+){offDelim}',
+                r'\1',fn) if (previewmode==2 or (previewmode==0 and not self.qmc.flagon)) else re.sub(fr'{offDelim}([^{offDelim}]+){offDelim}',r'',fn)
             #replace the fields with content
             for fi in fields:
                 fn = re.sub(fr'{fieldDelim}{fi[0]}', fr'{str(fi[1])}', fn, count=0, flags=_ignorecase)
@@ -12120,6 +12160,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             _log.exception(ex)
             _a, _b, exc_tb = sys.exc_info()
             self.qmc.adderror((QApplication.translate('Error Message','Exception:') + ' fileLoad() {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+
+    @pyqtSlot(str)
+    def loadFileSlot(self, filename:str) -> None:
+        self.loadFile(filename)
 
     #loads stored profiles. Called from file menu
     def loadFile(self, filename:str, quiet:bool = False) -> None:
@@ -18391,7 +18435,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.settingsSetValue(settings, default_settings, 'dutySteps',self.pidcontrol.dutySteps, read_defaults)
             self.settingsSetValue(settings, default_settings, 'svSliderMin',self.pidcontrol.svSliderMin, read_defaults)
             self.settingsSetValue(settings, default_settings, 'svSliderMax',self.pidcontrol.svSliderMax, read_defaults)
-            self.settingsSetValue(settings, default_settings, 'svValue',self.pidcontrol.svValue, read_defaults)
+            sv = max(min(self.pidcontrol.svValue, self.pidcontrol.svSliderMax), self.pidcontrol.svSliderMin)
+            self.settingsSetValue(settings, default_settings, 'svValue',sv, read_defaults)
             self.settingsSetValue(settings, default_settings, 'dutyMin',self.pidcontrol.dutyMin, read_defaults)
             self.settingsSetValue(settings, default_settings, 'dutyMax',self.pidcontrol.dutyMax, read_defaults)
             self.settingsSetValue(settings, default_settings, 'positiveTargetRangeLimit',self.pidcontrol.positiveTargetRangeLimit, read_defaults)
@@ -23574,6 +23619,20 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 #        except Exception as e: # pylint: disable=broad-except
 #            _log.exception(e)
 
+    @pyqtSlot(str)
+    def comparatorAddProfileSlot(self, filename:str) -> None:
+        if self.comparator is not None:
+            self.comparator.addProfiles([filename])
+
+    @pyqtSlot('QUrl')
+    def comparatorAddProfileURLSlot(self, url:QUrl) -> None:
+        if self.comparator is not None:
+            self.comparator.addProfileFromURL(self.artisanURLextractor, url)
+
+    @pyqtSlot('QUrl')
+    def importArtisanURLSlot(self, url:QUrl) -> None:
+        self.importExternalURL(self.artisanURLextractor, url=url)
+
     # url a QUrl
     def importExternalURL(self, extractor: Callable[[QUrl, 'ApplicationWindow'], Optional['ProfileData']], message:str='', url:Optional[QUrl] = None) -> None:
         try:
@@ -23874,6 +23933,16 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 if len(self.logofilename) > 0 or self.qmc.logoimg is not None:
                     self.qmc.redraw()
                     self.qmc.placelogoimage()
+                if fileext == '.png':
+                    batch_nr_str = ('' if self.qmc.roastbatchnrB == 0 else self.qmc.roastbatchprefixB + str(self.qmc.roastbatchnrB) + ' ')
+                    metadata = {
+                        'Title': f'{batch_nr_str}{self.qmc.title}',
+                        'Author': getpass.getuser(),
+                        'Description': f'Artisan Roast Profile {batch_nr_str}{self.qmc.title}',
+                        'Software': f'Artisan v{__version__}, https://artisan-scope.org/'
+                    }
+                else:
+                    metadata = None
                 self.qmc.fig.savefig(filename,
                         dpi=fig_dpi,
                         backend='agg',
@@ -23881,7 +23950,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                         #bbox_inches='tight',
                         #backend='pgf', # slow and fails on # characters in TeX backend
                         facecolor=str(self.qmc.palette['canvas']),
-                        edgecolor=None
+                        edgecolor=None,
+                        metadata=metadata
                 ) # transparent=True is need to get the delta curves and legend drawn
 
                 if adjust_fig_size:
@@ -23915,12 +23985,33 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     filename += extension
                     #mpl.rcParams['pdf.fonttype'] = 3   # 3 or 42
                     #mpl.rc('pdf', fonttype=3)
+                batch_nr_str = ('' if self.qmc.roastbatchnrB == 0 else self.qmc.roastbatchprefixB + str(self.qmc.roastbatchnrB) + ' ')
+                if extension == '*.pdf':
+                    metadata = {
+                            'Title': f'{batch_nr_str}{self.qmc.title}',
+                            'Author': getpass.getuser(),
+                            'Subject': f'Artisan Roast Profile {batch_nr_str}{self.qmc.title}',
+                            'Keywords': ', '.join(filter(None, ['Artisan', 'Roast Profile', batch_nr_str])),
+                            'Creator': f'Artisan v{__version__}, https://artisan-scope.org/'
+                            }
+                else: # SVG
+                    metadata = {
+                            'Title': f'{batch_nr_str}{self.qmc.title}',
+                            'Creator': getpass.getuser(),
+                            'Description': f'Artisan Roast Profile {batch_nr_str}{self.qmc.title}',
+                            'Keywords': ', '.join(filter(None, ['Artisan', 'Roast Profile', batch_nr_str])),
+                            'Publisher': f'Artisan v{__version__}, https://artisan-scope.org/'
+                    }
+                    if self.curFile is not None:
+                        metadata['Source'] = Path(self.curFile).name
+
                 self.qmc.fig.savefig(filename,
                         transparent=(self.qmc.palette['canvas'] is None or self.qmc.palette['canvas']=='None'),
                         #bbox_inches='tight',
                         #backend='pgf', # slow and fails on # characters in TeX backend
                         facecolor=str(self.qmc.palette['canvas']),
-                        edgecolor=None
+                        edgecolor=None,
+                        metadata=metadata
                         ) # transparent=True is need to get the delta curves and legend drawn
                 self.qmc.updateBackground() # that redraw is needed to avoid the "transparent flicker"
 
@@ -24324,6 +24415,9 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         except OSError as ex:
             self.qmc.adderror((QApplication.translate('Error Message','IO Error:') + ' backuppaletteeventbuttons(): {0}').format(str(ex)))
 
+    def loadPalettesSlot(self, filename:str) -> None:
+        self.getPalettes(filename, self.buttonpalette)
+
     def getPalettes(self, filename:str, pal:List['Palette']) -> None:
         maxlen = self.loadPalettes(filename,pal)
         if maxlen is not None:
@@ -24472,6 +24566,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 #        if filename:
 #            self.getPalettes(filename,pal)
 
+    @pyqtSlot(str)
     def loadAlarms(self, filename:str) -> None:
         try:
             from json import load as json_load
@@ -25158,7 +25253,7 @@ def excepthook(excType:type, excValue:BaseException, tracebackobj:Optional['Trac
         if aw is not None:
             if hasattr(aw, 'qmc'):
                 aw.qmc.adderror('Error: ' + detailedmsg)
-            errorbox = QMessageBox(aw)
+            errorbox = QMessageBox()
             errorbox.about(aw, detailedmsg, f'{notice}{versionInfo}{msg}')
 
             # using a (native) QErrorMessage dialog which does not allow styled text like bold/links

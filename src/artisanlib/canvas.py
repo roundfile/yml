@@ -182,6 +182,7 @@ class tgraphcanvas(FigureCanvas):
     showExtraCurveSignal = pyqtSignal(int, str, bool)
     showEventsSignal = pyqtSignal(int, bool)
     showBackgroundEventsSignal = pyqtSignal(bool)
+    redrawSignal = pyqtSignal(bool,bool,bool,bool,bool)
 
     umlaute_dict : Final[Dict[str, str]] = {
        uchr(228): 'ae',  # U+00E4   \xc3\xa4
@@ -865,7 +866,7 @@ class tgraphcanvas(FigureCanvas):
                        '+Phidget DAQ1301 23',       #157
                        '+Phidget DAQ1301 45',       #158
                        '+Phidget DAQ1301 67',       #159
-                       f'+IKAWA {deltaLabelUTF8}Humidity/{deltaLabelUTF8}Humidity Dir.' #160
+                       f'+IKAWA {deltaLabelUTF8}Humidity/{deltaLabelUTF8}Humidity Dir.',    #160
                        '+Omega HH309 34',           #161
                        'Digi-Sense 20250-07',       #162
                        'Extech 42570'               #163
@@ -2261,6 +2262,7 @@ class tgraphcanvas(FigureCanvas):
         self.showExtraCurveSignal.connect(self.showExtraCurve)
         self.showEventsSignal.connect(self.showEvents)
         self.showBackgroundEventsSignal.connect(self.showBackgroundEvents)
+        self.redrawSignal.connect(self.redraw, type=Qt.ConnectionType.QueuedConnection) # type: ignore
 
     #NOTE: empty Figure is initially drawn at the end of self.awsettingsload()
     #################################    FUNCTIONS    ###################################
@@ -6175,7 +6177,7 @@ class tgraphcanvas(FigureCanvas):
 
             if bool(self.aw.comparator):
                 starttime = 0
-            elif self.timeindex[0] != -1 and self.timeindex[0] < len(self.timex):
+            elif -1 < self.timeindex[0] < len(self.timex):
                 starttime = self.timex[self.timeindex[0]]
             else:
                 starttime = 0
@@ -6411,7 +6413,8 @@ class tgraphcanvas(FigureCanvas):
     #Resets graph. Called from reset button. Deletes all data. Calls redraw() at the end
     # returns False if action was canceled, True otherwise
     # if keepProperties=True (a call from OnMonitor()), we keep all the pre-set roast properties
-    def reset(self,redraw:bool = True, soundOn:bool = True, keepProperties:bool = False, fireResetAction:bool = True) -> bool:
+    # onMonitor is set if called from onMonitor
+    def reset(self,redraw:bool = True, soundOn:bool = True, keepProperties:bool = False, fireResetAction:bool = True, onMonitor:bool = False) -> bool:
         try:
             focused_widget = QApplication.focusWidget()
             if focused_widget and focused_widget != self.aw.centralWidget():
@@ -6425,13 +6428,13 @@ class tgraphcanvas(FigureCanvas):
         # restore and clear extra device settings which might have been created on loading a profile with different extra devices settings configuration
         self.aw.restoreExtraDeviceSettingsBackup()
 
-        if self.flagon and self.flagOpenCompleted and self.aw.curFile is not None:
+        if onMonitor and self.flagOpenCompleted and self.aw.curFile is not None:
             # always if ON is pressed while a profile is loaded, the profile is send to the Viewer
             # the file URL of the saved profile (if any) is send to the ArtisanViewer app to be opened if already running
             try:
                 fileURL = QUrl.fromLocalFile(self.aw.curFile)
                 fileURL.setQuery('background') # open the file URL without raising the app to the foreground
-                QTimer.singleShot(10,lambda : self.aw.app.sendMessage2ArtisanInstance(fileURL.toString(),self.aw.app._viewer_id)) # pylint: disable=protected-access
+                self.aw.app.sendmessage2ArtisanViewerSignal.emit(fileURL.toString())
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
 
@@ -7104,8 +7107,6 @@ class tgraphcanvas(FigureCanvas):
                         else:
                             st1 = self.aw.arabicReshape(QApplication.translate('Scope Annotation', 'CHARGE'))
                             st1 = self.__dijstra_to_ascii(st1)
-                            if self.graphfont == 1:
-                                st1 = self.__to_ascii(st1)
                             e = 0
                             a = 1.
                         time_temp_annos = self.annotate(temp[t0idx],st1,t0,y,ystep_up,ystep_down,e,a,draggable,0+anno_key_offset)
@@ -7572,8 +7573,7 @@ class tgraphcanvas(FigureCanvas):
         self.background_title_width = 0
         backgroundtitle = backgroundtitle.strip()
         if backgroundtitle != '':
-            if self.graphfont in {1, 9}: # if selected font is Humor we translate the unicode title into pure ascii
-                backgroundtitle = self.__to_ascii(backgroundtitle)
+            backgroundtitle = self.__dijstra_to_ascii(backgroundtitle)
             backgroundtitle = f'\n{abbrevString(backgroundtitle, 32)}'
 
         self.l_subtitle = self.fig.suptitle(backgroundtitle,
@@ -7607,8 +7607,7 @@ class tgraphcanvas(FigureCanvas):
         elif bnr == 0 and title != '' and title != self.title != QApplication.translate('Scope Title', 'Roaster Scope') and bprefix != '':
             title = f'{bprefix} {title}'
 
-        if self.graphfont in {1,9}: # if selected font is Humor or Dijkstra we translate the unicode title into pure ascii
-            title = self.__to_ascii(title)
+        title = self.__dijstra_to_ascii(title)
 
         self.title_text = self.aw.arabicReshape(title.strip())
         if self.ax is not None and self.title_text is not None:
@@ -7903,10 +7902,11 @@ class tgraphcanvas(FigureCanvas):
     #Redraws data
     # if recomputeAllDeltas, the delta arrays and if smooth the smoothed line arrays are recomputed (incl. those of the background curves)
     # re_smooth_foreground: the foreground curves (incl. extras) will be re-smoothed if called while not recording. During recording foreground will never be smoothed here.
-    # re_smooth_background: the background curves (incl. extras) will be re-smoothed if True (default False), also during recording
+# re_smooth_background: the background curves (incl. extras) will be re-smoothed if True (default False), also during recording
     # NOTE: points for error values represented by None or masked arrays (where values are -1) are not drawn and lines are broken there
     #   see https://matplotlib.org/stable/gallery/lines_bars_and_markers/masked_demo.html
     #   to keep points and lines drawn without those breaks data should be interpolated via util:fill_gaps (controlled by the "Interpolate Drops" filter)
+    @pyqtSlot(bool,bool,bool,bool,bool)
     def redraw(self, recomputeAllDeltas:bool = True, re_smooth_foreground:bool = True, takelock:bool = True, forceRenewAxis:bool = False, re_smooth_background:bool = False) -> None: # pyright: ignore [reportGeneralTypeIssues] # Code is too complex to analyze; reduce complexity by refactoring into subroutines or reducing conditional code paths
 #        _log.info("PRINT redraw(recomputeAllDeltas: %s, re_smooth_foreground: %s, takelock: %s, forceRenewAxis: %s, re_smooth_background: %s)",recomputeAllDeltas, re_smooth_foreground, takelock, forceRenewAxis, re_smooth_background)
         if self.designerflag:
@@ -8037,7 +8037,7 @@ class tgraphcanvas(FigureCanvas):
                     if self.flagstart or self.xgrid == 0:
                         self.set_xlabel('')
                     else:
-                        self.set_xlabel(f'{self.roastertype_setup} {self.roastersize_setup}kg')
+                        self.set_xlabel(f'{self.__dijstra_to_ascii(self.roastertype_setup)} {self.roastersize_setup}kg')
 
                     try:
                         y_label.set_in_layout(False) # remove y-axis labels from tight_layout calculation
@@ -9860,8 +9860,7 @@ class tgraphcanvas(FigureCanvas):
                             ncol = int(math.ceil(len(self.handles)/2.))
                         else:
                             ncol = int(math.ceil(len(self.handles)))
-                        if self.graphfont == 1:
-                            self.labels = [self.__to_ascii(l) for l in self.labels]
+                        self.labels = [self.__dijstra_to_ascii(l) for l in self.labels]
                         loc:Union[int, Tuple[float,float]]
                         if self.legend is None:
                             if self.legendloc_pos is None:
@@ -10205,17 +10204,17 @@ class tgraphcanvas(FigureCanvas):
 
             #text between single quotes ' will show only before FCs
 
-            eventanno = re.sub(r'{pd}([^{pd}]+){pd}'.format(pd=preFCsDelim), # noqa: UP032
-                r'\1',eventanno) if not postFCs else re.sub(r'{pd}([^{pd}]+){pd}'.format(pd=preFCsDelim),
+            eventanno = re.sub(fr'{preFCsDelim}([^{preFCsDelim}]+){preFCsDelim}',
+                r'\1',eventanno) if not postFCs else re.sub(fr'{preFCsDelim}([^{preFCsDelim}]+){preFCsDelim}',
                 r'',eventanno)
             #text between double quotes " will show only after FCs
-            eventanno = re.sub(r'{pd}([^{pd}]+){pd}'.format(pd=postFCsDelim),
-                r'\1',eventanno) if postFCs else re.sub(r'{pd}([^{pd}]+){pd}'.format(pd=postFCsDelim),
+            eventanno = re.sub(fr'{postFCsDelim}([^{postFCsDelim}]+){postFCsDelim}',
+                r'\1',eventanno) if postFCs else re.sub(fr'{postFCsDelim}([^{postFCsDelim}]+){postFCsDelim}',
                 r'',eventanno)
 
             #text between back ticks ` will show only within 90 seconds before FCs
-            eventanno = re.sub(r'{wd}([^{wd}]+){wd}'.format(wd=fcsWindowDelim),
-                r'\1',eventanno) if (fcsWindow) else re.sub(r'{wd}([^{wd}]+){wd}'.format(wd=fcsWindowDelim),
+            eventanno = re.sub(fr'{fcsWindowDelim}([^{fcsWindowDelim}]+){fcsWindowDelim}',
+                r'\1',eventanno) if (fcsWindow) else re.sub(fr'{fcsWindowDelim}([^{fcsWindowDelim}]+){fcsWindowDelim}',
                 r'',eventanno)
 
             # substitute numeric to nominal values if in the annotationstring
@@ -10341,7 +10340,15 @@ class tgraphcanvas(FigureCanvas):
                 self.logoimg = self.convertQImageToNumpyArray(newImage)
                 self.aw.logofilename = filename
                 self.aw.sendmessage(QApplication.translate('Message','Loaded watermark image {0}').format(filename))
-                QTimer.singleShot(500, lambda : self.redraw(recomputeAllDeltas=False)) #some time needed before the redraw on artisan start with no profile loaded.  processevents() does not work here.
+#                QTimer.singleShot(500, lambda : self.redraw(recomputeAllDeltas=False)) #some time needed before the redraw on artisan start with no profile loaded.  processevents() does not work here.
+                # we avoid a potentially leaking QTimer.signleShot with lambda by emitting a signal
+                self.redrawSignal.emit(
+                    False, # recomputeAllDeltas (default: True)
+                    True, # re_smooth_foreground (default: True)
+                    True,  # takelock (default: True)
+                    False, # forceRenewAxis (default: False)
+                    False, # re_smooth_background (default: False)
+                    )
             else:
                 self.aw.sendmessage(QApplication.translate('Message','Unable to load watermark image {0}').format(filename))
                 _log.info('Unable to load watermark image %s', filename)
@@ -10444,9 +10451,10 @@ class tgraphcanvas(FigureCanvas):
 
                 # Roast Info Section
                 statstr_segments.append(skipline)
-                if 'roasted_density' in cp:
-                    statstr_segments += ['\n', self.__dijstra_to_ascii(QApplication.translate('AddlInfo', 'Density Roasted')), ': ', str(cp['roasted_density']),
-                        ' ', self.density[1], '/', self.density[3]]
+                roasted_density = (self.aw.qmc.density_roasted[0] if self.aw.qmc.density_roasted[0] != 0 else cp.get('roasted_density', 0))
+                if roasted_density:
+                    statstr_segments += ['\n', self.__dijstra_to_ascii(QApplication.translate('AddlInfo', 'Density Roasted')), ': ', str(roasted_density),
+                        ' ', self.density_roasted[1], '/', self.density_roasted[3]]
                 if self.moisture_roasted:
                     statstr_segments += ['\n', self.__dijstra_to_ascii(QApplication.translate('AddlInfo', 'Moisture Roasted')), ': ', str(self.aw.float2float(self.moisture_roasted,1)), '%']
                 if self.whole_color > 0:
@@ -11451,7 +11459,7 @@ class tgraphcanvas(FigureCanvas):
         try:
             self.generateNoneTempHints()
             self.block_update = True # block the updating of the bitblit canvas (unblocked at the end of this function to avoid multiple redraws)
-            res = self.reset(redraw=False, soundOn=False, keepProperties=True)
+            res = self.reset(redraw=False, soundOn=False, keepProperties=True, onMonitor=True)
             if not res: # reset canceled
                 return
 
@@ -11620,6 +11628,12 @@ class tgraphcanvas(FigureCanvas):
         _log.debug('MODE: OffMonitorCloseDown')
         try:
             self.threadserver.terminatingSignal.disconnect(self.OffMonitorCloseDown)
+
+            # reset WebLCDs
+            resLCD = '-.-' if self.LCDdecimalplaces else '--'
+            if self.aw.WebLCDs:
+                self.updateWebLCDs(bt=resLCD,et=resLCD)
+
             if len(self.timex) < 3:
                 # clear data from monitoring-only mode
                 self.clearMeasurements()
@@ -11695,10 +11709,7 @@ class tgraphcanvas(FigureCanvas):
             self.aw.buttonONOFF.setText(QApplication.translate('Button', 'ON')) # text means click to turn OFF (it is ON)
             # reset time LCD color to the default (might have been changed to red due to long cooling!)
             self.aw.updateReadingsLCDsVisibility()
-            # reset WebLCDs
-            resLCD = '-.-' if self.LCDdecimalplaces else '--'
-            if self.aw.WebLCDs:
-                self.updateWebLCDs(bt=resLCD,et=resLCD)
+
             if not self.aw.HottopControlActive:
                 self.aw.hideExtraButtons(changeDefault=False)
             self.aw.updateSlidersVisibility() # update visibility of sliders based on the users preference
@@ -11789,6 +11800,7 @@ class tgraphcanvas(FigureCanvas):
                         self.aw.eventactionx(self.extrabuttonactions[1],self.extrabuttonactionstrings[1])
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
+
 
                 self.threadserver.terminatingSignal.connect(self.OffMonitorCloseDown)
                 self.flagon = False
@@ -12475,7 +12487,7 @@ class tgraphcanvas(FigureCanvas):
                     if time_temp_annos is not None:
                         self.l_annotations += time_temp_annos
                     self.updateBackground() # but we need to update the background cache with the new annotation
-                    st2 = f'{temp:.1f} {self.mode}'
+                    st2 = f'{temp:.1f}{self.mode}'
                     message = QApplication.translate('Message','[TP] recorded at {0} BT = {1}').format(st,st2)
                     #set message at bottom
                     self.aw.sendmessage(message)
@@ -12596,7 +12608,7 @@ class tgraphcanvas(FigureCanvas):
                         else:
                             start = 0
                         st = stringfromseconds(self.timex[self.timeindex[1]]-start)
-                        st2 = f'{self.temp2[self.timeindex[1]]:.1f} {self.mode}'
+                        st2 = f'{self.temp2[self.timeindex[1]]:.1f}{self.mode}'
                         message = QApplication.translate('Message','[DRY END] recorded at {0} BT = {1}').format(st,st2)
                         #set message at bottom
                         self.aw.sendmessage(message)
@@ -12711,7 +12723,7 @@ class tgraphcanvas(FigureCanvas):
                     else:
                         start = 0
                     st1 = stringfromseconds(self.timex[self.timeindex[2]]-start)
-                    st2 = f'{self.temp2[self.timeindex[2]]:.1f} {self.mode}'
+                    st2 = f'{self.temp2[self.timeindex[2]]:.1f}{self.mode}'
                     message = QApplication.translate('Message','[FC START] recorded at {0} BT = {1}').format(st1,st2)
                     self.aw.sendmessage(message)
                 self.aw.onMarkMoveToNext(self.aw.buttonFCs)
@@ -12821,7 +12833,7 @@ class tgraphcanvas(FigureCanvas):
                     else:
                         start = 0
                     st1 = stringfromseconds(self.timex[self.timeindex[3]]-start)
-                    st2 = f'{self.temp2[self.timeindex[3]]:.1f} {self.mode}'
+                    st2 = f'{self.temp2[self.timeindex[3]]:.1f}{self.mode}'
                     message = QApplication.translate('Message','[FC END] recorded at {0} BT = {1}').format(st1,st2)
                     self.aw.sendmessage(message)
                 self.aw.onMarkMoveToNext(self.aw.buttonFCe)
@@ -12935,7 +12947,7 @@ class tgraphcanvas(FigureCanvas):
                             start = 0
                         try:
                             st1 = stringfromseconds(self.timex[self.timeindex[4]]-start)
-                            st2 = f'{self.temp2[self.timeindex[4]]:.1f} {self.mode}'
+                            st2 = f'{self.temp2[self.timeindex[4]]:.1f}{self.mode}'
                         except Exception: # pylint: disable=broad-except
                             pass
                         message = QApplication.translate('Message','[SC START] recorded at {0} BT = {1}').format(st1,st2)
@@ -13052,7 +13064,7 @@ class tgraphcanvas(FigureCanvas):
                     else:
                         start = 0
                     st1 = stringfromseconds(self.timex[self.timeindex[5]]-start)
-                    st2 = f'{self.temp2[self.timeindex[5]]:.1f} {self.mode}'
+                    st2 = f'{self.temp2[self.timeindex[5]]:.1f}{self.mode}'
                     message = QApplication.translate('Message','[SC END] recorded at {0} BT = {1}').format(st1,st2)
                     self.aw.sendmessage(message)
                 self.aw.onMarkMoveToNext(self.aw.buttonSCe)
@@ -13355,7 +13367,7 @@ class tgraphcanvas(FigureCanvas):
                     else:
                         start = 0
                     st1 = stringfromseconds(self.timex[self.timeindex[7]]-start)
-                    st2 = f'{self.temp2[self.timeindex[7]]:.1f} {self.mode}'
+                    st2 = f'{self.temp2[self.timeindex[7]]:.1f}{self.mode}'
                     message = QApplication.translate('Message','[COOL END] recorded at {0} BT = {1}').format(st1,st2)
                     #set message at bottom
                     self.aw.sendmessage(message)
@@ -13693,7 +13705,7 @@ class tgraphcanvas(FigureCanvas):
                                         pass
                         if doupdatebackground:
                             self.updateBackground() # call to canvas.draw() not needed as self.annotate does the (partial) redraw, but updateBackground() is needed
-                        temp2 = f'{self.temp2[i]:.1f} {self.mode}'
+                        temp2 = f'{self.temp2[i]:.1f}{self.mode}'
                         if self.timeindex[0] != -1:
                             start = self.timex[self.timeindex[0]]
                         else:
@@ -13749,7 +13761,7 @@ class tgraphcanvas(FigureCanvas):
                     else:
                         start = 0
                     timed = stringfromseconds(self.timex[i]-start)
-                    message = QApplication.translate('Message','Computer Event # {0} recorded at BT = {1} Time = {2}').format(str(Nevents+1),temp_str,timed)
+                    message = QApplication.translate('Message','Computer Event # {0} recorded at BT = {1}{self.mode} Time = {2}').format(str(Nevents+1),temp_str,timed)
                     self.aw.sendmessage(message)
                     #write label in mini recorder if flag checked
                     self.aw.eNumberSpinBox.setValue(Nevents+1)
@@ -14070,12 +14082,13 @@ class tgraphcanvas(FigureCanvas):
 
                 #if DROP
                 if self.timeindex[6] and self.timeindex[2]:
-                    totaltime = self.timex[self.timeindex[6]]-self.timex[self.timeindex[0]]
+                    starttime = (self.timex[self.timeindex[0]] if -1 < self.timeindex[0] < len(self.timex) else 0)
+                    totaltime = self.timex[self.timeindex[6]]-starttime
                     if totaltime == 0:
                         return dryEndIndex, statisticstimes
 
                     statisticstimes[0] = totaltime
-                    dryphasetime = dryEndTime - self.timex[self.timeindex[0]] # self.aw.float2float(dryEndTime - self.timex[self.timeindex[0]])
+                    dryphasetime = dryEndTime - starttime # self.aw.float2float(dryEndTime - starttime)
                     midphasetime = self.timex[self.timeindex[2]] - dryEndTime # self.aw.float2float(self.timex[self.timeindex[2]] - dryEndTime)
                     finishphasetime = self.timex[self.timeindex[6]] - self.timex[self.timeindex[2]] # self.aw.float2float(self.timex[self.timeindex[6]] - self.timex[self.timeindex[2]])
 
@@ -14102,6 +14115,8 @@ class tgraphcanvas(FigureCanvas):
                 return
 
             LP:Optional[float] = None
+
+            starttime = (self.timex[self.timeindex[0]] if -1 < self.timeindex[0] < len(self.timex) else 0)
 
             dryEndIndex, statisticstimes = self.calcStatistics(TP_index)
 
@@ -14172,7 +14187,7 @@ class tgraphcanvas(FigureCanvas):
 
                         # Draw mid phase rectangle
                         rect = patches.Rectangle(
-                                (self.timex[self.timeindex[0]]+self.statisticstimes[1],
+                                (starttime+self.statisticstimes[1],
                                 statisticsheight),
                                 width = self.statisticstimes[2],
                                 height = statisticsbarheight,
@@ -14182,15 +14197,17 @@ class tgraphcanvas(FigureCanvas):
                         self.ax.add_patch(rect)
 
                     # Draw dry phase rectangle
-                    rect = patches.Rectangle(
-                            (self.timex[self.timeindex[0]],
-                            statisticsheight),
-                            width = self.statisticstimes[1],
-                            height = statisticsbarheight,
-                            color = self.palette['rect1'],
-                            alpha=0.5,
-                            path_effects=[])
-                    self.ax.add_patch(rect)
+                    if self.timeindex[0] > -1:
+                        # only if CHARGE is set
+                        rect = patches.Rectangle(
+                                (starttime,
+                                statisticsheight),
+                                width = self.statisticstimes[1],
+                                height = statisticsbarheight,
+                                color = self.palette['rect1'],
+                                alpha=0.5,
+                                path_effects=[])
+                        self.ax.add_patch(rect)
 
                 fmtstr = '{0:.1f}' if self.LCDdecimalplaces else '{0:.0f}'
                 if self.statisticstimes[0]:
@@ -14208,23 +14225,31 @@ class tgraphcanvas(FigureCanvas):
                     LP = self.temp2[TP_index]
 
                 if self.statisticsflags[0]:
-                    text = self.ax.text(self.timex[self.timeindex[0]]+ self.statisticstimes[1]/2.,statisticsupper,st1 + '  '+ dryphaseP+'%',color=self.palette['text'],ha='center',
-                        fontsize='medium'
-                        )
-                    try:
-                        text.set_in_layout(False)
-                    except Exception: # pylint: disable=broad-except
-                        pass
+                    if self.timeindex[0] > -1:
+                        # only if CHARGE is set
+                        text = self.ax.text(starttime + self.statisticstimes[1]/2.,statisticsupper,
+                                f'{st1}  {dryphaseP}%',
+                                color=self.palette['text'],ha='center',
+                            fontsize='medium'
+                            )
+                        try:
+                            text.set_in_layout(False)
+                        except Exception: # pylint: disable=broad-except
+                            pass
                     if self.timeindex[2]: # only if FCs exists
                         if self.statisticstimes[2]*100./self.statisticstimes[0]>1: # annotate only if mid phase is at least 1% of the total
-                            text = self.ax.text(self.timex[self.timeindex[0]]+ self.statisticstimes[1]+self.statisticstimes[2]/2.,statisticsupper,st2+ '  ' + midphaseP+'%',color=self.palette['text'],ha='center',
+                            text = self.ax.text(starttime + self.statisticstimes[1]+self.statisticstimes[2]/2.,statisticsupper,
+                                    (f'{st2}  {midphaseP}%' if self.timeindex[0] > -1 else st2),
+                                    color=self.palette['text'],ha='center',
                                 fontsize='medium'
                                 )
                             try:
                                 text.set_in_layout(False)
                             except Exception: # pylint: disable=broad-except
                                 pass
-                        text = self.ax.text(self.timex[self.timeindex[0]]+ self.statisticstimes[1]+self.statisticstimes[2]+self.statisticstimes[3]/2.,statisticsupper,st3 + '  ' + finishphaseP+ '%',color=self.palette['text'],ha='center',
+                        text = self.ax.text(starttime + self.statisticstimes[1]+self.statisticstimes[2]+self.statisticstimes[3]/2.,statisticsupper,
+                                    (f'{st3}  {finishphaseP}%' if self.timeindex[0] > -1 else st3),
+                                    color=self.palette['text'],ha='center',
                             fontsize='medium'
                             )
                         try:
@@ -14232,7 +14257,7 @@ class tgraphcanvas(FigureCanvas):
                         except Exception:  # pylint: disable=broad-except
                             pass
                     if self.timeindex[7]: # only if COOL exists
-                        text = self.ax.text(self.timex[self.timeindex[0]]+ self.statisticstimes[1]+self.statisticstimes[2]+self.statisticstimes[3]+self.statisticstimes[4]/2.,statisticsupper,st4,color=self.palette['text'],ha='center',
+                        text = self.ax.text(starttime + self.statisticstimes[1]+self.statisticstimes[2]+self.statisticstimes[3]+self.statisticstimes[4]/2.,statisticsupper,st4,color=self.palette['text'],ha='center',
                             fontsize='medium'
                             )
                         try:
@@ -14260,17 +14285,19 @@ class tgraphcanvas(FigureCanvas):
                     if rates_of_changes[5] != -1:
                         st3 = st3 + fmtstr.format(rates_of_changes[5], self.mode, rates_of_changes[2], unit)
 
-                    text = self.ax.text(self.timex[self.timeindex[0]] + self.statisticstimes[1]/2.,statisticslower,st1,
-                        color=self.palette['text'],
-                        ha='center',
-                        fontsize='medium')
-                    try:
-                        text.set_in_layout(False)
-                    except Exception: # pylint: disable=broad-except
-                        pass
+
+                    if self.timeindex[0] > -1:
+                        text = self.ax.text(starttime + self.statisticstimes[1]/2.,statisticslower,st1,
+                            color=self.palette['text'],
+                            ha='center',
+                            fontsize='medium')
+                        try:
+                            text.set_in_layout(False)
+                        except Exception: # pylint: disable=broad-except
+                            pass
                     if self.timeindex[2]: # only if FCs exists
                         if self.statisticstimes[2]*100./self.statisticstimes[0]>1: # annotate only if mid phase is at least 1% of the total
-                            text = self.ax.text(self.timex[self.timeindex[0]] + self.statisticstimes[1]+self.statisticstimes[2]/2.,statisticslower,st2,color=self.palette['text'],ha='center',
+                            text = self.ax.text(starttime + self.statisticstimes[1]+self.statisticstimes[2]/2.,statisticslower,st2,color=self.palette['text'],ha='center',
                                 #fontproperties=statsprop # fails be rendered in PDF exports on MPL v3.4.x
                                 fontsize='medium'
                                 )
@@ -14278,7 +14305,7 @@ class tgraphcanvas(FigureCanvas):
                                 text.set_in_layout(False)
                             except Exception: # pylint: disable=broad-except
                                 pass
-                        text = self.ax.text(self.timex[self.timeindex[0]] + self.statisticstimes[1]+self.statisticstimes[2]+self.statisticstimes[3]/2.,statisticslower,st3,color=self.palette['text'],ha='center',
+                        text = self.ax.text(starttime + self.statisticstimes[1]+self.statisticstimes[2]+self.statisticstimes[3]/2.,statisticslower,st3,color=self.palette['text'],ha='center',
                             #fontproperties=statsprop # fails be rendered in PDF exports on MPL v3.4.x
                             fontsize='medium'
                             )
@@ -14287,7 +14314,7 @@ class tgraphcanvas(FigureCanvas):
                         except Exception: # pylint: disable=broad-except
                             pass
                     if self.timeindex[7]: # only if COOL exists
-                        text = self.ax.text(self.timex[self.timeindex[0]]+ self.statisticstimes[1]+self.statisticstimes[2]+self.statisticstimes[3]+max(self.statisticstimes[4]/2.,self.statisticstimes[4]/3.),statisticslower,st4,color=self.palette['text'],ha='center',
+                        text = self.ax.text(starttime + self.statisticstimes[1]+self.statisticstimes[2]+self.statisticstimes[3]+max(self.statisticstimes[4]/2.,self.statisticstimes[4]/3.),statisticslower,st4,color=self.palette['text'],ha='center',
                             #fontproperties=statsprop # fails be rendered in PDF exports on MPL v3.4.x
                             fontsize='medium'
                             )
@@ -16858,15 +16885,14 @@ class tgraphcanvas(FigureCanvas):
 
     def __to_ascii(self, s:str) -> str:
         utf8_string = str(s)
-        if self.locale_str.startswith('de'):
-            for k, uml in self.umlaute_dict.items():
-                utf8_string = utf8_string.replace(k, uml)
+        for k, uml in self.umlaute_dict.items():
+            utf8_string = utf8_string.replace(k, uml)
         from unidecode import unidecode
         return unidecode(utf8_string)
 
     # convert German Umlauts if Dijkstra font is selected
     def __dijstra_to_ascii(self, s:str) -> str:
-        if self.graphfont == 9: # font Dijkstra selected
+        if self.graphfont in {1,9,10}: # font Humor, Dijkstra, or Xkcd selected
             return self.__to_ascii(s)
         return s
 

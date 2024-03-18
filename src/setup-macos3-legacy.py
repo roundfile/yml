@@ -16,6 +16,7 @@ Usage:
 #sysconfig.parse_makefile = my_parse_makefile
 
 import os
+import sys
 import subprocess
 from setuptools import setup
 
@@ -234,15 +235,19 @@ for lang in ['ar', 'da', 'de','el','en','es','fa','fi','fr','gd', 'he','hu','id'
 #
 # to get libusb installed
 try:
-    subprocess.check_call(r'cp /usr/local/Cellar/libusb/1.0.26/lib/libusb-1.0.0.dylib Artisan.app/Contents/Frameworks/libusb-1.0.dylib',shell = True)
+    subprocess.check_call(r'cp /usr/local/Cellar/libusb/1.0.27/lib/libusb-1.0.0.dylib Artisan.app/Contents/Frameworks/libusb-1.0.dylib',shell = True)
 except Exception: # pylint: disable=broad-except
     try:
-        subprocess.check_call(r'cp /usr/local/Cellar/libusb/1.0.25/lib/libusb-1.0.0.dylib Artisan.app/Contents/Frameworks/libusb-1.0.dylib',shell = True)
+        subprocess.check_call(r'cp /usr/local/Cellar/libusb/1.0.26/lib/libusb-1.0.0.dylib Artisan.app/Contents/Frameworks/libusb-1.0.dylib',shell = True)
     except Exception: # pylint: disable=broad-except
         try:
-            subprocess.check_call(r'cp /usr/local/Cellar/libusb/1.0.24/lib/libusb-1.0.0.dylib Artisan.app/Contents/Frameworks/libusb-1.0.dylib',shell = True)
+            subprocess.check_call(r'cp /usr/local/Cellar/libusb/1.0.25/lib/libusb-1.0.0.dylib Artisan.app/Contents/Frameworks/libusb-1.0.dylib',shell = True)
         except Exception: # pylint: disable=broad-except
-            subprocess.check_call(r'cp /usr/local/Cellar/libusb/1.0.23/lib/libusb-1.0.0.dylib Artisan.app/Contents/Frameworks/libusb-1.0.dylib',shell = True)
+            try:
+                subprocess.check_call(r'cp /usr/local/Cellar/libusb/1.0.24/lib/libusb-1.0.0.dylib Artisan.app/Contents/Frameworks/libusb-1.0.dylib',shell = True)
+            except Exception: # pylint: disable=broad-except
+                print('ERROR: failed to locate libusb')
+                sys.exit(1)
 
 
 

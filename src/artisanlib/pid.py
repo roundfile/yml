@@ -150,6 +150,9 @@ class PID:
                 self.lastError = err
             elif (dt := now - self.lastTime) > 0.2:
                 derr = (err - self.lastError) / dt
+
+                # Derivative on Measurement to avoid the derivative kick on SV changes
+                # http://brettbeauregard.com/blog/2011/04/improving-the-beginner%e2%80%99s-pid-derivative-kick/
                 if self.lastInput:
                     dinput = i - self.lastInput
                     dtinput = dinput / dt
@@ -321,7 +324,9 @@ class PID:
     def getDuty(self) -> Optional[float]:
         try:
             self.pidSemaphore.acquire(1)
-            return self.lastOutput
+            if self.lastOutput is not None:
+                return int(round(min(self.dutyMax,max(self.dutyMin,self.lastOutput))))
+            return None
         finally:
             if self.pidSemaphore.available() < 1:
                 self.pidSemaphore.release(1)
