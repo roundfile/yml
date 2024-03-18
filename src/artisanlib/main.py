@@ -421,6 +421,8 @@ class Artisan(QtSingleApplication):
                     else:
                         application_path = sys.argv[0]
                     application_path = re.sub(r'\\',r'/',application_path)
+                    _log.info("** application_path %s",application_path)  #dave
+                    _log.info("** os.path.dirname(sys.executable) %s",os.path.dirname(sys.executable))  #dave
                     # must start viewer without an argv else it thinks it was started from a link and sends back to artisan
                     os.startfile(application_path) # type:ignore[unused-ignore,attr-defined] # @UndefinedVariable # pylint: disable=maybe-no-member
                     QTimer.singleShot(3000,lambda : self._sendMessage2ArtisanInstanceShot(message,instance_id))
