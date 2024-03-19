@@ -433,6 +433,7 @@ class Artisan(QtSingleApplication):
                     else:
                         application_path = sys.argv[0]
                     application_path = re.sub(r'\\',r'/',application_path)
+                    _log.info("** application_path", application_path)  #dave
                     # must start viewer without an argv else it thinks it was started from a link and sends back to artisan
                     os.startfile(application_path) # type:ignore[unused-ignore,attr-defined] # @UndefinedVariable # pylint: disable=maybe-no-member
                     self.sendmessage2ArtisanInstanceSignal.emit(message,instance_id)
