@@ -346,7 +346,8 @@ class Artisan(QtSingleApplication):
     #                                  if query is "background" Artisan is not raised to the foreground
     #                                  if query is "template" and the file has an .alog extension, the profile is loaded as background profile
     def open_url(self, url:QUrl) -> None:
-        _log.debug('open_url(%s)', url)
+#dave        _log.debug('open_url(%s)', url)
+        _log.info('open_url(%s)', url)  #dave
         aw:Optional['ApplicationWindow'] = self.activationWindow()
         if aw is not None and not aw.qmc.flagon and not aw.qmc.designerflag and not aw.qmc.wheelflag and aw.qmc.flavorchart_plot is None: # only if not yet monitoring
             if url.scheme() == 'artisan' and url.authority() in {'roast','template'}:
@@ -409,6 +410,7 @@ class Artisan(QtSingleApplication):
 
     @pyqtSlot(str)
     def receiveMessage(self, msg:str) -> None:
+        _log.info('In receiveMessage(%s)',msg)  #dave
         url = QUrl()
         url.setUrl(msg)
         self.open_url(url)
@@ -416,6 +418,8 @@ class Artisan(QtSingleApplication):
     # to send message to main Artisan instance: id = appGuid
     # to send message to viewer:                id = viewerAppGuid
     def sendMessage2ArtisanInstance(self, message:str, instance_id:str) -> None:
+        import inspect, os  #dave
+        _log.debug("\n      %s:%s called by %s:%s, line %s",os.path.basename(inspect.getframeinfo(inspect.stack()[0][0]).filename), inspect.stack()[0][3], os.path.basename(inspect.getframeinfo(inspect.stack()[1][0]).filename), inspect.stack()[1][3], inspect.getframeinfo(inspect.stack()[1][0]).lineno)  #dave99
         if platform.system() == 'Windows':
             try:
                 res = None
@@ -423,19 +427,24 @@ class Artisan(QtSingleApplication):
                     res = self._sendMessage2ArtisanInstance(message,self._viewer_id)
                 elif instance_id == self._id:
                     res = self._sendMessage2ArtisanInstance(message,self._id)
+                _log.debug('res %s',str(res))  #dave
                 if not res:
+                    _log.debug("res is False...")  #dave
                     # get the path of the artisan.exe file
+                    _log.debug("getattr(sys, 'frozen', False)= %s",getattr(sys, 'frozen', False))  #dave
                     if getattr(sys, 'frozen', False):
-                        application_path = getattr(sys, '_MEIPASS', os.path.dirname(sys.executable))
-                        #pplication_path = os.path.dirname(sys.executable)
+                        application_path = os.path.dirname(sys.executable)
                         application_path += '\\artisan.exe'
+                        _log.debug('application_path os.path.dirname() %s',application_path)  #dave
                     # or the artisan py file if running from source
                     else:
                         application_path = sys.argv[0]
+                        _log.debug('application_path sys.argv[0] %s',application_path)  #dave
                     application_path = re.sub(r'\\',r'/',application_path)
-                    _log.info("** application_path", application_path)  #dave
                     # must start viewer without an argv else it thinks it was started from a link and sends back to artisan
+                    _log.debug('application_path %s',application_path)  #dave
                     os.startfile(application_path) # type:ignore[unused-ignore,attr-defined] # @UndefinedVariable # pylint: disable=maybe-no-member
+                    #os.startfile('c:/temp/debug.bat') # type:ignore[unused-ignore,attr-defined] # @UndefinedVariable # pylint: disable=maybe-no-member
                     self.sendmessage2ArtisanInstanceSignal.emit(message,instance_id)
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
@@ -444,22 +453,27 @@ class Artisan(QtSingleApplication):
 
     @pyqtSlot(str, str)
     def _sendMessage2ArtisanInstanceSlot(self, message:str, instance_id:str) -> None:
+        _log.debug('_sendMessage2ArtisanInstanceSlot(%s,%s)',message, instance_id)  #dave
         self._sendMessage2ArtisanInstance(message, instance_id)
 
     @pyqtSlot(str)
     def _sendMessage2ArtisanViewerSlot(self, message:str) -> None:
-        self._sendMessage2ArtisanInstance(message, self._viewer_id)
+        _log.debug('_sendMessage2ArtisanViewerSlot(%s,%s)',message, self._viewer_id)  #dave
+        #dave self._sendMessage2ArtisanInstance(message, self._viewer_id)
+        self._sendMessage2ArtisanInstance('', self._viewer_id)
 
     def _sendMessage2ArtisanInstance(self, message:str, instance_id:str) -> bool:
-        _log.debug('_sendMessage2ArtisanInstance(%s,%s)',message, instance_id)
+        _log.debug('_sendMessage2ArtisanInstance(%s,%s)',message, instance_id)  #dave
         try:
             self._outSocket = QLocalSocket()
             self._outSocket.connectToServer(instance_id)
             self._isRunning = self._outSocket.waitForConnected(-1)
             if self.isRunning():
+                _log.debug('self.isRunning() is True, self._isRunning=%s',self._isRunning)  #dave
                 self._outStream = QTextStream(self._outSocket)
 #                self._outStream.setCodec('UTF-8')
                 return self.sendMessage(message)
+            _log.debug('self.isRunning() is False, self._isRunning=%s',self._isRunning)  #dave
             return False
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
@@ -469,7 +483,9 @@ class Artisan(QtSingleApplication):
             self._outStream = None
 
     def event(self, event:Optional[QEvent]) -> bool:
+#        _log.info("In event()")  #dave
         if event is not None and event.type() == QEvent.Type.FileOpen:
+            _log.debug("In event() with event.type() == QEvent.Type.FileOpen")  #dave
             try:
                 aw:Optional['ApplicationWindow'] = self.activationWindow()
                 if aw is not None:
@@ -488,12 +504,15 @@ class Artisan(QtSingleApplication):
                         self.open_url(url)
                     else:
                         message = url.toString()
+                        _log.debug("Sending message %s",message)  #dave
                         # we send open file in the other instance if running
                         if self.artisanviewerMode:
                             # this is the Viewer, but we cannot open the file, send an open request to the main app if it is running
+                            _log.debug("Sending message self._id %s",self._id)  #dave
                             self.sendMessage2ArtisanInstance(message,self._id)
                         else:
                             # try to open the file in Viewer if it is running
+                            _log.debug("Sending message self._viewer_id %s",self._viewer_id)  #dave
                             self.sendMessage2ArtisanInstance(message,self._viewer_id)
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
@@ -25459,12 +25478,15 @@ def main() -> None:
     # inform the user the debug logging is on
     if debugLogLevelActive():
         appWindow.sendmessage(QApplication.translate('Message', 'debug logging ON'))
+        _log.info('Dave debug logging ON')  #dave
 
+    _log.info('About to appWindow.show()')  #dave
     appWindow.show()
 
     try:
         if sys.argv and len(sys.argv) > 1:
             argv_file = str(sys.argv[1])
+            _log.info('argv_file %s',argv_file)  #dave
 
             if platform.system() in {'Windows', 'Linux'}:
                 # send argv_file to running instance and exit this one
@@ -25472,12 +25494,15 @@ def main() -> None:
                     # reformat a file path to a url form
                     if re.match(r'^.:',argv_file):
                         argv_file = QUrl.fromLocalFile(argv_file).toString() #here we don't want a local file, preserve the windows file:///
+                    _log.info('About to app.sendMessage(%s)',argv_file)  #dave
                     app.sendMessage(argv_file)
+                    _log.info('Exit() -- as expected from main()')  #dave
                     sys.exit(0)
                 # otherwise if an artisan://roast url open it in this instance, if not a url do normal file processing
                 elif re.match(r'artisan://[roast|profile]',argv_file):
                     url = QUrl()
                     url.setUrl(argv_file)
+                    _log.info('About to app.open_url(%s)',url)  #dave
                     app.open_url(url)
             # on Linux (and RPi), local argv_file paths may contain percent encoded spaces %20 and a file:// URL prefix
             if platform.system() == 'Linux':
@@ -25488,9 +25513,9 @@ def main() -> None:
                     argv_file = u.toLocalFile()
                 else:
                     argv_file = argv_file_decoded
-
             qfile = QFileInfo(argv_file)
             file_suffix = qfile.suffix()
+            _log.info('file_suffix %s',file_suffix)  #dave
             if file_suffix == 'alog':
                 # load Artisan profile on double-click on *.alog file
                 appWindow.loadFile(argv_file)
