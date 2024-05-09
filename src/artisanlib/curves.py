@@ -329,7 +329,7 @@ class CurvesDlg(ArtisanDialog):
         self.org_deltaBTfilter = self.aw.qmc.deltaBTfilter
         self.org_deltaBTspan = self.aw.qmc.deltaBTspan
         self.org_deltaETspan = self.aw.qmc.deltaETspan
-        self.org_graphstyle = self.aw.qmc.graphstyle
+        #self.org_graphstyle = self.aw.qmc.graphstyle
         self.org_ETname = self.aw.ETname
         self.org_BTname = self.aw.BTname
         self.org_foregroundShowFullflag = self.aw.qmc.foregroundShowFullflag
@@ -2330,7 +2330,11 @@ class CurvesDlg(ArtisanDialog):
     @pyqtSlot(int)
     def changeGraphFont(self, n:int) -> None:
         self.aw.qmc.graphfont = n
-        self.aw.setFonts()
+        #self.aw.setFonts()
+        self.aw.setFonts(redraw=True) #dave false to keep from having two redraws since there is now one loaded below
+        self.aw.qmc.redraw(recomputeAllDeltas=True, re_smooth_background=True)  #dave for statistics, there is still a slight change on redraw() at accept.
+        #self.aw.qmc.redraw(recomputeAllDeltas=True, re_smooth_background=True)  #dave for statistics, there is still a slight change on redraw() at accept.
+        #self.aw.qmc.redraw(recomputeAllDeltas=True, re_smooth_background=True)  #dave for statistics, there is still a slight change on redraw() at accept.
 
     @pyqtSlot()
     def changeDeltaBTfilter(self) -> None:
@@ -2481,6 +2485,7 @@ class CurvesDlg(ArtisanDialog):
     #cancel button
     @pyqtSlot()
     def close(self) -> bool:
+        _log.info('^^^ close')  #dave
         self.closeHelp()
         #save window position (only; not size!)
         settings = QSettings()
@@ -2524,7 +2529,12 @@ class CurvesDlg(ArtisanDialog):
         self.aw.qmc.resetlinecountcaches()
         self.aw.qmc.resetlines()
         self.aw.qmc.updateDeltaSamples()
-        self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True, re_smooth_background=True)
+        
+        #dave self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True, re_smooth_background=True)
+        if self.aw.qmc.statssummary and self.aw.qmc.autotimex:
+            self.aw.qmc.redraw(recomputeAllDeltas=True, re_smooth_background=True)
+        else:
+            self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True, re_smooth_background=True)
         self.aw.clearMessageLine() #clears plotter possible exceptions if Cancel
 
         self.reject()
@@ -2587,6 +2597,11 @@ class CurvesDlg(ArtisanDialog):
         self.aw.cacheCurveVisibilities()
         self.aw.qmc.resetlinecountcaches()
         self.aw.qmc.resetlines()
-        self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True, re_smooth_background=True)
+        #dave self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True, re_smooth_background=True)
+        if self.aw.qmc.statssummary and self.aw.qmc.autotimex:
+            self.aw.qmc.redraw(recomputeAllDeltas=True, re_smooth_background=True)
+        else:
+            self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True, re_smooth_background=True)
+
 #        self.aw.closeEventSettings()
         self.accept()

@@ -66,6 +66,7 @@ from artisanlib.filters import LiveMedian
 from artisanlib.dialogs import ArtisanMessageBox
 from artisanlib.types import SerialSettings
 from artisanlib.types import BTBreakParams
+from artisanlib.types import BbpCache  #dave
 
 # import artisan.plus module
 from plus.util import roastLink
@@ -312,7 +313,7 @@ class tgraphcanvas(FigureCanvas):
         'segmentpickflag', 'segmentdeltathreshold', 'segmentsamplesthreshold', 'stats_summary_rect', 'title_text', 'title_artist', 'title_width',
         'background_title_width', 'xlabel_text', 'xlabel_artist', 'xlabel_width', 'lazyredraw_on_resize_timer', 'mathdictionary_base',
         'ambient_pressure_sampled', 'ambient_humidity_sampled', 'ambientTemp_sampled', 'backgroundmovespeed', 'chargeTimerPeriod', 'flavors_default_value',
-        'fmt_data_ON', 'l_subtitle', 'projectDeltaFlag', 'btbreak_params']
+        'fmt_data_ON', 'l_subtitle', 'projectDeltaFlag', 'btbreak_params','bbpCache']
 
 
     def __init__(self, parent:QWidget, dpi:int, locale:str, aw:'ApplicationWindow') -> None:
@@ -2154,6 +2155,9 @@ class tgraphcanvas(FigureCanvas):
         self.showtimeguide:bool = True
         self.statsmaxchrperline = 30
 
+        # Cache for BBP calculations
+        self.bbpCache: BbpCache = {}  #dave
+
         #EnergyUse
         self.energyunits: Final[List[str]] = ['BTU', 'kJ', 'kCal', 'kWh', 'hph']
         self.powerunits: Final[List[str]] = ['BTU/h', 'kJ/h', 'kCal/h', 'kW', 'hp']
@@ -3022,7 +3026,10 @@ class tgraphcanvas(FigureCanvas):
                         # toggle background if right top corner above canvas where the subtitle is clicked
                         self.background = not self.background
                         self.aw.autoAdjustAxis(background=self.background and (not len(self.timex) > 3))
-                        self.redraw_keep_view(recomputeAllDeltas=True)
+                        if self.statssummary and self.autotimex:
+                            self.redraw(recomputeAllDeltas=True)
+                        else:
+                            self.redraw_keep_view(recomputeAllDeltas=True)
                         return
 
             if event.button == 1 and event.inaxes and self.crossmarker and not self.designerflag and not self.wheelflag and not self.flagon:
@@ -4065,6 +4072,17 @@ class tgraphcanvas(FigureCanvas):
                                 self.aw.updateAUCguide()
                         except Exception as e: # pylint: disable=broad-except
                             _log.exception(e)
+
+                    #dave
+                    # update BBP values
+                    if local_flagstart: # only during recording
+                        try:
+                            if self.timeindex[0] > -1 and len(sample_timex) == self.timeindex[0] + 5:
+                                _log.info(f'== {len(sample_timex)=}, {self.timeindex[0]=}')
+                                self.aw.calcBBPMetrics(checkCache=True)
+                        except Exception as e: # pylint: disable=broad-except
+                            _log.exception(e)
+
 
                     #output ET, BT, ETB, BTB to output program
                     if self.aw.ser.externaloutprogramFlag:
@@ -6642,6 +6660,8 @@ class tgraphcanvas(FigureCanvas):
                 self.errorlog = []
                 self.aw.seriallog = []
 
+            self.aw.resetBBPMetrics()  #dave
+
             self.zoom_follow = False # reset the zoom follow feature
 
             self.specialevents = []
@@ -7969,6 +7989,9 @@ class tgraphcanvas(FigureCanvas):
                     any(self.aw.extraDelta2[:len(self.extratimex)])))
 
     def redraw_keep_view(self, *args:bool, **kwargs:bool) -> None:
+#dave
+        import inspect, os  #dave
+        _log.info("\n      %s:%s called by %s:%s, line %s",os.path.basename(inspect.getframeinfo(inspect.stack()[0][0]).filename), inspect.stack()[0][3], os.path.basename(inspect.getframeinfo(inspect.stack()[1][0]).filename), inspect.stack()[1][3], inspect.getframeinfo(inspect.stack()[1][0]).lineno)  #dave99
         xlimit_min: Optional[float] = None
         xlimit: Optional[float] = None
         ylimit_min: Optional[float] = None
@@ -7991,6 +8014,9 @@ class tgraphcanvas(FigureCanvas):
             self.delta_ax.set_xlim(xlimit_min, xlimit)
             self.delta_ax.set_ylim(zlimit_min, zlimit)
 
+    @pyqtSlot(bool)
+    def redraw_menu_slot(self, _:bool = False) -> None:
+        self.redraw()
     #Redraws data
     # if recomputeAllDeltas, the delta arrays and if smooth the smoothed line arrays are recomputed (incl. those of the background curves)
     # re_smooth_foreground: the foreground curves (incl. extras) will be re-smoothed if called while not recording. During recording foreground will never be smoothed here.
@@ -9433,6 +9459,7 @@ class tgraphcanvas(FigureCanvas):
                                 elif (self.timeindex[6] > 0 and self.extendevents and self.timex[self.timeindex[6]] > self.timex[self.specialevents[E1_last]]):   #if drop exists and last event was earlier
                                     self.E1timex.append(self.timex[self.timeindex[6]]) #time of drop
                                     self.E1values.append(pos) #repeat last event value
+#TODO dave insert bbp values? here
                                 E1x = list(self.E1timex) # E1x:List(Optional[float] while E1timex:List[float], but List is invariant
                                 E1y = list(self.E1values)
                                 if E1_CHARGE is not None and len(E1y)>1 and E1y[0] != E1_CHARGE:
@@ -9926,10 +9953,11 @@ class tgraphcanvas(FigureCanvas):
                             TP_index = self.aw.findTP()
                             self.writestatistics(TP_index)
 
-                    if not self.flagon and self.timeindex[6] and self.statssummary:
-                        self.statsSummary()
-                    else:
-                        self.stats_summary_rect = None
+#TODO dave moved to later for stats summary testing
+#                    if not self.flagon and self.timeindex[6] and self.statssummary:
+#                        self.statsSummary()
+#                    else:
+#                        self.stats_summary_rect = None
 
                     if not self.flagon and self.timeindex[6] and self.AUCshowFlag:
                         self.drawAUC()
@@ -10002,6 +10030,12 @@ class tgraphcanvas(FigureCanvas):
                     # we create here the project line plots to have the accurate time axis after CHARGE
                     dashes_setup = [0.4,0.8,0.1,0.8] # simulating matplotlib 1.5 default on 2.0
 
+#TODO dave moved stats summary here after legend placement
+                    if not self.flagon and self.timeindex[6] and self.statssummary:
+                        self.statsSummary()
+                    else:
+                        self.stats_summary_rect = None
+
                     #watermark image
                     self.placelogoimage()
                 finally:
@@ -10048,6 +10082,7 @@ class tgraphcanvas(FigureCanvas):
                 ############  ready to plot ############
                 self.updateBackground() # update bitlblit backgrounds
                 #######################################
+
 
             except Exception as ex: # pylint: disable=broad-except
                 _log.exception(ex)
@@ -10464,231 +10499,531 @@ class tgraphcanvas(FigureCanvas):
             return f'{prefix}{roastbatchpos}{suffix} {self.__dijstra_to_ascii(QApplication.translate("AddlInfo", "Roast of the Day"))}'
         return '' #return an empty string if roastbatchpos is None
 
-    #add stats summary to graph
+    #add stats summary to graph, called from redraw()
     def statsSummary(self) -> None:
         if self.ax is None:
             return
+
         import textwrap
-        try:
-            skipline = '\n'
-            statstr_segments = []
-            if self.statssummary:
-                cp = self.aw.computedProfileInformation()  # get all the computed profile information
 
-                #Admin Info Section
-                if self.roastbatchnr > 0:
-                    statstr_segments += [self.roastbatchprefix, str(self.roastbatchnr)]
-                if self.title != QApplication.translate('Scope Title', 'Roaster Scope'):
-                    if statstr_segments:
-                        statstr_segments.append(' ')
-                    statstr_segments.append(self.__dijstra_to_ascii(self.title))
-                statstr_segments += [
-                    skipline,
-                    self.roastdate.date().toString(),
-                    ' ',
-                    self.roastdate.time().toString()]
+        # Format a text block of notes for stats display
+        def wrapNotes(notes:Optional[str]) -> str:
+            notestr = ''
+            newline = '\n'
+            notes_lines = textwrap.wrap(notes, width=self.statsmaxchrperline)
+            if len(notes_lines)>0:
+                notestr += f"{newline}{notes_lines[0]}"
+                if len(notes_lines)>1:
+                    notestr += f"{newline}  {notes_lines[1]}"
+                    if len(notes_lines)>2:
+                        notestr += '..'
+            return notestr
 
-                # build roast of the day string
+        def wrapString(in_string:str, line_length:int=self.statsmaxchrperline, max_lines:Optional[int]=None) -> str:
+            res = '\n'.join(['\n'.join(textwrap.wrap(line, line_length,
+                         break_long_words=False, subsequent_indent='  ', max_lines=max_lines, placeholder='..', replace_whitespace=False))
+                         for line in in_string.splitlines() if line.strip() != ''])
+            return f'\n{res}'
+
+        # Create each statistic
+        # Statistic entries are made here and self.summarystats_types[] in statistics.py
+        #TODO some entries have a space before the units and others no space.  Make consistent!
+        def buildStat(n:int) -> str:
+            stattype_str = ''
+            newline = '\n'
+            degree = '\u00b0'
+            charge = QApplication.translate('AddlInfo', 'Charge')
+            begin = QApplication.translate('AddlInfo', 'Drop') if self.aw.bbp_begin == 'DROP' else QApplication.translate('AddlInfo', 'Start')
+            froms = QApplication.translate('AddlInfo', 'from')
+            bottom = QApplication.translate('AddlInfo', 'Bottom')
+            if n == 0:  #Blank line
+                stattype_str = f"{newline}"
+            elif n == 1:  #Title
+                if self.roastbatchnr > 0 or len(self.title) > 0:
+                    stattype_str = f'{newline}'
+                    if self.roastbatchnr > 0:
+                        stattype_str += f'{self.roastbatchprefix}{self.roastbatchnr} '
+                    if len(self.title) > 0:
+                        stattype_str += f'{self.__dijstra_to_ascii(self.title)}'
+            elif n == 2:  #Date and Time
+                stattype_str = f'{newline}{self.roastdate.date().toString()} {self.roastdate.time().toString()}'
+            elif n == 3:  #Roast of the day
                 if self.roastbatchpos is not None and self.roastbatchpos != 0:
-                    statstr_segments += [f'\n{self.roastOfTheDay(self.roastbatchpos)}']
-
+                    stattype_str = f'{newline}{self.roastOfTheDay(self.roastbatchpos)}'
+            elif n == 4:  #Ambient Temp, Hum, Pressure
                 if self.ambientTemp not in [None,0] or self.ambient_humidity not in [None,0] or self.ambient_pressure not in [None,0]:
-                    statstr_segments.append(skipline)
+                    stattype_str = f'{newline}'
                     if self.ambientTemp not in [None,0]:
-                        statstr_segments += [str(int(round(self.ambientTemp))), '\u00b0', self.mode, '  ']
+                        stattype_str += f'{str(int(round(self.ambientTemp)))}{degree}{self.mode}  '
                     if self.ambient_humidity not in [None,0]:
-                        statstr_segments += [str(int(round(self.ambient_humidity))), '%  ']
+                        stattype_str += f'{str(int(round(self.ambient_humidity)))}%  '
                     if self.ambient_pressure not in [None,0]:
-                        statstr_segments += [str(float2float(self.ambient_pressure,2)), 'hPa']
+                        stattype_str += f'{str(float2float(self.ambient_pressure,2))}hPa'
+            elif n == 5:  #Roaster, RPM
                 if self.roastertype or self.drumspeed:
-                    statstr_segments.append(skipline)
+                    stattype_str = f'{newline}'
                     if self.roastertype:
-                        statstr_segments += [self.roastertype, ' ']
+                        stattype_str += f'{self.roastertype} '
                     if self.drumspeed:
-                        statstr_segments += ['(', self.drumspeed, QApplication.translate('Label', 'RPM'), ')']
-
-                #Green Beans Info Section
-                statstr_segments.append(skipline)
+                        stattype_str += f"({self.drumspeed}{QApplication.translate('Label', 'RPM')})"
+            elif n == 6:  #Bean
                 if self.beans is not None and len(self.beans)>0:
-                    statstr_segments.append(skipline)
-                    beans_lines = textwrap.wrap(self.beans, width=self.statsmaxchrperline)
-                    statstr_segments.append(beans_lines[0])
-                    if len(beans_lines)>1:
-                        statstr_segments += [skipline, ' ', beans_lines[1]]
-                        if len(beans_lines)>2:
-                            statstr_segments.append('..')
-
+                    stattype_str = wrapNotes(self.beans)
+            elif n == 7:  #Screen Size
                 if self.beansize_min or self.beansize_max:
-                    statstr_segments += ['\n',  self.__dijstra_to_ascii(QApplication.translate('AddlInfo', 'Screen Size')), ': ']
+                    stattype_str += f"{newline}{self.__dijstra_to_ascii(QApplication.translate('AddlInfo', 'Screen Size'))}: "
                     if self.beansize_min:
-                        statstr_segments.append(str(int(round(self.beansize_min))))
+                        stattype_str += f'{int(round(self.beansize_min))}'
                     if self.beansize_max:
                         if self.beansize_min:
-                            statstr_segments.append('/')
-                        statstr_segments.append(str(int(round(self.beansize_max))))
-
+                            stattype_str += '/'
+                        stattype_str += f'{int(round(self.beansize_max))}'
+            elif n == 8:  #Density Green
                 if self.density[0]!=0 and self.density[2] != 0:
-                    statstr_segments += ['\n', QApplication.translate('AddlInfo', 'Density Green'), ': ',
-                        str(float2float(self.density[0]/self.density[2],2)), ' ', self.density[1], '/', self.density[3]]
+                    stattype_str += (f"{newline}{QApplication.translate('AddlInfo', 'Density Green')}: "
+                        f'{float2float(self.density[0]/self.density[2],2)}'
+                        f' {self.density[1]}/{self.density[3]}')
+            elif n == 9:  #Moisture Green
                 if self.moisture_greens:
-                    statstr_segments += ['\n', QApplication.translate('AddlInfo', 'Moisture Green'), ': ', str(float2float(self.moisture_greens,1)), '%']
+                    stattype_str += f"{newline}{QApplication.translate('AddlInfo', 'Moisture Green')}: {float2float(self.moisture_greens,1)}%"
+            elif n == 10:  #Batch Size
                 if self.weight[0] != 0:
                     if self.weight[2] == 'g':
-                        w =str(float2float(self.weight[0],0))
+                        w = f'{float2float(self.weight[0],0)}'
                     else:
-                        w = str(float2float(self.weight[0],2))
-                    statstr_segments += ['\n', self.__dijstra_to_ascii(QApplication.translate('AddlInfo', 'Batch Size')) , ': ', w, self.weight[2], ' ']
+                        w = f'{float2float(self.weight[0],2)}'
+                    stattype_str += (f"{newline}{self.__dijstra_to_ascii(QApplication.translate('AddlInfo', 'Batch Size'))}: "
+                        f'{w}{self.weight[2]} ')
                     if self.weight[1]:
-                        statstr_segments += ['(-', str(float2float(self.aw.weight_loss(self.weight[0],self.weight[1]),1)), '%)']
-
-                # Roast Info Section
-                statstr_segments.append(skipline)
+                        stattype_str += f'(-{float2float(self.aw.weight_loss(self.weight[0],self.weight[1]),1)}%)'
+            elif n == 11:  #Density Roasted
                 roasted_density = (self.aw.qmc.density_roasted[0] if self.aw.qmc.density_roasted[0] != 0 else cp.get('roasted_density', 0))
                 if roasted_density:
-                    statstr_segments += ['\n', self.__dijstra_to_ascii(QApplication.translate('AddlInfo', 'Density Roasted')), ': ', str(roasted_density),
-                        ' ', self.density_roasted[1], '/', self.density_roasted[3]]
+                    stattype_str += (f"{newline}{self.__dijstra_to_ascii(QApplication.translate('AddlInfo', 'Density Roasted'))}: "
+                        f'{roasted_density} {self.density_roasted[1]}/{self.density_roasted[3]}')
+            elif n == 12:  #Moisture Roasted
                 if self.moisture_roasted:
-                    statstr_segments += ['\n', self.__dijstra_to_ascii(QApplication.translate('AddlInfo', 'Moisture Roasted')), ': ', str(float2float(self.moisture_roasted,1)), '%']
-                if self.whole_color > 0:
-                    statstr_segments += ['\n', QApplication.translate('AddlInfo', 'Whole Color'), ': #', str(self.whole_color), ' ',
-                        str(self.color_systems[self.color_system_idx])]
+                    stattype_str += (f"{newline}{self.__dijstra_to_ascii(QApplication.translate('AddlInfo', 'Moisture Roasted'))}: "
+                        f'{float2float(self.moisture_roasted,1)}%')
+            elif n == 13:  #Ground Color
                 if self.ground_color > 0:
-                    statstr_segments += ['\n', QApplication.translate('AddlInfo', 'Ground Color'), ': #', str(self.ground_color), ' ',
-                        str(self.color_systems[self.color_system_idx])]
+                    stattype_str += (f"{newline}{QApplication.translate('AddlInfo', 'Ground Color')}: #"
+                        f'{self.ground_color} {self.color_systems[self.color_system_idx]}')
+            elif n == 14:  #Energy
                 if 'BTU_batch' in cp and cp['BTU_batch']:
-                    statstr_segments += ['\n', QApplication.translate('AddlInfo', 'Energy'), ': ',
-                        str(float2float(self.convertHeat(cp['BTU_batch'],0,3),2)), 'kWh']
+                    stattype_str += (f"{newline}{QApplication.translate('AddlInfo', 'Energy')}: "
+                        f"{float2float(self.convertHeat(cp['BTU_batch'],0,3),2)}kWh")
                     if 'BTU_batch_per_green_kg' in cp and cp['BTU_batch_per_green_kg']:
-                        statstr_segments += [' (', str(float2float(self.convertHeat(cp['BTU_batch_per_green_kg'], 0,3), 2)), 'kWh/kg)']
+                        stattype_str += f" ({float2float(self.convertHeat(cp['BTU_batch_per_green_kg'], 0,3), 2)}kWh/kg)"
+            elif n == 15:  #CO2
                 if 'CO2_batch' in cp and cp['CO2_batch']:
-                    statstr_segments += ['\n', QApplication.translate('AddlInfo', 'CO2'), ': ', str(float2float(cp['CO2_batch'],0)),'g']
+                    stattype_str += f"{newline}{QApplication.translate('AddlInfo', 'CO2')}: {float2float(cp['CO2_batch'],0)}g"
                     if 'CO2_batch_per_green_kg' in cp and cp['CO2_batch_per_green_kg']:
-                        statstr_segments += [' (', str(float2float(cp['CO2_batch_per_green_kg'],0)), 'g/kg)']
+                        stattype_str += f" ({float2float(cp['CO2_batch_per_green_kg'],0)}g/kg)"
+            elif n == 16:  #AUC
                 if cp['AUC']:
-                    statstr_segments += ['\n', QApplication.translate('AddlInfo', 'AUC'), ': ', str(cp['AUC']), 'C*min [', str(cp['AUCbase']), '\u00b0', self.mode, ']']
-
-                def render_notes(notes:Optional[str], statstr_segments:List[str]) -> None:
-                    if notes is not None and len(notes)>0:
-                        notes_lines = textwrap.wrap(notes, width=self.statsmaxchrperline)
-                        if len(notes_lines)>0:
-                            statstr_segments += [skipline, notes_lines[0]]
-                            if len(notes_lines)>1:
-                                statstr_segments += [skipline, '  ', notes_lines[1]]
-                                if len(notes_lines)>2:
-                                    statstr_segments.append('..')
-
-                render_notes(self.roastingnotes,statstr_segments)
-
+                    stattype_str += (f"{newline}{QApplication.translate('AddlInfo', 'AUC')}: "
+                        f"{cp['AUC']}C*min [{cp['AUCbase']}{degree}{self.mode}]")
+            elif n == 17:  #Notes (Roast)
+                if self.roastingnotes is not None and len(self.roastingnotes)>0:
+                    stattype_str = wrapNotes(self.roastingnotes)
+            elif n == 18:  #Cupping Score
                 cupping_score, cupping_all_default = self.aw.cuppingSum(self.flavors)
                 if not cupping_all_default:
-                    statstr_segments += ['\n', QApplication.translate('HTML Report Template', 'Cupping:'), ' ', str(float2float(cupping_score))]
+                    stattype_str += (f"{newline}{QApplication.translate('HTML Report Template', 'Cupping:')} "
+                        f'{float2float(cupping_score)}')
+            elif n == 19:  #Notes (Cupping)
+                if self.cuppingnotes is not None and len(self.cuppingnotes)>0:
+                    stattype_str = wrapNotes(self.cuppingnotes)
+            elif n == 20:  #Weight Green
+                if self.weight[0] != 0:
+                    if self.weight[2] == 'g':
+                        w = f'{float2float(self.weight[0],0)}'
+                    else:
+                        w = f'{float2float(self.weight[0],2)}'
+                    stattype_str += (f"{newline}{self.__dijstra_to_ascii(QApplication.translate('AddlInfo', 'Weight Green'))}: "
+                        f'{w}{self.weight[2]} ')
+            elif n == 21:  #Weight Roasted
+                if self.weight[1] != 0:
+                    if self.weight[2] == 'g':
+                        w = f'{float2float(self.weight[1],0)}'
+                    else:
+                        w = f'{float2float(self.weight[1],2)}'
+                    stattype_str += (f"{newline}{self.__dijstra_to_ascii(QApplication.translate('AddlInfo', 'Weight Roasted'))}: "
+                        f'{w}{self.weight[2]} ')
+            elif n == 22:  #Weight Loss
+                if self.weight[0] != 0 and self.weight[1] != 0:  # noqa: SIM102
+                    stattype_str += f"{newline}{QApplication.translate('AddlInfo', 'Weight Loss')} -{float2float(self.aw.weight_loss(self.weight[0],self.weight[1]),1)}%"
+            elif n == 23:  # BBP total time
+                if self.aw.bbp_totaltime:
+                    stattype_str += f"{newline}{QApplication.translate('AddlInfo', 'BBP Total Time')} {stringfromseconds(self.aw.bbp_totaltime)}"
+            elif n == 24:  # BBP bottom temp (BT)
+                if self.aw.bbp_bottomtemp:
+                    stattype_str += f"{newline}{QApplication.translate('AddlInfo', 'BBP Bottom Temp')} {self.aw.bbp_bottomtemp:.1f}{self.aw.qmc.mode}"
+            elif n == 25:  # BBP summary
+                if self.aw.bbp_totaltime:  # noqa: SIM102
+                    stattype_str += f"{newline}{bottom} {self.aw.bbp_bottomtemp:.0f}{degree}{self.mode}, "
+                    stattype_str += f"{stringfromseconds(self.aw.bbp_begin2bottomtime,False)} {froms} {begin}"
+                    stattype_str += f"{newline}{charge} {self.temp2[self.timeindex[0]]:.0f}{degree}{self.mode}, "
+                    stattype_str += f"{stringfromseconds(self.aw.bbp_bottom2chargetime,False)} {froms} {bottom}"
+            elif n == 26:  # BBP summary long
+                if self.aw.bbp_totaltime:  # noqa: SIM102
+                    seconds = int(math.floor(self.aw.bbp_begin2bottomtime + 0.5))
+                    d, m = divmod(seconds, 60)
+                    bbp_str = f"{bottom} temp@{self.aw.bbp_bottomtemp:.0f}{degree}{self.mode} - "
+                    bbp_str += f"{d}min {m}sec {froms} {begin} to bottom temp"
+                    stattype_str += wrapString(bbp_str)
+                    bbp_str = f"{newline}{charge} temp: {self.temp2[self.timeindex[0]]:.0f}{degree}{self.mode} - "
+                    bbp_str += f"{self.aw.bbp_bottom2chargetime:.0f} {froms} {bottom} temp to charge"
+                    stattype_str += wrapString(bbp_str)
+            elif n == 27:  # BBP summary compact
+                if self.aw.bbp_totaltime:  # noqa: SIM102
+                    startingtemp = self.aw.bbp_dropbt if self.aw.bbp_begin == 'DROP' else self.temp2[0]
+                    stattype_str += f"{newline}{startingtemp:.0f}{degree}{self.mode} "
+                    stattype_str += f"({stringfromseconds(self.aw.bbp_begin2bottomtime,False)}) "
+                    stattype_str += f"{self.aw.bbp_bottomtemp:.0f}{degree}{self.mode} "
+                    stattype_str += f"({stringfromseconds(self.aw.bbp_bottom2chargetime,False)}) "
+                    stattype_str += f"{self.temp2[self.timeindex[0]]:.0f}{degree}{self.mode}"
+#TODO add more stats  MET, CM, RoR, Profile quality, RoR at FCs, Temp Rise FCs to DROP, RMSE BT (Bckgd), BBP Metrics (New))
 
-                render_notes(self.cuppingnotes,statstr_segments)
 
-                # Trim the long lines
-                trimmedstatstr_segments:List[str] = []
-                for l in ''.join(statstr_segments).split('\n'):
-                    if trimmedstatstr_segments:
-                        trimmedstatstr_segments.append('\n')
-                    trimmedstatstr_segments.append(l[:self.statsmaxchrperline])
-                    if len(l) > self.statsmaxchrperline:
-                        trimmedstatstr_segments.append('..')
-                statstr = ''.join(trimmedstatstr_segments)
+            # Trim the long lines
+            trimmedstatype_segments:List[str] = []
+            for line in stattype_str.split('\n'):
+                if trimmedstatype_segments:
+                    trimmedstatype_segments.append('\n')
+                trimmedstatype_segments.append(line[:self.statsmaxchrperline])
+                if len(line) > self.statsmaxchrperline:
+                    trimmedstatype_segments.append('..')
 
-                #defaults appropriate for default font
-                prop = self.aw.mpl_fontproperties.copy()
-                prop_size = 'small'
-                prop.set_size(prop_size)
-                fc = self.palette['statsanalysisbkgnd']  #fill color
-                tc = self.aw.labelBorW(fc)                   #text color
-                a = self.alpha['statsanalysisbkgnd']     #alpha
-                ls = 1.7                     #linespacing
-                if self.graphfont == 9:   #Dijkstra
-                    ls = 1.2
-                border = 10                  #space around outside of text box (in seconds)
-                margin = 4                   #text to edge of text box
+            return ''.join(trimmedstatype_segments)
 
-                #adjust for other fonts
-                if self.graphfont == 1:   #Humor
-                    prop_size = 'x-small'
-                    prop.set_size(prop_size)
-                if self.graphfont == 2:   #Comic
-                    ls = 1.2
-                if self.graphfont == 9:   #Dijkstra
-                    ls = 1.2
+        # Create the SummaryStats box
+            # NOTES
+            # self.ax.get_xlim() "x-axis view limits".  In other words, x-axis min and max values relative to
+            #   the start of the curve, thus they could be negative.
+            #
+            # self.endofx is the max, or right side, x-axis value
+            # self.startofx is the number of seconds from start of curve to the left side x-axis (can be negative)
+            #
+            # statstextboxBounds() takes x,y positions in data coordinates, returns in data coordinates relative to start of curve
+            # eventtextBounds() takes x,y positions in data coordinates, returns in data coordinates
+            # legendboxbounds() returns legend bounds in data coordinates x relative to start of curve, y relative to self.ylimit_min
+            #
+            # time0 is number of seconds from start of curve or x-axis min, whichever is earlier, to CHARGE
+            #
+            # patch_originX is seconds from start of curve to the origin of the patch
+            #
+            # eventtext_end is seconds from left min x-axis to right side x of the event text
+            #
+            # stats_summary_rect() is a patches.Rectangle whose origin is the lower left corner
+            # text is a self.ax.text() whose origin is the upper left corner
+            #
 
-                if self.legendloc != 1:
-                    # legend not in upper right
-                    statsheight = self.ylimit - (0.08 * (self.ylimit - self.ylimit_min)) # standard positioning
-                else:
-                    # legend in upper right
-                    statsheight = self.ylimit - (0.13 * (self.ylimit - self.ylimit_min))
+        try:
+            t0 = libtime.perf_counter() #dave
+            t1 = t2 = t3 = t4 = t5 = t6 = t7 = t8 = 0.0
+            newline = '\n'
+            statstr_segments = []
+            cp = self.aw.computedProfileInformation()  # get all the computed profile information
 
-                if self.timeindex[0] != -1:
-                    start = self.timex[self.timeindex[0]]
-                else:
-                    start = 0
+            # build the summary stats string
+            for _,statitem in enumerate(self.aw.summarystatstypes):
+                statstr_segments.append(buildStat(statitem))
+            statstr = ''.join(statstr_segments)
+            if len(statstr) > 1 and statstr[0] == newline:
+                statstr = statstr[1:]
 
+            # font properties for event annos
+            event_prop = self.aw.mpl_fontproperties.copy()
+            event_prop.set_size('x-small')  # to match the prop size used for event annos in redraw())
+
+            # font properties for Summary Statistics
+            prop = self.aw.mpl_fontproperties.copy()
+            font_sizes = ['x-small','x-small','small','medium','large']
+#            _log.info(f'*** *** {self.aw.summarystatsfontsize=}')
+            prop_size = font_sizes[self.aw.summarystatsfontsize]
+            prop.set_size(prop_size)
+            fc = self.palette['statsanalysisbkgnd']  #fill color
+            tc = self.aw.labelBorW(fc)               #text color
+            a = self.alpha['statsanalysisbkgnd']     #background alpha
+#TODO review all the linespacing values and see how they look on mac as well as windows
+#TODO review all the font_bleed values and see how they look on mac as well as windows
+            ls = 1.7                                 #linespacing
+            ls = 1.5                                 #linespacing
+
+            # sizing factor used because some fonts bleed over the textbox bounds returned by MPL
+            font_bleed = 1.0
+            # adjustments for other fonts
+            if self.graphfont == 1:   #Humor
+                font_bleed = 1.04
+            if self.graphfont == 2:   #Comic
+                ls = 1.2
+            if self.graphfont == 4:   #Source Han Sans CN
+                font_bleed = 1.01
+            if self.graphfont == 9:   #Dijkstra
+                ls = 1.2
+                font_bleed = 1.02 #1.009
+
+            # size borders and margins
+            borderX = 0.007 * (self.ax.get_xlim()[1] - self.ax.get_xlim()[0])  # space around outside of patch rect (in seconds)
+            borderY = max( 11, 0.015 * (self.ax.get_ylim()[1] - self.ax.get_ylim()[0]) ) # space around outside of patch rect (in degrees)
+            marginX = 4.0          # text to edge of patch rect (in seconds)
+            marginX_factor = 0.05  #scaling factor to size relative to stats_textbox_width
+            marginY = 4.0          # text to edge of patch rect (in degrees)
+
+            # geometry in data (graph) coordinates
+            patch_originX:float = 0  #lower left
+            patch_originY = self.ylimit_min + borderY
+            patch_upperY = self.ylimit - borderY # standard positioning
+            patch_height = patch_upperY -self.ylimit_min - borderY
+            avail_height = patch_height - 2*marginY
+
+            # number of seconds from start of curve or x-axis min, whichever is earlier, to CHARGE
+            if self.timeindex[0] != -1:
+                time0 = self.timex[self.timeindex[0]]
+                #TODO look at potential issues where the timex values before CHARGE are negative
+                # correct for the case where the curve starts after the graph origin
+                if self.ax.get_xlim()[0] < 0:
+                    time0 = self.timex[self.timeindex[0]] - self.ax.get_xlim()[0]
+            else:
+                time0 = 0
+
+            # set the right side x value of the patch rect
+            _,_,stats_textbox_width,_ = self.statstextboxBounds(time0,self.ylimit,statstr,ls,prop,fc)
+            marginX = stats_textbox_width * marginX_factor
+#            _log.info("1 stats_textbox_width= %s",stats_textbox_width)  #dave
+            t1 = libtime.perf_counter() #dave
+            # this presumes the origin of the event label is on the event, it is independent of the actual label position
+            patch_originX = time0 + min(self.ax.get_xlim()[0],0) + self.endofx - stats_textbox_width - borderX - 2*marginX
+            #_log.info(f'++++ {self.endofx=}, {self.ax.get_xlim()[1]=}')  #dave
+
+            eventtext_width = eventtext_start = eventtext_end = 0. #TODO remove the this line  #dave
+            legend_ymin = legend_ymax = 0. #TODO remove this line
+            adjust = 0.
+
+            if self.autotimex:
                 # position the stats summary relative to the right hand edge of the graph
                 # when in BBP mode the graph will end at CHARGE, so we must look for the CHARGE annotation instead of DROP.
-                if not self.autotimex or self.autotimexMode != 2:
+                if self.autotimexMode in {0,1}:  #Roast, BBP+Roast
                     event_label = QApplication.translate('Scope Annotation','DROP {0}').replace(' {0}','')
-                else:
+                else:  #BBP
                     event_label = QApplication.translate('Scope Annotation','CHARGE')
-                _,_,eventtext_end = self.eventtextBounds(event_label,start,statsheight,ls,prop,fc)
-                stats_textbox_bounds = self.statstextboxBounds(self.ax.get_xlim()[1]+border,statsheight,statstr,ls,prop,fc)
-                stats_textbox_width = stats_textbox_bounds[2]
+
+                # find right side of the event label
+                _,_,eventtext_end = self.eventtextBounds(time0,patch_upperY,event_label,ls,event_prop,fc)
+#                _log.info("1 eventtext_end= %s, time0= %s",eventtext_end, time0)  #dave
+                t2 = libtime.perf_counter() #dave
+                self.endofx = eventtext_end + stats_textbox_width + 2*borderX + 2*marginX # provide room for the stats
+                self.xaxistosm(redraw=False)  # recalculate the x axis
+
+#TODO display bbp only- works for 0529, does not work properly for 0522 or 0519
+                prev_stats_textbox_width:float = 0
+                #set the maximum number of iterations
+                for _ in range(2, 20):
+                    # this presumes the origin of the event label is on the event, it is independent of the actual label position
+                    eventtext_width,eventtext_start,eventtext_end = self.eventtextBounds(time0,self.ylimit,event_label,ls,event_prop,fc)
+
+                    _,_,stats_textbox_width,_ = self.statstextboxBounds(0,self.ylimit,statstr,ls,prop,fc)
+                    marginX = stats_textbox_width * marginX_factor #0.02  #TODO  Note this is set to a scaled value in two places...bad form
+
+                    # position the stats summary relative to the right edge of the drop text
+                    #TODO check boundary conditions so none of these values are bad.
+                    #TODO works pretty well, needs more test, on CHARGE there is more gap from event anno to textbox 0519 and 0529
+                    if self.ax.get_xlim()[0] < 0 and time0 > self.timex[self.timeindex[0]]:
+                        adjust = time0 - self.timex[self.timeindex[0]]
+                    else:
+                        adjust = 0.
+
+                    # instead of using eventtext_end, how about drop (or charge for bbp)?
+                    self.endofx = adjust + eventtext_end + stats_textbox_width + 2*borderX + 2*marginX  #provide room for the stats
+                    self.endofx = adjust + max(eventtext_width,eventtext_end) + stats_textbox_width + 2*borderX + 2*marginX  #provide room for the stats
+
+                    self.xaxistosm(redraw=False)
+
+                    #break the loop if it looks like stats_textbox_width has converged
+                    if abs(prev_stats_textbox_width - stats_textbox_width) < .2:
+                        break
+                    prev_stats_textbox_width = stats_textbox_width
+
+                patch_originX = self.timex[self.timeindex[0]] + self.endofx - stats_textbox_width - borderX - 2*marginX
+
+                #TODO with a simple legend, ctrl-chift-a locate in upper right, does not redraw until OK.  Confused even me. Moved to later in redraw()
+                # adjust the stats size and position if the legend overlaps above or below.
+                _,legend_xmax,legend_ymin,legend_ymax = self.legendboxbounds()
+                # legend overlaps above the stats
+                if legend_xmax > patch_originX and legend_ymax > patch_upperY:
+                    patch_upperY = legend_ymin - borderY
+                    patch_height = patch_upperY - self.ylimit_min - borderY
+                    avail_height = patch_height - borderY - 2*marginY
+                    _log.info(f'legend {patch_upperY=}, {avail_height=}, {self.legendloc}')  #dave
+                # legend overlaps below the stats
+                if legend_xmax > patch_originX and legend_ymin < self.ylimit_min + borderY:
+                    patch_originY = legend_ymax + borderY
+                    patch_upperY = self.ax.get_ylim()[1] - borderY
+                    patch_height = patch_upperY - patch_originY
+                    avail_height = patch_height - 2*marginY
+
+            # adjust height of the patch rect
+            linecount = statstr.count(newline) + 1
+            for i in range(linecount, 0, -1):
+                stats_textbox_bounds = self.statstextboxBounds(self.ax.get_xlim()[1]+borderX,patch_upperY,statstr,ls,prop,fc)
                 stats_textbox_height = stats_textbox_bounds[3]
-                pos_x = self.ax.get_xlim()[1]-stats_textbox_width-border
+                #_log.info('i= %s, stats_textbox_height= %s, avail_height= %s, linecount= %s', i, stats_textbox_height, avail_height, linecount) #dave
+                stats_textbox_height = stats_textbox_height * font_bleed
+                #_log.info('adjusted stats_textbox_height= %s', stats_textbox_height) #dave
 
-                if self.autotimex:
-                    self.endofx = eventtext_end + stats_textbox_width + 2*border # provide room for the stats
-                    self.xaxistosm(redraw=False)  # recalculate the x axis
+                # Exit the loop when the avail_height exceeds the current stats_textbox_height
+                if avail_height > stats_textbox_height:
+                    line_height = stats_textbox_height/(linecount + 1)  #unused
+                    if True or i == linecount:  #TODO remove conditional
+                        _log.info(f'-+-  {stats_textbox_height=}, {patch_upperY=}, {patch_height=}')
+                        #patch_height = stats_textbox_height * font_bleed + 2*marginY
+                        patch_height = stats_textbox_height + 2*marginY
+                        patch_originY = max(patch_originY, patch_upperY - patch_height)  #dave!!
+                        #patch_originY = patch_upperY - stats_textbox_height * font_bleed - 2*marginY  #dave!!
+                    _log.info(f'{linecount=}, {line_height=}, {marginY=}')  #dave
+                    break
 
-                    prev_stats_textbox_width:float = 0
-                    #set the maximum number of iterations
-                    for _ in range(2, 20):
-                        _,_,eventtext_end = self.eventtextBounds(event_label,start,statsheight,ls,prop,fc)
-                        stats_textbox_bounds = self.statstextboxBounds(self.ax.get_xlim()[1]+border,statsheight,statstr,ls,prop,fc)
-                        stats_textbox_width = stats_textbox_bounds[2]
-                        stats_textbox_height = stats_textbox_bounds[3]
+                # Truncate the stats if they run below the patch rect and add a marker to indicate there are hidden stats
+                # Find the index of each newline character using regex
+                match = re.finditer(newline, statstr)
+                indices = [m.start() for m in match]
+                if len(indices) > i-1:
+                    trunc_index = indices[i-1]
+                    # if the last line to be displayed is full width shrink it by one character to leave room for the indicator
+                    if len(statstr[indices[i-2]:indices[i-1]]) == self.statsmaxchrperline +1:
+                        trunc_index = trunc_index - 1
+                    # Truncate the string just before newline character and add a marker to indicate the stats were truncated
+                    if self.graphfont == 9:   #Dijkstra
+                        statstr = statstr[:trunc_index] + '*'
+                    else:
+                        statstr = statstr[:trunc_index] + uchr(187) # '»'
 
-                        # position the stats summary relative to the right edge of the drop text
-                        self.endofx = eventtext_end + stats_textbox_width + 2*border #provide room for the stats
-                        self.xaxistosm(redraw=False)
-                        #break the loop if it looks like stats_textbox_width has converged
-                        if abs(prev_stats_textbox_width - stats_textbox_width) < .2:
-                            break
-                        prev_stats_textbox_width = stats_textbox_width
+            _log.info('i= %s, stats_textbox_height= %s, avail_height= %s, linecount= %s', i, stats_textbox_height, avail_height, linecount) #dave
+            t6 = libtime.perf_counter() #dave
 
-                    pos_x = eventtext_end + border + start
+            _log.info("stats_textbox_width=%s, marginX=%s, total width=%s", stats_textbox_width,marginX,stats_textbox_width+2*marginX)  #dave
+            pos_y = self.ylimit - borderY - marginY
+            _log.info('self.ylimit - self.ylimit_min -20 aka pos_y= %s',self.ylimit - self.ylimit_min -20)  #dave
 
-                pos_y = statsheight
-                self.stats_summary_rect = patches.Rectangle(
-                        (pos_x-margin,pos_y - (stats_textbox_height + 2*margin)),
-                        stats_textbox_width+2*margin,
-                        stats_textbox_height+3*margin,
-                        linewidth=0.5,
-                        edgecolor=self.palette['grid'],
-                        facecolor=fc,
-                        fill=True,
-                        alpha=a,
-                        zorder=10,
-                        path_effects=[])
-                self.ax.add_patch(self.stats_summary_rect)
+            # the patch is used as background to allow for transparency
+            self.stats_summary_rect = patches.Rectangle(
+                    (patch_originX,                   #x
+                    patch_originY),                   #y
+                    stats_textbox_width + 2*marginX,  #width
+                    patch_height,                     #height
+                    linewidth=0.5,
+                    #linewidth=1,  #TODO
+                    edgecolor=self.palette['grid'],
+                    #edgecolor='#ff0000',  #TODO get rid of the red border
+                    facecolor=fc,
+                    fill=True,
+                    alpha=a,
+                    zorder=10,
+                    path_effects=[])
+            self.ax.add_patch(self.stats_summary_rect)
 
-                text = self.ax.text(pos_x, pos_y, statstr, verticalalignment='top',linespacing=ls,
-                    fontsize=prop_size,
-                    color=tc,zorder=11,path_effects=[])
-                text.set_in_layout(False)
+            text = self.ax.text(
+                patch_originX + marginX,   #x
+                patch_upperY - marginY,    #y
+                statstr,                   #text string
+                verticalalignment='top',
+                linespacing=ls,
+                fontsize=prop_size,
+#                    backgroundcolor='y',
+                color=tc,zorder=11,
+                path_effects=[])
+            text.set_in_layout(False)
+
+##dave debug
+#            patch_originX_ = stringfromseconds(patch_originX)
+#            patch_originY_ = patch_originY
+#            stats_textbox_width_ = stringfromseconds(stats_textbox_width)
+#            self_ax_get_xlim_0_ = stringfromseconds(self.ax.get_xlim()[0])
+#            self_ax_get_xlim_1_ = stringfromseconds(self.ax.get_xlim()[1])
+#            time0_ = stringfromseconds(time0)
+#            self_endofx_ = stringfromseconds(self.endofx)
+#            self_startofx_ = stringfromseconds(self.startofx)
+#            eventtext_end_ = stringfromseconds(eventtext_end)
+#            eventtext_start_ = stringfromseconds(eventtext_start)
+#            eventtext_width_ = stringfromseconds(eventtext_width)
+#            borderX_ = stringfromseconds(borderX)
+#            marginX_ = stringfromseconds(marginX)
+#            charge_ = stringfromseconds(self.timex[self.timeindex[0]])
+#            charge = self.timex[self.timeindex[0]]
+#            drop_ = stringfromseconds(self.timex[self.timeindex[6]])
+#            drop = self.timex[self.timeindex[6]]
+#            adjust_ = stringfromseconds(adjust)
+#
+#            _log.info(f'{self.aw.curFile}')
+#            _log.info(f'{self.ax.get_xlim()[0]=:.0f}, {self.ax.get_xlim()[1]=:.0f}')  #dave
+#            _log.info(f'{time0=:.0f}, {charge=:.0f}, {drop=:.0f}')
+#            _log.info(f'{adjust=:.0f}')
+#            _log.info(f'{self.endofx=:.0f}, {self.startofx=:.0f}')  #dave
+#            _log.info(f'{eventtext_end=:.0f}, {eventtext_start=:.0f}, {eventtext_width=:.0f}')  #dave
+#            _log.info('    eventtext start ref(0522) 558, ref(0529) 995')
+#            _log.info(f'{stats_textbox_width=:.0f}, {borderX=:.0f}, {marginX=:.0f}')  #dave
+#            _log.info(f'{patch_originX=:.0f}')  #dave
+#            _log.info(' ')
+#            _log.info(f'{self_ax_get_xlim_0_=}, {self_ax_get_xlim_1_=}')  #dave
+#            _log.info(f'{time0_=}, {charge_=}, {drop_=}')
+#            _log.info(f'{adjust_=}')
+#            _log.info(f'{self_endofx_=}, {self_startofx_=}' )  #dave
+#            _log.info(f'{eventtext_end_=}, {eventtext_start_=}, {eventtext_width_=}')  #dave
+#            _log.info(f'    eventtext start ref(0522) {stringfromseconds(558)}, ref(0529) {stringfromseconds(995)}')
+#            _log.info(f'{stats_textbox_width_=}, {borderX=}, {marginX=}')  #dave
+#            _log.info(f'{patch_originX_=}')
+#            _log.info(f'{patch_originY_=:.1f}')  #dave
+#            _log.info(f'{patch_upperY=}, {patch_height=}')
+#            _log.info(' ')
+#            _log.info(f'{legend_ymin=}, {legend_ymax=}')
+#            _log.info(f'{self.ax.get_ylim()=}')
+#            _log.info(f'{self.ylimit_min=},{self.ylimit=}')
+
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
             self.adderror((QApplication.translate('Error Message','Exception:') + ' statsSummary() {0}').format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
+    def legendboxbounds(self) -> Tuple[float,float,float,float]:
+        try:
+            _log.info(f'From legendboxbounds, {self.legendloc=}, {self.ax is not None}, {self.legend is not None}')  #dave
+            if self.legendloc > 0 and self.ax is not None and self.legend is not None:
+                # Get the legend bounding box in axes-relative coordinates
+                legend_bb_axes = self.legend.get_window_extent().transformed(self.ax.transAxes.inverted())
+
+                # Get the data range
+                x_min, x_max = self.ax.get_xlim()
+                y_min, y_max = self.ax.get_ylim()
+
+                # Calculate the width and height of the data range
+                x_range = x_max - x_min
+                y_range = y_max - y_min
+
+                # Convert legend bounding box coordinates from axes-relative to data coordinates
+                # Relative to the start of the curve
+                xmin = x_min + x_range * legend_bb_axes.x0
+                xmax = x_min + x_range * legend_bb_axes.x1
+                ymin = y_min + y_range * legend_bb_axes.y0
+                ymax = y_min + y_range * legend_bb_axes.y1
+
+                _log.info(f'Legend {legend_bb_axes=}')
+                _log.info(f'Legend {int(x_min)=} {stringfromseconds(x_min)}, {int(x_max)=} {stringfromseconds(x_max)}')  #dave
+                _log.info(f'Legend {int(y_min)=}, {int(y_max)=}')  #dave
+                _log.info(f'Legend {int(x_range)=} {stringfromseconds(x_range)}, {int(y_range)=}')  #dave
+                _log.info(f'Legend {int(xmin)=} {stringfromseconds(xmin)}, {int(xmax)=} {stringfromseconds(xmax)}')  #dave
+                _log.info(f'Legend {int(ymin)=}, {int(ymax)=}')  #dave
+
+                return xmin,xmax,ymin,ymax
+        except Exception as e:  # pylint: disable=broad-except
+            _log.exception(e)
+        return 0.,0.,0.,0.
+
     def statstextboxBounds(self, x_pos:float, y_pos:float, textstr:str, ls:float, prop:'FontProperties', fc:str) -> Tuple[float,float,float,float]:
+#        _log.info("** x_pos=%s, y_pos=%s, ls=%s, fc=%s",x_pos,y_pos,ls,fc)  #dave
         if self.ax is None:
-            return 0,0,0,0
+            return 0.,0.,0.,0.
 
         with warnings.catch_warnings():
             # MPL will generate warnings for missing glyphs in some fonts
@@ -10704,26 +11039,32 @@ class tgraphcanvas(FigureCanvas):
             if r is not None:
                 t.update_bbox_position_size(r)
                 bb = t.get_window_extent(renderer=r) # bounding box in display space
-                bbox_data = self.ax.transData.inverted().transform(bb)
+                bbox_data = self.ax.transData.inverted().transform(bb) # bounding box in data space
+                #_log.info(f'*** {bbox_data=}')  #dave
                 bbox = Bbox(bbox_data)
                 t.remove()
-                return bbox.bounds
+                #_log.info("** bbox.bounds= %s",bbox.bounds) #dave
+                return bbox.bounds  # x0, y0, width, height
             return 0,0,0,0
 
-    def eventtextBounds(self, event_label:str, x_pos:float, y_pos:float, ls:float, prop:'FontProperties', fc:str) -> Tuple[float,float,float]:
+    def eventtextBounds(self, x_pos:float, y_pos:float, event_label:str, ls:float, prop:'FontProperties', fc:str) -> Tuple[float,float,float]:
         eventtext_width:float = 0
         eventtextstart:float = 0
         eventtext_end:float = 0
         try:
             if self.ax:
                 eventtext_end = self.timex[-1] - x_pos #default for when Events Annotations is unchecked
-                for child in self.ax.get_children():
+                for child in reversed(self.ax.get_children()):  # reversed() needed when there is a background profile
                     if isinstance(child, Annotation):
+                        #_log.info(f'+++{str(child)=}')
                         eventtext = re.search(fr'.*\((.*?),.*({event_label}[ 0-9:]*)',str(child))
                         if eventtext:
-                            eventtextstart = int(float(eventtext.group(1))) - x_pos
+#                            _log.info(f'Found {str(child)}')  #dave
+                            #dave eventtextstart = int(float(eventtext.group(1))) - x_pos
+                            eventtextstart = float(eventtext.group(1)) - x_pos
                             eventtext_width = self.statstextboxBounds(x_pos,y_pos,eventtext.group(2),ls,prop,fc)[2]
                             eventtext_end = eventtextstart + eventtext_width
+                            break
         except Exception as e:  # pylint: disable=broad-except
             _log.exception(e)
         return eventtext_width,eventtextstart,eventtext_end
@@ -12198,6 +12539,29 @@ class tgraphcanvas(FigureCanvas):
 
     def OnRecorder(self) -> None:
         try:
+            #dave - test code #TODO remove
+            if False:
+                # mode
+                self.bbpCache['mode'] = self.mode
+                # drop temps
+                self.bbpCache['drop_bt'] = 400.1  #F
+                self.bbpCache['drop_et'] = 395.2  #F
+                if self.mode == 'C':
+                    self.bbpCache['drop_bt'] = 220.1  #F
+                    self.bbpCache['drop_et'] = 215.2  #F
+                # ending time epoch in mSec
+                self.bbpCache['end_roastepoch_msec'] = QDateTime.currentDateTime().toMSecsSinceEpoch() - 10000
+                # get the special events values at OFF and time of previous change relative to end
+                self.bbpCache['end_events'] = [[2,-6.5], [None,0], [None,0], [6,0]]
+                # get the special events values at DROP and time of previous change relative to end
+                self.bbpCache['drop_events'] = [[4,None], [None,None], [None,None], [6,None]]
+                self.bbpCache['end_to_drop'] = -12
+                self.bbpCache['drop_to_end'] = 12
+                _log.info(f'~~~ {self.bbpCache["end_roastepoch_msec"]=}')
+                _log.info(f'~~~ {self.bbpCache["end_to_drop"]=}')
+                _log.info(f'~~~ {self.bbpCache["end_events"]=}')
+                _log.info(f'~~~ {self.bbpCache["drop_events"]=}')
+                #dave - end test code
             # if on turn mouse crosslines off
             if self.crossmarker:
                 self.togglecrosslines()
@@ -12308,6 +12672,8 @@ class tgraphcanvas(FigureCanvas):
                 start = self.timex[self.timeindex[0]]
                 if (len(self.timex)>0 and self.timex[-1] - start) > 7*60: # only after 7min into the roast
                     self.markDrop()
+            # dave save items for bbp
+            self.cacheforBbp()  #dave
             self.aw.enableSaveActions()
             self.aw.resetCurveVisibilities()
             self.flagstart = False
@@ -14422,6 +14788,43 @@ class tgraphcanvas(FigureCanvas):
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
             self.adderror((QApplication.translate('Error Message','Exception:') + ' writestatistics() {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+
+    #dave Start
+    def cacheforBbp(self) -> None:
+        # mode
+        self.bbpCache['mode'] = self.mode
+        # drop temps
+        self.bbpCache['drop_bt'] = self.temp2[self.timeindex[6]]
+        self.bbpCache['drop_et'] = self.temp1[self.timeindex[6]]
+        # ending time epoch in mSec
+        self.bbpCache['end_roastepoch_msec'] = QDateTime.currentDateTime().toMSecsSinceEpoch()
+        # get the special events values at OFF and time of previous change relative to end
+        self.bbpCache['end_events'] = self.get_specialevents_at_timeindex(len(self.timex)-1)
+        # get the special events values at DROP and time of previous change relative to end
+        self.bbpCache['drop_events'] = self.get_specialevents_at_timeindex(self.timeindex[6])
+        self.bbpCache['end_to_drop'] = self.timex[self.timeindex[6]] - self.timex[-1]
+        self.bbpCache['drop_to_end'] = self.timex[-1] - self.timex[self.timeindex[6]]
+        _log.info(f'~~~ {self.bbpCache["end_roastepoch_msec"]=}')
+        _log.info(f'~~~ {self.bbpCache["end_to_drop"]=}')
+        _log.info(f'~~~ {self.bbpCache["end_events"]=}')
+        _log.info(f'~~~ {self.bbpCache["drop_events"]=}')
+
+
+    def get_specialevents_at_timeindex(self, timeindex:int) -> List[List[Optional[float]]]:
+        # note: event values are returned as actual_value+1
+        # values_at_timeindex -> specialeventvalue, time_relative_to_end of last change after DROP else None
+        values_at_timeindex: List[List[Optional[float]]] = [[None, None] for _ in range(4)]
+        for event_type in range(4):
+            for i in range(len(self.specialevents)-1, -1, -1):
+                if self.specialeventstype[i] == event_type and self.specialevents[i] <= timeindex:
+                    last_change_after_drop = None
+                    if self.specialevents[i] > self.timeindex[6]:
+                        last_change_after_drop = self.timex[self.specialevents[i]] - self.timex[-1]
+                    values_at_timeindex[event_type] = [self.specialeventsvalue[i], last_change_after_drop]
+                    break
+        return values_at_timeindex
+
+    #dave end
 
     @staticmethod
     def convertHeat(value:float, fromUnit:int, toUnit:int=0) -> float:
