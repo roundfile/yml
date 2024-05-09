@@ -20,12 +20,13 @@ import time as libtime
 import re
 import platform
 import logging
+from PIL import ImageColor
 from typing import Final, Optional, List, Tuple, cast, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
 
-from artisanlib.util import deltaLabelUTF8, setDeviceDebugLogLevel
+from artisanlib.util import deltaLabelUTF8, setDeviceDebugLogLevel, argb_colorname2rgba_colorname, rgba_colorname2argb_colorname
 from artisanlib.dialogs import ArtisanResizeablDialog
 from artisanlib.widgets import MyQComboBox, MyQDoubleSpinBox
 
@@ -38,14 +39,14 @@ try:
     from PyQt6.QtWidgets import (QApplication, QWidget, QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,  # @UnusedImport @Reimport  @UnresolvedImport
                                  QPushButton, QSpinBox, QTabWidget, QComboBox, QDialogButtonBox, QGridLayout, # @UnusedImport @Reimport  @UnresolvedImport
                                  QGroupBox, QRadioButton, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QTableWidget, QMessageBox, QHeaderView) # @UnusedImport @Reimport  @UnresolvedImport
+                                 QTableWidget, QMessageBox, QHeaderView, QTableWidgetItem) # @UnusedImport @Reimport  @UnresolvedImport
 except ImportError:
     from PyQt5.QtCore import (Qt, pyqtSlot, QSettings, QTimer) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtGui import (QStandardItemModel, QStandardItem, QColor) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QApplication, QWidget, QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
                                  QPushButton, QSpinBox, QTabWidget, QComboBox, QDialogButtonBox, QGridLayout, # @UnusedImport @Reimport  @UnresolvedImport
                                  QGroupBox, QRadioButton, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QTableWidget, QMessageBox, QHeaderView) # @UnusedImport @Reimport  @UnresolvedImport
+                                 QTableWidget, QMessageBox, QHeaderView, QTableWidgetItem) # @UnusedImport @Reimport  @UnresolvedImport
 
 
 class DeviceAssignmentDlg(ArtisanResizeablDialog):
@@ -1537,6 +1538,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
 #            if nddevices != 0:
 #                self.devicetable.clearContents() # this crashes Ubuntu 16.04 if device table is empty
 #            self.devicetable.clearSelection()
+
             self.devicetable.setRowCount(nddevices)
             self.devicetable.setColumnCount(columns)
             self.devicetable.setHorizontalHeaderLabels([QApplication.translate('Table', 'Device'),
@@ -1558,6 +1560,9 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
             self.devicetable.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
             self.devicetable.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
             self.devicetable.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+
+#            self.devicetable.setStyleSheet("selection-background-color: transparent;") # avoid the selection color to shine through transparent device color items
+
             self.devicetable.setShowGrid(True)
             vheader = self.devicetable.verticalHeader()
             if vheader is not None:
@@ -1589,16 +1594,16 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                             pass
                         # 1: color 1
                         color1Button = QPushButton(self.aw.qmc.extradevicecolor1[i])
-                        color1Button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
                         color1Button.clicked.connect(self.setextracolor1)
                         textcolor = self.aw.labelBorW(self.aw.qmc.extradevicecolor1[i])
-                        color1Button.setStyleSheet(f'background-color: {self.aw.qmc.extradevicecolor1[i]}; color: {textcolor}')
+                        color1Button.setStyleSheet(f'selection-background-color: transparent; border: none; outline: none; background-color: rgba{ImageColor.getcolor(self.aw.qmc.extradevicecolor1[i], "RGBA")}; color: {textcolor}')
+                        color1Button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
                         # 2: color 2
                         color2Button = QPushButton(self.aw.qmc.extradevicecolor2[i])
                         color2Button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
                         color2Button.clicked.connect(self.setextracolor2)
                         textcolor = self.aw.labelBorW(self.aw.qmc.extradevicecolor2[i])
-                        color2Button.setStyleSheet(f'background-color: {self.aw.qmc.extradevicecolor2[i]}; color: {textcolor}')
+                        color2Button.setStyleSheet(f'selection-background-color: transparent; border: none; outline: none; background-color: rgba{ImageColor.getcolor(self.aw.qmc.extradevicecolor2[i], "RGBA")}; color: {textcolor}')
                         # 3+4: name 1 + 2
                         name1edit = QLineEdit(self.aw.qmc.extraname1[i])
                         name2edit = QLineEdit(self.aw.qmc.extraname2[i])
@@ -1679,6 +1684,19 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                         self.devicetable.setCellWidget(i,12,Delta2widget)
                         self.devicetable.setCellWidget(i,13,Fill1SpinBox)
                         self.devicetable.setCellWidget(i,14,Fill2SpinBox)
+
+                        # we add QTableWidgetItems disable selection of cells and to have tab focus to jump over those cells
+                        color1item = QTableWidgetItem()
+                        color1item.setFlags(Qt.ItemFlag.NoItemFlags)
+                        self.devicetable.setItem(i,1,color1item)
+                        color2item = QTableWidgetItem()
+                        color2item.setFlags(Qt.ItemFlag.NoItemFlags)
+                        self.devicetable.setItem(i,2,color2item)
+                        for j in range(7, 13):
+                            item = QTableWidgetItem()
+                            item.setFlags(Qt.ItemFlag.NoItemFlags)
+                            self.devicetable.setItem(i,j,item)
+
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
                 fixed_size_sections = [7,8,9,10,11,12,13,14]
@@ -1797,23 +1815,53 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 mexpr2edit = cast(QLineEdit, self.devicetable.cellWidget(r,6))
                 clipboard += mexpr2edit.text() + '\t'
                 # lcd 1
-                LCD1visibilityQCheckBox = cast(QCheckBox, self.devicetable.cellWidget(r,7))
-                clipboard += str(LCD1visibilityQCheckBox.isChecked()) + '\t'
+                LCD1visibilityWidget = cast(QWidget, self.devicetable.cellWidget(r,7))
+                LCD1visibilityLayout = LCD1visibilityWidget.layout()
+                if LCD1visibilityLayout is not None:
+                    item0 = LCD1visibilityLayout.itemAt(0)
+                    if item0 is not None:
+                        LCD1visibilityCheckBox = cast(QCheckBox, item0.widget())
+                        clipboard += str(LCD1visibilityCheckBox.isChecked()) + '\t'
                 # lcde 2
-                LCD2visibilityQCheckBox = cast(QCheckBox, self.devicetable.cellWidget(r,8))
-                clipboard += str(LCD2visibilityQCheckBox.isChecked()) + '\t'
+                LCD2visibilityWidget = cast(QWidget, self.devicetable.cellWidget(r,8))
+                LCD2visibilityLayout = LCD2visibilityWidget.layout()
+                if LCD2visibilityLayout is not None:
+                    item0 = LCD2visibilityLayout.itemAt(0)
+                    if item0 is not None:
+                        LCD2visibilityCheckBox = cast(QCheckBox, item0.widget())
+                        clipboard += str(LCD2visibilityCheckBox.isChecked()) + '\t'
                 # curve 1
-                Curve1visibilityQCheckBox = cast(QCheckBox, self.devicetable.cellWidget(r,9))
-                clipboard += str(Curve1visibilityQCheckBox.isChecked()) + '\t'
+                Curve1visibilityWidget = cast(QWidget, self.devicetable.cellWidget(r,9))
+                Curve1visibilityLayout = Curve1visibilityWidget.layout()
+                if Curve1visibilityLayout is not None:
+                    item0 = Curve1visibilityLayout.itemAt(0)
+                    if item0 is not None:
+                        Curve1visibilityCheckBox = cast(QCheckBox, item0.widget())
+                        clipboard += str(Curve1visibilityCheckBox.isChecked()) + '\t'
                 # curve 2
-                Curve2visibilityQCheckBox = cast(QCheckBox, self.devicetable.cellWidget(r,10))
-                clipboard += str(Curve2visibilityQCheckBox.isChecked()) + '\t'
+                Curve2visibilityWidget = cast(QWidget, self.devicetable.cellWidget(r,10))
+                Curve2visibilityLayout = Curve2visibilityWidget.layout()
+                if Curve2visibilityLayout is not None:
+                    item0 = Curve2visibilityLayout.itemAt(0)
+                    if item0 is not None:
+                        Curve2visibilityCheckBox = cast(QCheckBox, item0.widget())
+                        clipboard += str(Curve2visibilityCheckBox.isChecked()) + '\t'
                 # delta 1
-                Delta1QCheckBox = cast(QCheckBox, self.devicetable.cellWidget(r,11))
-                clipboard += str(Delta1QCheckBox.isChecked()) + '\t'
+                Delta1Widget = cast(QWidget, self.devicetable.cellWidget(r,11))
+                Delta1Layout = Delta1Widget.layout()
+                if Delta1Layout is not None:
+                    item0 = Delta1Layout.itemAt(0)
+                    if item0 is not None:
+                        Delta1CheckBox = cast(QCheckBox, item0.widget())
+                        clipboard += str(Delta1CheckBox.isChecked()) + '\t'
                 # delta 2
-                Delta2QCheckBox = cast(QCheckBox, self.devicetable.cellWidget(r,12))
-                clipboard += str(Delta2QCheckBox.isChecked()) + '\t'
+                Delta2Widget = cast(QWidget, self.devicetable.cellWidget(r,12))
+                Delta2Layout = Delta2Widget.layout()
+                if Delta2Layout is not None:
+                    item0 = Delta2Layout.itemAt(0)
+                    if item0 is not None:
+                        Delta2CheckBox = cast(QCheckBox, item0.widget())
+                        clipboard += str(Delta2CheckBox.isChecked()) + '\t'
                 # fill 1
                 Fill1SpinBox = cast(QSpinBox, self.devicetable.cellWidget(r,13))
                 clipboard += str(Fill1SpinBox.value()) + '\t'
@@ -2166,28 +2214,28 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
             #line 1
             if ll == 1:
                 # use native no buttons dialog on Mac OS X, blocks otherwise
-                colorf = self.aw.colordialog(QColor(self.aw.qmc.extradevicecolor1[i]),True,self)
+                colorf = self.aw.colordialog(QColor(rgba_colorname2argb_colorname(self.aw.qmc.extradevicecolor1[i])),True,self, alphasupport=True)
                 if colorf.isValid():
-                    colorname = str(colorf.name())
+                    colorname = argb_colorname2rgba_colorname(colorf.name(QColor.NameFormat.HexArgb))
                     self.aw.qmc.extradevicecolor1[i] = colorname
                     # set LCD label color
-                    self.aw.setLabelColor(self.aw.extraLCDlabel1[i],QColor(colorname))
+                    self.aw.setLabelColor(self.aw.extraLCDlabel1[i],QColor(colorname[:7]))
                     color1Button = cast(QPushButton, self.devicetable.cellWidget(i,1))
-                    color1Button.setStyleSheet(f'background-color: {self.aw.qmc.extradevicecolor1[i]}; color: { self.aw.labelBorW(self.aw.qmc.extradevicecolor1[i])}')
+                    color1Button.setStyleSheet(f'border: none; outline: none; background-color: rgba{ImageColor.getcolor(self.aw.qmc.extradevicecolor1[i], "RGBA")}; color: { self.aw.labelBorW(self.aw.qmc.extradevicecolor1[i])}')
                     color1Button.setText(colorname)
                     self.aw.checkColors([(self.aw.qmc.extraname1[i], self.aw.qmc.extradevicecolor1[i], QApplication.translate('Label','Background'), self.aw.qmc.palette['background'])])
                     self.aw.checkColors([(self.aw.qmc.extraname1[i], self.aw.qmc.extradevicecolor1[i], QApplication.translate('Label','Legend bkgnd'), self.aw.qmc.palette['background'])])
             #line 2
             elif ll == 2:
                 # use native no buttons dialog on Mac OS X, blocks otherwise
-                colorf = self.aw.colordialog(QColor(self.aw.qmc.extradevicecolor2[i]),True,self)
+                colorf = self.aw.colordialog(QColor(rgba_colorname2argb_colorname(self.aw.qmc.extradevicecolor2[i])),True,self, alphasupport=True)
                 if colorf.isValid():
-                    colorname = str(colorf.name())
+                    colorname = argb_colorname2rgba_colorname(colorf.name(QColor.NameFormat.HexArgb))
                     self.aw.qmc.extradevicecolor2[i] = colorname
                     # set LCD label color
                     self.aw.setLabelColor(self.aw.extraLCDlabel2[i],QColor(colorname))
                     color2Button = cast(QPushButton, self.devicetable.cellWidget(i,2))
-                    color2Button.setStyleSheet(f'background-color: {self.aw.qmc.extradevicecolor2[i]}; color: {self.aw.labelBorW(self.aw.qmc.extradevicecolor2[i])}')
+                    color2Button.setStyleSheet(f'border: none; outline: none; background-color: rgba{ImageColor.getcolor(self.aw.qmc.extradevicecolor2[i], "RGBA")}; color: {self.aw.labelBorW(self.aw.qmc.extradevicecolor2[i])}')
                     color2Button.setText(colorname)
                     self.aw.checkColors([(self.aw.qmc.extraname2[i], self.aw.qmc.extradevicecolor2[i], QApplication.translate('Label','Background'), self.aw.qmc.palette['background'])])
                     self.aw.checkColors([(self.aw.qmc.extraname2[i], self.aw.qmc.extradevicecolor2[i], QApplication.translate('Label','Legend bkgnd'),self.aw.qmc.palette['background'])])

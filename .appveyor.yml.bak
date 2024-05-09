@@ -17,21 +17,21 @@
 
 # Include "skip ci" in the commit message to prevent this build process from running
 environment:
-  # Set the default Appveyor Python version here. Does not affect windows_legacy. Can be overridden in platform environment.
+  # Set the Appveyor Python version for windows, macos and linux here. Does not affect windows_legacy.
   PYTHON_V: 3.12
   # Upgrade to specific version (for platforms supporting upgrade). Upgrade skipped if env var is missing or blank.
-  #PYUPGRADE_WIN_V: 3.11.6
-  #PYUPGRADE_MACOS_V: 3.12.1
+  PYUPGRADE_WIN_V: 3.11.6
+  #PYUPGRADE_MACOS_V: 3.11.5
 
   matrix:
   - job_name: windows_legacy
     appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
     appveyor_build_worker_image: Visual Studio 2022
-  - job_name: macos
-    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
-  - job_name: linux
-    appveyor_build_worker_image: Ubuntu2204
+#  - job_name: macos
+#    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
+#  - job_name: linux
+#    appveyor_build_worker_image: Ubuntu2004
 
 
 # Generic build number, later set to commit hash by init
@@ -48,7 +48,7 @@ init:
   - ps: |
       $env:artifact_prefix = 'disable_artifact'
       if ([bool]$env:APPVEYOR_PULL_REQUEST_NUMBER -eq $true) {
-        $env:artifact_prefix = 'artisan'
+        $env:artifact_prefix = 'artisan' 
       }
 
 branches:
@@ -102,21 +102,23 @@ for:
 
     # update the __revision__ field with the left seven of the GIT commit hash
     - ps: $GIT_VERSION=git rev-parse --verify --short HEAD
-    - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '.*'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
+    - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '0'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the build script
-    - cmd: build-win3-pi.bat
+#    - cmd: build-win3-pi.bat
+    - cmd: build-win3-standalone-pi.bat
 
 #  test_script:
 #    - cmd: python -m unittest discover
 
   artifacts:
 #    - path: 'generated-win-legacy.zip'
-    - path: 'src\%artifact_prefix%-*.zip'
+#    - path: 'src\%artifact_prefix%-*.zip'
+    - path: 'src\artisan*.exe'
 
-  deploy_script:
-    - cmd: bash ../.ci/upload.sh artisan-*.zip
+#  deploy_script:
+#    - cmd: bash ../.ci/upload.sh artisan-*.zip
 
 #  # uncomment this section for remote desktop connection to build image
 #  on_finish:
@@ -130,7 +132,6 @@ for:
     fast_finish: false
 
   environment:
-    PYTHON_V: 3.11
     QT_PATH: "C:/qt/6.5.1/msvc2019_64"  #there is no msvc2022_64 under /qt*
     PYQT: "6"
     PYUIC: "pyuic6.exe"
@@ -146,7 +147,7 @@ for:
     # Note that the paths set below may not exist yet.
     - ps: |
         if (Test-Path env:PYUPGRADE_WIN_V) {
-            $env:PREV_PYTHON_V = $env:PYTHON_V
+            $env:PREV_PYTHON_V = $env:PYTHON_V 
             $env:PYTHON_V = ($env:PYUPGRADE_WIN_V -split '\.')[0..1] -join '.'
         }
 
@@ -178,21 +179,23 @@ for:
 
     # update the __revision__ field with the left seven of the GIT commit hash
     - ps: $GIT_VERSION=git rev-parse --verify --short HEAD
-    - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '.*'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
+    - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '0'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the build script
-    - cmd: build-win3-pi.bat
+#    - cmd: build-win3-pi.bat
+    - cmd: build-win3-standalone-pi.bat
 
 #  test_script:
 #    - cmd: python -m unittest discover
 
   artifacts:
 #    - path: 'generated-win.zip'
-    - path: 'src\%artifact_prefix%-*.zip'
+#    - path: 'src\%artifact_prefix%-*.zip'
+    - path: 'src\artisan*.exe'
 
-  deploy_script:
-    - cmd: bash ../.ci/upload.sh artisan-*.zip
+#  deploy_script:
+#    - cmd: bash ../.ci/upload.sh artisan-*.zip
 
 #  # uncomment this section for remote desktop connection to build image
 #  on_finish:
@@ -210,7 +213,7 @@ for:
     MACOSX_DEPLOYMENT_TARGET: 11.0
     PYTHONSITEPKGS: /Users/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
     QT_PATH: ${PYTHONSITEPKGS}/PyQt6/Qt6
-    QT_SRC_PATH: /Users/appveyor/Qt/6.6/macos
+    QT_SRC_PATH: /Users/appveyor/Qt/6.4/macos
     PYUIC: pyuic6
     PYLUPDATE: ./pylupdate6pro.py  #the dot slash is necessary
 
@@ -220,7 +223,7 @@ for:
 
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
-    - sed -i'' -e "s/__revision__ = '.*'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
+    - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
 
     # run the install script
     - .ci/install-macos.sh
@@ -239,9 +242,9 @@ for:
 #  test_script:
 #    - python -m unittest discover -s src
 
-  artifacts:
+#  artifacts:
 #    - path: 'generated-macos.zip'
-    - path: 'src/%artifact_prefix%-*.dmg'
+#    - path: 'src/artisan-*.dmg'
 
   deploy_script:
     # we upgrade libidn2 and curl to prevent issues caused by the previous python update
@@ -264,16 +267,14 @@ for:
     fast_finish: false
 
   environment:
-    #PYTHON_V: 3.11
     ARTISAN_OS: linux
     PYTHONSITEPKGS: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
     QT_PATH: $PYTHON_PATH/PyQt6/Qt6
-    QT_SRC_PATH: /home/appveyor/Qt/6.4/gcc_64 # latest points still to 5.15.2
+    QT_SRC_PATH: /home/appveyor/Qt/6.4/gcc_64
     PYUIC: pyuic6
     PYLUPDATE: ./pylupdate6pro.py  #the dot slash is necessary
 
   install:
-    #- ls -la /home/appveyor/Qt/
     - echo "Linux Install"
     - chmod +x .ci/*.sh
 
@@ -285,7 +286,7 @@ for:
 
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
-    - sed -i'' -e "s/__revision__ = '.*'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
+    - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
 
     # run the install script
     - .ci/install-linux.sh
@@ -302,16 +303,17 @@ for:
 #  test_script:
 #    - QT_QPA_PLATFORM=offscreen python -m unittest discover -s src
 
-  artifacts:
+#  artifacts:
 #    - path: 'generated-linux.zip'
-    - path: 'src/%artifact_prefix%-*.deb'
-    - path: 'src/%artifact_prefix%-*.rpm'
-    - path: 'src/%artifact_prefix%-*.AppImage'
+#    - path: 'src/artisan-*.deb'
+#    - path: 'src/artisan-*.rpm'
+#    - path: 'src/artisan-*.AppImage'
 
   deploy_script:
     - ../.ci/upload.sh artisan-*.deb
     - ../.ci/upload.sh artisan-*.rpm
     - ../.ci/upload.sh artisan-*.AppImage
+
 
 #  # uncomment this section for ssh connection to build image
 #  on_finish:

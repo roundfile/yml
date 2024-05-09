@@ -1,0 +1,575 @@
+#
+# ABOUT
+# Artisan Statistics Dialog
+
+# LICENSE
+# This program or module is free software: you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as published
+# by the Free Software Foundation, either version 2 of the License, or
+# version 3 of the License, or (at your option) any later version. It is
+# provided for educational purposes and is distributed in the hope that
+# it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+# warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+# the GNU General Public License for more details.
+
+# AUTHOR
+# Marko Luther, 2023
+
+import sys
+import platform
+from typing import Optional, List, Any, cast, TYPE_CHECKING
+from artisanlib.dialogs import ArtisanDialog
+from artisanlib.util import deltaLabelUTF8
+from artisanlib.widgets import MyQComboBox
+
+try:
+    from PyQt6.QtCore import Qt, pyqtSlot, QSettings, QTimer # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt6.QtWidgets import (QApplication, QLabel, QDialogButtonBox, QGridLayout, # @UnusedImport @Reimport  @UnresolvedImport
+        QComboBox, QHBoxLayout, QVBoxLayout, QCheckBox, QGroupBox, QLayout, # @UnusedImport @Reimport  @UnresolvedImport
+        QSpinBox, QWidget, QTabWidget, QTableWidget, QPushButton, QHeaderView) # @UnusedImport @Reimport  @UnresolvedImport
+except ImportError:
+    from PyQt5.QtCore import Qt, pyqtSlot, QSettings, QTimer # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt5.QtWidgets import (QApplication, QLabel, QDialogButtonBox, QGridLayout, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
+        QComboBox, QHBoxLayout, QVBoxLayout, QCheckBox, QGroupBox, QLayout, # @UnusedImport @Reimport  @UnresolvedImport
+        QSpinBox, QWidget, QTabWidget, QTableWidget, QPushButton, QHeaderView) # @UnusedImport @Reimport  @UnresolvedImport
+
+if TYPE_CHECKING:
+    from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
+    from PyQt6.QtWidgets import QPushButton, QWidget # pylint: disable=unused-import
+
+
+class StatisticsDlg(ArtisanDialog):
+    def __init__(self, parent:'QWidget', aw:'ApplicationWindow', activeTab:int = 0) -> None:
+        super().__init__(parent, aw)
+        self.activeTab = activeTab
+        self.setWindowTitle(QApplication.translate('Form Caption','Statistics'))
+        self.setModal(True)
+        self.helpdialog = None
+        self.timez = QCheckBox(QApplication.translate('CheckBox','Time'))
+        self.barb = QCheckBox(QApplication.translate('CheckBox','Bar'))
+        self.dt = QCheckBox(deltaLabelUTF8 + self.aw.qmc.mode)
+        self.ror = QCheckBox(self.aw.qmc.mode + QApplication.translate('CheckBox','/min'))
+        self.area = QCheckBox(QApplication.translate('CheckBox','Characteristics'))
+        self.ShowStatsSummary = QCheckBox(QApplication.translate('CheckBox', 'Summary'))
+        self.ShowStatsSummary.setChecked(self.aw.qmc.statssummary)
+        self.ShowStatsSummary.stateChanged.connect(self.changeStatsSummary)         #toggle
+        if self.aw.qmc.statisticsflags[0]:
+            self.timez.setChecked(True)
+        if self.aw.qmc.statisticsflags[1]:
+            self.barb.setChecked(True)
+        if self.aw.qmc.statisticsflags[3]:
+            self.area.setChecked(True)
+        if self.aw.qmc.statisticsflags[4]:
+            self.ror.setChecked(True)
+        if self.aw.qmc.statisticsflags[6]:
+            self.dt.setChecked(True)
+        self.timez.stateChanged.connect(self.changeStatisticsflag)
+        self.barb.stateChanged.connect(self.changeStatisticsflag)
+        # flag 2 not used anymore
+        self.area.stateChanged.connect(self.changeStatisticsflag)
+        self.ror.stateChanged.connect(self.changeStatisticsflag)
+        # flag 5 not used anymore
+        self.dt.stateChanged.connect(self.changeStatisticsflag)
+
+        self.summarystatsalways:List[int] = []
+        self.summarystatsitems:List[str] = ['',
+                                     QApplication.translate('ComboBox','Serial Command'),
+                                     QApplication.translate('ComboBox','Call Program'),
+                                     QApplication.translate('ComboBox','Multiple Event'),
+                                     QApplication.translate('ComboBox','Modbus Command'),
+                                     QApplication.translate('ComboBox','DTA Command'),
+                                     QApplication.translate('ComboBox','IO Command'),
+                                     QApplication.translate('ComboBox','Hottop Heater'),
+                                     QApplication.translate('ComboBox','Hottop Fan'),
+                                     QApplication.translate('ComboBox','Hottop Command'),
+                                     QApplication.translate('ComboBox','p-i-d'),
+                                     QApplication.translate('ComboBox','Fuji Command'),
+                                     QApplication.translate('ComboBox','PWM Command'),
+                                     QApplication.translate('ComboBox','VOUT Command'),
+                                     QApplication.translate('ComboBox','S7 Command'),
+                                     QApplication.translate('ComboBox','Aillio R1 Heater'),
+                                     QApplication.translate('ComboBox','Aillio R1 Fan'),
+                                     QApplication.translate('ComboBox','Aillio R1 Drum'),
+                                     QApplication.translate('ComboBox','Aillio R1 Command'),
+                                     QApplication.translate('ComboBox','Artisan Command'),
+                                     QApplication.translate('ComboBox','RC Command'),
+                                     QApplication.translate('ComboBox','WebSocket Command')]
+        self.summarystats_sorted:List[str] = sorted(self.summarystatsitems)
+        
+        # create the summary statistics table
+        self.summarystatstable = QTableWidget()
+        self.summarystatstable.setTabKeyNavigation(True)
+        self.summarystatstable.itemSelectionChanged.connect(self.selectionChanged)
+        vheader: Optional[QHeaderView] = self.summarystatstable.verticalHeader()
+        if vheader is not None:
+            vheader.sectionMoved.connect(self.sectionMoved)
+#        self.createSummarystatsTable()
+        defaultsButton: Optional[QPushButton] = QPushButton(QApplication.translate('Button','Defaults'))
+        if defaultsButton is not None:
+            defaultsButton.setToolTip(QApplication.translate('Tooltip','Restore defaults'))
+            defaultsButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            defaultsButton.clicked.connect(self.defaults)
+        helpDialogButton = QDialogButtonBox()
+        helpButton: Optional[QPushButton] = helpDialogButton.addButton(QDialogButtonBox.StandardButton.Help)
+        if helpButton is not None:
+            helpButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            helpButton.setToolTip(QApplication.translate('Tooltip','Show help'))
+            self.setButtonTranslations(helpButton,'Help',QApplication.translate('Button','Help'))
+            helpButton.clicked.connect(self.showSummarystatshelp)
+
+
+        # connect the ArtisanDialog standard OK/Cancel buttons
+        self.dialogbuttons.accepted.connect(self.accept)
+        self.dialogbuttons.removeButton(self.dialogbuttons.button(QDialogButtonBox.StandardButton.Cancel))
+        flagsLayout = QGridLayout()
+        flagsLayout.addWidget(self.timez,0,0)
+        flagsLayout.addWidget(self.barb,0,1)
+        flagsLayout.addWidget(self.dt,0,2)
+        flagsLayout.addWidget(self.ror,0,3)
+        flagsLayout.addWidget(self.area,0,4)
+        flagsLayout.addWidget(self.ShowStatsSummary,0,5)
+
+        beginlabel =QLabel(QApplication.translate('Label', 'From'))
+        beginitems = [
+                    QApplication.translate('Label','CHARGE'),
+                    QApplication.translate('Label','TP'),
+                    QApplication.translate('Label','DRY END'),
+                    QApplication.translate('Label','FC START')]
+        self.beginComboBox = QComboBox()
+        self.beginComboBox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.beginComboBox.setMaximumWidth(120)
+        self.beginComboBox.addItems(beginitems)
+        self.beginComboBox.setCurrentIndex(self.aw.qmc.AUCbegin)
+        baselabel =QLabel(QApplication.translate('Label', 'Base'))
+        self.baseedit = QSpinBox()
+        self.baseedit.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.baseedit.setRange(0,999)
+        self.baseedit.setValue(int(round(self.aw.qmc.AUCbase)))
+        if self.aw.qmc.mode == 'F':
+            self.baseedit.setSuffix(' F')
+        else:
+            self.baseedit.setSuffix(' C')
+        self.baseFlag = QCheckBox(QApplication.translate('CheckBox','From Event'))
+        self.baseedit.setEnabled(not self.aw.qmc.AUCbaseFlag)
+        self.baseFlag.setChecked(self.aw.qmc.AUCbaseFlag)
+        self.baseFlag.stateChanged.connect(self.switchAUCbase)
+        targetlabel =QLabel(QApplication.translate('Label', 'Target'))
+        self.targetedit = QSpinBox()
+        self.targetedit.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.targetedit.setRange(0,9999)
+        self.targetedit.setValue(int(round(self.aw.qmc.AUCtarget)))
+        self.targetFlag = QCheckBox(QApplication.translate('CheckBox','Background'))
+        self.targetedit.setEnabled(not self.aw.qmc.AUCtargetFlag)
+        self.targetFlag.setChecked(self.aw.qmc.AUCtargetFlag)
+        self.targetFlag.stateChanged.connect(self.switchAUCtarget)
+        self.guideFlag = QCheckBox(QApplication.translate('CheckBox','Guide'))
+        self.guideFlag.setChecked(self.aw.qmc.AUCguideFlag)
+        self.AUClcdFlag = QCheckBox(QApplication.translate('CheckBox','LCD'))
+        self.AUClcdFlag.setChecked(self.aw.qmc.AUClcdFlag)
+        self.AUClcdFlag.stateChanged.connect(self.AUCLCFflagChanged)
+        self.AUCshowFlag = QCheckBox(QApplication.translate('CheckBox','Show Area'))
+        self.AUCshowFlag.setChecked(self.aw.qmc.AUCshowFlag)
+        self.AUCshowFlag.stateChanged.connect(self.changeAUCshowFlag)
+
+        statsmaxchrperlinelabel =QLabel(QApplication.translate('Label', 'Max characters per line'))
+        self.statsmaxchrperlineedit = QSpinBox()
+        self.statsmaxchrperlineedit.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.statsmaxchrperlineedit.setRange(1,120)
+        self.statsmaxchrperlineedit.setValue(int(round(self.aw.qmc.statsmaxchrperline)))
+        self.statsmaxchrperlineedit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        statsmaxchrperlineHorizontal = QHBoxLayout()
+        statsmaxchrperlineHorizontal.addWidget(statsmaxchrperlinelabel)
+        statsmaxchrperlineHorizontal.addWidget(self.statsmaxchrperlineedit)
+        statsmaxchrperlineHorizontal.addStretch()
+        statsmaxchrperlineGroupLayout = QGroupBox(QApplication.translate('GroupBox','Stats Summary'))
+        statsmaxchrperlineGroupLayout.setLayout(statsmaxchrperlineHorizontal)
+
+        AUCgrid = QGridLayout()
+        AUCgrid.addWidget(beginlabel,0,0,Qt.AlignmentFlag.AlignRight)
+        AUCgrid.addWidget(self.beginComboBox,0,1,1,2)
+        AUCgrid.addWidget(baselabel,1,0,Qt.AlignmentFlag.AlignRight)
+        AUCgrid.addWidget(self.baseedit,1,1)
+        AUCgrid.addWidget(self.baseFlag,1,2)
+        AUCgrid.addWidget(targetlabel,2,0,Qt.AlignmentFlag.AlignRight)
+        AUCgrid.addWidget(self.targetedit,2,1)
+        AUCgrid.addWidget(self.targetFlag,2,2)
+        AUCgrid.setRowMinimumHeight(3, 20)
+
+        aucFlagsLayout = QHBoxLayout()
+        aucFlagsLayout.addStretch()
+        aucFlagsLayout.addWidget(self.AUClcdFlag)
+        aucFlagsLayout.addSpacing(10)
+        aucFlagsLayout.addWidget(self.guideFlag)
+        aucFlagsLayout.addSpacing(10)
+        aucFlagsLayout.addWidget(self.AUCshowFlag)
+        aucFlagsLayout.addStretch()
+
+        AUCvertical = QVBoxLayout()
+        AUCvertical.addLayout(AUCgrid)
+        AUCvertical.addLayout(aucFlagsLayout)
+        AUCvertical.addStretch()
+        AUCgroupLayout = QGroupBox(QApplication.translate('GroupBox','AUC'))
+        AUCgroupLayout.setLayout(AUCvertical)
+        displayGroupLayout = QGroupBox(QApplication.translate('GroupBox','Display'))
+        displayGroupLayout.setLayout(flagsLayout)
+        buttonsLayout = QHBoxLayout()
+        buttonsLayout.addWidget(self.dialogbuttons)
+        vgroupLayout = QVBoxLayout()
+        vgroupLayout.addWidget(AUCgroupLayout)
+        vgroupLayout.addWidget(statsmaxchrperlineGroupLayout)
+
+        #tab layout
+        self.TabWidget = QTabWidget()
+        tab1layout = QVBoxLayout()
+        tab1layout.addWidget(displayGroupLayout)
+        tab1layout.addLayout(vgroupLayout)
+        C1Widget = QWidget()
+        C1Widget.setLayout(tab1layout)
+        self.TabWidget.addTab(C1Widget,QApplication.translate('Tab','Statistics'))
+        C1Widget.setContentsMargins(5, 0, 5, 0)
+
+        tab2layout = QVBoxLayout()
+        tab2layout.addLayout(vgroupLayout)
+        C2Widget = QWidget()
+        C2Widget.setLayout(tab2layout)
+        self.TabWidget.addTab(C2Widget,QApplication.translate('Tab','Config Summary'))
+        C2Widget.setContentsMargins(5, 0, 5, 0)
+
+        self.TabWidget.currentChanged.connect(self.tabSwitched)
+
+        mainLayout = QVBoxLayout()
+        mainLayout.addWidget(self.TabWidget)
+        mainLayout.addLayout(buttonsLayout)
+        self.setLayout(mainLayout)
+
+        if platform.system() != 'Windows':
+            ok_button: Optional[QPushButton] = self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok)
+            if ok_button is not None:
+                ok_button.setFocus()
+        else:
+            self.TabWidget.setFocus()
+
+        # we set the active tab with a QTimer after the tabbar has been rendered once, as otherwise
+        # some tabs are not rendered at all on Winwos using Qt v6.5.1 (https://bugreports.qt.io/projects/QTBUG/issues/QTBUG-114204?filter=allissues)
+        QTimer.singleShot(50, self.setActiveTab)
+
+        settings = QSettings()
+        if settings.contains('StatisticsPosition'):
+            self.move(settings.value('StatisticsPosition'))
+
+        mainLayout.setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
+
+    @pyqtSlot(int)
+    def AUCLCFflagChanged(self, _:int) -> None:
+        self.aw.qmc.AUClcdFlag = not self.aw.qmc.AUClcdFlag
+        if self.aw.qmc.flagstart:
+            if self.aw.qmc.AUClcdFlag:
+                self.aw.AUCLCD.show()
+            else:
+                self.aw.AUCLCD.hide()
+        if self.aw.largePhasesLCDs_dialog is not None:
+            self.aw.largePhasesLCDs_dialog.updateVisiblitiesPhases()
+
+    @pyqtSlot(int)
+    def changeAUCshowFlag(self, _:int) -> None:
+        self.aw.qmc.AUCshowFlag = not self.aw.qmc.AUCshowFlag
+        self.aw.qmc.redraw(recomputeAllDeltas=False)
+
+    @pyqtSlot(int)
+    def switchAUCbase(self, i:int) -> None:
+        if i:
+            self.baseedit.setEnabled(False)
+        else:
+            self.baseedit.setEnabled(True)
+
+    @pyqtSlot(int)
+    def switchAUCtarget(self, i:int) -> None:
+        if i:
+            self.targetedit.setEnabled(False)
+        else:
+            self.targetedit.setEnabled(True)
+
+    @pyqtSlot(int)
+    def changeStatsSummary(self, _:int) -> None:
+        self.aw.qmc.statssummary = not self.aw.qmc.statssummary
+        # IF Auto is set for the axis the recompute it
+        if self.aw.qmc.autotimex and not self.aw.qmc.statssummary:
+            self.aw.autoAdjustAxis()
+        self.aw.qmc.redraw(recomputeAllDeltas=False)
+        if self.aw.qmc.statssummary and not self.aw.qmc.flagon:
+            self.aw.savestatisticsAction.setEnabled(True)
+        else:
+            self.aw.savestatisticsAction.setEnabled(False)
+
+    @pyqtSlot(int)
+    def changeStatisticsflag(self, value:int) -> None:
+        sender = self.sender()
+        if sender == self.timez:
+            i = 0
+        elif sender == self.barb:
+            i = 1
+        elif sender == self.area:
+            i = 3
+        elif sender == self.ror:
+            i = 4
+        elif sender == self.dt:
+            i = 6
+        else:
+            return
+        self.aw.qmc.statisticsflags[i] = value
+        self.aw.qmc.redraw(recomputeAllDeltas=False)
+
+    @pyqtSlot()
+    def accept(self) -> None:
+        self.aw.qmc.statsmaxchrperline = self.statsmaxchrperlineedit.value()
+        self.aw.qmc.AUCbegin = self.beginComboBox.currentIndex()
+        self.aw.qmc.AUCbase = self.baseedit.value()
+        self.aw.qmc.AUCbaseFlag = self.baseFlag.isChecked()
+        self.aw.qmc.AUCtarget = self.targetedit.value()
+        self.aw.qmc.AUCtargetFlag = self.targetFlag.isChecked()
+        self.aw.qmc.AUCguideFlag = self.guideFlag.isChecked()
+        self.aw.qmc.AUClcdFlag = self.AUClcdFlag.isChecked()
+        try:
+            if self.aw.qmc.TP_time_B:
+                _,_,auc,_ = self.aw.ts(tp=self.aw.qmc.backgroundtime2index(self.aw.qmc.TP_time_B),background=True)
+            else:
+                _,_,auc,_ = self.aw.ts(tp=0,background=True)
+            self.aw.qmc.AUCbackground = auc
+        except Exception: # pylint: disable=broad-except
+            pass
+        if self.timez.isChecked():
+            self.aw.qmc.statisticsflags[0] = 1
+        else:
+            self.aw.qmc.statisticsflags[0] = 0
+
+        if self.barb.isChecked():
+            self.aw.qmc.statisticsflags[1] = 1
+        else:
+            self.aw.qmc.statisticsflags[1] = 0
+
+        if self.area.isChecked():
+            self.aw.qmc.statisticsflags[3] = 1
+        else:
+            self.aw.qmc.statisticsflags[3] = 0
+
+        if self.ror.isChecked():
+            self.aw.qmc.statisticsflags[4] = 1
+        else:
+            self.aw.qmc.statisticsflags[4] = 0
+
+        if self.dt.isChecked():
+            self.aw.qmc.statisticsflags[6] = 1
+        else:
+            self.aw.qmc.statisticsflags[6] = 0
+
+        self.aw.qmc.redraw(recomputeAllDeltas=False)
+        #save window position (only; not size!)
+        settings = QSettings()
+        settings.setValue('StatisticsPosition',self.frameGeometry().topLeft())
+#        self.aw.closeEventSettings()
+        self.aw.StatisticsDlg_activeTab = self.TabWidget.currentIndex()
+        self.close()
+
+    @pyqtSlot()
+    def setActiveTab(self) -> None:
+        self.TabWidget.setCurrentIndex(self.activeTab)
+
+    @pyqtSlot(int)
+    def tabSwitched(self, i:int) -> None:
+        if i == 0:
+            pass
+        elif i == 1: # switched to Button tab
+            self.createSummarystatsTable()
+        pass
+
+    @pyqtSlot(bool)
+    def showSummarystatshelp(self, _:bool = False) -> None:
+        pass
+        return
+        
+        from help import summarystats_help # pyright: ignore [attr-defined] # pylint: disable=no-name-in-module
+        self.helpdialog = self.aw.showHelpDialog(
+                self,            # this dialog as parent
+                self.helpdialog, # the existing help dialog
+                QApplication.translate('Form Caption','Summary Statistics Help'),
+                summarystats_help.content())
+
+    @pyqtSlot()
+    def selectionChanged(self) -> None:
+        pass
+        return
+        
+        selected = self.summarystatstable.selectedRanges()
+        if self.insertButton is not None:
+            if selected and len(selected) > 0:
+                self.insertButton.setEnabled(True)
+            else:
+                self.insertButton.setEnabled(False)
+
+    @staticmethod
+    def swapItems(l:List[Any], source:int, target:int) -> None:
+        l[target],l[source] = l[source],l[target]
+
+    @staticmethod
+    def moveItem(l:List[Any], source:int, target:int) -> None:
+        l.insert(target, l.pop(source))
+
+    @pyqtSlot(int,int,int)
+    def sectionMoved(self, logicalIndex:int, _oldVisualIndex:int, newVisualIndex:int) -> None:
+        max_rows:int = len(self.extraeventstypes)
+
+        # adjust vertical headers # seems not to be required with the clearContent/setRowCount(0) below
+        self.summarystatstable.setVerticalHeaderLabels([str(1 + self.summarystatstable.visualRow(i)) for i in range(max_rows)])
+
+        # adjust datamodel
+        swap:bool = False # default action is to move item to new position
+        if QApplication.queryKeyboardModifiers() == Qt.KeyboardModifier.AltModifier:
+            # if ALT/OPTION key is hold, the items are swap
+            swap = True
+        l:List[Any]
+        event_data:List[List[Any]] = [self.extraeventslabels, self.extraeventsdescriptions, self.extraeventstypes, self.extraeventsvalues,
+                self.extraeventsactions, self.extraeventsactionstrings, self.extraeventsvisibility, self.extraeventbuttoncolor,
+                self.extraeventbuttontextcolor]
+        for l in event_data:
+            if swap:
+                self.swapItems(l, logicalIndex, newVisualIndex)
+            else:
+                self.moveItem(l, logicalIndex, newVisualIndex)
+
+        self.summarystatstable.clearContents() # resets the view
+        self.summarystatstable.setRowCount(0)  # resets the data model
+        self.createSummarystatsTable()
+
+    @pyqtSlot(bool)
+    def defaults(self, _:bool = False) -> None:
+        pass
+
+    def createSummarystatsTable(self) -> None:
+        columns = 2
+        if self.summarystatstable is not None and self.summarystatstable.columnCount() == columns:
+            # rows have been already established
+            # save the current columnWidth to reset them afte table creation
+            self.aw.summarystatstablecolumnwidths = [self.summarystatstable.columnWidth(c) for c in range(self.summarystatstable.columnCount())]
+
+        self.nstats = len(self.summarystatsitems)
+        # self.summarystatstable.clear() # this crashes Ubuntu 16.04
+#        if ndata != 0:
+#            self.summarystatstable.clearContents() # this crashes Ubuntu 16.04 if device table is empty and also sometimes else
+#        self.summarystatstable.clearSelection() # this seems to work also for Ubuntu 16.04
+
+        self.summarystatstable.setRowCount(self.nstats)   #(nbuttons)
+        self.summarystatstable.setColumnCount(columns)
+        self.summarystatstable.setHorizontalHeaderLabels([QApplication.translate('Table','Visibility'),
+                                                         QApplication.translate('Table','Statistic'),''])
+        self.summarystatstable.setAlternatingRowColors(True)
+        self.summarystatstable.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self.summarystatstable.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.summarystatstable.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.summarystatstable.setShowGrid(True)
+
+        vheader = self.summarystatstable.verticalHeader()
+        if vheader is not None:
+            vheader.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+
+        #Enable Drag Sorting
+        self.summarystatstable.setDragEnabled(False) # content not draggable, only vertical header!
+        self.summarystatstable.setAutoScroll(False)
+        vheader = self.summarystatstable.verticalHeader()
+        if vheader is not None:
+            vheader.setSectionsMovable(True)
+            vheader.setDragDropMode(QTableWidget.DragDropMode.InternalMove)
+            vheader.setAutoScroll(False)
+
+        always = [QApplication.translate('ComboBox','OFF'),
+                      QApplication.translate('ComboBox','ON')]
+
+
+        for i in range(self.nstats):
+            #0 Statistic
+            statisticComboBox = MyQComboBox()
+            statisticComboBox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+            statisticComboBox.addItems(self.summarystats_sorted)
+            item = self.summarystatsitems_idxs[i]
+            statisticComboBox.setCurrentIndex(self.summarystats_sorted.index(self.summarystatsitems[item]))
+            statisticComboBox.currentIndexChanged.connect(self.setsummarystatsitem)
+
+            #1 Show Always, even when no data
+            alwaysComboBox =  MyQComboBox()
+            alwaysComboBox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+            alwaysComboBox.addItems(always)
+            alwaysComboBox.setCurrentIndex(self.summarystatsalways[i])
+            alwaysComboBox.currentIndexChanged.connect(self.setalwaysstatistic)
+
+            #2 Empty Cell
+            emptyCell = QLabel('')
+
+            #add widgets to the table
+            self.summarystatstable.setCellWidget(i,0,statisticComboBox)
+            self.summarystatstable.setCellWidget(i,1,alwaysComboBox)
+            self.summarystatstable.setCellWidget(i,2,emptyCell)
+
+        hheader = self.summarystatstable.horizontalHeader()
+        if hheader is not None:
+            hheader.setStretchLastSection(False)
+            self.summarystatstable.resizeColumnsToContents()
+            hheader.setStretchLastSection(True)
+        self.summarystatstable.setColumnWidth(0,100)
+        self.summarystatstable.setColumnWidth(1,50)
+
+        # remember the columnwidth
+        for i, _ in enumerate(self.aw.summarystatstablecolumnwidths):
+            try:
+                self.summarystatstable.setColumnWidth(i,self.aw.summarystatstablecolumnwidths[i])
+            except Exception: # pylint: disable=broad-except
+                pass
+
+    @pyqtSlot(int)
+    def setalwaysstatistic(self, _:int) -> None:
+        i = self.aw.findWidgetsRow(self.summarystatstable,self.sender(),0)
+        if i is not None:
+            alwaysComboBox = cast(MyQComboBox, self.summarystats.cellWidget(i,0))
+            if i < len(self.nstats):
+                self.summarystatsalways[i] = alwaysComboBox.currentIndex()
+
+    @pyqtSlot(int)
+    def setsummarystatsitem(self, _:int) -> None:
+        i = self.aw.findWidgetsRow(self.summarystatstable,self.sender(),1)
+        if i is not None:
+            itemcombobox = cast(MyQComboBox, self.eventbuttontable.cellWidget(i,1))
+            if i < len(self.extraeventsactions):
+                self.summarystatsitems[i] = self.custom_button_actions.index(self.custom_button_actions_sorted[itemcombobox.currentIndex()])
+
+    #called from OK button
+    @pyqtSlot()
+    def updatesummarystats(self) -> None:
+        try:
+            self.closeHelp()
+            # save column widths
+            self.aw.summarystatstablecolumnwidths = [self.summarystatstable.columnWidth(c) for c in range(self.summarystatstable.columnCount())]
+            self.aw.qmc.redraw(recomputeAllDeltas=False)
+            self.aw.sendmessage(QApplication.translate('Message','Event configuration saved'))
+            self.close()
+        except Exception as e: # pylint: disable=broad-except
+            _, _, exc_tb = sys.exc_info()
+            self.aw.qmc.adderror((QApplication.translate('Error Message', 'Exception:') + ' updatetypes(): {0}').format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+
+    def savetablesummarystats(self) -> None:
+        maxStats = len(self.summarystatsitems)
+        #Clean Lists:
+        #Stats Item
+        self.aw.summarystatsitems_idxs = [''] * maxStats
+        #Always show 
+        self.aw.summarystatsalways_idxs = [''] * maxStats
+
+        #Sorting buttons based on the visualRow
+        for i in range(maxStats):
+            visualIndex = i #self.eventbuttontable.visualRow(i)
+            #Stats Item
+            self.aw.summarystatsitems_idxs[visualIndex] = self.summarystatsitems_idxs[i]
+            #Always show
+            self.aw.summarystatsalways_idxs = self.summarystatsalways_idxs[i]
+
+        #Apply Event Button Changes
+        self.aw.update_summarystats_always()
+        self.aw.realignbuttons()
+        self.aw.settooltip() # has to be done after realignbuttons() to have set the aw.buttonlist correctly!

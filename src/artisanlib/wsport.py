@@ -22,6 +22,7 @@ import logging
 import asyncio
 import websockets
 import contextlib
+import socket
 
 from contextlib import suppress
 from threading import Thread
@@ -36,13 +37,14 @@ try:
 except ImportError:
     from PyQt5.QtWidgets import QApplication # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
+from artisanlib import __version__
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
 
 class wsport:
 
-    __slots__ = [ 'aw', '_loop', '_thread', '_write_queue', 'default_host', 'host', 'port', 'path', 'machineID',  'lastReadResult', 'channels', 'readings',
-                    'channel_requests', 'channel_nodes', 'channel_modes', 'connect_timeout', 'request_timeout',
+    __slots__ = [ 'aw', '_loop', '_thread', '_write_queue', 'default_host', 'host', 'port', 'path', 'machineID', 'lastReadResult', 'channels', 'readings', 'tx',
+                    'channel_requests', 'channel_nodes', 'channel_modes', 'connect_timeout', 'request_timeout', 'compression',
                     'reconnect_interval', 'ping_interval', 'ping_timeout', 'id_node', 'machine_node',
                     'command_node', 'data_node', 'pushMessage_node', 'request_data_command', 'charge_message', 'drop_message', 'addEvent_message', 'event_node',
                     'DRY_node', 'FCs_node', 'FCe_node', 'SCs_node', 'SCe_node', 'STARTonCHARGE', 'OFFonDROP', 'open_event', 'pending_events',
@@ -62,12 +64,14 @@ class wsport:
         self.port:int = 80          # the TCP port
         self.path:str = 'WebSocket' # the ws path
         self.machineID:int = 0
+        self.compression:bool = True # activatesd/deactivates 'deflate' compression
 
         self.lastReadResult:Optional[Dict[str,Any]] = None # this is set by eventaction following some custom button/slider Modbus actions with "read" command
 
         self.channels:Final[int] = 10 # maximal number of WebSocket channels
 
         # WebSocket data
+        self.tx:float = 0 # timestamp as epoch of last read
         self.readings:List[float] = [-1]*self.channels
 
         self.channel_requests:List[str] = ['']*self.channels
@@ -249,9 +253,22 @@ class wsport:
 
     # if serial settings are given, host/port are ignore and communication is handled by the given serial port
     async def connect(self) -> None:
+        if self.aw.qmc.device_logging:
+            logging.getLogger('websockets').setLevel(logging.DEBUG)
+        else:
+            logging.getLogger('websockets').setLevel(logging.ERROR)
+
         while True:
             try:
-                async with websockets.connect(f'ws://{self.host}:{self.port}/{self.path}') as websocket:
+                if self.port == 80:
+                    hostport = self.host
+                else:
+                    hostport = f'{self.host}:{self.port}'
+                async with websockets.connect(
+                        f'ws://{hostport}/{self.path}',
+                        compression=('deflate' if self.compression else None),
+                        origin=websockets.Origin(f'http://{socket.gethostname()}'),
+                        user_agent_header = f'Artisan/{__version__} websockets') as websocket:
                     self.aw.sendmessageSignal.emit(QApplication.translate('Message', '{} connected').format('WebSocket'),True,None)
                     if self._write_queue is None:
                         self._write_queue = asyncio.Queue()

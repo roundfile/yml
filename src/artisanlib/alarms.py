@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from PyQt6.QtWidgets import QStyleOptionViewItem  # pylint: disable=unused-import
     from PyQt6.QtCore import QModelIndex # pylint: disable=unused-import
 
-from artisanlib.util import deltaLabelUTF8, comma2dot
+from artisanlib.util import deltaLabelUTF8, comma2dot, float2float
 from artisanlib.dialogs import ArtisanResizeablDialog
 from artisanlib.widgets import (MyQComboBox, MyTableWidgetItemNumber, MyTableWidgetItemQCheckBox,
                                 MyTableWidgetItemQComboBox, MyTableWidgetItemQLineEdit, MyTableWidgetItemQTime)
@@ -39,13 +39,13 @@ try:
     from PyQt6.QtGui import QColor, QIntValidator # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtWidgets import (QApplication, QWidget, QLabel, QLineEdit, QComboBox, QDialogButtonBox, # @UnusedImport @Reimport  @UnresolvedImport
                 QTableWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QPushButton, QSizePolicy, QSpinBox, # @UnusedImport @Reimport  @UnresolvedImport
-                QTableWidgetSelectionRange, QTimeEdit, QTabWidget, QGridLayout, QGroupBox, QHeaderView, QStyledItemDelegate) # @UnusedImport @Reimport  @UnresolvedImport
+                QTableWidgetSelectionRange, QTimeEdit, QTabWidget, QGridLayout, QGroupBox, QHeaderView, QStyledItemDelegate, QAbstractSpinBox) # @UnusedImport @Reimport  @UnresolvedImport
 except ImportError:
     from PyQt5.QtCore import (Qt, pyqtSlot, QSettings, QTimer) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtGui import QColor, QIntValidator # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QApplication, QWidget, QLabel, QLineEdit, QComboBox, QDialogButtonBox, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
                 QTableWidget, QHBoxLayout, QVBoxLayout, QCheckBox, QPushButton, QSizePolicy, QSpinBox, # # @UnusedImport @Reimport  @UnresolvedImport
-                QTableWidgetSelectionRange, QTimeEdit, QTabWidget, QGridLayout, QGroupBox, QHeaderView, QStyledItemDelegate) # @UnusedImport @Reimport  @UnresolvedImport
+                QTableWidgetSelectionRange, QTimeEdit, QTabWidget, QGridLayout, QGroupBox, QHeaderView, QStyledItemDelegate, QAbstractSpinBox) # @UnusedImport @Reimport  @UnresolvedImport
 
 
 
@@ -854,6 +854,7 @@ class AlarmDlg(ArtisanResizeablDialog):
         timeoffsetedit.setAlignment(Qt.AlignmentFlag.AlignRight)
         timeoffsetedit.setDisplayFormat('mm:ss')
         timeoffsetedit.setTime(self.aw.time2QTime(max(0,self.aw.qmc.alarmoffset[i])))
+        timeoffsetedit.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
         #6: type/source
         typeComboBox = MyQComboBox()
         typeComboBox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
@@ -878,7 +879,7 @@ class AlarmDlg(ArtisanResizeablDialog):
         condComboBox.addItems(['<','>','=', '\u2260'])
         condComboBox.setCurrentIndex(self.aw.qmc.alarmcond[i])
         #8: temperature
-        tempedit = QLineEdit(str(self.aw.float2float(self.aw.qmc.alarmtemperature[i])))
+        tempedit = QLineEdit(str(float2float(self.aw.qmc.alarmtemperature[i])))
         tempedit.setAlignment(Qt.AlignmentFlag.AlignRight)
         tempedit.setMaximumWidth(130)
 #        tempedit.setValidator(QIntValidator(0, 999,tempedit))
@@ -1086,10 +1087,11 @@ class AlarmDlg(ArtisanResizeablDialog):
                 beepWidget = cast(QWidget, self.alarmtable.cellWidget(r,10))
                 beepLayout = beepWidget.layout()
                 if beepLayout is not None:
-                    item1 = beepLayout.itemAt(1)
+                    item1 = beepLayout.itemAt(0)
                     if item1 is not None:
                         beepCheckBox = cast(QCheckBox, item1.widget())
-                        rows.append(str(beepCheckBox.isChecked()))
+                        if beepCheckBox and beepCheckBox is not None:
+                            rows.append(str(beepCheckBox.isChecked()))
                 descriptionedit = cast(QLineEdit, self.alarmtable.cellWidget(r,11))
                 rows.append(descriptionedit.text())
                 tbl.add_row(rows)
@@ -1127,10 +1129,13 @@ class AlarmDlg(ArtisanResizeablDialog):
                 beepWidget = cast(QWidget, self.alarmtable.cellWidget(r,10))
                 beepLayout = beepWidget.layout()
                 if beepLayout is not None:
-                    item1 = beepLayout.itemAt(1)
+                    item1 = beepLayout.itemAt(0)
                     if item1 is not None:
                         beepCheckBox = cast(QCheckBox, item1.widget())
-                        clipboard += str(beepCheckBox.isChecked()) + '\t'
+                        if beepCheckBox and beepCheckBox is not None:
+                            clipboard += str(beepCheckBox.isChecked()) + '\t'
+                        else:
+                            clipboard += ' ' + '\t'
                 descriptionedit = cast(QLineEdit, self.alarmtable.cellWidget(r,11))
                 clipboard += descriptionedit.text() + '\n'
         # copy to the system clipboard

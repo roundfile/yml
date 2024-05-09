@@ -31,7 +31,7 @@ except Exception: # pylint: disable=broad-except
     from PyQt5.QtWidgets import QApplication # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
 from pathlib import Path
-from artisanlib.util import getDirectory
+from artisanlib.util import getDirectory, weight_units, convertWeight
 from plus import config, util, connection, controller, roast, stock
 import os
 import time
@@ -419,19 +419,19 @@ def applyServerUpdates(data:Dict[str, Any]) -> None:
             wunit:str = aw.qmc.weight[2]
             if 'amount' in data and data['amount'] is not None:
                 assert isinstance(data['amount'], (int, float))
-                w = aw.convertWeight(
+                w = convertWeight(
                     data['amount'],
-                    aw.qmc.weight_units.index('Kg'),
-                    aw.qmc.weight_units.index(wunit),
+                    weight_units.index('Kg'),
+                    weight_units.index(wunit),
                 )
                 if w != win:
                     win = w
                     dirty = True
             if 'end_weight' in data and data['end_weight'] is not None:
-                w = aw.convertWeight(
+                w = convertWeight(
                     data['end_weight'],
-                    aw.qmc.weight_units.index('Kg'),
-                    aw.qmc.weight_units.index(wunit),
+                    weight_units.index('Kg'),
+                    weight_units.index(wunit),
                 )
                 if w != wout:
                     wout = w
@@ -654,7 +654,8 @@ def applyServerUpdates(data:Dict[str, Any]) -> None:
 
 # internal function fetching the update from server and then unblock the
 # Properties Dialog and update the plus icon
-def fetchServerUpdate(uuid: str, file:Optional[str]=None) -> None:
+# if return_data is set, the received data is not applied via applyServerUpdates, but returned instead
+def fetchServerUpdate(uuid: str, file:Optional[str]=None, return_data:bool = False) -> Optional[Dict[str, Any]]:
     assert config.app_window is not None
     aw = config.app_window
     import requests
@@ -729,7 +730,7 @@ def fetchServerUpdate(uuid: str, file:Optional[str]=None) -> None:
             data = res.json()
             util.updateLimitsFromResponse(data) # update account limits
             if 'result' in data:
-                r = data['result']
+                r:Dict[str, Any] = data['result']
                 _log.debug('-> fetch: %s', r)
 
                 if getSync(uuid) is None and 'modified_at' in r:
@@ -737,7 +738,8 @@ def fetchServerUpdate(uuid: str, file:Optional[str]=None) -> None:
                     _log.debug(
                         '-> added profile automatically to sync cache'
                     )
-
+                if return_data:
+                    return r
                 if file_last_modified is not None:
                     _log.debug(
                         '-> file last_modified date: %s',
@@ -782,6 +784,7 @@ def fetchServerUpdate(uuid: str, file:Optional[str]=None) -> None:
         # syncing from the server
         aw.editgraphdialog = None
         config.app_window.updatePlusStatusSignal.emit()  # @UndefinedVariable
+    return None
 
 
 # updates from server are only requested if connected (the uuid does not have
@@ -806,7 +809,6 @@ def getUpdate(uuid: Optional[str], file:Optional[str]=None) -> None:
                 QTimer.singleShot(2, lambda: (fetchServerUpdate(uuid, file) if isinstance(uuid, str) else None))
             except Exception as e:  # pylint: disable=broad-except
                 _log.exception(e)
-
 
 # Sync Action as issued on profile load and turning plus on
 
