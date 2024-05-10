@@ -12368,16 +12368,16 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 
 #dave temporary
 #TODO remove
-                _log.info(f'-{self.bbp_totaltime=}, {self.bbp_bottomtemp=}')
-                _log.info(f'-{self.bbp_begin2bottomtime=}, {self.bbp_bottom2chargetime=}')
-                _log.info(f'-{self.bbp_begin2bottomror=}, {self.bbp_bottom2chargeror=}')
-                _log.info(f'-{self.bbp_timeaddedfromprev=}')
-                _log.info(f'-{self.bbp_begin=}, {self.bbp_endroastepoch_msec=}')
-                _log.info(f'-{self.bbp_endevents=}')
-                _log.info(f'-{self.bbp_dropevents=}')
-                _log.info(f'-{self.bbp_dropbt=}')
-                _log.info(f'-{self.bbp_dropet=}')
-                _log.info(f'-{self.bbp_drop_to_end=}')
+#                _log.info(f'-{self.bbp_totaltime=}, {self.bbp_bottomtemp=}')
+#                _log.info(f'-{self.bbp_begin2bottomtime=}, {self.bbp_bottom2chargetime=}')
+#                _log.info(f'-{self.bbp_begin2bottomror=}, {self.bbp_bottom2chargeror=}')
+#                _log.info(f'-{self.bbp_timeaddedfromprev=}')
+#                _log.info(f'-{self.bbp_begin=}, {self.bbp_endroastepoch_msec=}')
+#                _log.info(f'-{self.bbp_endevents=}')
+#                _log.info(f'-{self.bbp_dropevents=}')
+#                _log.info(f'-{self.bbp_dropbt=}')
+#                _log.info(f'-{self.bbp_dropet=}')
+#                _log.info(f'-{self.bbp_drop_to_end=}')
 
                 # update plus data set modification date
                 self.qmc.plus_file_last_modified = plus.util.getModificationDate(filename)
@@ -15278,17 +15278,20 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     self.bbp_bottom2chargeror = 60 * (self.qmc.temp2[self.qmc.timeindex[0]] - self.bbp_bottomtemp) / (self.qmc.timex[self.qmc.timeindex[0]] - self.qmc.timex[bbp_tpidx])
             #TODO now deal with the special events from the previous roast
 
+            #TODO remove these logs
+            #prex = '\n  '
+            prex = ', '
             output = (
-                f'\n\n  NEW BBP Metrics'
-                f'\n  Time added from prev: {self.bbp_timeaddedfromprev}'
-                f'\n  Bottom temp: {self.bbp_bottomtemp:.1f}{self.qmc.mode} - {self.bbp_begin2bottomtime} from DROP@{self.qmc.temp2[0]:.1f}{self.qmc.mode} to bottom temp'
-                f'\n  Charge temp: {self.qmc.temp2[self.qmc.timeindex[0]]:.1f} - {self.bbp_bottom2chargetime} from bottom to CHARGE'
-                f'\n  BBP Low Temp: {self.bbp_bottomtemp:.1f} {self.qmc.mode}'
-                f'\n  BBP Time Start to Bottom Temp: {self.bbp_begin2bottomtime} with RoR: {self.bbp_begin2bottomror:.1f} {self.qmc.mode}/min'
-                f'\n  BBP RoR Start to Bottom Temp: {self.bbp_begin2bottomtime} with RoR: {self.bbp_bottom2chargeror:.1f} {self.qmc.mode}/min'
-                f'\n  BBP Time Bottom Temp to CHARGE: {self.bbp_bottom2chargetime}'
-                f'\n  BBP Total Time: {self.bbp_totaltime}'
-                f'\n  '
+                f'\n{prex}NEW BBP Metrics'
+                f'{prex}Time added from prev: {self.bbp_timeaddedfromprev}'
+                f'{prex}Bottom temp: {self.bbp_bottomtemp:.1f}{self.qmc.mode} - {self.bbp_begin2bottomtime} from DROP@{self.qmc.temp2[0]:.1f}{self.qmc.mode} to bottom temp'
+                f'{prex}Charge temp: {self.qmc.temp2[self.qmc.timeindex[0]]:.1f} - {self.bbp_bottom2chargetime} from bottom to CHARGE'
+                f'{prex}BBP Low Temp: {self.bbp_bottomtemp:.1f} {self.qmc.mode}'
+                f'{prex}BBP Time Start to Bottom Temp: {self.bbp_begin2bottomtime} with RoR: {self.bbp_begin2bottomror:.1f} {self.qmc.mode}/min'
+                f'{prex}BBP RoR Start to Bottom Temp: {self.bbp_begin2bottomtime} with RoR: {self.bbp_bottom2chargeror:.1f} {self.qmc.mode}/min'
+                f'{prex}BBP Time Bottom Temp to CHARGE: {self.bbp_bottom2chargetime}'
+                f'{prex}BBP Total Time: {self.bbp_totaltime}'
+                f'{prex}'
             )
             _log.info(output)
 

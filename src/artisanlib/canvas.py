@@ -2997,9 +2997,6 @@ class tgraphcanvas(FigureCanvas):
             pass
 
     def onclick(self, event:'MouseEvent') -> None:
-        _log.info(f'==== {event.button=}, {event.inaxes=}')  #dave
-        _log.info(f'==== {event.x=}, {event.y=}')  #dave
-        _log.info(f'==== {event.xdata=}, {event.ydata=}')  #dave
         self.aw.setFocus() # we set the focus to the ApplicationWindow on clicking the MPL canvas to (re-)gain focus while the event minieditor is open
         try:
             if self.ax is None:
