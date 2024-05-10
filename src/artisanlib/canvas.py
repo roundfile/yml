@@ -66,7 +66,7 @@ from artisanlib.filters import LiveMedian
 from artisanlib.dialogs import ArtisanMessageBox
 from artisanlib.types import SerialSettings
 from artisanlib.types import BTBreakParams
-from artisanlib.types import BbpCache  #dave
+from artisanlib.types import BbpCache
 
 # import artisan.plus module
 from plus.util import roastLink
@@ -2156,7 +2156,7 @@ class tgraphcanvas(FigureCanvas):
         self.statsmaxchrperline = 30
 
         # Cache for BBP calculations
-        self.bbpCache: BbpCache = {}  #dave
+        self.bbpCache: BbpCache = {}
 
         #EnergyUse
         self.energyunits: Final[List[str]] = ['BTU', 'kJ', 'kCal', 'kWh', 'hph']
@@ -2997,6 +2997,9 @@ class tgraphcanvas(FigureCanvas):
             pass
 
     def onclick(self, event:'MouseEvent') -> None:
+        _log.info(f'==== {event.button=}, {event.inaxes=}')  #dave
+        _log.info(f'==== {event.x=}, {event.y=}')  #dave
+        _log.info(f'==== {event.xdata=}, {event.ydata=}')  #dave
         self.aw.setFocus() # we set the focus to the ApplicationWindow on clicking the MPL canvas to (re-)gain focus while the event minieditor is open
         try:
             if self.ax is None:
@@ -4073,7 +4076,6 @@ class tgraphcanvas(FigureCanvas):
                         except Exception as e: # pylint: disable=broad-except
                             _log.exception(e)
 
-                    #dave
                     # update BBP values
                     if local_flagstart: # only during recording
                         try:
@@ -6660,7 +6662,7 @@ class tgraphcanvas(FigureCanvas):
                 self.errorlog = []
                 self.aw.seriallog = []
 
-            self.aw.resetBBPMetrics()  #dave
+            self.aw.resetBBPMetrics()
 
             self.zoom_follow = False # reset the zoom follow feature
 
@@ -7989,9 +7991,6 @@ class tgraphcanvas(FigureCanvas):
                     any(self.aw.extraDelta2[:len(self.extratimex)])))
 
     def redraw_keep_view(self, *args:bool, **kwargs:bool) -> None:
-#dave
-        import inspect, os  #dave
-        _log.info("\n      %s:%s called by %s:%s, line %s",os.path.basename(inspect.getframeinfo(inspect.stack()[0][0]).filename), inspect.stack()[0][3], os.path.basename(inspect.getframeinfo(inspect.stack()[1][0]).filename), inspect.stack()[1][3], inspect.getframeinfo(inspect.stack()[1][0]).lineno)  #dave99
         xlimit_min: Optional[float] = None
         xlimit: Optional[float] = None
         ylimit_min: Optional[float] = None
@@ -10500,14 +10499,14 @@ class tgraphcanvas(FigureCanvas):
         return '' #return an empty string if roastbatchpos is None
 
     #add stats summary to graph, called from redraw()
-    def statsSummary(self) -> None:
+    def statsSummary(self, txt:bool=False) -> str:
         if self.ax is None:
-            return
+            return ''
 
         import textwrap
 
         # Format a text block of notes for stats display
-        def wrapNotes(notes:Optional[str]) -> str:
+        def wrapNotes(notes:str) -> str:
             notestr = ''
             newline = '\n'
             notes_lines = textwrap.wrap(notes, width=self.statsmaxchrperline)
@@ -10534,7 +10533,7 @@ class tgraphcanvas(FigureCanvas):
             degree = '\u00b0'
             charge = QApplication.translate('AddlInfo', 'Charge')
             begin = QApplication.translate('AddlInfo', 'Drop') if self.aw.bbp_begin == 'DROP' else QApplication.translate('AddlInfo', 'Start')
-            froms = QApplication.translate('AddlInfo', 'from')
+            from_s = QApplication.translate('AddlInfo', 'from')
             bottom = QApplication.translate('AddlInfo', 'Bottom')
             if n == 0:  #Blank line
                 stattype_str = f"{newline}"
@@ -10663,20 +10662,20 @@ class tgraphcanvas(FigureCanvas):
             elif n == 25:  # BBP summary
                 if self.aw.bbp_totaltime:  # noqa: SIM102
                     stattype_str += f"{newline}{bottom} {self.aw.bbp_bottomtemp:.0f}{degree}{self.mode}, "
-                    stattype_str += f"{stringfromseconds(self.aw.bbp_begin2bottomtime,False)} {froms} {begin}"
+                    stattype_str += f"{stringfromseconds(self.aw.bbp_begin2bottomtime,False)} {from_s} {begin}"
                     stattype_str += f"{newline}{charge} {self.temp2[self.timeindex[0]]:.0f}{degree}{self.mode}, "
-                    stattype_str += f"{stringfromseconds(self.aw.bbp_bottom2chargetime,False)} {froms} {bottom}"
+                    stattype_str += f"{stringfromseconds(self.aw.bbp_bottom2chargetime,False)} {from_s} {bottom}"
             elif n == 26:  # BBP summary long
                 if self.aw.bbp_totaltime:  # noqa: SIM102
                     seconds = int(math.floor(self.aw.bbp_begin2bottomtime + 0.5))
                     d, m = divmod(seconds, 60)
                     bbp_str = f"{bottom} temp@{self.aw.bbp_bottomtemp:.0f}{degree}{self.mode} - "
-                    bbp_str += f"{d}min {m}sec {froms} {begin} to bottom temp"
+                    bbp_str += f"{d}min {m}sec {from_s} {begin} to bottom temp"
                     stattype_str += wrapString(bbp_str)
                     bbp_str = f"{newline}{charge} temp: {self.temp2[self.timeindex[0]]:.0f}{degree}{self.mode} - "
-                    bbp_str += f"{self.aw.bbp_bottom2chargetime:.0f} {froms} {bottom} temp to charge"
+                    bbp_str += f"{self.aw.bbp_bottom2chargetime:.0f} {from_s} {bottom} temp to charge"
                     stattype_str += wrapString(bbp_str)
-            elif n == 27:  # BBP summary compact
+            elif n == 27:  # BBP summary compact  # noqa: SIM102
                 if self.aw.bbp_totaltime:  # noqa: SIM102
                     startingtemp = self.aw.bbp_dropbt if self.aw.bbp_begin == 'DROP' else self.temp2[0]
                     stattype_str += f"{newline}{startingtemp:.0f}{degree}{self.mode} "
@@ -10721,8 +10720,6 @@ class tgraphcanvas(FigureCanvas):
             #
 
         try:
-            t0 = libtime.perf_counter() #dave
-            t1 = t2 = t3 = t4 = t5 = t6 = t7 = t8 = 0.0
             newline = '\n'
             statstr_segments = []
             cp = self.aw.computedProfileInformation()  # get all the computed profile information
@@ -10734,6 +10731,9 @@ class tgraphcanvas(FigureCanvas):
             if len(statstr) > 1 and statstr[0] == newline:
                 statstr = statstr[1:]
 
+            if txt:
+                return statstr
+
             # font properties for event annos
             event_prop = self.aw.mpl_fontproperties.copy()
             event_prop.set_size('x-small')  # to match the prop size used for event annos in redraw())
@@ -10741,7 +10741,6 @@ class tgraphcanvas(FigureCanvas):
             # font properties for Summary Statistics
             prop = self.aw.mpl_fontproperties.copy()
             font_sizes = ['x-small','x-small','small','medium','large']
-#            _log.info(f'*** *** {self.aw.summarystatsfontsize=}')
             prop_size = font_sizes[self.aw.summarystatsfontsize]
             prop.set_size(prop_size)
             fc = self.palette['statsanalysisbkgnd']  #fill color
@@ -10793,7 +10792,6 @@ class tgraphcanvas(FigureCanvas):
             _,_,stats_textbox_width,_ = self.statstextboxBounds(time0,self.ylimit,statstr,ls,prop,fc)
             marginX = stats_textbox_width * marginX_factor
 #            _log.info("1 stats_textbox_width= %s",stats_textbox_width)  #dave
-            t1 = libtime.perf_counter() #dave
             # this presumes the origin of the event label is on the event, it is independent of the actual label position
             patch_originX = time0 + min(self.ax.get_xlim()[0],0) + self.endofx - stats_textbox_width - borderX - 2*marginX
             #_log.info(f'++++ {self.endofx=}, {self.ax.get_xlim()[1]=}')  #dave
@@ -10813,7 +10811,6 @@ class tgraphcanvas(FigureCanvas):
                 # find right side of the event label
                 _,_,eventtext_end = self.eventtextBounds(time0,patch_upperY,event_label,ls,event_prop,fc)
 #                _log.info("1 eventtext_end= %s, time0= %s",eventtext_end, time0)  #dave
-                t2 = libtime.perf_counter() #dave
                 self.endofx = eventtext_end + stats_textbox_width + 2*borderX + 2*marginX # provide room for the stats
                 self.xaxistosm(redraw=False)  # recalculate the x axis
 
@@ -10877,7 +10874,7 @@ class tgraphcanvas(FigureCanvas):
                 if avail_height > stats_textbox_height:
                     line_height = stats_textbox_height/(linecount + 1)  #unused
                     if True or i == linecount:  #TODO remove conditional
-                        _log.info(f'-+-  {stats_textbox_height=}, {patch_upperY=}, {patch_height=}')
+                        _log.info(f'-+-  {stats_textbox_height=}, {patch_upperY=}, {patch_height=}')  #dave
                         #patch_height = stats_textbox_height * font_bleed + 2*marginY
                         patch_height = stats_textbox_height + 2*marginY
                         patch_originY = max(patch_originY, patch_upperY - patch_height)  #dave!!
@@ -10901,10 +10898,8 @@ class tgraphcanvas(FigureCanvas):
                         statstr = statstr[:trunc_index] + uchr(187) # '»'
 
             _log.info('i= %s, stats_textbox_height= %s, avail_height= %s, linecount= %s', i, stats_textbox_height, avail_height, linecount) #dave
-            t6 = libtime.perf_counter() #dave
 
             _log.info("stats_textbox_width=%s, marginX=%s, total width=%s", stats_textbox_width,marginX,stats_textbox_width+2*marginX)  #dave
-            pos_y = self.ylimit - borderY - marginY
             _log.info('self.ylimit - self.ylimit_min -20 aka pos_y= %s',self.ylimit - self.ylimit_min -20)  #dave
 
             # the patch is used as background to allow for transparency
@@ -10985,6 +10980,7 @@ class tgraphcanvas(FigureCanvas):
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
             self.adderror((QApplication.translate('Error Message','Exception:') + ' statsSummary() {0}').format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+        return ''
 
     def legendboxbounds(self) -> Tuple[float,float,float,float]:
         try:
@@ -11008,7 +11004,7 @@ class tgraphcanvas(FigureCanvas):
                 ymin = y_min + y_range * legend_bb_axes.y0
                 ymax = y_min + y_range * legend_bb_axes.y1
 
-                _log.info(f'Legend {legend_bb_axes=}')
+                _log.info(f'Legend {legend_bb_axes=}')  #dave
                 _log.info(f'Legend {int(x_min)=} {stringfromseconds(x_min)}, {int(x_max)=} {stringfromseconds(x_max)}')  #dave
                 _log.info(f'Legend {int(y_min)=}, {int(y_max)=}')  #dave
                 _log.info(f'Legend {int(x_range)=} {stringfromseconds(x_range)}, {int(y_range)=}')  #dave
@@ -11056,7 +11052,7 @@ class tgraphcanvas(FigureCanvas):
                 eventtext_end = self.timex[-1] - x_pos #default for when Events Annotations is unchecked
                 for child in reversed(self.ax.get_children()):  # reversed() needed when there is a background profile
                     if isinstance(child, Annotation):
-                        #_log.info(f'+++{str(child)=}')
+                        #_log.info(f'+++{str(child)=}')  #dave
                         eventtext = re.search(fr'.*\((.*?),.*({event_label}[ 0-9:]*)',str(child))
                         if eventtext:
 #                            _log.info(f'Found {str(child)}')  #dave
@@ -12557,10 +12553,10 @@ class tgraphcanvas(FigureCanvas):
                 self.bbpCache['drop_events'] = [[4,None], [None,None], [None,None], [6,None]]
                 self.bbpCache['end_to_drop'] = -12
                 self.bbpCache['drop_to_end'] = 12
-                _log.info(f'~~~ {self.bbpCache["end_roastepoch_msec"]=}')
-                _log.info(f'~~~ {self.bbpCache["end_to_drop"]=}')
-                _log.info(f'~~~ {self.bbpCache["end_events"]=}')
-                _log.info(f'~~~ {self.bbpCache["drop_events"]=}')
+                _log.info(f'~~~ {self.bbpCache["end_roastepoch_msec"]=}')  #dave
+                _log.info(f'~~~ {self.bbpCache["end_to_drop"]=}')  #dave
+                _log.info(f'~~~ {self.bbpCache["end_events"]=}')  #dave
+                _log.info(f'~~~ {self.bbpCache["drop_events"]=}')  #dave
                 #dave - end test code
             # if on turn mouse crosslines off
             if self.crossmarker:
@@ -12672,8 +12668,7 @@ class tgraphcanvas(FigureCanvas):
                 start = self.timex[self.timeindex[0]]
                 if (len(self.timex)>0 and self.timex[-1] - start) > 7*60: # only after 7min into the roast
                     self.markDrop()
-            # dave save items for bbp
-            self.cacheforBbp()  #dave
+            self.cacheforBbp()  # save items for bbp
             self.aw.enableSaveActions()
             self.aw.resetCurveVisibilities()
             self.flagstart = False
@@ -14789,7 +14784,6 @@ class tgraphcanvas(FigureCanvas):
             _, _, exc_tb = sys.exc_info()
             self.adderror((QApplication.translate('Error Message','Exception:') + ' writestatistics() {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
-    #dave Start
     def cacheforBbp(self) -> None:
         # mode
         self.bbpCache['mode'] = self.mode
@@ -14804,10 +14798,10 @@ class tgraphcanvas(FigureCanvas):
         self.bbpCache['drop_events'] = self.get_specialevents_at_timeindex(self.timeindex[6])
         self.bbpCache['end_to_drop'] = self.timex[self.timeindex[6]] - self.timex[-1]
         self.bbpCache['drop_to_end'] = self.timex[-1] - self.timex[self.timeindex[6]]
-        _log.info(f'~~~ {self.bbpCache["end_roastepoch_msec"]=}')
-        _log.info(f'~~~ {self.bbpCache["end_to_drop"]=}')
-        _log.info(f'~~~ {self.bbpCache["end_events"]=}')
-        _log.info(f'~~~ {self.bbpCache["drop_events"]=}')
+        _log.info(f'~~~ {self.bbpCache["end_roastepoch_msec"]=}')  #dave
+        _log.info(f'~~~ {self.bbpCache["end_to_drop"]=}')  #dave
+        _log.info(f'~~~ {self.bbpCache["end_events"]=}')  #dave
+        _log.info(f'~~~ {self.bbpCache["drop_events"]=}')  #dave
 
 
     def get_specialevents_at_timeindex(self, timeindex:int) -> List[List[Optional[float]]]:
@@ -14823,8 +14817,6 @@ class tgraphcanvas(FigureCanvas):
                     values_at_timeindex[event_type] = [self.specialeventsvalue[i], last_change_after_drop]
                     break
         return values_at_timeindex
-
-    #dave end
 
     @staticmethod
     def convertHeat(value:float, fromUnit:int, toUnit:int=0) -> float:

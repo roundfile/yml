@@ -450,10 +450,12 @@ class StatisticsDlg(ArtisanDialog):
         if self.aw.qmc.autotimex and not self.aw.qmc.statssummary:
             self.aw.autoAdjustAxis()
         self.aw.qmc.redraw(recomputeAllDeltas=False)
-        if self.aw.qmc.statssummary and not self.aw.qmc.flagon:
-            self.aw.savestatisticsAction.setEnabled(True)
-        else:
-            self.aw.savestatisticsAction.setEnabled(False)
+        if self.aw.qmc.statssummary and not self.aw.qmc.flagon and self.aw.saveStatisticsMenu is not None:
+            #dave self.aw.savestatisticsAction.setEnabled(True)
+            self.aw.saveStatisticsMenu.setEnabled(True)
+        elif self.aw.saveStatisticsMenu is not None:
+            #dave self.aw.savestatisticsAction.setEnabled(False)
+            self.aw.saveStatisticsMenu.setEnabled(False)
 
     @pyqtSlot(int)
     def changeStatisticsflag(self, value:int) -> None:
@@ -582,7 +584,7 @@ class StatisticsDlg(ArtisanDialog):
 #            # rows have been already established
 #            # save the current columnWidth to reset them after table creation
 #            self.aw.summarystatstablecolumnwidths = [self.summarystatstable.columnWidth(self.summarystatstable.width())]
-        _log.info("Table width %s", self.summarystatstable.width())
+        #_log.info("Table width %s", self.summarystatstable.width())  #dave
 
         # deleting all rows is not allowed, create a first row if that happens
         if len(self.summarystatstypes) < 1:
