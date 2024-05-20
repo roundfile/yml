@@ -130,7 +130,7 @@ for:
     fast_finish: false
 
   environment:
-    PYTHON_V: 3.12
+    #PYTHON_V: 3.11
     QT_PATH: "C:/qt/6.5.1/msvc2019_64"  #there is no msvc2022_64 under /qt*
     PYQT: "6"
     PYUIC: "pyuic6.exe"
@@ -170,6 +170,9 @@ for:
   build_script:
     - cmd: echo Windows Build
     - cmd: cd src
+
+    #Pause Build Here For Remote Desktop Access
+    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
     #update the copyright year used by pyinstaller to set exe properties for Windows
     - ps: $YEAR=(Get-Date).year
