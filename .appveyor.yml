@@ -172,7 +172,7 @@ for:
     - cmd: cd src
 
     #Pause Build Here For Remote Desktop Access
-    #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
     #update the copyright year used by pyinstaller to set exe properties for Windows
     - ps: $YEAR=(Get-Date).year
