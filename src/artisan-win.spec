@@ -116,8 +116,7 @@ hiddenimports_list=['charset_normalizer.md__mypyc', # part of requests 2.28.2 # 
                             'scipy._lib.messagestream',
                             'pywintypes',
                             'win32cred',
-                            'win32timezone',
-                            'ctypes'
+                            'win32timezone'
                             ]
 # Add the hidden imports not required by legacy Windows.
 if not ARTISAN_LEGACY=='True':
@@ -129,7 +128,7 @@ if not ARTISAN_LEGACY=='True':
 
 
 a = Analysis(['artisan.py'],
-             pathex=[PYQT_QT_BIN, ARTISAN_SRC, SCIPY_BIN, r'C:\Windows\SysWOW64\downlevel'],
+             pathex=[PYQT_QT_BIN, ARTISAN_SRC, SCIPY_BIN],
              binaries=[],
              datas=[],
              hookspath=[],
