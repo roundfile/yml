@@ -129,7 +129,7 @@ if not ARTISAN_LEGACY=='True':
 
 
 a = Analysis(['artisan.py'],
-             pathex=[PYQT_QT_BIN, ARTISAN_SRC, SCIPY_BIN, 'C:\Windows\SysWOW64\downlevel'],
+             pathex=[PYQT_QT_BIN, ARTISAN_SRC, SCIPY_BIN, r'C:\Windows\SysWOW64\downlevel'],
              binaries=[],
              datas=[],
              hookspath=[],
