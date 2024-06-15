@@ -293,18 +293,18 @@ class serialport:
         self.PhidgetIOlastvalues:List[float] = [-1]*8 # the values gathered by registered change triggers
         self.PhidgetIOsemaphores:List[QSemaphore] = [QSemaphore(1),QSemaphore(1),QSemaphore(1),QSemaphore(1)] # semaphores protecting the access to self.Phidget1048values per channel
         #stores the Phidget Digital Output PMW objects (None if not initialized)
-        self.PhidgetDigitalOut:Dict[Optional[str], List['Phidget']] = {} # type:ignore[no-any-unimported,unused-ignore] # a dict associating out serials with lists of channels
+        self.PhidgetDigitalOut:Dict[Optional[str], List[Phidget]] = {} # type:ignore[no-any-unimported,unused-ignore] # a dict associating out serials with lists of channels
         self.PhidgetDigitalOutLastPWM:Dict[Optional[str], List[int]] = {} # a dict associating out serials with the list of last PWMs per channel
         self.PhidgetDigitalOutLastToggle:Dict[Optional[str], List[Optional[int]]] = {} # a dict associating out serials with the list of last 'PWM'-toggles per channel; if not None, channel was last toggled OFF and the value indicates that lastPWM on switching OFF
-        self.PhidgetDigitalOutHub:Dict[Optional[str], List['Phidget']] = {} # type:ignore[no-any-unimported,unused-ignore] # a dict associating hub serials with lists of channels
+        self.PhidgetDigitalOutHub:Dict[Optional[str], List[Phidget]] = {} # type:ignore[no-any-unimported,unused-ignore] # a dict associating hub serials with lists of channels
         self.PhidgetDigitalOutLastPWMhub:Dict[Optional[str], List[int]] = {} # a dict associating hub serials with the list of last PWMs per port of the hub
         self.PhidgetDigitalOutLastToggleHub:Dict[Optional[str], List[Optional[int]]] = {} # a dict associating hub serials with the list of last toggles per port of the hub; if not None, channel was last toggled OFF and the value indicates that lastPWM on switching OFF
         #store the Phidget Analog Output objects
-        self.PhidgetAnalogOut:Dict[Optional[str], List['Phidget']] = {} # type:ignore[no-any-unimported,unused-ignore] # a dict associating serials with lists of channels
+        self.PhidgetAnalogOut:Dict[Optional[str], List[Phidget]] = {} # type:ignore[no-any-unimported,unused-ignore] # a dict associating serials with lists of channels
         #store the servo objects
-        self.PhidgetRCServo:Dict[Optional[str], List['Phidget']] = {} # type:ignore[no-any-unimported,unused-ignore] # a dict associating serials with lists of channels
+        self.PhidgetRCServo:Dict[Optional[str], List[Phidget]] = {} # type:ignore[no-any-unimported,unused-ignore] # a dict associating serials with lists of channels
         #store the Phidget DCMotor objects
-        self.PhidgetDCMotor:Dict[Optional[str], List['Phidget']] = {} # type:ignore[no-any-unimported,unused-ignore] # a dict associating serials with lists of channels
+        self.PhidgetDCMotor:Dict[Optional[str], List[Phidget]] = {} # type:ignore[no-any-unimported,unused-ignore] # a dict associating serials with lists of channels
         # Phidget Ambient Sensor Channels
         self.PhidgetHUMtemp:Optional[PhidgetTemperatureSensor] = None # type:ignore[no-any-unimported,unused-ignore]
         self.PhidgetHUMhum:Optional[PhidgetHumiditySensor] = None# type:ignore[no-any-unimported,unused-ignore]
@@ -312,9 +312,9 @@ class serialport:
         self.TMP1000temp:Optional[PhidgetTemperatureSensor] = None# type:ignore[no-any-unimported,unused-ignore]
         #Yoctopuce channels
         self.YOCTOlibImported:bool = False # ensure that the YOCTOlib is only imported once
-        self.YOCTOsensor:Optional['YSensor'] = None # type:ignore[no-any-unimported,unused-ignore]
-        self.YOCTOchan1:Optional['YSensor'] = None # type:ignore[no-any-unimported,unused-ignore]
-        self.YOCTOchan2:Optional['YSensor'] = None # type:ignore[no-any-unimported,unused-ignore]
+        self.YOCTOsensor:Optional[YSensor] = None # type:ignore[no-any-unimported,unused-ignore]
+        self.YOCTOchan1:Optional[YSensor] = None # type:ignore[no-any-unimported,unused-ignore]
+        self.YOCTOchan2:Optional[YSensor] = None # type:ignore[no-any-unimported,unused-ignore]
         self.YOCTOtempIRavg:Optional[float] = None # averages IR module temperature channel to eliminate noise
 
         self.YOCTOvalues:List[List[Tuple[float,float]]] = [[],[]] # the values for each of the 2 channels gathered by registered change triggers in the last period
@@ -322,11 +322,11 @@ class serialport:
         self.YOCTOsemaphores:List[QSemaphore] = [QSemaphore(1),QSemaphore(1)] # semaphores protecting the access to YOCTO per channel
         self.YOCTOthread:Optional[YoctoThread] = None
 
-        self.YOCTOvoltageOutputs:List['YVoltageOutput'] = [] # type:ignore[no-any-unimported,unused-ignore]
-        self.YOCTOcurrentOutputs:List['YCurrentLoopOutput'] = [] # type:ignore[no-any-unimported,unused-ignore]
-        self.YOCTOrelays:List['YRelay'] = [] # type:ignore[no-any-unimported,unused-ignore]
-        self.YOCTOservos:List['YServo'] = [] # type:ignore[no-any-unimported,unused-ignore]
-        self.YOCTOpwmOutputs:List['YPwmOutput'] = [] # type:ignore[no-any-unimported,unused-ignore]
+        self.YOCTOvoltageOutputs:List[YVoltageOutput] = [] # type:ignore[no-any-unimported,unused-ignore]
+        self.YOCTOcurrentOutputs:List[YCurrentLoopOutput] = [] # type:ignore[no-any-unimported,unused-ignore]
+        self.YOCTOrelays:List[YRelay] = [] # type:ignore[no-any-unimported,unused-ignore]
+        self.YOCTOservos:List[YServo] = [] # type:ignore[no-any-unimported,unused-ignore]
+        self.YOCTOpwmOutputs:List[YPwmOutput] = [] # type:ignore[no-any-unimported,unused-ignore]
 
         #stores the _id of the meter HH506RA as a string
         self.HH506RAid:str = 'X'
@@ -354,7 +354,7 @@ class serialport:
         self.ArduinoIsInitialized = 0
         self.ArduinoFILT = [70,70,70,70] # Arduino Filter settings per channel in %
         self.HH806Winitflag = 0
-        self.R1:Optional['AillioR1'] = None
+        self.R1:Optional[AillioR1] = None
         #list of functions calls to read temperature for devices.
         # device 0 (with index 0 below) is Fuji Pid
         # device 1 (with index 1 below) is Omega HH806
@@ -526,7 +526,11 @@ class serialport:
                                    self.Ikawa_MROR,           #160
                                    self.HH309_34,             #161
                                    self.Digi_Sense_20250_07,  #162
-                                   self.Extech42570           #163
+                                   self.Extech42570,          #163
+                                   self.Mugma_BTET,           #164
+                                   self.Mugma_HeaterFan,      #165
+                                   self.Mugma_Catalyzer,      #166
+                                   self.Mugma_SV              #167
                                    ]
         #string with the name of the program for device #27
         self.externalprogram:str = 'test.py'
@@ -1615,6 +1619,43 @@ class serialport:
         else:
             t1 = t2 = -1
         return tx,t1,t2 # time, -1 (chan2), Drum (chan1)
+
+    def Mugma_BTET(self) -> Tuple[float,float,float]:
+        tx = self.aw.qmc.timeclock.elapsedMilli()
+        if self.aw.mugma is not None:
+            t1 = self.aw.mugma.getET()
+            t2 = self.aw.mugma.getBT()
+            if self.aw.qmc.mode == 'F':
+                t1 = fromCtoFstrict(t1)
+                t2 = fromCtoFstrict(t2)
+        else:
+            t1 = t2 = -1
+        return tx,t1,t2 # time, ET (chan2), BT (chan1)
+
+    def Mugma_HeaterFan(self) -> Tuple[float,float,float]:
+        tx = self.aw.qmc.timeclock.elapsedMilli()
+        if self.aw.mugma is not None:
+            t1 = self.aw.mugma.getHeater()
+            t2 = self.aw.mugma.getFan()
+        else:
+            t1 = t2 = -1
+        return tx,t1,t2 # time, Fan (chan2), Heater (chan1)
+
+    def Mugma_Catalyzer(self) -> Tuple[float,float,float]:
+        tx = self.aw.qmc.timeclock.elapsedMilli()
+        if self.aw.mugma is not None:
+            t1 = t2 = self.aw.mugma.getCatalyzer()
+        else:
+            t1 = t2 = -1
+        return tx,t1,t2 # time, Catalyzer (chan2), Catalyzer (chan1)
+
+    def Mugma_SV(self) -> Tuple[float,float,float]:
+        tx = self.aw.qmc.timeclock.elapsedMilli()
+        if self.aw.mugma is not None:
+            t1 = t2 = self.aw.mugma.getSV()
+        else:
+            t1 = t2 = -1
+        return tx,t1,t2 # time, SV (chan2), SV (chan1)
 
     def Kaleido_BTET(self) -> Tuple[float,float,float]:
         tx = self.aw.qmc.timeclock.elapsedMilli()

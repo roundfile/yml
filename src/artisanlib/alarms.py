@@ -257,7 +257,7 @@ class AlarmDlg(ArtisanResizeablDialog):
             self.TabWidget.setFocus()
 
         # we set the active tab with a QTimer after the tabbar has been rendered once, as otherwise
-        # some tabs are not rendered at all on Winwos using Qt v6.5.1 (https://bugreports.qt.io/projects/QTBUG/issues/QTBUG-114204?filter=allissues)
+        # some tabs are not rendered at all on Windows using Qt v6.5.1 (https://bugreports.qt.io/projects/QTBUG/issues/QTBUG-114204?filter=allissues)
         QTimer.singleShot(50, self.setActiveTab)
 
     @pyqtSlot()
@@ -269,7 +269,7 @@ class AlarmDlg(ArtisanResizeablDialog):
     def setAlarmSetLabels(self) -> None:
         alarmset_labels = []
         for i in range(self.aw.qmc.ALARMSET_COUNT):
-            alarmset:'Optional[AlarmSet]' = self.aw.qmc.getAlarmSet(i)
+            alarmset:Optional[AlarmSet] = self.aw.qmc.getAlarmSet(i)
             if alarmset is not None:
                 alarmset_labels.append(f"{str(i)} {alarmset['label']}")
         self.transferalarmsetcombobox.clear()

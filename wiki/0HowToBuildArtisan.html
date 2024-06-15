@@ -1,0 +1,797 @@
+<!doctype html>
+<html id="mdhtml">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, minimal-ui">
+    <meta http-equiv="X-UA-Compatible" content="IE=9">
+    <title>Markdown preview</title>
+    <style>body {
+  box-sizing: border-box;
+  min-width: 200px;
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 45px;
+}
+
+@font-face {
+  font-family: octicons-link;
+  src: url(data:font/woff;charset=utf-8;base64,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) format('woff');
+}
+
+.markdown-body {
+  -ms-text-size-adjust: 100%;
+  -webkit-text-size-adjust: 100%;
+  line-height: 1.5;
+  color: #24292e;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  font-size: 16px;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.markdown-body .pl-c {
+  color: #6a737d;
+}
+
+.markdown-body .pl-c1,
+.markdown-body .pl-s .pl-v {
+  color: #005cc5;
+}
+
+.markdown-body .pl-e,
+.markdown-body .pl-en {
+  color: #6f42c1;
+}
+
+.markdown-body .pl-smi,
+.markdown-body .pl-s .pl-s1 {
+  color: #24292e;
+}
+
+.markdown-body .pl-ent {
+  color: #22863a;
+}
+
+.markdown-body .pl-k {
+  color: #d73a49;
+}
+
+.markdown-body .pl-s,
+.markdown-body .pl-pds,
+.markdown-body .pl-s .pl-pse .pl-s1,
+.markdown-body .pl-sr,
+.markdown-body .pl-sr .pl-cce,
+.markdown-body .pl-sr .pl-sre,
+.markdown-body .pl-sr .pl-sra {
+  color: #032f62;
+}
+
+.markdown-body .pl-v,
+.markdown-body .pl-smw {
+  color: #e36209;
+}
+
+.markdown-body .pl-bu {
+  color: #b31d28;
+}
+
+.markdown-body .pl-ii {
+  color: #fafbfc;
+  background-color: #b31d28;
+}
+
+.markdown-body .pl-c2 {
+  color: #fafbfc;
+  background-color: #d73a49;
+}
+
+.markdown-body .pl-c2::before {
+  content: "^M";
+}
+
+.markdown-body .pl-sr .pl-cce {
+  font-weight: bold;
+  color: #22863a;
+}
+
+.markdown-body .pl-ml {
+  color: #735c0f;
+}
+
+.markdown-body .pl-mh,
+.markdown-body .pl-mh .pl-en,
+.markdown-body .pl-ms {
+  font-weight: bold;
+  color: #005cc5;
+}
+
+.markdown-body .pl-mi {
+  font-style: italic;
+  color: #24292e;
+}
+
+.markdown-body .pl-mb {
+  font-weight: bold;
+  color: #24292e;
+}
+
+.markdown-body .pl-md {
+  color: #b31d28;
+  background-color: #ffeef0;
+}
+
+.markdown-body .pl-mi1 {
+  color: #22863a;
+  background-color: #f0fff4;
+}
+
+.markdown-body .pl-mc {
+  color: #e36209;
+  background-color: #ffebda;
+}
+
+.markdown-body .pl-mi2 {
+  color: #f6f8fa;
+  background-color: #005cc5;
+}
+
+.markdown-body .pl-mdr {
+  font-weight: bold;
+  color: #6f42c1;
+}
+
+.markdown-body .pl-ba {
+  color: #586069;
+}
+
+.markdown-body .pl-sg {
+  color: #959da5;
+}
+
+.markdown-body .pl-corl {
+  text-decoration: underline;
+  color: #032f62;
+}
+
+.markdown-body .octicon {
+  display: inline-block;
+  vertical-align: text-top;
+  fill: currentColor;
+}
+
+.markdown-body a {
+  background-color: transparent;
+}
+
+.markdown-body a:active,
+.markdown-body a:hover {
+  outline-width: 0;
+}
+
+.markdown-body h1 {
+  font-size: 2em;
+  margin: 0.67em 0;
+}
+
+.markdown-body img {
+  border-style: none;
+}
+
+.markdown-body code,
+.markdown-body kbd,
+.markdown-body pre {
+  font-family: monospace, monospace;
+  font-size: 1em;
+}
+
+.markdown-body hr {
+  box-sizing: content-box;
+  height: 0;
+  overflow: visible;
+}
+
+.markdown-body input {
+  font: inherit;
+  margin: 0;
+}
+
+.markdown-body input {
+  overflow: visible;
+}
+
+.markdown-body [type="checkbox"] {
+  box-sizing: border-box;
+  padding: 0;
+}
+
+.markdown-body * {
+  box-sizing: border-box;
+}
+
+.markdown-body input {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+}
+
+.markdown-body a {
+  color: #0366d6;
+  text-decoration: none;
+}
+
+.markdown-body a:hover {
+  text-decoration: underline;
+}
+
+.markdown-body strong {
+  font-weight: 700;
+}
+
+.markdown-body hr {
+  height: 0;
+  margin: 15px 0;
+  overflow: hidden;
+  background: transparent;
+  border: 0;
+  border-bottom: 1px solid #dfe2e5;
+}
+
+.markdown-body hr::before {
+  display: table;
+  content: "";
+}
+
+.markdown-body hr::after {
+  display: table;
+  clear: both;
+  content: "";
+}
+
+.markdown-body table {
+  border-spacing: 0;
+  border-collapse: collapse;
+}
+
+.markdown-body td,
+.markdown-body th {
+  padding: 0;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.markdown-body h1 {
+  font-size: 32px;
+  font-weight: 600;
+}
+
+.markdown-body h2 {
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.markdown-body h3 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.markdown-body h4 {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.markdown-body h5 {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.markdown-body h6 {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.markdown-body p {
+  margin-top: 0;
+  margin-bottom: 10px;
+}
+
+.markdown-body blockquote {
+  margin: 0;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.markdown-body ol ol,
+.markdown-body ul ol {
+  list-style-type: lower-roman;
+}
+
+.markdown-body ul ul ol,
+.markdown-body ul ol ol,
+.markdown-body ol ul ol,
+.markdown-body ol ol ol {
+  list-style-type: lower-alpha;
+}
+
+.markdown-body dd {
+  margin-left: 0;
+}
+
+.markdown-body code {
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  font-size: 12px;
+}
+
+.markdown-body pre {
+  margin-top: 0;
+  margin-bottom: 0;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  font-size: 12px;
+}
+
+.markdown-body .octicon {
+  vertical-align: text-bottom;
+}
+
+.markdown-body .pl-0 {
+  padding-left: 0 !important;
+}
+
+.markdown-body .pl-1 {
+  padding-left: 4px !important;
+}
+
+.markdown-body .pl-2 {
+  padding-left: 8px !important;
+}
+
+.markdown-body .pl-3 {
+  padding-left: 16px !important;
+}
+
+.markdown-body .pl-4 {
+  padding-left: 24px !important;
+}
+
+.markdown-body .pl-5 {
+  padding-left: 32px !important;
+}
+
+.markdown-body .pl-6 {
+  padding-left: 40px !important;
+}
+
+.markdown-body::before {
+  display: table;
+  content: "";
+}
+
+.markdown-body::after {
+  display: table;
+  clear: both;
+  content: "";
+}
+
+.markdown-body>*:first-child {
+  margin-top: 0 !important;
+}
+
+.markdown-body>*:last-child {
+  margin-bottom: 0 !important;
+}
+
+.markdown-body a:not([href]) {
+  color: inherit;
+  text-decoration: none;
+}
+
+.markdown-body .anchor {
+  float: left;
+  padding-right: 4px;
+  margin-left: -20px;
+  line-height: 1;
+}
+
+.markdown-body .anchor:focus {
+  outline: none;
+}
+
+.markdown-body p,
+.markdown-body blockquote,
+.markdown-body ul,
+.markdown-body ol,
+.markdown-body dl,
+.markdown-body table,
+.markdown-body pre {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.markdown-body hr {
+  height: 1px;
+  padding: 0;
+  margin: 24px 0;
+  background-color: #d5d5d6;
+  border: 0;
+}
+
+.markdown-body blockquote {
+  padding: 0 1em;
+  color: #6a737d;
+  border-left: 0.25em solid #dfe2e5;
+  font-style: italic;
+}
+
+.markdown-body blockquote>:first-child {
+  margin-top: 0;
+}
+
+.markdown-body blockquote>:last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body kbd {
+  display: inline-block;
+  padding: 3px 5px;
+  font-size: 11px;
+  line-height: 10px;
+  color: #444d56;
+  vertical-align: middle;
+  background-color: #fafbfc;
+  border: solid 1px #c6cbd1;
+  border-bottom-color: #959da5;
+  border-radius: 3px;
+  box-shadow: inset 0 -1px 0 #959da5;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.markdown-body h1 .octicon-link,
+.markdown-body h2 .octicon-link,
+.markdown-body h3 .octicon-link,
+.markdown-body h4 .octicon-link,
+.markdown-body h5 .octicon-link,
+.markdown-body h6 .octicon-link {
+  color: #1b1f23;
+  vertical-align: middle;
+  visibility: hidden;
+}
+
+.markdown-body h1:hover .anchor,
+.markdown-body h2:hover .anchor,
+.markdown-body h3:hover .anchor,
+.markdown-body h4:hover .anchor,
+.markdown-body h5:hover .anchor,
+.markdown-body h6:hover .anchor {
+  text-decoration: none;
+}
+
+.markdown-body h1:hover .anchor .octicon-link,
+.markdown-body h2:hover .anchor .octicon-link,
+.markdown-body h3:hover .anchor .octicon-link,
+.markdown-body h4:hover .anchor .octicon-link,
+.markdown-body h5:hover .anchor .octicon-link,
+.markdown-body h6:hover .anchor .octicon-link {
+  visibility: visible;
+}
+
+.markdown-body h1 {
+  padding-bottom: 0.3em;
+  font-size: 2em;
+  border-bottom: 1px solid #eaecef;
+}
+
+.markdown-body h2 {
+  padding-bottom: 0.3em;
+  font-size: 1.5em;
+  border-bottom: 1px solid #eaecef;
+}
+
+.markdown-body h3 {
+  font-size: 1.25em;
+}
+
+.markdown-body h4 {
+  font-size: 1em;
+}
+
+.markdown-body h5 {
+  font-size: 0.875em;
+}
+
+.markdown-body h6 {
+  font-size: 0.85em;
+  color: #6a737d;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  padding-left: 2em;
+}
+
+.markdown-body ul ul,
+.markdown-body ul ol,
+.markdown-body ol ol,
+.markdown-body ol ul {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.markdown-body li {
+  word-wrap: break-all;
+}
+
+.markdown-body li>p {
+  margin-top: 16px;
+}
+
+.markdown-body li+li {
+  margin-top: 0.25em;
+}
+
+.markdown-body dl {
+  padding: 0;
+}
+
+.markdown-body dl dt {
+  padding: 0;
+  margin-top: 16px;
+  font-size: 1em;
+  font-style: italic;
+  font-weight: 600;
+}
+
+.markdown-body dl dd {
+  padding: 0 16px;
+  margin-bottom: 16px;
+}
+
+.markdown-body table {
+  display: block;
+  overflow: auto;
+}
+
+.markdown-body table th {
+  font-weight: 600;
+}
+
+.markdown-body table th,
+.markdown-body table td {
+  padding: 6px 13px;
+  border: 1px solid #dfe2e5;
+}
+
+.markdown-body table tr {
+  background-color: #fff;
+  border-top: 1px solid #c6cbd1;
+}
+
+.markdown-body table tr:nth-child(2n) {
+  background-color: #f6f8fa;
+}
+
+.markdown-body img {
+  max-width: 100%;
+  box-sizing: content-box;
+  background-color: #fff;
+}
+
+.markdown-body img[align=right] {
+  padding-left: 20px;
+}
+
+.markdown-body img[align=left] {
+  padding-right: 20px;
+}
+
+.markdown-body code {
+  padding: 0.2em 0.4em;
+  margin: 0;
+  font-size: 85%;
+  background-color: #f1f1f1;
+  border: 1px solid #cecece;
+  border-radius: 3px;
+}
+
+.markdown-body pre {
+  word-wrap: normal;
+}
+
+.markdown-body pre>code {
+  padding: 0;
+  margin: 0;
+  font-size: 100%;
+  word-break: normal;
+  white-space: pre;
+  background: transparent;
+  border: 0;
+}
+
+.markdown-body .highlight {
+  margin-bottom: 16px;
+}
+
+.markdown-body .highlight pre {
+  margin-bottom: 0;
+  word-break: normal;
+}
+
+.markdown-body .highlight pre,
+.markdown-body pre {
+  padding: 16px;
+  overflow: auto;
+  font-size: 85%;
+  line-height: 1.45;
+  background-color: #f1f1f1;
+  border: 1px solid #cecece;
+  border-radius: 3px;
+}
+
+.markdown-body pre code {
+  display: inline;
+  max-width: auto;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  line-height: inherit;
+  word-wrap: normal;
+  background-color: transparent;
+  border: 0;
+}
+
+.markdown-body .full-commit .btn-outline:not(:disabled):hover {
+  color: #005cc5;
+  border-color: #005cc5;
+}
+
+.markdown-body kbd {
+  display: inline-block;
+  padding: 3px 5px;
+  font: 11px "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+  line-height: 10px;
+  color: #444d56;
+  vertical-align: middle;
+  background-color: #fafbfc;
+  border: solid 1px #d1d5da;
+  border-bottom-color: #c6cbd1;
+  border-radius: 3px;
+  box-shadow: inset 0 -1px 0 #c6cbd1;
+}
+
+.markdown-body :checked+.radio-label {
+  position: relative;
+  z-index: 1;
+  border-color: #0366d6;
+}
+
+.markdown-body .task-list-item {
+  list-style-type: none;
+}
+
+.markdown-body .task-list-item+.task-list-item {
+  margin-top: 3px;
+}
+
+.markdown-body .task-list-item input {
+  margin: 0 0.2em 0.25em -1.6em;
+  vertical-align: middle;
+}
+
+.markdown-body hr {
+  border-bottom-color: #eee;
+}</style>
+  </head>
+  <body>
+    <article class="markdown-body">
+      <h1 data-sourcepos="1:1-1:62">How to build Artisan install packages from source on GitHub.</h1>
+<hr data-sourcepos="3:1-3:4" />
+<p data-sourcepos="4:1-4:277"><strong>Important: Artisan is licensed under <a href="https://www.gnu.org/licenses/gpl-3.0.html">The GNU General Public License</a>.  Copies of Artisan and derivative works are subject to this license.  Be sure to review the license to understand your legal obligations.  Please respect them.</strong></p>
+<hr data-sourcepos="5:1-6:0" />
+<h3 data-sourcepos="7:1-7:16">Introduction</h3>
+<p data-sourcepos="9:1-9:477">Artisan official release, and continuous build, install packages for <strong>Windows</strong>, <strong>macOS</strong> and <strong>Linux</strong> are built from the GitHub repository using <a href="https://www.appveyor.com">AppVeyor CI/CD</a>.  This is an automated process, known as continuous integration (CI), that begins whenever a commit is made to the GitHub repository.  All the necessary files to manage the CI process are contained in the <a href="https://github.com/artisan-roaster-scope/artisan">Artisan GitHub repository</a>.</p>
+<p data-sourcepos="11:1-11:204">Users may <a href="https://docs.github.com/en/get-started/quickstart/fork-a-repo">fork</a> the Artisan repository to their own GitHub account and then build Artisan install packages using their own AppVeyor account.</p>
+<p data-sourcepos="13:1-13:220">Since Artisan is officially built and packaged on AppVeyor, the process works straight out of the box using the files in the Artisan repository.  Follow the instructions below.  They apply to public GitHub repositories.</p>
+<p data-sourcepos="15:1-15:293">While this document is presumed free of errors as of August 2023, there is no guarantee that it is correct as you read it.  If you find an error or discrepancy please start a <a href="https://github.com/artisan-roaster-scope/artisan/discussions/new?category=general">new general discussion</a> on GitHub.</p>
+<p data-sourcepos="17:1-17:198"><em>Note: Building Artisan install packages on a local machine cannot be done without modifying the repository files. The Artisan team does not have the resources to support users making local builds.</em></p>
+<h3 data-sourcepos="19:1-19:16">What Happens</h3>
+<p data-sourcepos="21:1-21:123">Whenever a commit is made to the repository a number of actions occur. A GitHub workflow executes several script that will</p>
+<ul data-sourcepos="22:3-26:0">
+<li data-sourcepos="22:3-22:83">validate and correct certain possible inconsistencies in the committed files,</li>
+<li data-sourcepos="23:3-23:58">validate the Python code with several linting tools,</li>
+<li data-sourcepos="24:3-26:0">trigger the CI process on AppVeyor causing the build and deployment (CD) of the packages back to GitHub.</li>
+</ul>
+<h3 data-sourcepos="27:1-27:16">Step by Step</h3>
+<h4 data-sourcepos="29:1-29:19">Setup Accounts</h4>
+<ol data-sourcepos="30:1-38:0">
+<li data-sourcepos="30:1-30:98"><a href="https://github.com/signup">Sign up</a> to create a GitHub account if you do not already have one.</li>
+<li data-sourcepos="31:1-31:60"><a href="https://github.com/login">Login</a> to your GitHub account.</li>
+<li data-sourcepos="32:1-32:111"><a href="https://github.com/artisan-roaster-scope/artisan/fork">Fork the Artisan repository</a> to your GitHub account.</li>
+<li data-sourcepos="33:1-33:280"><a href="https://ci.appveyor.com/signup">Create</a> an account on AppVeyor.  There are multiple ways to create an account, it is recommended to select the plan &quot;FREE - for open-source projects&quot; then click the GitHub button.  A confirmation window will open.  Click <strong>Authorize AppVeyor</strong>.</li>
+<li data-sourcepos="34:1-34:171">Click <strong>NEW PROJECT</strong>.  On the next page click <strong>Authorize GitHub</strong> under &quot;Authorize as OAuth App&quot;.  Click <strong>Authorize AppVeyor</strong> in the confirmation page that opens.</li>
+<li data-sourcepos="35:1-35:122">AppVeyor should now ask &quot;Select repository for your new project&quot;.  Click on the repository created earlier by the fork.</li>
+<li data-sourcepos="36:1-36:662">To publish the build files to the GitHub releases page requires generating a GitHub personal access token and storing it in the AppVeyor project's environment.  <a href="https://github.com/settings/tokens">Generate a new token</a> with minimally <strong>repo:status</strong>, <strong>repo_deployment</strong> and <strong>public_repo</strong> permissions.  Copy the token.  Go now to <a href="https://ci.appveyor.com/projects">AppVeyor projects</a>, click on the project, then click <strong>Settings</strong> followed by <strong>Environment</strong>.  Under &quot;Environment Variables&quot; click <strong>Add Variable</strong>.  Set the <strong>name</strong> field to &quot;GITHUB_TOKEN&quot; and paste the token into the <strong>value</strong> field.  Scroll to the bottom of the page and click <strong>Save</strong>.</li>
+<li data-sourcepos="37:1-38:0">This completes the setup required to build installation packages on AppVeyor.</li>
+</ol>
+<h4 data-sourcepos="39:1-39:22">Start a CI Build.</h4>
+<p data-sourcepos="40:1-40:191">Make a commit to your GitHub repository.  If working in a local clone do not forget to push the commit.  This will trigger the GitHub actions listed above including starting the CI build.</p>
+<p data-sourcepos="42:1-42:230">If you encounter this message on AppVeyor: <em>&quot;There was an error while trying to complete the current operation. Please contact AppVeyor support.&quot;</em> you must send an email to <a href="mailto:support@appveyor.com">support@appveyor.com</a> asking to have your account enabled.</p>
+<p data-sourcepos="44:1-44:18"><strong>Happy Building</strong></p>
+<hr data-sourcepos="46:1-47:0" />
+<hr data-sourcepos="48:1-48:5" />
+<h3 data-sourcepos="49:1-49:47"><strong>Appendix: Connecting to the build image</strong></h3>
+<p data-sourcepos="50:1-50:515">Though seldom necessary, it is possible to connect to the build image on AppVeyor during CI.  Before a connection can be made, environment variables must be added to the AppVeyor project's environment settings or directly in <code>.appveyor.yml</code> as described here for  <a href="https://www.appveyor.com/docs/how-to/rdp-to-build-worker/">Windows RDP access</a>, or <a href="https://www.appveyor.com/docs/how-to/ssh-to-build-worker/">macOS/Linux SSH access</a> or <a href="https://www.appveyor.com/docs/how-to/vnc-to-build-worker/">macOS VNC access</a>.</p>
+<p data-sourcepos="52:1-52:326">You must watch the AppVeyor build log.  The IP and port information will be shown there when the connection is opened.  AppVeyor creates a file that needs to be deleted to allow the CI process to continue.  Total CI time is currently limited to 60 min.  The connection will close and the CI build terminated when time expires.</p>
+<h4 data-sourcepos="54:1-54:48">Sample Code - Windows Remote Desktop Access</h4>
+<h5 data-sourcepos="55:1-55:41">To pause at a line in .appveyor.yml</h5>
+<h6 data-sourcepos="56:1-56:27">In .appveyor.yml add</h6>
+<pre data-sourcepos="57:1-60:3"><code># Pause Build Here For Remote Desktop Access 
+- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+</code></pre>
+<h5 data-sourcepos="62:1-62:34">To pause within a batch file</h5>
+<h6 data-sourcepos="63:1-63:27">Add to .appveyor.yml</h6>
+<pre data-sourcepos="64:1-67:5"><code>init:
+  - ps: $env:APPVEYOR_RDP_BLOCK = $true
+</code></pre>
+<h6 data-sourcepos="68:1-68:62">Then add to the batch files (can be in mulitple places)</h6>
+<pre data-sourcepos="69:1-72:5"><code>:: Pause Build Here For Remote Desktop Access  
+PowerShell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command &quot;if ($env:APPVEYOR_RDP_BLOCK -eq $true) {$blockRdp = $true; &amp; iex ((new-object net.webclient).DownloadString(\&quot;https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1\&quot;))}&quot;
+</code></pre>
+<h4 data-sourcepos="74:1-74:44">Sample Code - Linux or macOS SSH Access</h4>
+<h5 data-sourcepos="75:1-75:41">To pause at a line in .appveyor.yml</h5>
+<h6 data-sourcepos="76:1-76:27">In .appveyor.yml add</h6>
+<pre data-sourcepos="77:1-81:5"><code>  # Pause Build Here For SSH Access 
+  - sh: export APPVEYOR_SSH_BLOCK=true
+  - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+</code></pre>
+<h5 data-sourcepos="82:1-82:31">To pause within a sh file</h5>
+<h6 data-sourcepos="83:1-83:27">Add to .appveyor.yml</h6>
+<pre data-sourcepos="84:1-87:5"><code>init:
+  - sh: export APPVEYOR_SSH_BLOCK=true
+</code></pre>
+<h5 data-sourcepos="88:1-88:58">Then add to the sh files (can be in multiple places)</h5>
+<pre data-sourcepos="89:1-92:5"><code># Pause Build Here For SSH Access
+if [ ! -z $APPVEYOR_SSH_BLOCK ]; then if $APPVEYOR_SSH_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi;fi
+</code></pre>
+<h4 data-sourcepos="95:1-95:35">Sample Code - macOS VNC Access</h4>
+<p data-sourcepos="96:1-96:92">Not recommended.  The performance can be slow and there can be only one pause per build.</p>
+<h5 data-sourcepos="97:1-97:41">To pause at a line in .appveyor.yml</h5>
+<h6 data-sourcepos="98:1-98:27">In .appveyor.yml add</h6>
+<pre data-sourcepos="99:1-103:5"><code>  # Pause Build Here For VNC Access 
+  - sh: export APPVEYOR_VNC_BLOCK=true
+  - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-vnc.sh' | bash -e -
+</code></pre>
+<h5 data-sourcepos="104:1-104:31">To pause within a sh file</h5>
+<h6 data-sourcepos="105:1-105:27">Add to .appveyor.yml</h6>
+<pre data-sourcepos="106:1-109:5"><code>init:
+  - sh: export APPVEYOR_VNC_BLOCK=true`
+</code></pre>
+<h5 data-sourcepos="110:1-110:39">Then add only once to one sh file</h5>
+<pre data-sourcepos="111:1-114:5"><code># Pause Build Here For VNC Access
+if [ ! -z $APPVEYOR_VNC_BLOCK ]; then if $APPVEYOR_VNC_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-vnc.sh' | bash -e -;fi;fi
+</code></pre>
+
+    </article>
+  </body>
+</html>
