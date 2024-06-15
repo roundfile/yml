@@ -27,7 +27,7 @@ environment:
 #  - job_name: windows_legacy
 #    appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
-    appveyor_build_worker_image: Visual Studio 2019
+    appveyor_build_worker_image: Visual Studio 2022
 #  - job_name: macos
 #    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
 #  - job_name: linux
@@ -172,7 +172,7 @@ for:
     - cmd: cd src
 
     #Pause Build Here For Remote Desktop Access
-    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+    #- ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
     #update the copyright year used by pyinstaller to set exe properties for Windows
     - ps: $YEAR=(Get-Date).year
