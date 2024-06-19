@@ -116,6 +116,7 @@ hiddenimports_list=['charset_normalizer.md__mypyc', # part of requests 2.28.2 # 
                             'numpy.f2py.crackfortran',
                             'numpy.f2py.__version__',
                             'numpy.f2py.auxfuncs',
+                            'numpy.f2py.__init_.pyc',
                             'scipy.spatial.transform._rotation_groups',
                             'scipy.special.cython_special',
                             'scipy._lib.messagestream',
