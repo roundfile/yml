@@ -111,12 +111,12 @@ else:
 hiddenimports_list=['charset_normalizer.md__mypyc', # part of requests 2.28.2 # see https://github.com/pyinstaller/pyinstaller-hooks-contrib/issues/534
                             'matplotlib.backends.backend_pdf',
                             'matplotlib.backends.backend_svg',
-                            'numpy.f2py',
-                            'numpy.f2py.f2py2e',
-                            'numpy.f2py.crackfortran',
-                            'numpy.f2py.__version__',
-                            'numpy.f2py.auxfuncs',
-                            'numpy.f2py.cfuncs',
+#                            'numpy.f2py',
+#                            'numpy.f2py.f2py2e',
+#                            'numpy.f2py.crackfortran',
+#                            'numpy.f2py.__version__',
+#                            'numpy.f2py.auxfuncs',
+#                            'numpy.f2py.cfuncs',
                             'scipy.spatial.transform._rotation_groups',
                             'scipy.special.cython_special',
                             'scipy._lib.messagestream',
@@ -132,9 +132,10 @@ if not ARTISAN_LEGACY=='True':
                             'PyQt6.QtWebEngineCore'
                             ]
 
+F2PY = PYTHON_PACKAGES + r'\numpy\f2py'
 
 a = Analysis(['artisan.py'],
-             pathex=[PYQT_QT_BIN, ARTISAN_SRC, SCIPY_BIN],
+             pathex=[PYQT_QT_BIN, ARTISAN_SRC, SCIPY_BIN, F2PY],
              binaries=[],
              datas=[],
              hookspath=[],
