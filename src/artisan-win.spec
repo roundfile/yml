@@ -106,12 +106,14 @@ if is_module_satisfies('scipy >= 1.3.2'):
 else:
     SCIPY_BIN = PYTHON_PACKAGES + r'\scipy\extra-dll'
 
+NUMPY_F2PY = PYTHON_PACKAGES + r'\numpy\f2py'
+
 #os.system(PYTHON + r'\Scripts\pylupdate5 artisan.pro')
 
 hiddenimports_list=['charset_normalizer.md__mypyc', # part of requests 2.28.2 # see https://github.com/pyinstaller/pyinstaller-hooks-contrib/issues/534
                             'matplotlib.backends.backend_pdf',
                             'matplotlib.backends.backend_svg',
-#                            'numpy.f2py',
+                            'numpy.f2py',
                             'scipy.spatial.transform._rotation_groups',
                             'scipy.special.cython_special',
                             'scipy._lib.messagestream',
@@ -129,7 +131,7 @@ if not ARTISAN_LEGACY=='True':
 
 
 a = Analysis(['artisan.py'],
-             pathex=[PYQT_QT_BIN, ARTISAN_SRC, SCIPY_BIN],
+             pathex=[PYQT_QT_BIN, ARTISAN_SRC, SCIPY_BIN, NUMPY_F2PY],
              binaries=[],
              datas=[],
              hookspath=[],
