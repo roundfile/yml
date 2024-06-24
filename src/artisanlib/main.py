@@ -6716,7 +6716,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     try:
                         tra = numpy.trapezoid(segment_abs_deltas, x=segment_times) # type:ignore [attr-defined]
                     except Exception:  # pylint: disable=broad-except
-                        tra = numpy.trapz(segment_abs_deltas, x=segment_times) # type:ignore [attr-defined]
+                        tra = numpy.trapz(segment_abs_deltas, x=segment_times) # type:ignore [attr-defined, unused-ignore]
                     segment_abc_deltas = numpy.append(segment_abc_deltas, tra)
 
 
@@ -6729,7 +6729,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 try:
                     tra = numpy.trapezoid(ioi_abs_deltas, x=times_all) # type:ignore [attr-defined]
                 except Exception:  # pylint: disable=broad-except
-                    tra = numpy.trapz(ioi_abs_deltas, x=times_all) # type:ignore [attr-defined]
+                    tra = numpy.trapz(ioi_abs_deltas, x=times_all) # type:ignore [attr-defined, unused-ignore]
                 ioi_abc_deltas = numpy.sum(tra)
                 ioi_abcprime = ioi_abc_deltas / ioi_seconds
 
@@ -17595,7 +17595,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.scheduled_items_uuids = list(toStringList(settings.value('scheduled_items',self.scheduled_items_uuids)))
             self.scheduleFlag = toBool(settings.value('Schedule',self.scheduleFlag))
             if self.scheduleFlag:
-                self.schedule()
+                try:
+                    self.schedule()
+                except Exception as e: # pylint: disable=broad-except
+                    _log.exception(e)
 
             self.LargeLCDsFlag = toBool(settings.value('LargeLCDs',self.LargeLCDsFlag))
             if self.LargeLCDsFlag:
