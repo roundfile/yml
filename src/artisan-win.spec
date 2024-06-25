@@ -115,7 +115,6 @@ hiddenimports_list=['charset_normalizer.md__mypyc', # part of requests 2.28.2 # 
                             'matplotlib.backends.backend_pdf',
                             'matplotlib.backends.backend_svg',
                             'numpy.f2py',
-                            'numpy.f2py2e.py',
                             'scipy.spatial.transform._rotation_groups',
                             'scipy.special.cython_special',
                             'scipy._lib.messagestream',
@@ -133,7 +132,7 @@ if not ARTISAN_LEGACY=='True':
 
 
 a = Analysis(['artisan.py'],
-             pathex=[PYQT_QT_BIN, ARTISAN_SRC, SCIPY_BIN, NUMPY_F2PY, NUMPY_LIBS],
+             pathex=[PYQT_QT_BIN, ARTISAN_SRC, SCIPY_BIN],
              binaries=[],
              datas=[],
              hookspath=[],
