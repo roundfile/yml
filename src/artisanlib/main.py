@@ -285,7 +285,7 @@ class Artisan(QtSingleApplication):
         self.sendmessage2ArtisanViewerSignal.connect(self._sendMessage2ArtisanViewerSlot, type=Qt.ConnectionType.QueuedConnection) # type: ignore
 
         self.sentToBackground:Optional[float] = None # set to timestamp on putting app to background without any open dialog
-        self.plus_sync_cache_expiration = 1*60 # how long a plus sync is valid in seconds
+        self.plus_sync_cache_expiration = 1*40 # how long a plus sync is valid in seconds
 
         self.artisanviewerMode: bool = False # true if this is the ArtianViewer running
         if multiprocessing.current_process().name == 'MainProcess' and self.isRunning():
@@ -332,16 +332,14 @@ class Artisan(QtSingleApplication):
                     #app raised
 #                    _log.debug('app put to foreground')
                     try:
-                        if libtime.time() - self.sentToBackground > self.plus_sync_cache_expiration:
-                            if  aw.plus_account is not None and aw.qmc.roastUUID is not None and aw.curFile is not None:
-                                plus.sync.getUpdate(aw.qmc.roastUUID,aw.curFile)
+                        if (libtime.time() - self.sentToBackground > self.plus_sync_cache_expiration and
+                              aw.plus_account is not None and aw.qmc.roastUUID is not None and aw.curFile is not None):
+                            plus.sync.getUpdate(aw.qmc.roastUUID, aw.curFile) # sync the loaded profile data if any
 
-                            #QTimer.singleShot(100, aw.updateScheduleSignal.emit) # only redraw scheduler window
-                            if aw.schedule_window is not None and aw.plus_account is not None:
-                                # only if scheduler is active and plus connected we update the stock on app raise which triggers a scheduler redraw implicitly
-                                plus.stock.update()
-#                        else:
-#                            _log.info("PRINT missed by %ss",int(self.plus_sync_cache_expiration - (libtime.time() - self.sentToBackground)))
+                        if aw.schedule_window is not None and aw.plus_account is not None:
+                            # only if scheduler is active and plus connected we update the stock on app raise which triggers a scheduler redraw implicitly
+                            # NOTE the scheduler redraw is also happening if stock was not updated due to the update request time limit
+                            plus.stock.update() # stock update (frequency limited by plus/config.py:stock_cache_expiration)
 
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
@@ -1739,7 +1737,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         # Mugma Network
         self.mugma_default_host:Final[str] = '127.0.0.1'
         self.mugmaHost:str = '127.0.0.1'
-        self.mugmaPort:int = 1503
+        self.mugmaPort:int = 1504
         self.mugma:Optional[Mugma] = None # holds the Mugma instance created on connect; reset to None on disconnect
 
         # Kaleido Network
@@ -10806,6 +10804,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         self.EventsGroupLayout.setVisible(True)
 
     def updateLCDproperties(self) -> None:
+        # clear intChannel cache
+        self.qmc.intChannel.cache_clear()
         # set LCDframe visibilities and labels
         ndev = len(self.qmc.extradevices)
         for i in range(ndev):
@@ -13197,7 +13197,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         try:
             with open(filename, 'w', encoding='utf-8') as outfile:
                 from json import dump as json_dump
-                json_dump(self.getProfile(), outfile, ensure_ascii=True)
+                json_dump(self.getProfile(), outfile, indent=None, separators=(',', ':'), ensure_ascii=False)
                 outfile.write('\n')
             return True
         except Exception as ex: # pylint: disable=broad-except
@@ -15471,9 +15471,9 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         try:
             det,dbt = self.curveSimilarity()
             if det is not None and not math.isnan(det):
-                computedProfile['det'] = det
+                computedProfile['det'] = float(det)
             if dbt is not None and not math.isnan(dbt):
-                computedProfile['dbt'] = dbt
+                computedProfile['dbt'] = float(dbt)
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
         ######### Energy Use #########
