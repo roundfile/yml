@@ -169,7 +169,7 @@ class BleInterface(QtCore.QObject):
 
     def heartbeat(self):
         if self.m_connected:
-#            _log.debug("send heartbeat")
+            _log.debug("send heartbeat")
             self.sendHeartbeat(self.write)
             QtCore.QTimer.singleShot(2000,self.heartbeat)
 
@@ -293,10 +293,10 @@ class BleInterface(QtCore.QObject):
 
     @QtCore.pyqtSlot("QBluetoothDeviceInfo")
     def addDevice(self, device):
-#        _log.debug("addDevice()")
+        _log.debug("addDevice()")
         if self.m_device is None and device.coreConfigurations() & QtBluetooth.QBluetoothDeviceInfo.LowEnergyCoreConfiguration:
-#            _log.debug("discovered LE Device name: %s,  address: %s", device.name(), device.address().toString())
-            m_device = QtBluetooth.QBluetoothDeviceInfo(device)            
+            _log.debug("discovered LE Device name: %s,  address: %s", device.name(), device.address().toString())
+            m_device = QtBluetooth.QBluetoothDeviceInfo(device)
             if self.device_names is None:
                 _log.debug("check device for matching services")
                 for (uuid_service, _) in self.UUID_SERVICE_CHAR_TUPLES:
@@ -353,9 +353,7 @@ def main():
         [
             acaia.DEVICE_NAME_LUNAR, 
             acaia.DEVICE_NAME_PEARL, 
-            acaia.DEVICE_NAME_PEARL2021,
-            acaia.DEVICE_NAME_PEARLS,
-            acaia.DEVICE_NAME_OTHERS
+            acaia.DEVICE_NAME_PEARL2021
         ])
     ble.scanDevices()
     sys.exit(app.exec())

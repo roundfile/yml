@@ -139,17 +139,17 @@ else:
                              QInputDialog, QGroupBox, QLineEdit, # @Reimport @UnresolvedImport
                              QSizePolicy, QVBoxLayout, QHBoxLayout, QPushButton, # @Reimport @UnresolvedImport
                              QLCDNumber, QSpinBox, QComboBox, # @Reimport @UnresolvedImport
-                             QSlider,  # @Reimport @UnresolvedImport
+                             QSlider, QStackedWidget, # @Reimport @UnresolvedImport
                              QColorDialog, QFrame, QProgressDialog, # @Reimport @UnresolvedImport
                              QStyleFactory, QMenu, QLayout) # @Reimport @UnresolvedImport
     from PyQt6.QtGui import (QAction, QImageReader, QWindow,  # @Reimport @UnresolvedImport # pylint: disable=import-error
                                 QKeySequence, # @Reimport s@UnresolvedImport
                                 QPixmap,QColor,QDesktopServices,QIcon,  # @Reimport @UnresolvedImport
-                                QRegularExpressionValidator,QDoubleValidator, QPainter ,QCursor)  # @Reimport @UnresolvedImport
+                                QRegularExpressionValidator,QDoubleValidator, QPainter, QFont,QBrush, QRadialGradient,QCursor)  # @Reimport @UnresolvedImport
     from PyQt6.QtPrintSupport import (QPrinter,QPrintDialog)  # @Reimport @UnresolvedImport # pylint: disable=import-error
     from PyQt6.QtCore import (QLibraryInfo, QTranslator, QLocale, QFileInfo, PYQT_VERSION_STR, pyqtSignal, pyqtSlot,  # @Reimport @UnresolvedImport # pylint: disable=import-error
                               qVersion, QTime, QTimer, QFile, QIODevice, QTextStream, QSettings,   # @Reimport @UnresolvedImport
-                              QRegularExpression, QDate, QUrl, QDir, Qt, QEvent, QDateTime, QObject, QThread, QSemaphore, qInstallMessageHandler)  # @Reimport @UnresolvedImport
+                              QRegularExpression, QDate, QUrl, QDir, Qt, QPoint, QEvent, QDateTime, QObject, QThread, QSemaphore, qInstallMessageHandler)  # @Reimport @UnresolvedImport
     from PyQt6.QtNetwork import QLocalSocket, QLocalServer # @Reimport @UnusedImport @UnresolvedImport # pylint: disable=import-error
     from PyQt6 import sip # @Reimport @UnusedImport @UnresolvedImport # pylint: disable=import-error
 
@@ -578,8 +578,7 @@ from artisanlib.s7port import s7port
 from artisanlib.wsport import wsport
 from artisanlib.modbusport import modbusport
 from artisanlib.phidgets import PhidgetManager
-from artisanlib.slider_style import artisan_slider_style
-from artisanlib.event_button_style import artisan_event_button_style
+from artisanlib.sliderStyle import artisan_slider_style
 from artisanlib.cropster import extractProfileCropsterXLS
 from artisanlib.giesen import extractProfileGiesenCSV
 from artisanlib.petroncini import extractProfilePetronciniCSV
@@ -595,15 +594,14 @@ from artisanlib.dialogs import ArtisanMessageBox, HelpDlg, ArtisanInputDialog, A
 from artisanlib.large_lcds import (LargeMainLCDs, LargeDeltaLCDs, LargePIDLCDs, LargeExtraLCDs, LargePhasesLCDs)
 from artisanlib.logs import (serialLogDlg, errorDlg, messageDlg)
 from artisanlib.events import EventsDlg, customEventDlg
-from artisanlib.curves import CurvesDlg
+from artisanlib.curves import HUDDlg
 from artisanlib.devices import DeviceAssignmentDlg
 from artisanlib.ports import comportDlg
 from artisanlib.comm import serialport, colorport, scaleport
 from artisanlib.alarms import AlarmDlg
 from artisanlib.background import backgroundDlg
 from artisanlib.cup_profile import flavorDlg
-from artisanlib.pid_dialogs import (PXRpidDlgControl, PXG4pidDlgControl, 
-    PID_DlgControl, DTApidDlgControl)
+from artisanlib.pid_dialogs import PXRpidDlgControl, PXG4pidDlgControl, PID_DlgControl, DTApidDlgControl
 from artisanlib.designer import designerconfigDlg, pointDlg
 from artisanlib.sampling import SamplingDlg
 from artisanlib.wheels import WheelDlg
@@ -616,10 +614,8 @@ from artisanlib.batches import batchDlg
 from artisanlib.autosave import autosaveDlg
 from artisanlib.platform import platformDlg
 from artisanlib.pid_control import FujiPID, PIDcontrol, DtaPID
-from artisanlib.widgets import (MyQLCDNumber, MajorEventPushButton, 
-    AnimatedMajorEventPushButton, MinorEventPushButton, AuxEventPushButton)
-from artisanlib.hottop import (startHottop, stopHottop, setHottop,
-    releaseHottopControl, takeHottopControl, isHottopLoopRunning)
+from artisanlib.widgets import MyQLCDNumber
+from artisanlib.hottop import startHottop, stopHottop, setHottop, releaseHottopControl, takeHottopControl, isHottopLoopRunning
 
 from artisanlib import pid
 from artisanlib.time import ArtisanTime
@@ -732,13 +728,14 @@ class tgraphcanvas(FigureCanvas):
         'backgroundReproduce', 'backgroundReproduceBeep', 'backgroundPlaybackEvents', 'backgroundPlaybackDROP', 'Betypes', 'backgroundFlavors', 'flavorbackgroundflag', 
         'E1backgroundtimex', 'E2backgroundtimex', 'E3backgroundtimex', 'E4backgroundtimex', 'E1backgroundvalues', 'E2backgroundvalues', 'E3backgroundvalues', 
         'E4backgroundvalues', 'l_backgroundeventtype1dots', 'l_backgroundeventtype2dots', 'l_backgroundeventtype3dots', 'l_backgroundeventtype4dots',
-        'DeltaETBflag', 'DeltaBTBflag', 'clearBgbeforeprofileload', 'hideBgafterprofileload', 'heating_types', 'operator', 'organization', 'roastertype', 'roastersize', 'roasterheating', 'drumspeed',
+        'DeltaETBflag', 'DeltaBTBflag', 'clearBgbeforeprofileload', 'hideBgafterprofileload', 'HUDflag', 'hudresizeflag', 'ETtarget', 'ET2target', 'BTtarget',
+        'BT2target', 'hudETpid', 'pidpreviouserror', 'heating_types', 'operator', 'organization', 'roastertype', 'roastersize', 'roasterheating', 'drumspeed',
         'organization_setup', 'operator_setup', 'roastertype_setup', 'roastersize_setup', 'roasterheating_setup', 'drumspeed_setup', 'machinesetup_energy_ratings',
         'machinesetup', 'roastingnotes', 'cuppingnotes', 'roastdate', 'roastepoch', 'lastroastepoch', 'batchcounter', 'batchsequence', 'batchprefix', 'neverUpdateBatchCounter', 
         'roastbatchnr', 'roastbatchprefix', 'roastbatchpos', 'roasttzoffset', 'roastUUID', 'plus_default_store', 'plus_store', 'plus_store_label', 'plus_coffee',
         'plus_coffee_label', 'plus_blend_spec', 'plus_blend_spec_labels', 'plus_blend_label', 'plus_sync_record_hash', 'beans', 'projectFlag', 'ETcurve', 'BTcurve',
         'ETlcd', 'BTlcd', 'swaplcds', 'LCDdecimalplaces', 'foregroundShowFullflag', 'DeltaETflag', 'DeltaBTflag', 'DeltaETlcdflag', 'DeltaBTlcdflag', 
-        'swapdeltalcds', 'PIDbuttonflag', 'Controlbuttonflag', 'deltaETfilter', 'deltaBTfilter', 'curvefilter', 'deltaETspan', 'deltaBTspan',
+        'swapdeltalcds', 'HUDbuttonflag', 'PIDbuttonflag', 'Controlbuttonflag', 'deltaETfilter', 'deltaBTfilter', 'curvefilter', 'deltaETspan', 'deltaBTspan',
         'deltaETsamples', 'deltaBTsamples', 'profile_sampling_interval', 'background_profile_sampling_interval', 'optimalSmoothing', 'polyfitRoRcalc',
         'patheffects', 'graphstyle', 'graphfont', 'buttonvisibility', 'buttonactions', 'buttonactionstrings', 'extrabuttonactions', 'extrabuttonactionstrings',
         'xextrabuttonactions', 'xextrabuttonactionstrings', 'autoChargeFlag', 'autoDropFlag', 'autoChargeIdx', 'autoDropIdx', 'markTPflag', 'autoTPIdx',
@@ -1641,6 +1638,16 @@ class tgraphcanvas(FigureCanvas):
         self.DeltaBTBflag = True
         self.clearBgbeforeprofileload = False
         self.hideBgafterprofileload = False
+
+        # projection variables of change of rate
+        self.HUDflag = False
+        self.hudresizeflag = False
+        self.ETtarget = 300
+        self.ET2target = 350
+        self.BTtarget = 200
+        self.BT2target = 250
+        self.hudETpid = [5,240,60]    # HUD pid: p = 20, i = 60, d = 13
+        self.pidpreviouserror = 0  # temporary storage of pid error
         
         self.heating_types: Final = [
             "",
@@ -1651,12 +1658,12 @@ class tgraphcanvas(FigureCanvas):
 
         #General notes. Accessible through "edit graph properties" of graph menu. WYSIWYG viewer/editor.
         # setup of the current profile
-        self.operator: str = ""
-        self.organization: str = ""
-        self.roastertype: str = "" 
-        self.roastersize: int = 0
+        self.operator = ""
+        self.organization = ""
+        self.roastertype = "" 
+        self.roastersize = 0
         self.roasterheating = 0 # 0: ??, 1: LPG, 2: NG, 3: Elec
-        self.drumspeed: str = ""
+        self.drumspeed = ""
         # kept in app settings
         self.organization_setup = ""
         self.operator_setup = ""
@@ -1715,6 +1722,7 @@ class tgraphcanvas(FigureCanvas):
         self.DeltaETlcdflag = False
         self.DeltaBTlcdflag = True
         self.swapdeltalcds = False
+        self.HUDbuttonflag = False
         self.PIDbuttonflag = True # TC4 PID firmware available?
         self.Controlbuttonflag = False # PID Control active (either internal/external or Fuji)
         # user filter values x are translated as follows to internal filter values: y = x*2 + 1 (to go the other direction: x = y/2)
@@ -2614,7 +2622,7 @@ class tgraphcanvas(FigureCanvas):
     def doUpdate(self):
         if not self.designerflag:
             self.resetlinecountcaches() # ensure that the line counts are up to date
-            self.resetlines() # get rid of projection, cross lines and AUC line
+            self.resetlines() # get rid of HUD, projection, cross lines and AUC line
 
             try:
                 with warnings.catch_warnings():
@@ -2971,10 +2979,8 @@ class tgraphcanvas(FigureCanvas):
                 if event.artist in [self.l_backgroundeventtype1dots,self.l_backgroundeventtype2dots,self.l_backgroundeventtype3dots,self.l_backgroundeventtype4dots]:
                     timex = self.backgroundtime2index(event.artist.get_xdata()[ind])
                     for i in range(len(self.backgroundEvents)):
-                        if (re.search(
-                                    f"(Background{self.Betypesf(self.backgroundEtypes[i])})",
-                                    str(event.artist))
-                                and (timex in [self.backgroundEvents[i],self.backgroundEvents[i] -1,self.backgroundEvents[i] + 1])):
+                        if re.search('(Background'+self.Betypesf(self.backgroundEtypes[i])+')',str(event.artist))\
+                        and (timex in [self.backgroundEvents[i],self.backgroundEvents[i] -1,self.backgroundEvents[i] + 1]):
                             if aw.qmc.timeindex[0] != -1:
                                 start = aw.qmc.timex[aw.qmc.timeindex[0]]
                             else:
@@ -2992,10 +2998,8 @@ class tgraphcanvas(FigureCanvas):
                 elif event.artist in [self.l_eventtype1dots,self.l_eventtype2dots,self.l_eventtype3dots,self.l_eventtype4dots]:
                     timex = self.time2index(event.artist.get_xdata()[ind])
                     for i in range(len(self.specialevents)):
-                        if (re.search(
-                                    f"({self.etypesf(self.specialeventstype[i])})",
-                                    str(event.artist))
-                                and (timex in [self.specialevents[i], self.specialevents[i] + 1, self.specialevents[i] -1])):
+                        if re.search('('+self.etypesf(self.specialeventstype[i])+')',str(event.artist))\
+                        and (timex in [self.specialevents[i], self.specialevents[i] + 1, self.specialevents[i] -1]):
                             if aw.qmc.timeindex[0] != -1:
                                 start = aw.qmc.timex[aw.qmc.timeindex[0]]
                             else:
@@ -3004,14 +3008,14 @@ class tgraphcanvas(FigureCanvas):
                                 self.eventmessage = f"{self.eventmessage} | "
                             self.eventmessage = f"{self.eventmessage}{self.etypesf(self.specialeventstype[i])} = {self.eventsvalues(self.specialeventsvalue[i])}"                            
                             if aw.qmc.renderEventsDescr and self.specialeventsStrings[i] and self.specialeventsStrings[i]!="":
-                                self.eventmessage = f"{self.eventmessage} ({self.specialeventsStrings[i].strip()[:aw.qmc.eventslabelschars]})"
-                            self.eventmessage = f"{self.eventmessage} @ {stringfromseconds(self.timex[self.specialevents[i]] - start)} {aw.float2float(self.temp2[self.specialevents[i]],digits)}{aw.qmc.mode}"
+                                self.eventmessage += " (" + self.specialeventsStrings[i].strip()[:aw.qmc.eventslabelschars] + ")"
+                            self.eventmessage += " @ " + stringfromseconds(self.timex[self.specialevents[i]] - start) + " " + str(aw.float2float(self.temp2[self.specialevents[i]],digits)) + aw.qmc.mode
                             self.starteventmessagetimer()
                             break
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:", None) + " onpick() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " onpick() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     def onrelease_after_pick(self,_):
         if self.legend is not None:
@@ -3114,9 +3118,9 @@ class tgraphcanvas(FigureCanvas):
                     if bt != -1 and abs(bt-event.ydata) < btdelta:
                         # we surpress the popup if not clicked close enough to the BT curve
                         if self.timeindex[0] > -1:
-                            ac.setText(f"{QApplication.translate('Label', 'at')} {stringfromseconds(event.xdata - self.timex[self.timeindex[0]])}")
+                            ac.setText(QApplication.translate("Label", "at") + " " + stringfromseconds(event.xdata - self.timex[self.timeindex[0]]))
                         else:
-                            ac.setText(f"{QApplication.translate('Label', 'at')} {stringfromseconds(event.xdata)}")
+                            ac.setText(QApplication.translate("Label", "at") + " " + stringfromseconds(event.xdata))
                         ac.setEnabled(False)
                         menu.addAction(ac)
                         for k in [(QApplication.translate("Label","CHARGE"),0),
@@ -4587,6 +4591,13 @@ class tgraphcanvas(FigureCanvas):
                     if self.AUClcdFlag:
                         aw.updateAUCLCD()
 
+                    #check if HUD is ON (done after self.fig.canvas.draw())
+                    if self.HUDflag:
+                        try:
+                            aw.showHUD[aw.HUDfunction]()
+                        except Exception as e: # pylint: disable=broad-except
+                            _log.exception(e)
+
                 #check triggered alarms
                 if self.temporaryalarmflag > -3:
                     i = self.temporaryalarmflag  # reset self.temporaryalarmflag before calling alarm
@@ -4635,6 +4646,36 @@ class tgraphcanvas(FigureCanvas):
                 _log.exception(e)
             finally:
                 QTimer.singleShot(int(round(nextreading)),self.updateLCDtime)
+
+    @pyqtSlot(bool)
+    def toggleHUD(self,_=False):
+        aw.soundpopSignal.emit()
+        #OFF
+        if self.HUDflag:
+            self.HUDflag = False
+            aw.HUD.clear()
+            aw.button_18.setStyleSheet(aw.pushbuttonstyles["HUD_OFF"])
+            aw.stack.setCurrentIndex(0)
+            self.resetlines()
+            aw.sendmessage(QApplication.translate("Message","HUD OFF", None))
+
+        #ON
+        else:
+            self.redraw(False,False)
+            #load
+            img = self.grab()
+            aw.HUD.setPixmap(img)
+            self.HUDflag = True
+            aw.button_18.setStyleSheet(aw.pushbuttonstyles["HUD_ON"])
+            aw.stack.setCurrentIndex(1)
+            aw.sendmessage(QApplication.translate("Message","HUD ON", None))
+
+    def refreshHUD(self):
+        aw.stack.setCurrentIndex(0)
+        self.redraw(False,False)
+        img = self.grab()
+        aw.HUD.setPixmap(img)
+        aw.stack.setCurrentIndex(1)
 
     # redraws at least the canvas if redraw=True and force=True
     def timealign(self,redraw=True,recompute=False,force=False):
@@ -4922,38 +4963,42 @@ class tgraphcanvas(FigureCanvas):
     
                 elif action == 7:
                     # START
-                    if aw.buttonSTARTSTOP.isEnabled():
+                    if aw.button_2.isEnabled():
                         aw.qmc.ToggleRecorder()
                 elif action == 8:
                     # DRY
+                    #if aw.button_19.isEnabled():
+                    #    aw.qmc.markDryEnd()
                     aw.qmc.autoDryIdx = len(aw.qmc.timex)
                 elif action == 9:
                     # FCs
+                    #if aw.button_3.isEnabled():
+                    #    aw.qmc.mark1Cstart()
                     aw.qmc.autoFCsIdx = len(aw.qmc.timex)
                 elif action == 10:
                     # FCe
-                    if aw.buttonFCe.isEnabled():
+                    if aw.button_4.isEnabled():
                         aw.qmc.mark1Cend()
                 elif action == 11:
                     # SCs
-                    if aw.buttonSCs.isEnabled():
+                    if aw.button_5.isEnabled():
                         aw.qmc.mark2Cstart()
                 elif action == 12:
                     # SCe
-                    if aw.buttonSCe.isEnabled():
+                    if aw.button_6.isEnabled():
                         aw.qmc.mark2Cend()
                 elif action == 13:
                     # DROP
-                    #if aw.buttonDROP.isEnabled():
+                    #if aw.button_9.isEnabled():
                     #    aw.qmc.markDrop()
                     aw.qmc.autoDropIdx = len(aw.qmc.timex)
                 elif action == 14:
                     # COOL
-                    if aw.buttonCOOL.isEnabled():
+                    if aw.button_20.isEnabled():
                         aw.qmc.markCoolEnd()
                 elif action == 15:
                     # OFF
-                    if aw.buttonONOFF.isEnabled():
+                    if aw.button_1.isEnabled():
                         aw.qmc.ToggleMonitor()
                 elif action == 16:
                     # CHARGE
@@ -5241,6 +5286,26 @@ class tgraphcanvas(FigureCanvas):
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
             aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " updateProjection() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+
+    # this function is called from the HUD DLg and reports the linear time (straight line) it would take to reach a temperature target
+    # acording to the current rate of change
+    def getTargetTime(self):
+
+        if self.rateofchange1 > 0:
+            ETreachTime = (self.ETtarget - self.temp1[-1])/(self.rateofchange1/60.)
+            ET2reachTime = (self.ET2target - self.temp1[-1])/(self.rateofchange1/60.)
+        else:
+            ETreachTime = -1
+            ET2reachTime = -1
+
+        if self.rateofchange2 > 0:
+            BTreachTime = (self.BTtarget - self.temp2[-1])/(self.rateofchange2/60.)
+            BT2reachTime = (self.BT2target - self.temp2[-1])/(self.rateofchange2/60.)
+        else:
+            BTreachTime = -1
+            BT2reachTime = -1
+
+        return ETreachTime, BTreachTime, ET2reachTime, BT2reachTime
 
     # takes array with readings, the current index, the sign of the shift as character and the shift value
     # returns val, evalsign
@@ -6205,36 +6270,39 @@ class tgraphcanvas(FigureCanvas):
             aw.qmc.roastbatchpos = 1 # initialized to 1, set to increased batchsequence on DROP
             aw.qmc.roastbatchprefix = aw.qmc.batchprefix
 
+            if self.HUDflag:
+                self.toggleHUD()
+            self.hudresizeflag = False
+
             aw.sendmessage(QApplication.translate("Message","Scope has been reset",None))
-            aw.buttonFCs.setDisabled(False)
-            aw.buttonFCe.setDisabled(False)
-            aw.buttonSCs.setDisabled(False)
-            aw.buttonSCe.setDisabled(False)
-            aw.buttonRESET.setDisabled(False)
-            aw.buttonCHARGE.setDisabled(False)
-            aw.buttonDROP.setDisabled(False)
-            aw.buttonDRY.setDisabled(False)
-            aw.buttonCOOL.setDisabled(False)
-            aw.buttonFCs.setFlat(False)
-            aw.buttonFCe.setFlat(False)
-            aw.buttonSCs.setFlat(False)
-            aw.buttonSCe.setFlat(False)
-            aw.buttonRESET.setFlat(False)
-            aw.buttonCHARGE.setFlat(False)
-            aw.buttonCHARGE.stopAnimation()
-            aw.buttonDROP.setFlat(False)
-            aw.buttonDRY.setFlat(False)
-            aw.buttonCOOL.setFlat(False)
-            aw.buttonONOFF.setText(QApplication.translate("Button", "ON",None))
+            aw.button_3.setDisabled(False)
+            aw.button_4.setDisabled(False)
+            aw.button_5.setDisabled(False)
+            aw.button_6.setDisabled(False)
+            aw.button_7.setDisabled(False)
+            aw.button_8.setDisabled(False)
+            aw.button_9.setDisabled(False)
+            aw.button_19.setDisabled(False)
+            aw.button_20.setDisabled(False)
+            aw.button_3.setFlat(False)
+            aw.button_4.setFlat(False)
+            aw.button_5.setFlat(False)
+            aw.button_6.setFlat(False)
+            aw.button_7.setFlat(False)
+            aw.button_8.setFlat(False)
+            aw.button_9.setFlat(False)
+            aw.button_19.setFlat(False)
+            aw.button_20.setFlat(False)
+            aw.button_1.setText(QApplication.translate("Button", "ON",None))
             if aw.simulator:
-                aw.buttonONOFF.setStyleSheet(aw.pushbuttonstyles_simulator["OFF"])
+                aw.button_1.setStyleSheet(aw.pushbuttonstyles_simulator["OFF"])
             else:
-                aw.buttonONOFF.setStyleSheet(aw.pushbuttonstyles["OFF"])
-            aw.buttonSTARTSTOP.setText(QApplication.translate("Button", "START",None))
+                aw.button_1.setStyleSheet(aw.pushbuttonstyles["OFF"])
+            aw.button_2.setText(QApplication.translate("Button", "START",None))
             if aw.simulator:
-                aw.buttonSTARTSTOP.setStyleSheet(aw.pushbuttonstyles_simulator["STOP"])
+                aw.button_2.setStyleSheet(aw.pushbuttonstyles_simulator["STOP"])
             else:
-                aw.buttonSTARTSTOP.setStyleSheet(aw.pushbuttonstyles["STOP"])
+                aw.button_2.setStyleSheet(aw.pushbuttonstyles["STOP"])
 
             # quantification is blocked if lock_quantification_sampling_ticks is not 0
             # (eg. after a change of the event value by button or slider actions)
@@ -6316,7 +6384,7 @@ class tgraphcanvas(FigureCanvas):
             self.ystep_up = 0
 
             # reset keyboard mode
-            aw.keyboardmoveindex = 0 # points to the last activated button; we start with the CHARGE button (see keyboardButtonList)
+            aw.keyboardmoveindex = 3
             aw.keyboardmoveflag = 0
             aw.resetKeyboardButtonMarks()
 
@@ -9332,133 +9400,142 @@ class tgraphcanvas(FigureCanvas):
     #add stats summmary to graph
     def statsSummary(self):
         try:
+            # build roast of the day string
+            if aw.qmc.roastbatchnr != None and aw.qmc.roastbatchnr != 0 and aw.qmc.roastbatchpos != None and aw.qmc.roastbatchpos != 0:
+                roastoftheday = f"\n{aw.qmc.roastbatchpos}"
+                if self.locale_str == "en":
+                    if aw.qmc.roastbatchpos > 3:
+                        roastoftheday += 'th'
+                    elif aw.qmc.roastbatchpos == 3:
+                        roastoftheday += 'rd'
+                    elif aw.qmc.roastbatchpos == 2:
+                        roastoftheday += 'nd'
+                    elif aw.qmc.roastbatchpos == 1:
+                        roastoftheday += 'st'
+                else:
+                    roastoftheday = '\n#' + str(aw.qmc.roastbatchpos)
+                roastoftheday += ' ' + QApplication.translate("AddlInfo", "Roast of the Day",None)
+            else:
+                roastoftheday = ''
+
+            cp = aw.computedProfileInformation()  # get all the computed profile information
+
             skipline = '\n'
-            statstr_segments = []
+            statstr = ''
             if self.statssummary:
-                cp = aw.computedProfileInformation()  # get all the computed profile information
 
                 #Admin Info Section
                 if aw.qmc.roastbatchnr > 0:
-                    statstr_segments += [aw.qmc.roastbatchprefix, str(aw.qmc.roastbatchnr)]
+                    statstr += aw.qmc.roastbatchprefix + str(aw.qmc.roastbatchnr)
                 if aw.qmc.title != QApplication.translate("Scope Title", "Roaster Scope",None):
-                    if statstr_segments != []:
-                        statstr_segments.append(" ")
-                    statstr_segments.append(aw.qmc.title)
-                statstr_segments += [
-                    skipline, 
-                    aw.qmc.roastdate.date().toString(), 
-                    " ", 
-                    aw.qmc.roastdate.time().toString()]
-                
-                # build roast of the day string
-                if aw.qmc.roastbatchnr != None and aw.qmc.roastbatchnr != 0 and aw.qmc.roastbatchpos != None and aw.qmc.roastbatchpos != 0:
-                    if self.locale_str == "en":
-                        roastoftheday_segments = [f"\n{aw.qmc.roastbatchpos}"]
-                        if aw.qmc.roastbatchpos > 3:
-                            roastoftheday_segments.append('th')
-                        elif aw.qmc.roastbatchpos == 3:
-                            roastoftheday_segments.append('rd')
-                        elif aw.qmc.roastbatchpos == 2:
-                            roastoftheday_segments.append('nd')
-                        elif aw.qmc.roastbatchpos == 1:
-                            roastoftheday_segments.append('st')
-                    else:
-                        statstr_segments.append(f"\n#{aw.qmc.roastbatchpos}")
-                    statstr_segments += [" ", QApplication.translate("AddlInfo", "Roast of the Day", None)]
-                
+                    if statstr != "":
+                        statstr += " "
+                    statstr += aw.qmc.title
+                statstr += skipline
+                statstr += aw.qmc.roastdate.date().toString() + ' '
+                statstr += aw.qmc.roastdate.time().toString()
+                statstr += roastoftheday
                 if aw.qmc.ambientTemp not in [None,0] or aw.qmc.ambient_humidity not in [None,0] or aw.qmc.ambient_pressure not in [None,0]:
-                    statstr_segments.append(skipline)
+                    statstr += skipline
                     if aw.qmc.ambientTemp not in [None,0]:
-                        statstr_segments += [str(int(round(aw.qmc.ambientTemp))), '\u00b0', aw.qmc.mode, "  "]
+                        statstr += str(int(aw.qmc.ambientTemp)) + '\u00b0' + aw.qmc.mode + '  '
                     if aw.qmc.ambient_humidity not in [None,0]:
-                        statstr_segments += [str(int(round(aw.qmc.ambient_humidity))), '%  ']
+                        statstr +=  str(int(aw.qmc.ambient_humidity)) + '%  '
                     if aw.qmc.ambient_pressure not in [None,0]:
-                        statstr_segments += [str(aw.float2float(aw.qmc.ambient_pressure,2)), 'hPa']
+                        statstr +=  str(aw.float2float(aw.qmc.ambient_pressure,2)) + 'hPa'
                 if aw.qmc.roastertype or aw.qmc.drumspeed:
-                    statstr_segments.append(skipline)
+                    statstr += skipline
                     if aw.qmc.roastertype:
-                        statstr_segments += [aw.qmc.roastertype, " "]
+                        statstr += str(aw.qmc.roastertype) + " "
                     if aw.qmc.drumspeed:
-                        statstr_segments += ["(", aw.qmc.drumspeed, QApplication.translate("Label", "RPM",None), ")"]
+                        statstr += "(" + str(aw.qmc.drumspeed) + QApplication.translate("Label", "RPM",None) + ')'
 
                 #Green Beans Info Section
-                statstr_segments.append(skipline)
+                statstr += skipline
                 if aw.qmc.beans is not None and len(aw.qmc.beans)>0:
-                    statstr_segments.append(skipline)
+                    statstr += skipline
                     beans_lines = textwrap.wrap(aw.qmc.beans, width=aw.qmc.statsmaxchrperline)
-                    statstr_segments.append(beans_lines[0])
+                    statstr += beans_lines[0]
                     if len(beans_lines)>1:
-                        statstr_segments += [skipline, " ", beans_lines[1]]
+                        statstr += skipline
+                        statstr += "  " + beans_lines[1]
                         if len(beans_lines)>2:
-                            statstr_segments.append("..")
-                
+                            statstr += ".."
                 if aw.qmc.beansize_min or aw.qmc.beansize_max:
-                    statstr_segments += ['\n',  QApplication.translate("AddlInfo", "Screen Size", None), ': ']
+                    screen = ""
                     if aw.qmc.beansize_min:
-                        statstr_segments.append(str(int(round(aw.qmc.beansize_min))))
+                        screen = str(int(round(aw.qmc.beansize_min)))
                     if aw.qmc.beansize_max:
-                        if aw.qmc.beansize_min:
-                            statstr_segments.append("/")
-                        statstr_segments.append(str(int(round(aw.qmc.beansize_max))))
-
+                        if screen:
+                            screen = screen + "/"
+                        screen = screen + str(int(round(aw.qmc.beansize_max)))
+                        statstr += '\n' + QApplication.translate("AddlInfo", "Screen Size", None) + ': '+ screen # + '18/64\u2033' # the unit makes it hard to read
                 if aw.qmc.density[0] and aw.qmc.density[2] != 0:
-                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "Density Green", None), ': ', 
-                        str(aw.float2float(aw.qmc.density[0]/aw.qmc.density[2],2)), ' ', encodeLocal(aw.qmc.density[1]), "/", encodeLocal(aw.qmc.density[3])]
+                    statstr += '\n' + QApplication.translate("AddlInfo", "Density Green", None) + ': '+ str(aw.float2float(aw.qmc.density[0]/aw.qmc.density[2],2)) + ' ' + encodeLocal(aw.qmc.density[1]) + "/" + encodeLocal(aw.qmc.density[3])
                 if aw.qmc.moisture_greens:
-                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "Moisture Green", None), ': ', str(aw.float2float(aw.qmc.moisture_greens,1)), "%"]
+                    statstr += '\n' + QApplication.translate("AddlInfo", "Moisture Green", None) + ': '+ str(aw.float2float(aw.qmc.moisture_greens,1)) + "%"
                 if aw.qmc.weight[0]:
                     if aw.qmc.weight[2] == "g":
                         w =str(aw.float2float(aw.qmc.weight[0],0))
                     else:
                         w = str(aw.float2float(aw.qmc.weight[0],2))
-                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "Batch Size", None) , ': ', w, aw.qmc.weight[2], " "]
+                    statstr += '\n' + QApplication.translate("AddlInfo", "Batch Size", None) + ': '+ w + aw.qmc.weight[2] + " "
                     if aw.qmc.weight[1]:
-                        statstr_segments += ['(-', str(aw.float2float(aw.weight_loss(aw.qmc.weight[0],aw.qmc.weight[1]),1)), "%)"]
-                
-                # Roast Info Section
-                statstr_segments.append(skipline)
-                if "roasted_density" in cp:
-                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "Density Roasted", None), ': ', str(cp["roasted_density"]),
-                        ' ', encodeLocal(aw.qmc.density[1]), "/", encodeLocal(aw.qmc.density[3])]
-                if aw.qmc.moisture_roasted:
-                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "Moisture Roasted", None), ': ', str(aw.float2float(aw.qmc.moisture_roasted,1)), "%"]
-                if aw.qmc.whole_color > 0:
-                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "Whole Color", None), ': #', str(aw.qmc.whole_color), " ",
-                        str(aw.qmc.color_systems[aw.qmc.color_system_idx])]
-                if aw.qmc.ground_color > 0:
-                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "Ground Color", None), ': #', str(aw.qmc.ground_color), " ",
-                        str(aw.qmc.color_systems[aw.qmc.color_system_idx])]
-                if "BTU_batch" in cp and cp["BTU_batch"]:
-                    statstr_segments += ["\n", QApplication.translate("AddlInfo", "Energy", None), ": ",
-                        str(aw.float2float(aw.qmc.convertHeat(cp["BTU_batch"],0,3),2)), "kWh"]
-                    if "BTU_batch_per_green_kg" in cp and cp["BTU_batch_per_green_kg"]:
-                        statstr_segments += [" (", str(aw.float2float(aw.qmc.convertHeat(cp["BTU_batch_per_green_kg"], 0,3), 2)), "kWh/kg)"]
-                if "CO2_batch" in cp and cp["CO2_batch"]:
-                    statstr_segments += ["\n", QApplication.translate("AddlInfo", "CO2", None), ": ", str(aw.float2float(cp["CO2_batch"],0)),"g"]
-                    if "CO2_batch_per_green_kg" in cp and cp["CO2_batch_per_green_kg"]:
-                        statstr_segments += [" (", str(aw.float2float(cp["CO2_batch_per_green_kg"],0)), "g/kg)"]
-                if cp["AUC"]:
-                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "AUC", None), ': ', str(cp["AUC"]), 'C*min [', str(cp["AUCbase"]), aw.qmc.mode, "]"]
+                        statstr += '(-' + str(aw.float2float(aw.weight_loss(aw.qmc.weight[0],aw.qmc.weight[1]),1)) + "%)"
 
-                for notes in [aw.qmc.roastingnotes, aw.qmc.cuppingnotes]:
-                    if notes is not None and len(notes)>0:
-                        roasting_notes_lines = textwrap.wrap(notes, width=aw.qmc.statsmaxchrperline)
-                        if len(roasting_notes_lines)>0:
-                            statstr_segments += [skipline, roasting_notes_lines[0]]
-                            if len(roasting_notes_lines)>1:
-                                statstr_segments += [skipline, "  ", roasting_notes_lines[1]]
-                                if len(roasting_notes_lines)>2:
-                                    statstr_segments.append("..")
+                # Roast Info Section
+                statstr += skipline
+                if "roasted_density" in cp:
+                    statstr += '\n' + QApplication.translate("AddlInfo", "Density Roasted", None) + ': '+ str(cp["roasted_density"]) + ' ' + encodeLocal(aw.qmc.density[1]) + "/" + encodeLocal(aw.qmc.density[3])
+                if aw.qmc.moisture_roasted:
+                    statstr += '\n' + QApplication.translate("AddlInfo", "Moisture Roasted", None) + ': '+ str(aw.float2float(aw.qmc.moisture_roasted,1)) + "%"
+                if aw.qmc.whole_color > 0:
+                    statstr += '\n' + QApplication.translate("AddlInfo", "Whole Color", None) + ': #' + str(aw.qmc.whole_color) + " " + str(aw.qmc.color_systems[aw.qmc.color_system_idx])
+                if aw.qmc.ground_color > 0:
+                    statstr += '\n' + QApplication.translate("AddlInfo", "Ground Color", None) + ': #' + str(aw.qmc.ground_color) + " " + str(aw.qmc.color_systems[aw.qmc.color_system_idx])
+                if "BTU_batch" in cp and cp["BTU_batch"]:
+                    statstr += "\n{}: {}kWh".format(QApplication.translate("AddlInfo", "Energy", None),str(aw.float2float(aw.qmc.convertHeat(cp["BTU_batch"],0,3),2)))
+                    if "BTU_batch_per_green_kg" in cp and cp["BTU_batch_per_green_kg"]:
+                        statstr += " ({}kWh/kg)".format(str(aw.float2float(aw.qmc.convertHeat(cp["BTU_batch_per_green_kg"],0,3),2)))
+                if "CO2_batch" in cp and cp["CO2_batch"]:
+                    statstr += "\n{}: {}g".format(QApplication.translate("AddlInfo", "CO2", None),str(aw.float2float(cp["CO2_batch"],0)))
+                    if "CO2_batch_per_green_kg" in cp and cp["CO2_batch_per_green_kg"]:
+                        statstr += " ({}g/kg)".format(str(aw.float2float(cp["CO2_batch_per_green_kg"],0)))
+                if cp["AUC"]:
+                    statstr += '\n' + QApplication.translate("AddlInfo", "AUC", None) + ': ' + str(cp["AUC"]) + 'C*min [' + str(cp["AUCbase"]) + aw.qmc.mode + "]"
+
+                if aw.qmc.roastingnotes is not None and len(aw.qmc.roastingnotes)>0:
+                    roasting_notes_lines = textwrap.wrap(aw.qmc.roastingnotes, width=aw.qmc.statsmaxchrperline)
+                    if len(roasting_notes_lines)>0:
+                        statstr += skipline
+                        statstr += roasting_notes_lines[0]
+                        if len(roasting_notes_lines)>1:
+                            statstr += skipline
+                            statstr += "  " + roasting_notes_lines[1]
+                            if len(roasting_notes_lines)>2:
+                                statstr += ".."
+
+                if aw.qmc.cuppingnotes is not None and len(aw.qmc.cuppingnotes)>0:
+                    cupping_notes_lines = textwrap.wrap(aw.qmc.cuppingnotes, width=aw.qmc.statsmaxchrperline)
+                    if len(cupping_notes_lines)>0:
+                        statstr += skipline
+                        statstr += cupping_notes_lines[0]
+                        if len(cupping_notes_lines)>1:
+                            statstr += skipline
+                            statstr += "  " + cupping_notes_lines[1]
+                            if len(cupping_notes_lines)>2:
+                                statstr += ".."
 
                 # Trim the long lines
-                trimmedstatstr_segments = []
-                for l in "".join(statstr_segments).split('\n'):
-                    if trimmedstatstr_segments != []:
-                        trimmedstatstr_segments.append('\n')
-                    trimmedstatstr_segments.append(l[:aw.qmc.statsmaxchrperline])
+                trimmedstatstr = ""
+                lines = statstr.split('\n')
+                for l in lines:
+                    if trimmedstatstr != "":
+                        trimmedstatstr += '\n'
+                    trimmedstatstr += l[:aw.qmc.statsmaxchrperline]
                     if len(l) > aw.qmc.statsmaxchrperline:
-                        trimmedstatstr_segments.append("..")
-                statstr = "".join(trimmedstatstr_segments)
+                        trimmedstatstr += ".."
+                statstr = trimmedstatstr
 
                 #defaults appropriate for default font
                 prop = aw.mpl_fontproperties.copy()
@@ -9616,6 +9693,10 @@ class tgraphcanvas(FigureCanvas):
                 self.phases[i] = int(round(fromCtoF(self.phases[i])))
             if self.step100temp is not None:
                 self.step100temp = int(round(fromCtoF(self.step100temp)))
+            self.ETtarget = int(round(fromCtoF(self.ETtarget)))
+            self.ET2target = int(round(fromCtoF(self.ET2target)))
+            self.BTtarget = int(round(fromCtoF(self.BTtarget)))
+            self.BT2target = int(round(fromCtoF(self.BT2target)))
             self.AUCbase = int(round(fromCtoF(self.AUCbase)))
             self.alarmtemperature = [(fromCtoF(t) if t != 500 else t) for t in self.alarmtemperature]
             # conv Arduino mode
@@ -9649,6 +9730,10 @@ class tgraphcanvas(FigureCanvas):
                 self.phases[i] = int(round(fromFtoC(self.phases[i])))
             if self.step100temp is not None:
                 self.step100temp = int(round(fromFtoC(self.step100temp)))
+            self.ETtarget = int(round(fromFtoC(self.ETtarget)))
+            self.ET2target = int(round(fromFtoC(self.ET2target)))
+            self.BTtarget = int(round(fromFtoC(self.BTtarget)))
+            self.BT2target = int(round(fromFtoC(self.BT2target)))
             self.AUCbase = int(round(fromFtoC(self.AUCbase)))
             self.alarmtemperature = [(fromFtoC(t) if t != 500 else t) for t in self.alarmtemperature]
             # conv Arduino mode
@@ -10338,23 +10423,23 @@ class tgraphcanvas(FigureCanvas):
             if self.designerflag: return
             aw.sendmessage(QApplication.translate("Message","Scope monitoring...", None))
             #disable RESET button:
-            aw.buttonRESET.setEnabled(False)
-            aw.buttonRESET.setVisible(False)
+            aw.button_7.setEnabled(False)
+            aw.button_7.setVisible(False)
             QApplication.processEvents()
             if aw.simulator:
-                aw.buttonONOFF.setStyleSheet(aw.pushbuttonstyles_simulator["ON"])
+                aw.button_1.setStyleSheet(aw.pushbuttonstyles_simulator["ON"])
             else:
-                aw.buttonONOFF.setStyleSheet(aw.pushbuttonstyles["ON"])
+                aw.button_1.setStyleSheet(aw.pushbuttonstyles["ON"])
             QApplication.processEvents()
-            aw.buttonONOFF.setText(QApplication.translate("Button", "OFF",None)) # text means click to turn OFF (it is ON)
-            aw.buttonONOFF.setToolTip(QApplication.translate("Tooltip", "Stop monitoring", None))
-            aw.buttonSTARTSTOP.setEnabled(True) # ensure that the START button is enabled
+            aw.button_1.setText(QApplication.translate("Button", "OFF",None)) # text means click to turn OFF (it is ON)
+            aw.button_1.setToolTip(QApplication.translate("Tooltip", "Stop monitoring", None))
+            aw.button_2.setEnabled(True) # ensure that the START button is enabled
             aw.disableEditMenus()
             aw.update_extraeventbuttons_visibility()
             aw.updateExtraButtonsVisibility()
             aw.updateSlidersVisibility() # update visibility of sliders based on the users preference
-            aw.pidcontrol.activateONOFFeasySV(aw.pidcontrol.svButtons and aw.buttonONOFF0.isVisible())
-            aw.pidcontrol.activateSVSlider(aw.pidcontrol.svSlider and aw.buttonONOFF0.isVisible())
+            aw.pidcontrol.activateONOFFeasySV(aw.pidcontrol.svButtons and aw.button_10.isVisible())
+            aw.pidcontrol.activateSVSlider(aw.pidcontrol.svSlider and aw.button_10.isVisible())
             self.block_update = False # unblock the updating of the bitblit canvas
             aw.updateReadingsLCDsVisibility() # this one triggers the resize and the recreation of the bitblit canvas
             self.threadserver.createSampleThread()
@@ -10368,7 +10453,8 @@ class tgraphcanvas(FigureCanvas):
     def OffMonitor(self):
         try:
             # first activate "Stopping Mode" to ensure that sample() is not reseting the timer now (independent of the flagstart state)
-
+            if self.HUDflag:
+                self.toggleHUD()
             # stop Recorder if still running
             recording = self.flagstart
             if recording:
@@ -10402,17 +10488,17 @@ class tgraphcanvas(FigureCanvas):
                 aw.qmc.palette["canvas"] = aw.qmc.palette["canvas_alt"]
                 aw.updateCanvasColors()
             #enable RESET button:
-            aw.buttonRESET.setStyleSheet(aw.pushbuttonstyles["RESET"])
-            aw.buttonRESET.setEnabled(True)
-            aw.buttonRESET.setVisible(True)
+            aw.button_7.setStyleSheet(aw.pushbuttonstyles["RESET"])
+            aw.button_7.setEnabled(True)
+            aw.button_7.setVisible(True)
             aw.keyboardmoveflag = 0  #disable keyboard navigation
             if aw.simulator:
-                aw.buttonONOFF.setStyleSheet(aw.pushbuttonstyles_simulator["OFF"])
+                aw.button_1.setStyleSheet(aw.pushbuttonstyles_simulator["OFF"])
             else:
-                aw.buttonONOFF.setStyleSheet(aw.pushbuttonstyles["OFF"])
-            aw.buttonONOFF.setToolTip(QApplication.translate("Tooltip", "Start monitoring", None))
+                aw.button_1.setStyleSheet(aw.pushbuttonstyles["OFF"])
+            aw.button_1.setToolTip(QApplication.translate("Tooltip", "Start monitoring", None))
             aw.sendmessage(QApplication.translate("Message","Scope stopped", None))
-            aw.buttonONOFF.setText(QApplication.translate("Button", "ON",None)) # text means click to turn OFF (it is ON)
+            aw.button_1.setText(QApplication.translate("Button", "ON",None)) # text means click to turn OFF (it is ON)
             # reset time LCD color to the default (might have been changed to red due to long cooling!)
             aw.updateReadingsLCDsVisibility()
             # reset WebLCDs
@@ -10777,22 +10863,22 @@ class tgraphcanvas(FigureCanvas):
             aw.qmc.updateDeltaSamples()
             aw.disableSaveActions()
             aw.sendmessage(QApplication.translate("Message","Scope recording...", None))
-            aw.buttonSTARTSTOP.setEnabled(False)
-            aw.buttonSTARTSTOP.setGraphicsEffect(None)
-            aw.buttonONOFF.setText(QApplication.translate("Button", "OFF",None)) # text means click to turn OFF (it is ON)
-            aw.buttonONOFF.setToolTip(QApplication.translate("Tooltip", "Stop recording", None))
-            aw.buttonONOFF.setEnabled(True) # ensure that the OFF button is enabled
+            aw.button_2.setEnabled(False)
+            aw.button_2.setGraphicsEffect(None)
+            aw.button_1.setText(QApplication.translate("Button", "OFF",None)) # text means click to turn OFF (it is ON)
+            aw.button_1.setToolTip(QApplication.translate("Tooltip", "Stop recording", None))
+            aw.button_1.setEnabled(True) # ensure that the OFF button is enabled
             #disable RESET button:
-            aw.buttonRESET.setEnabled(False)
+            aw.button_7.setEnabled(False)
+            aw.button_18.setEnabled(True)
+            aw.button_18.setStyleSheet(aw.pushbuttonstyles["HUD_OFF"])
+            aw.button_18.setGraphicsEffect(aw.makeShadow())
             self.updateLCDtime()
             aw.lowerbuttondialog.setVisible(True)
             aw.applyStandardButtonVisibility()
 
             aw.update_extraeventbuttons_visibility()
             aw.updateExtraButtonsVisibility()
-            
-            if aw.qmc.buttonvisibility[0]: # if CHARGE button is visible we let it blink on START
-                aw.buttonCHARGE.startAnimation()
 
             aw.updateSlidersVisibility() # update visibility of sliders based on the users preference
             aw.updateReadingsLCDsVisibility() # update visiblity of reading LCDs based on the user preference
@@ -10817,14 +10903,16 @@ class tgraphcanvas(FigureCanvas):
             aw.enableSaveActions()
             self.flagstart = False
             if aw.simulator:
-                aw.buttonSTARTSTOP.setStyleSheet(aw.pushbuttonstyles_simulator["STOP"])
+                aw.button_2.setStyleSheet(aw.pushbuttonstyles_simulator["STOP"])
             else:
-                aw.buttonSTARTSTOP.setStyleSheet(aw.pushbuttonstyles["STOP"])
-            aw.buttonSTARTSTOP.setEnabled(True)
-            aw.buttonSTARTSTOP.setGraphicsEffect(aw.makeShadow())
+                aw.button_2.setStyleSheet(aw.pushbuttonstyles["STOP"])
+            aw.button_2.setEnabled(True)
+            aw.button_2.setGraphicsEffect(aw.makeShadow())
             #enable RESET button:
-            aw.buttonRESET.setStyleSheet(aw.pushbuttonstyles["RESET"])
-            aw.buttonRESET.setEnabled(True)
+            aw.button_7.setStyleSheet(aw.pushbuttonstyles["RESET"])
+            aw.button_7.setEnabled(True)
+            aw.button_18.setEnabled(False)
+            aw.button_18.setGraphicsEffect(None)
             self.updateLCDtime()
             #prevents accidentally deleting a modified profile:
             if len(self.timex) > 2:
@@ -10841,7 +10929,7 @@ class tgraphcanvas(FigureCanvas):
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
             aw.sendmessage(QApplication.translate("Message","Scope recording stopped", None))
-            aw.buttonSTARTSTOP.setText(QApplication.translate("Button", "START",None))
+            aw.button_2.setText(QApplication.translate("Button", "START",None))
             aw.lowerbuttondialog.setVisible(False)
             aw.messagelabel.setVisible(True)
             aw.phasesLCDs.hide()
@@ -10907,7 +10995,7 @@ class tgraphcanvas(FigureCanvas):
                     aw.soundpopSignal.emit()
                     #prevents accidentally deleting a modified profile.
                     self.fileDirtySignal.emit()
-                    if aw.buttonCHARGE.isFlat() and self.timeindex[0] > -1:
+                    if aw.button_8.isFlat() and self.timeindex[0] > -1:
                         # undo wrongly set CHARGE
                         ## deactivate autoCHARGE
                         ##aw.qmc.autoCHARGEenabled = False
@@ -10927,7 +11015,7 @@ class tgraphcanvas(FigureCanvas):
                             self.timeindex[0] = -1
                             removed = True
                             self.xaxistosm(redraw=False)
-                    elif not aw.buttonCHARGE.isFlat():
+                    elif not aw.button_8.isFlat():
                         if self.device == 18 and aw.simulator is None: #manual mode
                             tx,et,bt = aw.ser.NONE()
                             if bt != 1 and et != -1:  #cancel
@@ -10952,7 +11040,7 @@ class tgraphcanvas(FigureCanvas):
                                 aw.qmc.startofx = aw.qmc.chargemintime + self.timex[self.timeindex[0]] # we set the min x-axis limit to the CHARGE Min time
                         except Exception: # pylint: disable=broad-except
                             pass
-                        
+
                         self.xaxistosm(redraw=False) # need to fix uneven x-axis labels like -0:13
                         d = aw.qmc.ylimit - aw.qmc.ylimit_min
                         st1 = aw.arabicReshape(QApplication.translate("Scope Annotation", "CHARGE", None))
@@ -10973,8 +11061,7 @@ class tgraphcanvas(FigureCanvas):
                                     slidervalue = aw.slider3.value()
                                 elif slidernr == 3:
                                     slidervalue = aw.slider4.value()
-                                # only mark events that have not been marked before not to duplicate the event values
-                                if slidervalue != 0 and slidernr not in self.specialeventstype:
+                                if slidervalue != 0:
                                     value = aw.float2float((slidervalue + 10.0) / 10.0)
                                     # note that EventRecordAction avoids to generate events were type and value matches to the previously recorded one
                                     aw.qmc.EventRecordAction(extraevent = 1,eventtype=slidernr,eventvalue=value,takeLock=False,doupdategraphics=False)
@@ -10995,15 +11082,13 @@ class tgraphcanvas(FigureCanvas):
             # redraw (within timealign) should not be called if semaphore is hold!
             # NOTE: the following aw.eventaction might do serial communication that aquires a lock, so release it here
             aw.qmc.timealign(redraw=True,recompute=False,force=True) # redraws at least the canvas if redraw=True, so no need here for doing another canvas.draw()
-            if aw.buttonCHARGE.isFlat():
+            if aw.button_8.isFlat():
                 if removed:
-                    aw.buttonCHARGE.setFlat(False)
-                    aw.buttonCHARGE.startAnimation()
+                    aw.button_8.setFlat(False)
                     self.updategraphicsSignal.emit() # we need this to have the projections redrawn immediately
             else:
                 aw.eventactionx(aw.qmc.buttonactions[0],aw.qmc.buttonactionstrings[0])
-                aw.buttonCHARGE.setFlat(True)
-                aw.buttonCHARGE.stopAnimation()
+                aw.button_8.setFlat(True)
                 try:
                     if aw.qmc.LCDdecimalplaces:
                         fmt = "%.1f"
@@ -11016,7 +11101,7 @@ class tgraphcanvas(FigureCanvas):
                     _log.exception(e)
                 if aw.qmc.roastpropertiesAutoOpenFlag:
                     aw.openPropertiesSignal.emit()
-                aw.onMarkMoveToNext(aw.buttonCHARGE)
+                aw.onMarkMoveToNext(aw.button_8)
                 if not(self.autoChargeIdx and aw.qmc.timeindex[0] < 0):
                     self.updategraphicsSignal.emit() # we need this to have the projections redrawn immediately
 
@@ -11068,7 +11153,7 @@ class tgraphcanvas(FigureCanvas):
                         start = self.timex[self.timeindex[0]]
                     else:
                         start = 0
-                    if aw.buttonDRY.isFlat() and self.timeindex[1] > 0:
+                    if aw.button_19.isFlat() and self.timeindex[1] > 0:
                         # undo wrongly set DRY
                         # deactivate autoDRY
                         aw.qmc.autoDRYenabled = False
@@ -11088,7 +11173,7 @@ class tgraphcanvas(FigureCanvas):
                                 del self.l_annotations_dict[1]
                             self.timeindex[1] = 0
                             removed = True
-                    elif not aw.buttonDRY.isFlat():
+                    elif not aw.button_19.isFlat():
                         if self.device != 18 or aw.simulator is not None:
                             self.timeindex[1] = max(0,len(self.timex)-1)
                         else:
@@ -11127,19 +11212,16 @@ class tgraphcanvas(FigureCanvas):
                 if aw.qmc.alignEvent in [1,7]:
                     aw.qmc.timealign(redraw=True,recompute=False) # redraws at least the canvas if redraw=True, so no need here for doing another canvas.draw()
                 # NOTE: the following aw.eventaction might do serial communication that aquires a lock, so release it here
-                if aw.buttonDRY.isFlat():
+                if aw.button_19.isFlat():
                     if removed:
                         self.updateBackground()
-                        aw.buttonDRY.setFlat(False)
+                        aw.button_19.setFlat(False)
                         if self.timeindex[0] == -1: # reactivate the CHARGE button if not yet set
-                            aw.buttonCHARGE.setFlat(False)
-                            if aw.qmc.buttonvisibility[0]:
-                                aw.buttonCHARGE.startAnimation()
+                            aw.button_8.setFlat(False)
                         self.updategraphicsSignal.emit()
                 else:
-                    aw.buttonDRY.setFlat(True) # deactivate DRY button
-                    aw.buttonCHARGE.setFlat(True) # also deactivate CHARGE button
-                    aw.buttonCHARGE.stopAnimation()
+                    aw.button_19.setFlat(True) # deactivate DRY button
+                    aw.button_8.setFlat(True) # also deactivate CHARGE button
                     try:
                         aw.eventactionx(aw.qmc.buttonactions[1],aw.qmc.buttonactionstrings[1])
                         if self.timeindex[0] > -1:
@@ -11153,7 +11235,7 @@ class tgraphcanvas(FigureCanvas):
                         aw.sendmessage(message)
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
-                    aw.onMarkMoveToNext(aw.buttonDRY)
+                    aw.onMarkMoveToNext(aw.button_19)
                     if self.autoDryIdx == 0:
                         # only if markDryEnd() is not anyhow triggered within updategraphics()
                         self.updategraphicsSignal.emit()
@@ -11179,7 +11261,7 @@ class tgraphcanvas(FigureCanvas):
                         start = self.timex[self.timeindex[0]]
                     else:
                         start = 0
-                    if aw.buttonFCs.isFlat() and self.timeindex[2] > 0:
+                    if aw.button_3.isFlat() and self.timeindex[2] > 0:
                         # undo wrongly set FCs
                         # deactivate autoFCs
                         aw.qmc.autoFCsenabled = False
@@ -11198,7 +11280,7 @@ class tgraphcanvas(FigureCanvas):
                                 del self.l_annotations_dict[2]
                             self.timeindex[2] = 0
                             removed = True
-                    elif not aw.buttonFCs.isFlat():
+                    elif not aw.button_3.isFlat():
                         # record 1Cs only if Charge mark has been done
                         if self.device != 18 or aw.simulator is not None:
                             self.timeindex[2] = max(0,len(self.timex)-1)
@@ -11238,22 +11320,19 @@ class tgraphcanvas(FigureCanvas):
                 if aw.qmc.alignEvent in [2,7]:
                     aw.qmc.timealign(redraw=True,recompute=False) # redraws at least the canvas if redraw=True, so no need here for doing another canvas.draw()
                 # NOTE: the following aw.eventaction might do serial communication that acquires a lock, so release it here
-                if aw.buttonFCs.isFlat():
+                if aw.button_3.isFlat():
                     if removed:
                         self.updateBackground()
-                        aw.buttonFCs.setFlat(False)
+                        aw.button_3.setFlat(False)
                         if self.timeindex[1] == 0: # reactivate the DRY button if not yet set
-                            aw.buttonDRY.setFlat(False)
+                            aw.button_19.setFlat(False)
                             if self.timeindex[0] == -1: # reactivate the CHARGE button if not yet set
-                                aw.buttonCHARGE.setFlat(False)
-                                if aw.qmc.buttonvisibility[0]:
-                                    aw.buttonCHARGE.startAnimation()
+                                aw.button_8.setFlat(False)
                         self.updategraphicsSignal.emit() # we need this to have the projections redrawn immediately
                 else:
-                    aw.buttonFCs.setFlat(True)
-                    aw.buttonCHARGE.setFlat(True)
-                    aw.buttonCHARGE.stopAnimation()
-                    aw.buttonDRY.setFlat(True)
+                    aw.button_3.setFlat(True)
+                    aw.button_8.setFlat(True)
+                    aw.button_19.setFlat(True)
                     aw.eventactionx(aw.qmc.buttonactions[2],aw.qmc.buttonactionstrings[2])
                     if self.timeindex[0] > -1:
                         start = self.timex[self.timeindex[0]]
@@ -11263,7 +11342,7 @@ class tgraphcanvas(FigureCanvas):
                     st2 = "%.1f "%self.temp2[self.timeindex[2]] + self.mode
                     message = QApplication.translate("Message","[FC START] recorded at {0} BT = {1}", None).format(st1,st2)
                     aw.sendmessage(message)
-                    aw.onMarkMoveToNext(aw.buttonFCs)
+                    aw.onMarkMoveToNext(aw.button_3)
                     if self.autoFCsIdx == 0:
                         # only if mark1Cstart() is not triggered from within updategraphics() and the canvas is anyhow updated
                         self.updategraphicsSignal.emit() # we need this to have the projections redrawn immediately
@@ -11289,7 +11368,7 @@ class tgraphcanvas(FigureCanvas):
                         start = self.timex[self.timeindex[0]]
                     else:
                         start = 0
-                    if aw.buttonFCe.isFlat() and self.timeindex[3] > 0:
+                    if aw.button_4.isFlat() and self.timeindex[3] > 0:
                         # undo wrongly set FCe
                         st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","FCe {0}", None).format(stringfromseconds(self.timex[self.timeindex[3]]-start,False)))
                         if len(self.l_annotations) > 1 and self.l_annotations[-1].get_text() == st1:
@@ -11306,7 +11385,7 @@ class tgraphcanvas(FigureCanvas):
                                 del self.l_annotations_dict[3]
                             self.timeindex[3] = 0
                             removed = True
-                    elif not aw.buttonFCe.isFlat():
+                    elif not aw.button_4.isFlat():
                         if self.device != 18 or aw.simulator is not None:
                             self.timeindex[3] = max(0,len(self.timex)-1)
                         else:
@@ -11339,25 +11418,22 @@ class tgraphcanvas(FigureCanvas):
                 if aw.qmc.alignEvent in [3,7]:
                     aw.qmc.timealign(redraw=True,recompute=False) # redraws at least the canvas if redraw=True, so no need here for doing another canvas.draw()
                 # NOTE: the following aw.eventaction might do serial communication that aquires a lock, so release it here
-                if aw.buttonFCe.isFlat():
+                if aw.button_4.isFlat():
                     if removed:
                         self.updateBackground()
-                        aw.buttonFCe.setFlat(False)
+                        aw.button_4.setFlat(False)
                         if self.timeindex[2] == 0: # reactivate the FCs button if not yet set
-                            aw.buttonFCs.setFlat(False)
+                            aw.button_3.setFlat(False)
                             if self.timeindex[1] == 0: # reactivate the DRY button if not yet set
-                                aw.buttonDRY.setFlat(False)
+                                aw.button_19.setFlat(False)
                                 if self.timeindex[0] == -1: # reactivate the CHARGE button if not yet set
-                                    aw.buttonCHARGE.setFlat(False)
-                                    if aw.qmc.buttonvisibility[0]:
-                                        aw.buttonCHARGE.startAnimation()
+                                    aw.button_8.setFlat(False)
                         self.updategraphicsSignal.emit() # we need this to have the projections redrawn immediately
                 else:
-                    aw.buttonFCe.setFlat(True)
-                    aw.buttonCHARGE.setFlat(True)
-                    aw.buttonCHARGE.stopAnimation()
-                    aw.buttonDRY.setFlat(True)
-                    aw.buttonFCs.setFlat(True)
+                    aw.button_4.setFlat(True)
+                    aw.button_8.setFlat(True)
+                    aw.button_19.setFlat(True)
+                    aw.button_3.setFlat(True)
                     aw.eventactionx(aw.qmc.buttonactions[3],aw.qmc.buttonactionstrings[3])
                     if self.timeindex[0] > -1:
                         start = self.timex[self.timeindex[0]]
@@ -11367,7 +11443,7 @@ class tgraphcanvas(FigureCanvas):
                     st2 = "%.1f "%self.temp2[self.timeindex[3]] + self.mode
                     message = QApplication.translate("Message","[FC END] recorded at {0} BT = {1}", None).format(st1,st2)
                     aw.sendmessage(message)
-                    aw.onMarkMoveToNext(aw.buttonFCe)
+                    aw.onMarkMoveToNext(aw.button_4)
                     self.updategraphicsSignal.emit() # we need this to have the projections redrawn immediately
 
 
@@ -11392,7 +11468,7 @@ class tgraphcanvas(FigureCanvas):
                         start = self.timex[self.timeindex[0]]
                     else:
                         start = 0
-                    if aw.buttonSCs.isFlat() and self.timeindex[4] > 0:
+                    if aw.button_5.isFlat() and self.timeindex[4] > 0:
                         # undo wrongly set FCs
                         st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","SCs {0}", None).format(stringfromseconds(self.timex[self.timeindex[4]]-start,False)))
                         if len(self.l_annotations) > 1 and self.l_annotations[-1].get_text() == st1:
@@ -11409,7 +11485,7 @@ class tgraphcanvas(FigureCanvas):
                                 del self.l_annotations_dict[4]
                             self.timeindex[4] = 0
                             removed = True
-                    elif not aw.buttonSCs.isFlat():
+                    elif not aw.button_5.isFlat():
                         if self.device != 18 or aw.simulator is not None:
                             self.timeindex[4] = max(0,len(self.timex)-1)
                         else:
@@ -11444,28 +11520,25 @@ class tgraphcanvas(FigureCanvas):
                 if aw.qmc.alignEvent in [4,7]:
                     aw.qmc.timealign(redraw=True,recompute=False) # redraws at least the canvas if redraw=True, so no need here for doing another canvas.draw()
                 # NOTE: the following aw.eventaction might do serial communication that aquires a lock, so release it here
-                if aw.buttonSCs.isFlat():
+                if aw.button_5.isFlat():
                     if removed:
                         self.updateBackground()
-                        aw.buttonSCs.setFlat(False)
+                        aw.button_5.setFlat(False)
                         if self.timeindex[3] == 0: # reactivate the FCe button if not yet set
-                            aw.buttonFCe.setFlat(False)
+                            aw.button_4.setFlat(False)
                             if self.timeindex[2] == 0: # reactivate the FCs button if not yet set
-                                aw.buttonFCs.setFlat(False)
+                                aw.button_3.setFlat(False)
                                 if self.timeindex[1] == 0: # reactivate the DRY button if not yet set
-                                    aw.buttonDRY.setFlat(False)
+                                    aw.button_19.setFlat(False)
                                     if self.timeindex[0] == -1: # reactivate the CHARGE button if not yet set
-                                        aw.buttonCHARGE.setFlat(False)
-                                        if aw.qmc.buttonvisibility[0]:
-                                            aw.buttonCHARGE.startAnimation()
+                                        aw.button_8.setFlat(False)
                         self.updategraphicsSignal.emit() # we need this to have the projections redrawn immediately
                 else:
-                    aw.buttonSCs.setFlat(True)
-                    aw.buttonCHARGE.setFlat(True)
-                    aw.buttonCHARGE.stopAnimation()
-                    aw.buttonDRY.setFlat(True)
-                    aw.buttonFCs.setFlat(True)
-                    aw.buttonFCe.setFlat(True)
+                    aw.button_5.setFlat(True)
+                    aw.button_8.setFlat(True)
+                    aw.button_19.setFlat(True)
+                    aw.button_3.setFlat(True)
+                    aw.button_4.setFlat(True)
                     try:
                         aw.eventactionx(aw.qmc.buttonactions[4],aw.qmc.buttonactionstrings[4])
                         if self.timeindex[0] > -1:
@@ -11481,7 +11554,7 @@ class tgraphcanvas(FigureCanvas):
                         aw.sendmessage(message)
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
-                    aw.onMarkMoveToNext(aw.buttonSCs)
+                    aw.onMarkMoveToNext(aw.button_5)
                     self.updategraphicsSignal.emit() # we need this to have the projections redrawn immediately
 
     # trigger to be called by the markSCeSignal
@@ -11505,7 +11578,7 @@ class tgraphcanvas(FigureCanvas):
                         start = self.timex[self.timeindex[0]]
                     else:
                         start = 0
-                    if aw.buttonSCe.isFlat() and self.timeindex[5] > 0:
+                    if aw.button_6.isFlat() and self.timeindex[5] > 0:
                         # undo wrongly set FCs
                         st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","SCe {0}", None).format(stringfromseconds(self.timex[self.timeindex[5]]-start,False)))
                         if len(self.l_annotations) > 1 and self.l_annotations[-1].get_text() == st1:
@@ -11522,7 +11595,7 @@ class tgraphcanvas(FigureCanvas):
                                 del self.l_annotations_dict[5]
                             self.timeindex[5] = 0
                             removed = True
-                    elif not aw.buttonSCe.isFlat():
+                    elif not aw.button_6.isFlat():
                         if self.device != 18 or aw.simulator is not None:
                             self.timeindex[5] = max(0,len(self.timex)-1)
                         else:
@@ -11554,31 +11627,28 @@ class tgraphcanvas(FigureCanvas):
                 if aw.qmc.alignEvent in [5,7]:
                     aw.qmc.timealign(redraw=True,recompute=False) # redraws at least the canvas if redraw=True, so no need here for doing another canvas.draw()
                 # NOTE: the following aw.eventaction might do serial communication that aquires a lock, so release it here
-                if aw.buttonSCe.isFlat():
+                if aw.button_6.isFlat():
                     if removed:
                         self.updateBackground()
-                        aw.buttonSCe.setFlat(False)
+                        aw.button_6.setFlat(False)
                         if self.timeindex[4] == 0: # reactivate the SCs button if not yet set
-                            aw.buttonSCs.setFlat(False)
+                            aw.button_5.setFlat(False)
                             if self.timeindex[3] == 0: # reactivate the FCe button if not yet set
-                                aw.buttonFCe.setFlat(False)
+                                aw.button_4.setFlat(False)
                                 if self.timeindex[2] == 0: # reactivate the FCs button if not yet set
-                                    aw.buttonFCs.setFlat(False)
+                                    aw.button_3.setFlat(False)
                                     if self.timeindex[1] == 0: # reactivate the DRY button if not yet set
-                                        aw.buttonDRY.setFlat(False)
+                                        aw.button_19.setFlat(False)
                                         if self.timeindex[0] == -1: # reactivate the CHARGE button if not yet set
-                                            aw.buttonCHARGE.setFlat(False)
-                                            if aw.qmc.buttonvisibility[0]:
-                                                aw.buttonCHARGE.startAnimation()
+                                            aw.button_8.setFlat(False)
                         self.updategraphicsSignal.emit() # we need this to have the projections redrawn immediately
                 else:
-                    aw.buttonSCe.setFlat(True)
-                    aw.buttonCHARGE.setFlat(True)
-                    aw.buttonCHARGE.stopAnimation()
-                    aw.buttonDRY.setFlat(True)
-                    aw.buttonFCs.setFlat(True)
-                    aw.buttonFCe.setFlat(True)
-                    aw.buttonSCs.setFlat(True)
+                    aw.button_6.setFlat(True)
+                    aw.button_8.setFlat(True)
+                    aw.button_19.setFlat(True)
+                    aw.button_3.setFlat(True)
+                    aw.button_4.setFlat(True)
+                    aw.button_5.setFlat(True)
                     aw.eventactionx(aw.qmc.buttonactions[5],aw.qmc.buttonactionstrings[5])
                     if self.timeindex[0] > -1:
                         start = self.timex[self.timeindex[0]]
@@ -11588,7 +11658,7 @@ class tgraphcanvas(FigureCanvas):
                     st2 = "%.1f "%self.temp2[self.timeindex[5]] + self.mode
                     message = QApplication.translate("Message","[SC END] recorded at {0} BT = {1}", None).format(st1,st2)
                     aw.sendmessage(message)
-                    aw.onMarkMoveToNext(aw.buttonSCe)
+                    aw.onMarkMoveToNext(aw.button_6)
                     self.updategraphicsSignal.emit() # we need this to have the projections redrawn immediately
 
     # trigger to be called by the markDropSignal
@@ -11614,7 +11684,7 @@ class tgraphcanvas(FigureCanvas):
                         start = 0
                     # we check if this is the first DROP mark on this roast
                     firstDROP = self.timeindex[6] == 0
-                    if aw.buttonDROP.isFlat() and self.timeindex[6] > 0:
+                    if aw.button_9.isFlat() and self.timeindex[6] > 0:
                         # undo wrongly set FCs
                         # deactivate autoDROP
                         aw.qmc.autoDROPenabled = False
@@ -11635,7 +11705,7 @@ class tgraphcanvas(FigureCanvas):
                             #decrease BatchCounter again
                             self.decBatchCounter()
                             removed = True
-                    elif not aw.buttonDROP.isFlat():
+                    elif not aw.button_9.isFlat():
                         self.incBatchCounter()
                         # generate UUID
                         if self.roastUUID is None: # there might be already one assigned by undo and redo the markDROP!
@@ -11702,34 +11772,31 @@ class tgraphcanvas(FigureCanvas):
                     aw.qmc.timealign(redraw=True,recompute=False) # redraws at least the canvas if redraw=True, so no need here for doing another canvas.draw()
                 # NOTE: the following aw.eventaction might do serial communication that aquires a lock, so release it here
                 try:
-                    if aw.buttonDROP.isFlat():
+                    if aw.button_9.isFlat():
                         if removed:
                             self.updateBackground()
-                            aw.buttonDROP.setFlat(False)
+                            aw.button_9.setFlat(False)
                             if self.timeindex[5] == 0: # reactivate the SCe button if not yet set
-                                aw.buttonSCe.setFlat(False)
+                                aw.button_6.setFlat(False)
                                 if self.timeindex[4] == 0: # reactivate the SCs button if not yet set
-                                    aw.buttonSCs.setFlat(False)
+                                    aw.button_5.setFlat(False)
                                     if self.timeindex[3] == 0: # reactivate the FCe button if not yet set
-                                        aw.buttonFCe.setFlat(False)
+                                        aw.button_4.setFlat(False)
                                         if self.timeindex[2] == 0: # reactivate the FCs button if not yet set
-                                            aw.buttonFCs.setFlat(False)
+                                            aw.button_3.setFlat(False)
                                             if self.timeindex[1] == 0: # reactivate the DRY button if not yet set
-                                                aw.buttonDRY.setFlat(False)
+                                                aw.button_19.setFlat(False)
                                                 if self.timeindex[0] == -1: # reactivate the CHARGE button if not yet set
-                                                    aw.buttonCHARGE.setFlat(False)
-                                                    if aw.qmc.buttonvisibility[0]:
-                                                        aw.buttonCHARGE.startAnimation()
+                                                    aw.button_8.setFlat(False)
                             self.updategraphicsSignal.emit() # we need this to have the projections redrawn immediately
                     else:
-                        aw.buttonDROP.setFlat(True)
-                        aw.buttonCHARGE.setFlat(True)
-                        aw.buttonCHARGE.stopAnimation()
-                        aw.buttonDRY.setFlat(True)
-                        aw.buttonFCs.setFlat(True)
-                        aw.buttonFCe.setFlat(True)
-                        aw.buttonSCs.setFlat(True)
-                        aw.buttonSCe.setFlat(True)
+                        aw.button_9.setFlat(True)
+                        aw.button_8.setFlat(True)
+                        aw.button_19.setFlat(True)
+                        aw.button_3.setFlat(True)
+                        aw.button_4.setFlat(True)
+                        aw.button_5.setFlat(True)
+                        aw.button_6.setFlat(True)
     
                         try:
                             aw.eventactionx(aw.qmc.buttonactions[6],aw.qmc.buttonactionstrings[6])
@@ -11753,7 +11820,7 @@ class tgraphcanvas(FigureCanvas):
                                     _log.exception(e)
                         if aw.qmc.roastpropertiesAutoOpenDropFlag:
                             aw.openPropertiesSignal.emit()
-                        aw.onMarkMoveToNext(aw.buttonDROP)
+                        aw.onMarkMoveToNext(aw.button_9)
                         if not (self.autoDropIdx > 0 and aw.qmc.timeindex[0] > -1 and not aw.qmc.timeindex[6]):
                             # only if not anyhow markDrop() is triggered from within updategraphic() which guarantees an immedate redraw
                             self.updategraphicsSignal.emit() # we need this to have the projections redrawn immediately
@@ -11780,7 +11847,7 @@ class tgraphcanvas(FigureCanvas):
                         start = self.timex[self.timeindex[0]]
                     else:
                         start = 0
-                    if aw.buttonCOOL.isFlat() and self.timeindex[7] > 0:
+                    if aw.button_20.isFlat() and self.timeindex[7] > 0:
                         # undo wrongly set COOL
     
                         st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","CE {0}", None).format(stringfromseconds(self.timex[self.timeindex[7]] - start)))
@@ -11800,7 +11867,7 @@ class tgraphcanvas(FigureCanvas):
                             self.timeindex[7] = 0
                             removed = True
     
-                    elif not aw.buttonCOOL.isFlat():
+                    elif not aw.button_20.isFlat():
                         if self.device != 18 or aw.simulator is not None:
                             self.timeindex[7] = max(0,len(self.timex)-1)
                         else:
@@ -11830,37 +11897,34 @@ class tgraphcanvas(FigureCanvas):
                     aw.qmc.profileDataSemaphore.release(1)
             if self.flagstart:
                 # NOTE: the following aw.eventaction might do serial communication that aquires a lock, so release it here
-                if aw.buttonCOOL.isFlat():
+                if aw.button_20.isFlat():
                     if removed:
                         self.updateBackground()
-                        aw.buttonCOOL.setFlat(False)
+                        aw.button_20.setFlat(False)
                         if self.timeindex[6] == 0: # reactivate the DROP button if not yet set
-                            aw.buttonDROP.setFlat(False)
+                            aw.button_9.setFlat(False)
                             if self.timeindex[5] == 0: # reactivate the SCe button if not yet set
-                                aw.buttonSCe.setFlat(False)
+                                aw.button_6.setFlat(False)
                                 if self.timeindex[4] == 0: # reactivate the SCs button if not yet set
-                                    aw.buttonSCs.setFlat(False)
+                                    aw.button_5.setFlat(False)
                                     if self.timeindex[3] == 0: # reactivate the FCe button if not yet set
-                                        aw.buttonFCe.setFlat(False)
+                                        aw.button_4.setFlat(False)
                                         if self.timeindex[2] == 0: # reactivate the FCs button if not yet set
-                                            aw.buttonFCs.setFlat(False)
+                                            aw.button_3.setFlat(False)
                                             if self.timeindex[1] == 0: # reactivate the DRY button if not yet set
-                                                aw.buttonDRY.setFlat(False)
+                                                aw.button_19.setFlat(False)
                                                 if self.timeindex[0] == -1: # reactivate the CHARGE button if not yet set
-                                                    aw.buttonCHARGE.setFlat(False)
-                                                    if aw.qmc.buttonvisibility[0]:
-                                                        aw.buttonCHARGE.startAnimation()
+                                                    aw.button_8.setFlat(False)
                         self.updategraphicsSignal.emit() # we need this to have the projections redrawn immediately
                 else:
-                    aw.buttonCOOL.setFlat(True)
-                    aw.buttonCHARGE.setFlat(True)
-                    aw.buttonCHARGE.stopAnimation()
-                    aw.buttonDRY.setFlat(True)
-                    aw.buttonFCs.setFlat(True)
-                    aw.buttonFCe.setFlat(True)
-                    aw.buttonSCs.setFlat(True)
-                    aw.buttonSCe.setFlat(True)
-                    aw.buttonDROP.setFlat(True)
+                    aw.button_20.setFlat(True)
+                    aw.button_8.setFlat(True)
+                    aw.button_19.setFlat(True)
+                    aw.button_3.setFlat(True)
+                    aw.button_4.setFlat(True)
+                    aw.button_5.setFlat(True)
+                    aw.button_6.setFlat(True)
+                    aw.button_9.setFlat(True)
                     aw.eventactionx(aw.qmc.buttonactions[7],aw.qmc.buttonactionstrings[7])
                     if self.timeindex[0] > -1:
                         start = self.timex[self.timeindex[0]]
@@ -13054,6 +13118,12 @@ class tgraphcanvas(FigureCanvas):
             _, _, exc_tb = sys.exc_info()
             aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " measureFromprofile() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         return heatEnergy, coolEnergy, heatDuration, coolDuration
+
+    #used in EventRecord()
+    @staticmethod
+    def restorebutton_11():
+        aw.button_11.setDisabled(False)
+        aw.button_11.setFlat(False)
 
     #called from markdryend(), markcharge(), mark1Cstart(),  etc when using device 18 (manual mode)
     def drawmanual(self,et,bt,tx):
@@ -15448,10 +15518,10 @@ class ApplicationWindow(QMainWindow):
         'recentThemeActs', 'applicationDirectory', 'helpdialog', 'redrawTimer', 'lastLoadedProfile', 'lastLoadedBackground',
         'analysisresultsanno', 'segmentresultsanno', 'largeLCDs_dialog', 'LargeLCDsFlag', 'largeDeltaLCDs_dialog', 'LargeDeltaLCDsFlag', 'largePIDLCDs_dialog',
         'LargePIDLCDsFlag', 'largeExtraLCDs_dialog', 'LargeExtraLCDsFlag', 'largePhasesLCDs_dialog', 'LargePhasesLCDsFlag', 'WebLCDs', 'WebLCDsPort',
-        'WebLCDsAlerts', 'EventsDlg_activeTab', 'graphColorDlg_activeTab', 'PID_DlgControl_activeTab', 'CurveDlg_activeTab', 'editGraphDlg_activeTab',
+        'WebLCDsAlerts', 'EventsDlg_activeTab', 'graphColorDlg_activeTab', 'PID_DlgControl_activeTab', 'HUDDlg_activeTab', 'editGraphDlg_activeTab',
         'backgroundDlg_activeTab', 'DeviceAssignmentDlg_activeTab', 'AlarmDlg_activeTab', 'resetqsettings', 'settingspath', 'wheelpath', 'profilepath',
         'userprofilepath', 'printer', 'main_widget', 'defaultdpi', 'dpi', 'qmc', 'HottopControlActive', 'AsyncSamplingAction', 'wheeldialog',
-        'simulator', 'simulatorpath', 'comparator', 'stack', 'eventsbuttonflag', 'minieventsflag', 'seriallogflag',
+        'simulator', 'simulatorpath', 'comparator', 'HUD', 'showHUD', 'HUDfunction', 'stack', 'eventsbuttonflag', 'minieventsflag', 'seriallogflag',
         'seriallog', 'ser', 'modbus', 'extraMODBUStemps', 'extraMODBUStx', 's7', 'ws', 'scale', 'color', 'extraser', 'extracomport', 'extrabaudrate',
         'extrabytesize', 'extraparity', 'extrastopbits', 'extratimeout', 'fujipid', 'dtapid', 'pidcontrol', 'soundflag', 'recentRoasts', 'maxRecentRoasts',
         'lcdpaletteB', 'lcdpaletteF', 'extraeventsbuttonsflags', 'extraeventslabels', 'extraeventbuttoncolor', 'extraeventsactionstrings',
@@ -15466,7 +15536,7 @@ class ApplicationWindow(QMainWindow):
         'fileSaveAction', 'fileSaveCopyAsAction', 'exportMenu', 'convMenu', 'saveGraphMenu', 'reportMenu', 'htmlAction', 'productionMenu',
         'productionWebAction', 'productionCsvAction', 'productionExcelAction', 'rankingMenu', 'rankingWebAction', 'rankingCsvAction', 'rankingExcelAction',
         'savestatisticsAction', 'printAction', 'quitAction', 'cutAction', 'copyAction', 'pasteAction', 'editGraphAction', 'backgroundAction',
-        'flavorAction', 'switchAction', 'switchETBTAction', 'machineMenu', 'deviceAction', 'commportAction', 'calibrateDelayAction', 'curvesAction',
+        'flavorAction', 'switchAction', 'switchETBTAction', 'machineMenu', 'deviceAction', 'commportAction', 'calibrateDelayAction', 'hudAction',
         'eventsAction', 'alarmAction', 'phasesGraphAction', 'StatisticsAction', 'WindowconfigAction', 'colorsAction', 'themeMenu', 'autosaveAction',
         'batchAction', 'temperatureConfMenu', 'FahrenheitAction', 'CelsiusAction', 'languageMenu', 'analyzeMenu', 'fitIdealautoAction',
         'analyzeMenu', 'fitIdealx2Action', 'fitIdealx3Action', 'fitIdealx0Action', 'fitBkgndAction', 'clearresultsAction', 'roastCompareAction',
@@ -15477,7 +15547,7 @@ class ApplicationWindow(QMainWindow):
         'button_font_size_tiny', 'button_font_size_micro', 'main_button_min_width', 'standard_button_min_width', 'small_button_min_width', 'tiny_button_min_width',
         'pushbuttonstyles_simulator', 'pushbuttonstyles', 'standard_button_tiny_height', 'standard_button_small_height', 'standard_button_height',
         'button_1', 'button_2', 'button_3', 'button_4', 'button_5', 'button_6', 'button_7', 'button_8', 'button_9', 'button_10', 'button_11', 'button_12',
-        'button_13',  'button_14', 'button_15', 'button_16', 'button_17', 'button_19', 'button_20', 'lcd1', 'lcd2', 'lcd3', 'lcd4', 'lcd5', 
+        'button_13',  'button_14', 'button_15', 'button_16', 'button_17', 'button_18', 'button_19', 'button_20', 'lcd1', 'lcd2', 'lcd3', 'lcd4', 'lcd5', 
         'lcd6', 'lcd7', 'label2', 'label3', 'label4', 'label5', 'label6', 'label7', 'nLCDs', 'extraLCD1', 'extraLCD2', 'extraLCDlabel1', 'extraLCDlabel2',
         'extraLCDframe1', 'extraLCDframe2', 'extraLCDvisibility1', 'extraLCDvisibility2', 'extraCurveVisibility1', 'extraCurveVisibility2',
         'extraDelta1', 'extraDelta2', 'extraFill1', 'extraFill2', 'channel_tare_values', 'messagehist', 'eventlabel', 'eNumberSpinBox', 
@@ -15577,7 +15647,7 @@ class ApplicationWindow(QMainWindow):
         self.EventsDlg_activeTab = 0
         self.graphColorDlg_activeTab = 0
         self.PID_DlgControl_activeTab = 0
-        self.CurveDlg_activeTab = 0 # curves dialog
+        self.HUDDlg_activeTab = 0 # curves dialog
         self.editGraphDlg_activeTab = 0 # roast properties dialog
         self.backgroundDlg_activeTab = 0
         self.DeviceAssignmentDlg_activeTab = 0
@@ -15652,7 +15722,22 @@ class ApplicationWindow(QMainWindow):
 
         self.comparator = None # holds the profile comparator dialog
 
+        ####    HUD
+        self.HUD = QLabel()  #main canvas for hud widget
+        self.HUD.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
+
+        #This is a list of different HUD functions.
+        self.showHUD = [self.showHUDmetrics, self.showHUDthermal]
+        #this holds the index of the HUD functions above
+        self.HUDfunction = 0
+
+        self.stack = QStackedWidget()
+        self.stack.addWidget(self.qmc)
+        self.stack.addWidget(self.HUD)
+        self.stack.setCurrentIndex(0)
+        self.stack.setContentsMargins(0,0,0,0)
         self.qmc.setContentsMargins(0,0,0,0)
+        self.HUD.setContentsMargins(0,0,0,0)
         #events config
         self.eventsbuttonflag = 0
         self.minieventsflag = 0   #minieditor flag
@@ -16192,9 +16277,9 @@ class ApplicationWindow(QMainWindow):
 
         self.ConfMenu.addSeparator()
 
-        self.curvesAction = QAction(QApplication.translate("Menu", "Curves...", None), self)
-        self.curvesAction.triggered.connect(self.setCurves)
-        self.ConfMenu.addAction(self.curvesAction)
+        self.hudAction = QAction(QApplication.translate("Menu", "Curves...", None), self)
+        self.hudAction.triggered.connect(self.hudset)
+        self.ConfMenu.addAction(self.hudAction)
 
         self.ConfMenu.addSeparator()
 
@@ -16533,8 +16618,6 @@ class ApplicationWindow(QMainWindow):
         self.messagelabel.setIndent(6)
         # set a few broad style parameters
         self.button_font_size_pt = 13
-        
-        #TODO: delete
         if platf == 'Windows':
             self.button_font_size = f"{self.button_font_size_pt - 2}pt"
         else:
@@ -16544,42 +16627,23 @@ class ApplicationWindow(QMainWindow):
         self.button_font_size_tiny = f"{self.button_font_size_pt - 4}pt"
         self.button_font_size_micro = f"{self.button_font_size_pt - 5}pt"
 
-        #TODO: keep
-        button_font_size_small_pt = self.button_font_size_pt - 3
-        button_font_size_small_selected_pt = self.button_font_size_pt - 2
-        button_font_size_tiny_pt = self.button_font_size_pt - 4
-        button_font_size_micro_pt = self.button_font_size_pt - 5
         if platf == 'Windows':
-            button_font_size_pt = self.button_font_size_pt - 2
-
-        # button width in px
-        if platf == 'Windows':
-            # TODO: remove
-            self.main_button_min_width_str = "110px"
-            self.small_button_min_width_str = "75px"
-            self.tiny_button_min_width_str = "60px"
-            # TODO: keep
-            main_button_min_width_px: Final = 110
-            self.standard_button_min_width_px: Final = 90
-            small_button_min_width_px: Final = 75
-            tiny_button_min_width_px: Final = 60
+            self.main_button_min_width = "110px"
+            self.standard_button_min_width = "90px"
+            self.small_button_min_width = "75px"
+            self.tiny_button_min_width = "60px"
         else:
-            # TODO: remove
-            self.main_button_min_width_str = "100px"
-            self.small_button_min_width_str = "60px"
-            self.tiny_button_min_width_str = "50px"
-            # TODO: keep
-            main_button_min_width_px = 100
-            self.standard_button_min_width_px = 75
-            small_button_min_width_px = 60
-            tiny_button_min_width_px = 50
-        
+            self.main_button_min_width = "100px"
+            self.standard_button_min_width = "75px"
+            self.small_button_min_width = "60px"
+            self.tiny_button_min_width = "50px"
+
         border_modern = "border-style:solid; border-radius:4;border-color:grey; border-width:0;" # modernize
 
         self.pushbuttonstyles_simulator = {
             "OFF":    """
                 QPushButton {
-                    min-width: """ + self.main_button_min_width_str + """;
+                    min-width: """ + self.main_button_min_width + """;
                     """ + border_modern + """
                     font-size: """ + self.button_font_size + """;
                     font-weight: bold;
@@ -16597,7 +16661,7 @@ class ApplicationWindow(QMainWindow):
             """,
             "ON":    """
                 QPushButton {
-                    min-width: """ + self.main_button_min_width_str + """;
+                    min-width: """ + self.main_button_min_width + """;
                     """ + border_modern + """
                     font-size: """ + self.button_font_size + """;
                     font-weight: bold;
@@ -16616,7 +16680,7 @@ class ApplicationWindow(QMainWindow):
             """,
             "STOP":     """
                 QPushButton {
-                    min-width: """ + self.main_button_min_width_str + """;
+                    min-width: """ + self.main_button_min_width + """;
                     """ + border_modern + """
                     font-size: """ + self.button_font_size + """;
                     font-weight: bold;
@@ -16638,7 +16702,7 @@ class ApplicationWindow(QMainWindow):
             """,
             "START":    """
                 QPushButton {
-                    min-width: """ + self.main_button_min_width_str + """;
+                    min-width: """ + self.main_button_min_width + """;
                     """ + border_modern + """
                     font-size: """ + self.button_font_size + """;
                     font-weight: bold;
@@ -16663,7 +16727,7 @@ class ApplicationWindow(QMainWindow):
         self.pushbuttonstyles = {
             "RESET":     """
                 QPushButton {
-                    min-width: """ + self.main_button_min_width_str + """;
+                    min-width: """ + self.main_button_min_width + """;
                     """ + border_modern + """
                     font-size: """ + self.button_font_size + """;
                     font-weight: bold;
@@ -16685,7 +16749,7 @@ class ApplicationWindow(QMainWindow):
             """,
             "OFF":    """
                 QPushButton {
-                    min-width: """ + self.main_button_min_width_str + """;
+                    min-width: """ + self.main_button_min_width + """;
                     """ + border_modern + """
                     font-size: """ + self.button_font_size + """;
                     font-weight: bold;
@@ -16703,7 +16767,7 @@ class ApplicationWindow(QMainWindow):
             """,
             "ON":    """
                 QPushButton {
-                    min-width: """ + self.main_button_min_width_str + """;
+                    min-width: """ + self.main_button_min_width + """;
                     """ + border_modern + """
                     font-size: """ + self.button_font_size + """;
                     font-weight: bold;
@@ -16721,7 +16785,7 @@ class ApplicationWindow(QMainWindow):
             """,
             "STOP":     """
                 QPushButton {
-                    min-width: """ + self.main_button_min_width_str + """;
+                    min-width: """ + self.main_button_min_width + """;
                     """ + border_modern + """
                     font-size: """ + self.button_font_size + """;
                     font-weight: bold;
@@ -16743,7 +16807,7 @@ class ApplicationWindow(QMainWindow):
             """,
             "START":    """
                 QPushButton {
-                    min-width: """ + self.main_button_min_width_str + """;
+                    min-width: """ + self.main_button_min_width + """;
                     """ + border_modern + """
                     font-size: """ + self.button_font_size + """;
                     font-weight: bold;
@@ -16763,9 +16827,268 @@ class ApplicationWindow(QMainWindow):
                     background-color: red;
                 }
             """,
+
+            "CHARGE":    """
+                QPushButton {
+                    min-width: """ + self.standard_button_min_width + """;
+                    """ + border_modern + """
+                    font-size: """ + self.button_font_size_small + """;
+                    font-weight: bold;
+                    color: white;
+                    background-color:""" + createGradient('#147bb3') + """ ;
+                }
+                QPushButton:flat{
+                    color: darkgrey;
+                    background-color: #E0E0E0;
+                }
+                QPushButton:flat:hover:!pressed{
+                    color: #F5F5F5;
+                    background-color: #BDBDBD;
+                }
+                QPushButton:flat:hover:pressed{
+                    color: #EEEEEE;
+                    background-color: #9E9E9E;
+                }
+                QPushButton:pressed {
+                    color: #EEEEEE;
+                    background-color:""" + createGradient('#116999') + """ ;
+                }
+                QPushButton:hover:!pressed {
+                    color: white;
+                    background-color:""" + createGradient('#1985ba') + """ ;
+                }
+            """,
+            "DRY END":    """
+                QPushButton {
+                    min-width:  """ + self.standard_button_min_width + """;
+                    """ + border_modern + """
+                    font-size: """ + self.button_font_size_small + """;
+                    font-weight: bold;
+                    color: white;
+                    background-color:""" + createGradient('#66b8d7') + """ ;
+                }
+                QPushButton:flat{
+                    color: #BDBDBD;
+                    background-color: #EEEEEE;
+                }
+                QPushButton:flat:hover:!pressed{
+                    color: #F5F5F5;
+                    background-color: #DDDDDD;
+                }
+                QPushButton:flat:hover:pressed{
+                    color: #EEEEEE;
+                    background-color: #9E9E9E;
+                }
+                QPushButton:pressed {
+                    color: #EEEEEE;
+                    background-color:""" + createGradient('#147bb3') + """ ;
+                }
+                QPushButton:hover:!pressed {
+                    color: white;
+                    background-color:""" + createGradient('#43a7cf') + """ ;
+                }
+            """,
+            "FC START":    """
+                QPushButton {
+                    min-width:  """ + self.standard_button_min_width + """;
+                    """ + border_modern + """
+                    font-size: """ + self.button_font_size_small + """;
+                    font-weight: bold;
+                    color: white;
+                    background-color:""" + createGradient('#66b8d7') + """ ;
+                }
+                QPushButton:flat{
+                    color: #BDBDBD;
+                    background-color: #EEEEEE;
+                }
+                QPushButton:flat:hover:!pressed{
+                    color: #F5F5F5;
+                    background-color: #DDDDDD;
+                }
+                QPushButton:flat:hover:pressed{
+                    color: #EEEEEE;
+                    background-color: #9E9E9E;
+                }
+                QPushButton:pressed {
+                    color: #EEEEEE;
+                    background-color:""" + createGradient('#147bb3') + """ ;
+                }
+                QPushButton:hover:!pressed {
+                    color: white;
+                    background-color:""" + createGradient('#43a7cf') + """ ;
+                }
+            """,
+            "FC END":    """
+                QPushButton {
+                    min-width:  """ + self.standard_button_min_width + """;
+                    """ + border_modern + """
+                    font-size: """ + self.button_font_size_small + """;
+                    font-weight: bold;
+                    color: white;
+                    background-color:""" + createGradient('#66b8d7') + """ ;
+                }
+                QPushButton:flat{
+                    color: #BDBDBD;
+                    background-color: #EEEEEE;
+                }
+                QPushButton:flat:hover:!pressed{
+                    color: #F5F5F5;
+                    background-color: #DDDDDD;
+                }
+                QPushButton:flat:hover:pressed{
+                    color: #EEEEEE;
+                    background-color: #9E9E9E;
+                }
+                QPushButton:pressed {
+                    color: #EEEEEE;
+                    background-color:""" + createGradient('#147bb3') + """ ;
+                }
+                QPushButton:hover:!pressed {
+                    color: white;
+                    background-color:""" + createGradient('#43a7cf') + """ ;
+                }
+            """,
+            "SC START":    """
+                QPushButton {
+                    min-width:  """ + self.standard_button_min_width + """;
+                    """ + border_modern + """
+                    font-size: """ + self.button_font_size_small + """;
+                    font-weight: bold;
+                    color: white;
+                    background-color:""" + createGradient('#66b8d7') + """ ;
+                }
+                QPushButton:flat{
+                    color: #BDBDBD;
+                    background-color: #EEEEEE;
+                }
+                QPushButton:flat:hover:!pressed{
+                    color: #F5F5F5;
+                    background-color: #DDDDDD;
+                }
+                QPushButton:flat:hover:pressed{
+                    color: #EEEEEE;
+                    background-color: #9E9E9E;
+                }
+                QPushButton:pressed {
+                    color: #EEEEEE;
+                    background-color:""" + createGradient('#147bb3') + """ ;
+                }
+                QPushButton:hover:!pressed {
+                    color: white;
+                    background-color:""" + createGradient('#43a7cf') + """ ;
+                }
+            """,
+            "SC END":    """
+                QPushButton {
+                    min-width: """ + self.standard_button_min_width + """;
+                    """ + border_modern + """
+                    font-size: """ + self.button_font_size_small + """;
+                    font-weight: bold;
+                    color: white;
+                    background-color:""" + createGradient('#66b8d7') + """ ;
+                }
+                QPushButton:flat{
+                    color: #BDBDBD;
+                    background-color: #EEEEEE;
+                }
+                QPushButton:flat:hover:!pressed{
+                    color: #F5F5F5;
+                    background-color: #DDDDDD;
+                }
+                QPushButton:flat:hover:pressed{
+                    color: #EEEEEE;
+                    background-color: #9E9E9E;
+                }
+                QPushButton:pressed {
+                    color: #EEEEEE;
+                    background-color:""" + createGradient('#147bb3') + """ ;
+                }
+                QPushButton:hover:!pressed {
+                    color: white;
+                    background-color:""" + createGradient('#43a7cf') + """ ;
+                }
+            """,
+            "DROP":    """
+                QPushButton {
+                    min-width: """ + self.standard_button_min_width + """;
+                    """ + border_modern + """
+                    font-size: """ + self.button_font_size_small + """;
+                    font-weight: bold;
+                    color: white;
+                    background-color:""" + createGradient('#147bb3') + """ ;
+                }
+                QPushButton:flat{
+                    color: darkgrey;
+                    background-color: #E0E0E0;
+                }
+                QPushButton:flat:hover:!pressed{
+                    color: #F5F5F5;
+                    background-color: #BDBDBD;
+                }
+                QPushButton:flat:hover:pressed{
+                    color: #EEEEEE;
+                    background-color: #9E9E9E;
+                }
+                QPushButton:pressed {
+                    color: #EEEEEE;
+                    background-color:""" + createGradient('#116999') + """ ;
+                }
+                QPushButton:hover:!pressed {
+                    color: white;
+                    background-color:""" + createGradient('#1985ba') + """ ;
+                }
+            """,
+            "COOL END":    """
+                QPushButton {
+                    min-width: """ + self.standard_button_min_width + """;
+                    """ + border_modern + """
+                    font-size: """ + self.button_font_size_small + """;
+                    font-weight: bold;
+                    color: white;
+                    background-color:""" + createGradient('#66b8d7') + """ ;
+                }
+                QPushButton:flat{
+                    color: #BDBDBD;
+                    background-color: #EEEEEE;
+                }
+                QPushButton:flat:hover:!pressed{
+                    color: #F5F5F5;
+                    background-color: #DDDDDD;
+                }
+                QPushButton:flat:hover:pressed{
+                    color: #EEEEEE;
+                    background-color: #9E9E9E;
+                }
+                QPushButton:pressed {
+                    color: #EEEEEE;
+                    background-color:""" + createGradient('#147bb3') + """ ;
+                }
+                QPushButton:hover:!pressed {
+                    color: white;
+                    background-color:""" + createGradient('#43a7cf') + """ ;
+                }
+            """,
+            "EVENT":    """
+                QPushButton {
+                    min-width: """ + self.standard_button_min_width + """;
+                    """ + border_modern + """
+                    font-size: """ + self.button_font_size_small + """;
+                    font-weight: bold;
+                    color: white;
+                    background-color:""" + createGradient('#bdbdbd') + """ ;
+                }
+                QPushButton:pressed {
+                    color: white;
+                    background-color:""" + createGradient('#757575') + """ ;
+                }
+                QPushButton:hover:!pressed {
+                    color: white;
+                    background-color:""" + createGradient('#9e9e9e') + """ ;
+                }
+            """,
             "PID":     """
                 QPushButton {
-                    min-width: """ + self.main_button_min_width_str + """;
+                    min-width: """ + self.main_button_min_width + """;
                     """ + border_modern + """
                     font-size: """ + self.button_font_size + """;
                     font-weight: bold;
@@ -16787,7 +17110,7 @@ class ApplicationWindow(QMainWindow):
             """,
             "PIDactive":     """
                 QPushButton {
-                    min-width: """ + self.main_button_min_width_str + """;
+                    min-width: """ + self.main_button_min_width + """;
                     """ + border_modern + """
                     font-size: """ + self.button_font_size + """;
                     font-weight: bold;
@@ -16809,7 +17132,7 @@ class ApplicationWindow(QMainWindow):
             """,
             "SV +":     """
                 QPushButton {
-                    min-width: """ + str(self.standard_button_min_width_px) + """px;
+                    min-width: """ + self.standard_button_min_width + """;
                     """ + border_modern + """
                     font-size: """ + self.button_font_size_small + """;
                     font-weight: bold;
@@ -16827,7 +17150,7 @@ class ApplicationWindow(QMainWindow):
             """,
             "SV -":     """
                 QPushButton {
-                    min-width: """ + str(self.standard_button_min_width_px) + """px;
+                    min-width: """ + self.standard_button_min_width + """;
                     """ + border_modern + """
                     font-size: """ + self.button_font_size_small + """;
                     font-weight: bold;
@@ -16843,9 +17166,54 @@ class ApplicationWindow(QMainWindow):
                     background-color:""" + createGradient('#85cae1') + """ ;
                 }
             """,
+
+            "HUD_OFF":     """
+                QPushButton {
+                    min-width: """ + self.main_button_min_width + """;
+                    """ + border_modern + """
+                    font-size: """ + self.button_font_size + """;
+                    font-weight: bold;
+                    color: white;
+                    background-color: #2298c7;
+                }
+                QPushButton:!enabled {
+                    color: darkgrey;
+                    background-color: #E0E0E0;
+                }
+                QPushButton:pressed {
+                    color: #EEEEEE;
+                    background-color: #1985ba;
+                }
+                QPushButton:hover:!pressed {
+                    color: white;
+                    background-color: #43a7cf;
+                }
+            """,
+            "HUD_ON":     """
+                QPushButton {
+                    min-width: """ + self.main_button_min_width + """;
+                    """ + border_modern + """
+                    font-size: """ + self.button_font_size + """;
+                    font-weight: bold;
+                    color: white;
+                    background-color: #54b5ff;
+                }
+                QPushButton:!enabled {
+                    color: darkgrey;
+                    background-color: #E0E0E0;
+                }
+                QPushButton:pressed {
+                    color: #EEEEEE;
+                    background-color: #1985ba;
+                }
+                QPushButton:hover:!pressed {
+                    color: white;
+                    background-color: #77cafd;
+                }
+            """,
             "SELECTED":     """
                 QPushButton {
-                    min-width: """ + str(self.standard_button_min_width_px) + """px;
+                    min-width: """ + self.standard_button_min_width + """;
                     """ + border_modern + """
                     font-size: """ + self.button_font_size_small_selected + """;
                     font-weight: bold;
@@ -16875,9 +17243,39 @@ class ApplicationWindow(QMainWindow):
             """,
             "SELECTED_MAIN":     """
                 QPushButton {
-                    min-width: """ + str(self.standard_button_min_width_px) + """px;
+                    min-width: """ + self.standard_button_min_width + """;
                     """ + border_modern + """
                     font-size: """ + self.button_font_size_small_selected + """;
+                    font-weight: bold;
+                    color: white;
+                    background-color:""" + createGradient('#c00b40') + """ ;
+                }
+                QPushButton:flat{
+                    color: darkgrey;
+                    background-color: #f0b7cb;
+                }
+                QPushButton:flat:hover:!pressed{
+                    color: #F5F5F5;
+                    background-color: #db5785;
+                }
+                QPushButton:flat:hover:pressed{
+                    color: #EEEEEE;
+                    background-color: #cc0f50;
+                }
+                QPushButton:pressed {
+                    color: white;
+                    background-color:""" + createGradient('#147bb3') + """ ;
+                }
+                QPushButton:hover:!pressed {
+                    color: white;
+                    background-color:""" + createGradient('#c70d49') + """ ;
+                }
+            """,
+            "SELECTED_MAIN_LARGE":     """
+                QPushButton {
+                    min-width: """ + self.main_button_min_width + """;
+                    """ + border_modern + """
+                    font-size: """ + self.button_font_size + """;
                     font-weight: bold;
                     color: white;
                     background-color:""" + createGradient('#c00b40') + """ ;
@@ -16917,164 +17315,214 @@ class ApplicationWindow(QMainWindow):
 
         #create ON/OFF buttons
 
-        self.buttonONOFF = QPushButton(QApplication.translate("Button", "ON", None))
-        self.buttonONOFF.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.buttonONOFF.setToolTip(QApplication.translate("Tooltip", "Start monitoring", None))
-        self.buttonONOFF.setStyleSheet(self.pushbuttonstyles["OFF"])
-        self.buttonONOFF.setGraphicsEffect(self.makeShadow())
-        self.buttonONOFF.pressed.connect(self.mainButtonPressed)
-        self.buttonONOFF.released.connect(self.mainButtonReleased)
-        self.buttonONOFF.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.buttonONOFF.setMinimumHeight(self.standard_button_height)
-        self.buttonONOFF.clicked.connect(self.qmc.ToggleMonitor)
+        self.button_1 = QPushButton(QApplication.translate("Button", "ON", None))
+        self.button_1.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.button_1.setToolTip(QApplication.translate("Tooltip", "Start monitoring", None))
+        self.button_1.setStyleSheet(self.pushbuttonstyles["OFF"])
+        self.button_1.setGraphicsEffect(self.makeShadow())
+        self.button_1.pressed.connect(self.mainButtonPressed)
+        self.button_1.released.connect(self.mainButtonReleased)
+        self.button_1.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.button_1.setMinimumHeight(self.standard_button_height)
+        self.button_1.clicked.connect(self.qmc.ToggleMonitor)
         if app.artisanviewerMode:
-            self.buttonONOFF.setVisible(False)
+            self.button_1.setVisible(False)
 
         #create START/STOP buttons
-        self.buttonSTARTSTOP = QPushButton(QApplication.translate("Button", "START", None))
-        self.buttonSTARTSTOP.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.buttonSTARTSTOP.setToolTip(QApplication.translate("Tooltip", "Start recording", None))
-        self.buttonSTARTSTOP.setStyleSheet(self.pushbuttonstyles["STOP"])
-        self.buttonSTARTSTOP.setGraphicsEffect(self.makeShadow())
-        self.buttonSTARTSTOP.pressed.connect(self.mainButtonPressed)
-        self.buttonSTARTSTOP.released.connect(self.mainButtonReleased)
-        self.buttonSTARTSTOP.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.button_2 = QPushButton(QApplication.translate("Button", "START", None))
+        self.button_2.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.button_2.setToolTip(QApplication.translate("Tooltip", "Start recording", None))
+        self.button_2.setStyleSheet(self.pushbuttonstyles["STOP"])
+        self.button_2.setGraphicsEffect(self.makeShadow())
+        self.button_2.pressed.connect(self.mainButtonPressed)
+        self.button_2.released.connect(self.mainButtonReleased)
+        self.button_2.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
-        self.buttonSTARTSTOP.setMinimumHeight(self.standard_button_height)
-        self.buttonSTARTSTOP.clicked.connect(self.qmc.ToggleRecorder)
+        self.button_2.setMinimumHeight(self.standard_button_height)
+        self.button_2.clicked.connect(self.qmc.ToggleRecorder)
         if app.artisanviewerMode:
-            self.buttonSTARTSTOP.setVisible(False)
+            self.button_2.setVisible(False)
 
         #create 1C START, 1C END, 2C START and 2C END buttons
-        self.buttonFCs = MinorEventPushButton(QApplication.translate("Button", "FC\nSTART", None))
-        self.buttonFCs.setToolTip(QApplication.translate("Tooltip", "First Crack Start", None))
-        self.buttonFCs.clicked.connect(self.qmc.mark1Cstart)
+        self.button_3 = QPushButton(QApplication.translate("Button", "FC\nSTART", None))
+        self.button_3.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.button_3.setStyleSheet(self.pushbuttonstyles["FC START"])
+        self.button_3.setMinimumHeight(self.standard_button_height)
+        self.button_3.setToolTip(QApplication.translate("Tooltip", "First Crack Start", None))
+        self.button_3.clicked.connect(self.qmc.mark1Cstart)
+        self.button_3.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
-        self.buttonFCe = MinorEventPushButton(QApplication.translate("Button", "FC\nEND", None))
-        self.buttonFCe.setToolTip(QApplication.translate("Tooltip", "First Crack End", None))
-        self.buttonFCe.clicked.connect(self.qmc.mark1Cend)
+        self.button_4 = QPushButton(QApplication.translate("Button", "FC\nEND", None))
+        self.button_4.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.button_4.setStyleSheet(self.pushbuttonstyles["FC END"])
+        self.button_4.setMinimumHeight(self.standard_button_height)
+        self.button_4.setToolTip(QApplication.translate("Tooltip", "First Crack End", None))
+        self.button_4.clicked.connect(self.qmc.mark1Cend)
+        self.button_4.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
-        self.buttonSCs = MinorEventPushButton(QApplication.translate("Button", "SC\nSTART", None))
-        self.buttonSCs.setToolTip(QApplication.translate("Tooltip", "Second Crack Start", None))
-        self.buttonSCs.clicked.connect(self.qmc.mark2Cstart)
+        self.button_5 = QPushButton(QApplication.translate("Button", "SC\nSTART", None))
+        self.button_5.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.button_5.setStyleSheet(self.pushbuttonstyles["SC START"])
+        self.button_5.setMinimumHeight(self.standard_button_height)
+        self.button_5.setToolTip(QApplication.translate("Tooltip", "Second Crack Start", None))
+        self.button_5.clicked.connect(self.qmc.mark2Cstart)
+        self.button_5.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
-        self.buttonSCe = MinorEventPushButton(QApplication.translate("Button", "SC\nEND", None))
-        self.buttonSCe.setToolTip(QApplication.translate("Tooltip", "Second Crack End", None))
-        self.buttonSCe.clicked.connect(self.qmc.mark2Cend)
+        self.button_6 = QPushButton(QApplication.translate("Button", "SC\nEND", None))
+        self.button_6.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.button_6.setStyleSheet(self.pushbuttonstyles["SC END"])
+        self.button_6.setMinimumHeight(self.standard_button_height)
+        self.button_6.setToolTip(QApplication.translate("Tooltip", "Second Crack End", None))
+        self.button_6.clicked.connect(self.qmc.mark2Cend)
+        self.button_6.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         #create RESET button
-        self.buttonRESET = QPushButton(QApplication.translate("Button", "RESET", None))
-        self.buttonRESET.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.buttonRESET.setStyleSheet(self.pushbuttonstyles["RESET"])
-        self.buttonRESET.setGraphicsEffect(self.makeShadow())
-        self.buttonRESET.pressed.connect(self.mainButtonPressed)
-        self.buttonRESET.released.connect(self.mainButtonReleased)
-        self.buttonRESET.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.buttonRESET.setMinimumHeight(self.standard_button_height)
-        self.buttonRESET.setToolTip(QApplication.translate("Tooltip", "Reset", None))
-        self.buttonRESET.clicked.connect(self.qmc.resetButtonAction)
+        self.button_7 = QPushButton(QApplication.translate("Button", "RESET", None))
+        self.button_7.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.button_7.setStyleSheet(self.pushbuttonstyles["RESET"])
+        self.button_7.setGraphicsEffect(self.makeShadow())
+        self.button_7.pressed.connect(self.mainButtonPressed)
+        self.button_7.released.connect(self.mainButtonReleased)
+        self.button_7.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.button_7.setMinimumHeight(self.standard_button_height)
+        self.button_7.setToolTip(QApplication.translate("Tooltip", "Reset", None))
+        self.button_7.clicked.connect(self.qmc.resetButtonAction)
 
         #create CHARGE button
-        self.buttonCHARGE = AnimatedMajorEventPushButton(QApplication.translate("Button", "CHARGE", None))
-        self.buttonCHARGE.setToolTip(QApplication.translate("Tooltip", "Charge", None))
-        self.buttonCHARGE.clicked.connect(self.qmc.markCharge)
+        self.button_8 = QPushButton(QApplication.translate("Button", "CHARGE", None))
+        self.button_8.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.button_8.setStyleSheet(self.pushbuttonstyles["CHARGE"])
+        self.button_8.setMinimumHeight(self.standard_button_height)
+        self.button_8.setToolTip(QApplication.translate("Tooltip", "Charge", None))
+        self.button_8.clicked.connect(self.qmc.markCharge)
+        self.button_8.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         #create DROP button
-        self.buttonDROP = MajorEventPushButton(QApplication.translate("Button", "DROP", None))
-        self.buttonDROP.setToolTip(QApplication.translate("Tooltip", "Drop", None))
-        self.buttonDROP.clicked.connect(self.qmc.markDrop)
+        self.button_9 = QPushButton(QApplication.translate("Button", "DROP", None))
+        self.button_9.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.button_9.setStyleSheet(self.pushbuttonstyles["DROP"])
+        self.button_9.setMinimumHeight(self.standard_button_height)
+        self.button_9.setToolTip(QApplication.translate("Tooltip", "Drop", None))
+        self.button_9.clicked.connect(self.qmc.markDrop)
+        self.button_9.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         #create PID control button
-        self.buttonCONTROL = QPushButton(QApplication.translate("Button", "Control", None))
-        self.buttonCONTROL.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.buttonCONTROL.setStyleSheet(self.pushbuttonstyles["PID"])
-        self.buttonCONTROL.setGraphicsEffect(self.makeShadow())
-        self.buttonCONTROL.pressed.connect(self.mainButtonPressed)
-        self.buttonCONTROL.released.connect(self.mainButtonReleased)
-        self.buttonCONTROL.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
-        self.buttonCONTROL.setMinimumHeight(self.standard_button_height)
-        self.buttonCONTROL.clicked.connect(self.PIDcontrol)
+        self.button_10 = QPushButton(QApplication.translate("Button", "Control", None))
+        self.button_10.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.button_10.setStyleSheet(self.pushbuttonstyles["PID"])
+        self.button_10.setGraphicsEffect(self.makeShadow())
+        self.button_10.pressed.connect(self.mainButtonPressed)
+        self.button_10.released.connect(self.mainButtonReleased)
+        self.button_10.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.button_10.setMinimumHeight(self.standard_button_height)
+        self.button_10.clicked.connect(self.PIDcontrol)
         if app.artisanviewerMode:
-            self.buttonCONTROL.setVisible(False)
+            self.button_10.setVisible(False)
 
         #create EVENT record button
-        self.buttonEVENT = AuxEventPushButton(QApplication.translate("Button", "EVENT", None))
-        self.buttonEVENT.setToolTip(QApplication.translate("Tooltip", "Event", None))
-        self.buttonEVENT.clicked.connect(self.qmc.EventRecord_action)
+        self.button_11 = QPushButton(QApplication.translate("Button", "EVENT", None))
+        self.button_11.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.button_11.setStyleSheet(self.pushbuttonstyles["EVENT"])
+        self.button_11.setMinimumHeight(self.standard_button_height)
+        self.button_11.setToolTip(QApplication.translate("Tooltip", "Event", None))
+        self.button_11.clicked.connect(self.qmc.EventRecord_action)
+        self.button_11.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         #create PID+5 button
-        self.buttonSVp5 = QPushButton(QApplication.translate("Button", "SV +5", None))
-        self.buttonSVp5.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.buttonSVp5.setStyleSheet(self.pushbuttonstyles["SV +"])
-        self.buttonSVp5.setMinimumWidth(90)
-        self.buttonSVp5.setMinimumHeight(self.standard_button_height)
-        self.buttonSVp5.setToolTip(QApplication.translate("Tooltip", "Increases the current SV value by 5", None))
-        self.buttonSVp5.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.button_12 = QPushButton(QApplication.translate("Button", "SV +5", None))
+        self.button_12.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.button_12.setStyleSheet(self.pushbuttonstyles["SV +"])
+        self.button_12.setMinimumWidth(90)
+        self.button_12.setMinimumHeight(self.standard_button_height)
+        self.button_12.setToolTip(QApplication.translate("Tooltip", "Increases the current SV value by 5", None))
+        self.button_12.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         #create PID+10 button
-        self.buttonSVp10 = QPushButton(QApplication.translate("Button", "SV +10", None))
-        self.buttonSVp10.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.buttonSVp10.setStyleSheet(self.pushbuttonstyles["SV +"])
-        self.buttonSVp10.setMinimumWidth(90)
-        self.buttonSVp10.setMinimumHeight(self.standard_button_height)
-        self.buttonSVp10.setToolTip(QApplication.translate("Tooltip", "Increases the current SV value by 10", None))
-        self.buttonSVp10.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.button_13 = QPushButton(QApplication.translate("Button", "SV +10", None))
+        self.button_13.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.button_13.setStyleSheet(self.pushbuttonstyles["SV +"])
+        self.button_13.setMinimumWidth(90)
+        self.button_13.setMinimumHeight(self.standard_button_height)
+        self.button_13.setToolTip(QApplication.translate("Tooltip", "Increases the current SV value by 10", None))
+        self.button_13.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         #create PID+20 button
-        self.buttonSVp20 = QPushButton(QApplication.translate("Button", "SV +20", None))
-        self.buttonSVp20.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.buttonSVp20.setStyleSheet(self.pushbuttonstyles["SV +"])
-        self.buttonSVp20.setMinimumWidth(90)
-        self.buttonSVp20.setMinimumHeight(self.standard_button_height)
-        self.buttonSVp20.setToolTip(QApplication.translate("Tooltip", "Increases the current SV value by 20", None))
-        self.buttonSVp20.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.button_14 = QPushButton(QApplication.translate("Button", "SV +20", None))
+        self.button_14.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.button_14.setStyleSheet(self.pushbuttonstyles["SV +"])
+        self.button_14.setMinimumWidth(90)
+        self.button_14.setMinimumHeight(self.standard_button_height)
+        self.button_14.setToolTip(QApplication.translate("Tooltip", "Increases the current SV value by 20", None))
+        self.button_14.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         #create PID-20 button
-        self.buttonSVm20 = QPushButton(QApplication.translate("Button", "SV -20", None))
-        self.buttonSVm20.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.buttonSVm20.setStyleSheet(self.pushbuttonstyles["SV -"])
-        self.buttonSVm20.setMinimumWidth(90)
-        self.buttonSVm20.setMinimumHeight(self.standard_button_height)
-        self.buttonSVm20.setToolTip(QApplication.translate("Tooltip", "Decreases the current SV value by 20", None))
-        self.buttonSVm20.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.button_15 = QPushButton(QApplication.translate("Button", "SV -20", None))
+        self.button_15.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.button_15.setStyleSheet(self.pushbuttonstyles["SV -"])
+        self.button_15.setMinimumWidth(90)
+        self.button_15.setMinimumHeight(self.standard_button_height)
+        self.button_15.setToolTip(QApplication.translate("Tooltip", "Decreases the current SV value by 20", None))
+        self.button_15.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         #create PID-10 button
-        self.buttonSVm10 = QPushButton(QApplication.translate("Button", "SV -10", None))
-        self.buttonSVm10.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.buttonSVm10.setStyleSheet(self.pushbuttonstyles["SV -"])
-        self.buttonSVm10.setMinimumWidth(90)
-        self.buttonSVm10.setMinimumHeight(self.standard_button_height)
-        self.buttonSVm10.setToolTip(QApplication.translate("Tooltip", "Decreases the current SV value by 10", None))
-        self.buttonSVm10.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.button_16 = QPushButton(QApplication.translate("Button", "SV -10", None))
+        self.button_16.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.button_16.setStyleSheet(self.pushbuttonstyles["SV -"])
+        self.button_16.setMinimumWidth(90)
+        self.button_16.setMinimumHeight(self.standard_button_height)
+        self.button_16.setToolTip(QApplication.translate("Tooltip", "Decreases the current SV value by 10", None))
+        self.button_16.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         #create PID-5 button
-        self.buttonSVm5 = QPushButton(QApplication.translate("Button", "SV -5", None))
-        self.buttonSVm5.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.buttonSVm5.setStyleSheet(self.pushbuttonstyles["SV -"])
-        self.buttonSVm5.setMinimumWidth(90)
-        self.buttonSVm5.setMinimumHeight(self.standard_button_height)
-        self.buttonSVm5.setToolTip(QApplication.translate("Tooltip", "Decreases the current SV value by 5", None))
-        self.buttonSVm5.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        self.button_17 = QPushButton(QApplication.translate("Button", "SV -5", None))
+        self.button_17.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.button_17.setStyleSheet(self.pushbuttonstyles["SV -"])
+        self.button_17.setMinimumWidth(90)
+        self.button_17.setMinimumHeight(self.standard_button_height)
+        self.button_17.setToolTip(QApplication.translate("Tooltip", "Decreases the current SV value by 5", None))
+        self.button_17.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
-        #HUD button (button_18 was removed)
+        #create HUD button
+        self.button_18 = QPushButton(QApplication.translate("Button", "HUD", None))
+        self.button_18.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.button_18.setStyleSheet(self.pushbuttonstyles["HUD_OFF"])
+        self.button_18.setGraphicsEffect(self.makeShadow())
+        self.button_18.setMinimumHeight(self.standard_button_height)
+        self.button_18.setContentsMargins(0,0,0,0)
+        self.button_18.clicked.connect(self.qmc.toggleHUD)
+        self.button_18.setToolTip(QApplication.translate("Tooltip", "Turns ON/OFF the HUD", None))
+        self.button_18.setEnabled(False)
+        self.button_18.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
+        if not self.qmc.HUDbuttonflag:
+            self.button_18.setVisible(False)
+        if app.artisanviewerMode:
+            self.button_18.setVisible(False)
 
         #create DRY button
-        self.buttonDRY = MinorEventPushButton(QApplication.translate("Button", "DRY\nEND", None))
-        self.buttonDRY.setToolTip(QApplication.translate("Tooltip", "Dry End", None))
-        self.buttonDRY.clicked.connect(self.qmc.markDryEnd)
+        self.button_19 = QPushButton(QApplication.translate("Button", "DRY\nEND", None))
+        self.button_19.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.button_19.setStyleSheet(self.pushbuttonstyles["DRY END"])
+        self.button_19.setMinimumHeight(self.standard_button_height)
+        self.button_19.setToolTip(QApplication.translate("Tooltip", "Dry End", None))
+        self.button_19.clicked.connect(lambda _:self.qmc.markDryEnd())
+        self.button_19.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         #create COOLe button
-        self.buttonCOOL = MinorEventPushButton(QApplication.translate("Button", "COOL\nEND", None))
-        self.buttonCOOL.setToolTip(QApplication.translate("Tooltip", "Cool End", None))
-        self.buttonCOOL.clicked.connect(self.qmc.markCoolEnd)
+        self.button_20 = QPushButton(QApplication.translate("Button", "COOL\nEND", None))
+        self.button_20.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.button_20.setStyleSheet(self.pushbuttonstyles["COOL END"])
+        self.button_20.setMinimumHeight(self.standard_button_height)
+        self.button_20.setToolTip(QApplication.translate("Tooltip", "Cool End", None))
+        self.button_20.clicked.connect(self.qmc.markCoolEnd)
+        self.button_20.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         #connect PID sv easy buttons
-        self.buttonSVp5.clicked.connect(self.adjustPIDsv5)
-        self.buttonSVp10.clicked.connect(self.adjustPIDsv10)
-        self.buttonSVp20.clicked.connect(self.adjustPIDsv20)
-        self.buttonSVm20.clicked.connect(self.adjustPIDsv20m)
-        self.buttonSVm10.clicked.connect(self.adjustPIDsv10m)
-        self.buttonSVm5.clicked.connect(self.adjustPIDsv5m)
+        self.button_12.clicked.connect(self.adjustPIDsv5)
+        self.button_13.clicked.connect(self.adjustPIDsv10)
+        self.button_14.clicked.connect(self.adjustPIDsv20)
+        self.button_15.clicked.connect(self.adjustPIDsv20m)
+        self.button_16.clicked.connect(self.adjustPIDsv10m)
+        self.button_17.clicked.connect(self.adjustPIDsv5m)
 
         # NavigationToolbar VMToolbar
         self.ntb = VMToolbar(self.qmc, self.main_widget)
@@ -17089,6 +17537,8 @@ class ApplicationWindow(QMainWindow):
         self.lcd1.setMinimumWidth(100)
         self.lcd1.setFrameStyle(QFrame.Shadow.Plain)
         # switch superusermode action:
+        self.lcd1.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+#        self.lcd1.customContextMenuRequested.connect(self.superusermodeClicked)
         self.lcd1.clicked.connect(self.superusermodeLeftClicked)
         self.lcd1.setVisible(False)
 
@@ -17214,14 +17664,14 @@ class ApplicationWindow(QMainWindow):
 
         #only leave operational the control button if the device is Fuji PID
         #the SV buttons are activated from the PID control panel
-        self.buttonCONTROL.setVisible(False)
+        self.button_10.setVisible(False)
 
-        self.buttonSVp5.setVisible(False)
-        self.buttonSVp10.setVisible(False)
-        self.buttonSVp20.setVisible(False)
-        self.buttonSVm20.setVisible(False)
-        self.buttonSVm10.setVisible(False)
-        self.buttonSVm5.setVisible(False)
+        self.button_12.setVisible(False)
+        self.button_13.setVisible(False)
+        self.button_14.setVisible(False)
+        self.button_15.setVisible(False)
+        self.button_16.setVisible(False)
+        self.button_17.setVisible(False)
 
         #### EVENT MINI EDITOR: View&Edits events without opening roast properties Dlg.
         self.eventlabel = QLabel(QApplication.translate("Label","Event #<b>0 </b>", None))
@@ -17311,32 +17761,21 @@ class ApplicationWindow(QMainWindow):
         self.lowerbuttondialogLayout = QHBoxLayout()
         self.lowerbuttondialogLayout.setSpacing(5)
         self.lowerbuttondialogLayout.setContentsMargins(0, 0, 0, 10)
-        
         self.lowerbuttondialog = QFrame()
         self.lowerbuttondialog.setLayout(self.lowerbuttondialogLayout)
         self.lowerbuttondialog.setVisible(False)
-        # We set the styles of event buttons assigned to self.lowerbuttondialog here
-        # All stylesheet of its childs (the actual event buttons) needs to be non-conflicting. 
-        # Any conflict will turn off merging of parent styles and just rely on the child stylesheet.
-        self.lowerbuttondialog.setStyleSheet(
-            artisan_event_button_style.format(
-                min_width=self.standard_button_min_width_px - 6, 
-                min_height=self.standard_button_height - 7,
-                padding=3,
-                default_font_size=button_font_size_small_pt, 
-                selected_font_size=button_font_size_small_selected_pt))
-        
+
         #initiate configuration
         self.lowerbuttondialogLayout.addStretch()
-        self.lowerbuttondialogLayout.addWidget(self.buttonCHARGE)
-        self.lowerbuttondialogLayout.addWidget(self.buttonDRY)
-        self.lowerbuttondialogLayout.addWidget(self.buttonFCs)
-        self.lowerbuttondialogLayout.addWidget(self.buttonFCe)
-        self.lowerbuttondialogLayout.addWidget(self.buttonSCs)
-        self.lowerbuttondialogLayout.addWidget(self.buttonSCe)
-        self.lowerbuttondialogLayout.addWidget(self.buttonDROP)
-        self.lowerbuttondialogLayout.addWidget(self.buttonCOOL)
-        self.lowerbuttondialogLayout.addWidget(self.buttonEVENT)
+        self.lowerbuttondialogLayout.addWidget(self.button_8)
+        self.lowerbuttondialogLayout.addWidget(self.button_19)
+        self.lowerbuttondialogLayout.addWidget(self.button_3)
+        self.lowerbuttondialogLayout.addWidget(self.button_4)
+        self.lowerbuttondialogLayout.addWidget(self.button_5)
+        self.lowerbuttondialogLayout.addWidget(self.button_6)
+        self.lowerbuttondialogLayout.addWidget(self.button_9)
+        self.lowerbuttondialogLayout.addWidget(self.button_20)
+        self.lowerbuttondialogLayout.addWidget(self.button_11)
         self.lowerbuttondialogLayout.addStretch()
 
         self.e1buttonbarLayout = QHBoxLayout()
@@ -17374,24 +17813,29 @@ class ApplicationWindow(QMainWindow):
         self.setCentralWidget(self.main_widget)
 
         #list of functions to choose from (using left-right keyboard arrow)
-        #   sidecond: len(self.keyboardmove) = len(self.keyboardButtonList) # for each self.keyboardmoveindex we have a keyboardmove function
-        self.keyboardmove = [self.qmc.markCharge,self.qmc.markDryEnd,self.qmc.mark1Cstart,self.qmc.mark1Cend,
+        self.keyboardmove = [self.qmc.reset,self.qmc.toggleHUD,self.qmc.ToggleMonitor,self.qmc.markCharge,self.qmc.markDryEnd,self.qmc.mark1Cstart,self.qmc.mark1Cend,
                              self.qmc.mark2Cstart,self.qmc.mark2Cend,self.qmc.markDrop,self.qmc.markCoolEnd,self.qmc.EventRecord]
         # list of buttons that can be controlled via the keyboard
-        # RESET -> ON/OFF -> .. -> EVENT (RESET at index 0 is never used)
+        # RESET -> HUD -> ON/OFF -> .. -> EVENT (RESET at index 0 is never used)
         self.keyboardButtonList = [
-            self.buttonCHARGE,  # 0 CHARGE
-            self.buttonDRY, # 1 DRY END
-            self.buttonFCs,  # 2 FC START
-            self.buttonFCe,  # 3 FC END
-            self.buttonSCs,  # 4 SC START
-            self.buttonSCe,  # 5 SC END
-            self.buttonDROP,  # 6 DROP
-            self.buttonCOOL, # 7 COOL END
-            self.buttonEVENT  # 8 EVENT
+            self.button_7,  # RESET
+            self.button_18, # HUD_ON
+            self.button_1,  # ON
+            self.button_8,  # CHARGE
+            self.button_19, # DRY END
+            self.button_3,  # FC START
+            self.button_4,  # FC END
+            self.button_5,  # SC START
+            self.button_6,  # SC END
+            self.button_9,  # DROP
+            self.button_20, # COOL END
+            self.button_11  # EVENT
         ]
-        # 0:CHARGE,1:DRY,2:FCs,3:FCe,4:SCs,5:SCe,6:DROP,7:COOL,8:EVENT
+        # 0:RESET,1:HUD,2:ON/OFF,3:CHARGE,4:DRY,5:FCs,6:FCe,7:SCs,8:SCe,9:DROP,10:COOL,11:EVENT
         self.keyboardButtonStyles = [
+            "RESET",
+            "HUD_ON",
+            "ON",
             "CHARGE",
             "DRY END",
             "FC START",
@@ -17403,7 +17847,7 @@ class ApplicationWindow(QMainWindow):
             "EVENT"]
 
         #current function above
-        self.keyboardmoveindex = 0  # points to the last activated button; we start with the CHARGE button (see keyboardButtonList)
+        self.keyboardmoveindex = 3
         #state flag for above. It is initialized by pressing SPACE or left-right arrows
         self.keyboardmoveflag = 0
         #time stamp of last keyboard event SPACE to prevent multiple recognitions
@@ -17419,7 +17863,7 @@ class ApplicationWindow(QMainWindow):
         ####################   APPLICATION WINDOW (AW) LAYOUT  ##############################################
 
         self.level1frame = QFrame()
-        self.level1layout = QHBoxLayout()   # matplotlib toolbox + RESET button + LCD Timer
+        self.level1layout = QHBoxLayout()   # matplotlib toolbox + HUD button + reset button + LCD Timer
         self.level1frame.setLayout(self.level1layout)
 
         level3layout = QHBoxLayout()   # PID buttons, graph, temperature LCDs
@@ -17499,12 +17943,12 @@ class ApplicationWindow(QMainWindow):
         del w
 
         #PID Buttons
-        pidbuttonLayout.addWidget(self.buttonSVp20)
-        pidbuttonLayout.addWidget(self.buttonSVp10)
-        pidbuttonLayout.addWidget(self.buttonSVp5)
-        pidbuttonLayout.addWidget(self.buttonSVm5)
-        pidbuttonLayout.addWidget(self.buttonSVm10)
-        pidbuttonLayout.addWidget(self.buttonSVm20)
+        pidbuttonLayout.addWidget(self.button_14)
+        pidbuttonLayout.addWidget(self.button_13)
+        pidbuttonLayout.addWidget(self.button_12)
+        pidbuttonLayout.addWidget(self.button_17)
+        pidbuttonLayout.addWidget(self.button_16)
+        pidbuttonLayout.addWidget(self.button_15)
 
         # phases LCDs
 
@@ -17598,13 +18042,15 @@ class ApplicationWindow(QMainWindow):
         self.level1layout.addWidget(self.phasesLCDs)
         self.level1layout.addWidget(self.AUCLCD)
         self.level1layout.addSpacing(20)
-        self.level1layout.addWidget(self.buttonRESET)
+        self.level1layout.addWidget(self.button_7)
         self.level1layout.addSpacing(10)
-        self.level1layout.addWidget(self.buttonONOFF)
+        self.level1layout.addWidget(self.button_1)
         self.level1layout.addSpacing(10)
-        self.level1layout.addWidget(self.buttonSTARTSTOP)
+        self.level1layout.addWidget(self.button_2)
         self.level1layout.addSpacing(15)
-        self.level1layout.addWidget(self.buttonCONTROL)
+        self.level1layout.addWidget(self.button_10)
+        self.level1layout.addSpacing(10)
+        self.level1layout.addWidget(self.button_18)
         self.level1layout.addSpacing(10)
         self.level1layout.addWidget(self.lcd1)
         self.level1layout.setSpacing(0)
@@ -17612,7 +18058,7 @@ class ApplicationWindow(QMainWindow):
 
         #level 3
         level3layout.addLayout(pidbuttonLayout,0)
-        level3layout.addWidget(self.qmc)
+        level3layout.addWidget(self.stack,1)
         level3layout.setSpacing(0)
         level3layout.setContentsMargins(0,0,0,0)
 
@@ -19641,9 +20087,9 @@ class ApplicationWindow(QMainWindow):
             aw.pidcontrol.activateONOFFeasySV(False)
             aw.pidcontrol.activateSVSlider(False)
         if app.artisanviewerMode:
-            aw.buttonCONTROL.setVisible(False)
+            aw.button_10.setVisible(False)
         else:
-            aw.buttonCONTROL.setVisible(res)
+            aw.button_10.setVisible(res)
         self.LCD6frame.setVisible(lcds)
         self.LCD7frame.setVisible(lcds)
 
@@ -21137,6 +21583,9 @@ class ApplicationWindow(QMainWindow):
     def resizeEvent(self, event):
         if not aw.qmc.flagon and aw.qmc.statssummary and len(aw.qmc.timex) > 3:
             self.redrawTimer.start(500) # (re-) start the redraw time to be fired in half a second
+        #if HUD is ON when resizing application. No drawing should be done inside this handler
+        if self.qmc.HUDflag:
+            self.qmc.hudresizeflag = True
         super().resizeEvent(event)
 
     def setdpi(self,dpi,moveWindow=True):
@@ -21150,8 +21599,8 @@ class ApplicationWindow(QMainWindow):
                     warnings.simplefilter("ignore")
                     aw.qmc.fig.canvas.draw()
                     aw.qmc.fig.canvas.update()
-                aw.qmc.adjustSize()
-                FigureCanvas.updateGeometry(aw.qmc)  #@UndefinedVariable
+                aw.stack.adjustSize()
+                FigureCanvas.updateGeometry(aw.stack)  #@UndefinedVariable
                 QApplication.processEvents()
 
     def enableSaveActions(self):
@@ -21229,7 +21678,7 @@ class ApplicationWindow(QMainWindow):
                     BTB_subst = 0
                     ETB_subst = 0
                     try:
-                        if self.qmc.flagstart and len(self.qmc.timex)>0:
+                        if self.qmc.flagstart:
                             timex = self.qmc.timex[-1]
                             if self.qmc.timeindex[0] != -1:
                                 timex -= self.qmc.timex[self.qmc.timeindex[0]]
@@ -22670,10 +23119,7 @@ class ApplicationWindow(QMainWindow):
                 try:
                     with subprocess.Popen(command, stdout = subprocess.PIPE) as proc:
                         for line in proc.stdout:
-                            if isinstance(line, bytes):
-                                (k, _, value) = line.partition(b"=")
-                            else:
-                                (k, _, value) = line.partition("=")
+                            (k, _, value) = line.partition("=")
                             # don't copy PYTHONHOME nor PYTHONPATH if it points to the Artisan.app
                             if not ((k in ['PYTHONHOME','PYTHONPATH']) and (("Artisan.app" in value) or "artisan" in value)):
                                 my_env[k] = value
@@ -22719,23 +23165,16 @@ class ApplicationWindow(QMainWindow):
                     #subprocess.Popen([prg_file] + [x.strip() for x in cmd_str_parts[1:]], shell=False,env=my_env)
                     subprocess.Popen([prg_file] + [x.strip() for x in cmd_str_parts[1:]], # pylint: disable=consider-using-with
                         startupinfo=startupinfo,
+                        stdin=None, stdout=None, stderr=None,
 #                        creationflags=DETACHED_PROCESS | CREATE_NEW_PROCESS_GROUP, # with this the process ends before sleep
 #                        close_fds=True, # this seems not to change a thing
-                        env=my_env,
-                        stdin=None,
-                        # supress output:
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.STDOUT
-                        ) #.wait() # with this wait(), the script blocks the Artisan event loop
+                        env=my_env) #.wait() # with this wait(), the script blocks the Artisan event loop
                 else:
                     subprocess.Popen(os.path.expanduser(cmd_str), # pylint: disable=consider-using-with
                         shell=True,
+                        stdin=None, stdout=None, stderr=None,
                         close_fds=True,
-                        env=my_env,
-                        stdin=None,
-                        # supress output:
-                        stdout=subprocess.DEVNULL,
-                        stderr=subprocess.STDOUT)
+                        env=my_env)
                 QDir.setCurrent(current.absolutePath())
                 # alternative approach, that seems to fail on some Mac OS X versions:
                 #QProcess.startDetached(prg_file)
@@ -22782,13 +23221,13 @@ class ApplicationWindow(QMainWindow):
         square_style = "border-radius:0px;"
         if aw.buttonsize == 0:
             # tiny
-            buttonstyle = """min-width:""" + self.tiny_button_min_width_str + """;margin:0px;padding:0px;border-style:solid;border-color:darkgrey;border-width:0px;font-size:""" + self.button_font_size_micro + """; font-weight: bold;"""
+            buttonstyle = """min-width:""" + self.tiny_button_min_width + """;margin:0px;padding:0px;border-style:solid;border-color:darkgrey;border-width:0px;font-size:""" + self.button_font_size_micro + """; font-weight: bold;"""
         elif aw.buttonsize == 2:
             # large
-            buttonstyle = """min-width:""" + str(self.standard_button_min_width_px) + """px;margin:0px;padding:0px;border-style:solid;border-color:darkgrey;border-width:0px;font-size:""" + self.button_font_size_small + """; font-weight: bold;"""
+            buttonstyle = """min-width:""" + self.standard_button_min_width + """;margin:0px;padding:0px;border-style:solid;border-color:darkgrey;border-width:0px;font-size:""" + self.button_font_size_small + """; font-weight: bold;"""
         else:
             # small (default)
-            buttonstyle = """min-width:""" + self.small_button_min_width_str + """;margin:0px;padding:0px;border-style:solid;border-color:darkgrey;border-width:0px;font-size:""" + self.button_font_size_tiny + """; font-weight: bold;"""
+            buttonstyle = """min-width:""" + self.small_button_min_width + """;margin:0px;padding:0px;border-style:solid;border-color:darkgrey;border-width:0px;font-size:""" + self.button_font_size_tiny + """; font-weight: bold;"""
         ##
         if len(self.extraeventbuttonround) > tee:
             if self.extraeventbuttonround[tee] == 1: # left-side rounded
@@ -23304,7 +23743,7 @@ class ApplicationWindow(QMainWindow):
         self.languageMenu.setEnabled(True)
         self.deviceAction.setEnabled(True)
         self.commportAction.setEnabled(True)
-        self.curvesAction.setEnabled(True)
+        self.hudAction.setEnabled(True)
         self.analyzeMenu.setEnabled(True)
         self.roastCompareAction.setEnabled(True)
         self.designerAction.setEnabled(True)
@@ -23372,9 +23811,9 @@ class ApplicationWindow(QMainWindow):
             self.deviceAction.setEnabled(False)
             self.commportAction.setEnabled(False)
         if designer or wheel:
-            self.curvesAction.setEnabled(False) # Curves menu
+            self.hudAction.setEnabled(False) # Curves menu
         else:
-            self.curvesAction.setEnabled(True)
+            self.hudAction.setEnabled(True)
         if wheel or designer:
             self.eventsAction.setEnabled(False)
             self.phasesGraphAction.setEnabled(False)
@@ -23728,67 +24167,84 @@ class ApplicationWindow(QMainWindow):
             self.eNumberSpinBox.clearFocus()
 
     # this function respects the button visibility via aw.qmc.buttonvisibility and if button.isDisabled()
-    # ON/OFF (1,self.buttonONOFF) -> CHARGE (2,self.buttonCHARGE) -> DRYEND (3,self.buttonDRY) -> FCs (4,self.buttonFCs)
-    # -> FCe (5,self.buttonFCe) -> SCs (6,self.buttonSCs) -> SCe (7,self.buttonSCe) -> DROP (8,self.buttonDROP)
-    # -> COOLend (9,self.buttonCOOL) -> EVENT (10,self.buttonEVENT)-> ON/OFF
-    # currentButtonIndex is from [1-10]
+    # ON/OFF (2,self.button_1) -> CHARGE (3,self.button_8) -> DRYEND (4,self.button_19) -> FCs (5,self.button_3)
+    # -> FCe (6,self.button_4) -> SCs (7,self.button_5) -> SCe (8,self.button_6) -> DROP (9,self.button_9)
+    # -> COOLend (10,self.button_20) -> EVENT (11,self.button_11) -> HUD (1,self.button_18) -> ON/OFF
+    # currentButtonIndex is from [1-11]
     # buttons that trigger events and can be triggered only once
     def nextActiveButton(self,currentButtonIndex):
-        if currentButtonIndex == 8: # current: EVENT
-            return 0 # next: CHARGE
-        if currentButtonIndex == 7: # current: COOL (last before EVENT)
-            # check if the EVENT button is active, else move to the ON/OFF
+        if currentButtonIndex == 11 and aw.qmc.HUDbuttonflag: # current: EVENT
+            # the current button index is the event button, we move to the HUD button
+            return 1 # next: HUD
+        if currentButtonIndex == 1 or (currentButtonIndex == 11 and not aw.qmc.HUDbuttonflag): # current: HUD
+            return 2 # next: ON/OFF
+        if currentButtonIndex == 10: # current: COOL
+            # check if the EVENT button is active, else move to the HUD
             if aw.eventsbuttonflag:
-                return 8 # next: EVENT
-            return 0 # next: CHARGE
+                return 11 # next: EVENT
+            if aw.qmc.HUDbuttonflag:
+                return 1 # next: HUD
+            return 2 # next: ON/OFF
         # we check if the next button is visible, else we recurse (the index of buttonvisibility starts from 0:CHARGE and leads to 7:COOL)
-        if aw.qmc.buttonvisibility[currentButtonIndex + 1] and self.keyboardButtonList[currentButtonIndex + 1].isEnabled():
+        # there is an offset of 3
+        if aw.qmc.buttonvisibility[currentButtonIndex - 2] and self.keyboardButtonList[currentButtonIndex + 1].isEnabled():
             return currentButtonIndex + 1
         return self.nextActiveButton(currentButtonIndex + 1)
 
     def previousActiveButton(self,currentButtonIndex):
-        if currentButtonIndex == 0: # current: CHARGE
-            # check if the EVENT button is active, else move beyond
+        if currentButtonIndex == 2 and aw.qmc.HUDbuttonflag: # current: ON/OFF
+            # the current button index is the ON/OFF button, we move to the HUD button (if visible)
+            return 1
+        if currentButtonIndex == 2 and not aw.qmc.HUDbuttonflag:
+            return self.previousActiveButton(1)
+        if currentButtonIndex == 1 or (currentButtonIndex == 2 and not aw.qmc.HUDbuttonflag): # current: HUD
+            # check if the EVENT button is active, else move to the HUD
             if aw.eventsbuttonflag:
-                return 8 # next: EVENT
-            currentButtonIndex = 8 # set to EVENT and move to previous non-flat button
+                return 11 # move to EVENT
+            return self.previousActiveButton(11) # move to prev(EVENT)
+        if currentButtonIndex == 3: # current: CHARGE
+            return 2 # next: ON/OFF
         # we check if the previous button is visible, else we recurse (the index of buttonvisibility starts from 0:CHARGE and leads to 7:COOL)
-        if aw.qmc.buttonvisibility[currentButtonIndex - 1] and self.keyboardButtonList[currentButtonIndex - 1].isEnabled():
+        # there is an offset of 3
+        if aw.qmc.buttonvisibility[currentButtonIndex - 4] and self.keyboardButtonList[currentButtonIndex - 1].isEnabled():
             return currentButtonIndex - 1
         return self.previousActiveButton(currentButtonIndex - 1)
 
     def resetKeyboardButtonMarks(self):
         if self.qmc.flagon:
             if self.simulator:
-                self.buttonONOFF.setStyleSheet(self.pushbuttonstyles_simulator["ON"])
+                self.button_1.setStyleSheet(self.pushbuttonstyles_simulator["ON"])
             else:
-                self.buttonONOFF.setStyleSheet(self.pushbuttonstyles["ON"])
+                self.button_1.setStyleSheet(self.pushbuttonstyles["ON"])
         else:
             if self.simulator:
-                self.buttonONOFF.setStyleSheet(self.pushbuttonstyles_simulator["OFF"])
+                self.button_1.setStyleSheet(self.pushbuttonstyles_simulator["OFF"])
             else:
-                self.buttonONOFF.setStyleSheet(self.pushbuttonstyles["OFF"])
-        for b in [
-                self.buttonCHARGE,  # CHARGE
-                self.buttonDRY, # DRY END 
-                self.buttonFCs,  # FCs
-                self.buttonFCe,  # FCe
-                self.buttonSCs,  # SCs
-                self.buttonSCe,  # SCe
-                self.buttonDROP,  # DROP
-                self.buttonCOOL, # COOL END
-                self.buttonEVENT  # EVENT
-                ]:
-            b.setSelected(False)
+                self.button_1.setStyleSheet(self.pushbuttonstyles["OFF"])
+        self.button_8.setStyleSheet(self.pushbuttonstyles["CHARGE"])
+        self.button_19.setStyleSheet(self.pushbuttonstyles["DRY END"])
+        self.button_20.setStyleSheet(self.pushbuttonstyles["COOL END"])
+        self.button_3.setStyleSheet(self.pushbuttonstyles["FC START"])
+        self.button_4.setStyleSheet(self.pushbuttonstyles["FC END"])
+        self.button_5.setStyleSheet(self.pushbuttonstyles["SC START"])
+        self.button_6.setStyleSheet(self.pushbuttonstyles["SC END"])
+        self.button_9.setStyleSheet(self.pushbuttonstyles["DROP"])
+        self.button_11.setStyleSheet(self.pushbuttonstyles["EVENT"])
+        if self.qmc.flagstart:
+            if self.qmc.HUDflag:
+                self.button_18.setStyleSheet(self.pushbuttonstyles["HUD_ON"])
+            else:
+                self.button_18.setStyleSheet(self.pushbuttonstyles["HUD_OFF"])
+        else:
+            pass
 
     def ignoreFlatButtons(self,moveindex):
-        # there is an offset between keyboardButtonList and self.buttonvisibilty of 1
-        if self.keyboardButtonList[moveindex].isFlat() or (moveindex < 7 and not aw.qmc.buttonvisibility[moveindex]):
+        if self.keyboardButtonList[moveindex].isFlat() or not aw.qmc.buttonvisibility[moveindex - 3]:
             # we search forward for the next non-flat button
-            if moveindex < 7: # exclude the EVENT button that is not covered by aw.qmc.buttonvisibility
+            if moveindex < 10:
                 m = moveindex + 1
                 # we jump over invisible buttons
-                while m < 8 and (not aw.qmc.buttonvisibility[m] or self.keyboardButtonList[m].isFlat()):
+                while m < 10 and (not aw.qmc.buttonvisibility[m - 3] or self.keyboardButtonList[m].isFlat()):
                     m = m + 1
                 return m
         return moveindex
@@ -23831,12 +24287,11 @@ class ApplicationWindow(QMainWindow):
         if self.keyboardmoveflag:
             if kcommand == "space":
                 now = libtime.perf_counter()
-                if self.lastkeyboardcmd == 0 or (now > self.lastkeyboardcmd + 1): # accept SPACE keyboard cmds only every 1sec.
-                    button_is_flat = self.keyboardButtonList[self.keyboardmoveindex].isFlat()
+                if self.lastkeyboardcmd == 0 or (now > self.lastkeyboardcmd + 2): # accept SPACE keyboard cmds only every 2sec.
                     self.keyboardmove[self.keyboardmoveindex]()   #apply button command
                     #behaviour rules after pressing a button
-                    #if less than EVENT jump forward to the right one automatically
-                    if not button_is_flat and self.keyboardmoveindex < 8:
+                    #if less than EVENT jump forward to the right once automatically
+                    if self.keyboardmoveindex > 1 and self.keyboardmoveindex < 11:
                         self.moveKbutton("right")
                     self.lastkeyboardcmd = now
                     self.releaseminieditor()
@@ -23848,15 +24303,20 @@ class ApplicationWindow(QMainWindow):
                 else:
                     nextcmd = self.nextActiveButton(self.keyboardmoveindex)
                 # activate the button at index nextcmd
-                self.keyboardButtonList[nextcmd].setSelected(True)
-                
-#                if self.keyboardButtonStyles[nextcmd] in ["CHARGE", "DROP"]:
-#                    self.keyboardButtonList[nextcmd].setStyleSheet(self.pushbuttonstyles["SELECTED_MAIN"])
-#                else:
-#                    self.keyboardButtonList[nextcmd].setStyleSheet(self.pushbuttonstyles["SELECTED"])
-#                # turn the style of the button at index self.keyboardmoveindex to standard
-#                self.keyboardButtonList[self.keyboardmoveindex].setStyleSheet(self.pushbuttonstyles[self.keyboardButtonStyles[self.keyboardmoveindex]])
-                self.keyboardButtonList[self.keyboardmoveindex].setSelected(False)
+                if self.keyboardButtonStyles[nextcmd] in ["CHARGE", "DROP"]:
+                    self.keyboardButtonList[nextcmd].setStyleSheet(self.pushbuttonstyles["SELECTED_MAIN"])
+                if self.keyboardButtonStyles[nextcmd] in ["ON", "HUD_ON"]:
+                    self.keyboardButtonList[nextcmd].setStyleSheet(self.pushbuttonstyles["SELECTED_MAIN_LARGE"])
+                else:
+                    self.keyboardButtonList[nextcmd].setStyleSheet(self.pushbuttonstyles["SELECTED"])
+                # deactivate the button at index self.keyboardmoveindex
+                if self.keyboardmoveindex == 1: # we make an exception to respect the state of the HUD button
+                    if self.qmc.HUDflag:
+                        self.button_18.setStyleSheet(self.pushbuttonstyles["HUD_ON"])
+                    else:
+                        self.button_18.setStyleSheet(self.pushbuttonstyles["HUD_OFF"])
+                else:
+                    self.keyboardButtonList[self.keyboardmoveindex].setStyleSheet(self.pushbuttonstyles[self.keyboardButtonStyles[self.keyboardmoveindex]])
                 # update self.keyboardmoveindex
                 self.keyboardmoveindex = nextcmd
         # we enable keyboard event processing again
@@ -28741,6 +29201,27 @@ class ApplicationWindow(QMainWindow):
                 self.qmc.xextrabuttonactionstrings = list(map(str,list(toStringList(settings.value("xextrabuttonactionstrings",self.qmc.xextrabuttonactionstrings)))))
             settings.endGroup()
             self.qmc.transMappingMode = toInt(settings.value("transMappingMode",self.qmc.transMappingMode))
+            settings.beginGroup("HUD")
+            self.qmc.projectFlag = bool(toBool(settings.value("Projection",self.qmc.projectFlag)))
+            self.qmc.projectionmode = toInt(settings.value("ProjectionMode",self.qmc.projectionmode))
+            self.qmc.ETtarget = toInt(settings.value("ETtarget",self.qmc.ETtarget))
+            self.qmc.BTtarget = toInt(settings.value("BTtarget",self.qmc.BTtarget))
+            if settings.contains("ET2target"):
+                self.qmc.ET2target = toInt(settings.value("ET2target",self.qmc.ET2target))
+            if settings.contains("BT2target"):
+                self.qmc.BT2target = toInt(settings.value("BT2target",self.qmc.BT2target))
+            self.HUDfunction = toInt(settings.value("Mode",self.HUDfunction))
+            if settings.contains("hudETpid"):
+                self.qmc.hudETpid = [toInt(x) for x in toList(settings.value("hudETpid"))]
+            if settings.contains("buttonFlag"):
+                self.qmc.HUDbuttonflag = bool(toBool(settings.value("buttonFlag",self.qmc.HUDbuttonflag)))
+                if self.qmc.HUDbuttonflag:
+                    aw.button_18.setVisible(True)
+                else:
+                    aw.button_18.setVisible(False)
+            if app.artisanviewerMode:
+                aw.button_18.setVisible(False)
+            settings.endGroup()
             settings.beginGroup("Style")
             if settings.contains("patheffects"):
                 self.qmc.patheffects = toInt(settings.value("patheffects",self.qmc.patheffects))
@@ -29384,7 +29865,7 @@ class ApplicationWindow(QMainWindow):
             if settings.contains("Geometry"):
                 self.restoreGeometry(settings.value("Geometry"))
             if not filename: # only if an external settings file is loaded
-                FigureCanvas.updateGeometry(aw.qmc)  #@UndefinedVariable
+                FigureCanvas.updateGeometry(aw.stack)  #@UndefinedVariable
 
             #update visibility of main event button, extra event buttons and
             self.applyStandardButtonVisibility()
@@ -29462,18 +29943,18 @@ class ApplicationWindow(QMainWindow):
 
     def applyStandardButtonVisibility(self):
         if self.eventsbuttonflag:
-            self.buttonEVENT.setVisible(True)
+            self.button_11.setVisible(True)
         else:
-            self.buttonEVENT.setVisible(False)
+            self.button_11.setVisible(False)
         #set default button visibility
-        aw.buttonCHARGE.setVisible(bool(aw.qmc.buttonvisibility[0]))
-        aw.buttonDRY.setVisible(bool(aw.qmc.buttonvisibility[1]))
-        aw.buttonFCs.setVisible(bool(aw.qmc.buttonvisibility[2]))
-        aw.buttonFCe.setVisible(bool(aw.qmc.buttonvisibility[3]))
-        aw.buttonSCs.setVisible(bool(aw.qmc.buttonvisibility[4]))
-        aw.buttonSCe.setVisible(bool(aw.qmc.buttonvisibility[5]))
-        aw.buttonDROP.setVisible(bool(aw.qmc.buttonvisibility[6]))
-        aw.buttonCOOL.setVisible(bool(aw.qmc.buttonvisibility[7]))
+        aw.button_8.setVisible(bool(aw.qmc.buttonvisibility[0]))
+        aw.button_19.setVisible(bool(aw.qmc.buttonvisibility[1]))
+        aw.button_3.setVisible(bool(aw.qmc.buttonvisibility[2]))
+        aw.button_4.setVisible(bool(aw.qmc.buttonvisibility[3]))
+        aw.button_5.setVisible(bool(aw.qmc.buttonvisibility[4]))
+        aw.button_6.setVisible(bool(aw.qmc.buttonvisibility[5]))
+        aw.button_9.setVisible(bool(aw.qmc.buttonvisibility[6]))
+        aw.button_20.setVisible(bool(aw.qmc.buttonvisibility[7]))
 
     @staticmethod
     def getColor(line):
@@ -30203,6 +30684,17 @@ class ApplicationWindow(QMainWindow):
             settings.setValue("xextrabuttonactionstrings",self.qmc.xextrabuttonactionstrings)
             settings.endGroup()
             settings.setValue("transMappingMode",self.qmc.transMappingMode)
+            settings.beginGroup("HUD")
+            settings.setValue("Projection",self.qmc.projectFlag)
+            settings.setValue("ProjectionMode",self.qmc.projectionmode)
+            settings.setValue("ETtarget",self.qmc.ETtarget)
+            settings.setValue("BTtarget",self.qmc.BTtarget)
+            settings.setValue("ET2target",self.qmc.ET2target)
+            settings.setValue("BT2target",self.qmc.BT2target)
+            settings.setValue("Mode",self.HUDfunction)
+            settings.setValue("hudETpid",self.qmc.hudETpid)
+            settings.setValue("buttonFlag",self.qmc.HUDbuttonflag)
+            settings.endGroup()
             settings.beginGroup("Style")
             settings.setValue("patheffects",self.qmc.patheffects)
             settings.setValue("graphstyle",self.qmc.graphstyle)
@@ -33776,7 +34268,7 @@ class ApplicationWindow(QMainWindow):
             if self.HottopControlActive:
                 aw.sendmessage(QApplication.translate("Message","Hottop control turned off", None))
             self.HottopControlActive = False
-            aw.buttonCONTROL.setStyleSheet(aw.pushbuttonstyles["PID"])
+            aw.button_10.setStyleSheet(aw.pushbuttonstyles["PID"])
 
     def HottopControlOn(self):
         if aw.superusermode: # Hottop control mode can for now activated only in super user mode
@@ -33785,7 +34277,7 @@ class ApplicationWindow(QMainWindow):
             res = takeHottopControl()
             if res:
                 setHottop(drum_motor=True)
-                aw.buttonCONTROL.setStyleSheet(aw.pushbuttonstyles["PIDactive"])
+                aw.button_10.setStyleSheet(aw.pushbuttonstyles["PIDactive"])
                 if not self.HottopControlActive:
                     aw.sendmessage(QApplication.translate("Message","Hottop control turned on", None))
                 self.HottopControlActive = True
@@ -35171,13 +35663,146 @@ class ApplicationWindow(QMainWindow):
         except IOError as ex:
             aw.qmc.adderror((QApplication.translate("Error Message","IO Error:", None) + " saveVectorGraph() {0}").format(str(ex)))
 
-    #displays Dialog for the setting of the curves parameters (like RoR, Filters,..)
+    #displays Dialog for the setting of the HUD
     @pyqtSlot()
     @pyqtSlot(bool)
-    def setCurves(self,_=False):
-        curvesDlg = CurvesDlg(self,self,self.CurveDlg_activeTab)
-        curvesDlg.show()
-    
+    def hudset(self,_=False):
+        hudDl = HUDDlg(self,self,self.HUDDlg_activeTab)
+        hudDl.show()
+
+    def showHUDmetrics(self):
+        if self.qmc.hudresizeflag:
+            self.qmc.refreshHUD()
+            self.qmc.hudresizeflag = False
+        if len(self.qmc.temp2) > 1:  #Need this because viewProjections use rate of change (two values needed)
+            ETreachTime,BTreachTime,ET2reachTime,BT2reachTime = self.qmc.getTargetTime()
+            if 0 < ETreachTime < 2000:
+                text1 = QApplication.translate("Label","{0} to reach ET {1}{2}", None).format(stringfromseconds(ETreachTime),str(self.qmc.ETtarget),self.qmc.mode)
+                if self.qmc.timeindex[0] > -1:
+                    text1 = text1 + QApplication.translate("Label"," at {0}", None).format(stringfromseconds(self.qmc.timex[-1] - self.qmc.timex[self.qmc.timeindex[0]]+ETreachTime))
+            else:
+                text1 = QApplication.translate("Label","{0} to reach ET {1}{2}", None).format("xx:xx",str(self.qmc.ETtarget),self.qmc.mode)
+            if 0 < ET2reachTime < 2000:
+                text2 = QApplication.translate("Label","{0} to reach ET {1}{2}", None).format(stringfromseconds(ET2reachTime),str(self.qmc.ET2target),self.qmc.mode)
+                if self.qmc.timeindex[0] > -1:
+                    text2 = text2 + QApplication.translate("Label"," at {0}", None).format(stringfromseconds(self.qmc.timex[-1] - self.qmc.timex[self.qmc.timeindex[0]]+ET2reachTime))
+            else:
+                text2 = QApplication.translate("Label","{0} to reach ET {1}{2}", None).format("xx:xx",str(self.qmc.ET2target),self.qmc.mode)
+
+            if 0 < BTreachTime < 2000:
+                text3 = QApplication.translate("Label","{0} to reach BT {1}{2}", None).format(stringfromseconds(BTreachTime),str(self.qmc.BTtarget),self.qmc.mode)
+                if self.qmc.timeindex[0] > -1:
+                    text3 = text3 + QApplication.translate("Label"," at {0}", None).format(stringfromseconds(self.qmc.timex[-1] - self.qmc.timex[self.qmc.timeindex[0]]+BTreachTime))
+            else:
+                text3 = QApplication.translate("Label","{0} to reach BT {1}{2}", None).format("xx:xx",str(self.qmc.BTtarget),self.qmc.mode)
+            if 0 < BT2reachTime < 2000:
+                text4 = QApplication.translate("Label","{0} to reach BT {1}{2}", None).format(stringfromseconds(BT2reachTime),str(self.qmc.BT2target),self.qmc.mode)
+                if self.qmc.timeindex[0] > -1:
+                    text4 = text4 + QApplication.translate("Label"," at {0}", None).format(stringfromseconds(self.qmc.timex[-1] - self.qmc.timex[self.qmc.timeindex[0]]+BT2reachTime))
+            else:
+                text4 = QApplication.translate("Label","{0} to reach BT {1}{2}", None).format("xx:xx",str(self.qmc.BT2target),self.qmc.mode)
+            ####  Phase Texts #####
+            phasetext1 = "" # lower textline
+            phasetext2 = "" # higher textline
+            if self.qmc.timeindex[2]: # after FCs
+                FCs_time = self.qmc.timex[self.qmc.timeindex[2]]
+                if self.qmc.timeindex[6]: # after DROP
+                    afterFCs = self.qmc.timex[self.qmc.timeindex[6]] - FCs_time
+                else:
+                    afterFCs = self.qmc.timex[-1] - FCs_time
+                phasetext1 = QApplication.translate("Label","{0} after FCs", None).format(stringfromseconds(afterFCs))
+            if self.qmc.timeindex[3]: # after FCe
+                FCe_time = self.qmc.timex[self.qmc.timeindex[3]]
+                if self.qmc.timeindex[6]: # after DROP
+                    afterFCe = self.qmc.timex[self.qmc.timeindex[6]] - FCe_time
+                else:
+                    afterFCe = self.qmc.timex[-1] - FCe_time
+                phasetext2 = QApplication.translate("Label","{0} after FCe", None).format(stringfromseconds(afterFCe))
+                if self.qmc.timeindex[2]:
+                    phasetext2 = phasetext2 + " (" + stringfromseconds(FCe_time - self.qmc.timex[self.qmc.timeindex[2]]) + " FC)"
+            ####   ET pid    ######
+            error = self.qmc.ETtarget - self.qmc.temp1[-1]
+            differror = error - self.qmc.pidpreviouserror
+            difftime = self.qmc.timex[-1] - self.qmc.timex[-2]
+            if not difftime: difftime = 0.01
+            proportionalterm = self.qmc.hudETpid[0]*error
+            integralterm = self.qmc.hudETpid[1]*differror*difftime
+            derivativeterm = self.qmc.hudETpid[2]*differror/difftime
+            self.qmc.pidpreviouserror = error
+            MV = proportionalterm + integralterm + derivativeterm   # Manipulated Variable
+            if MV > 100.:MV = 100.
+            elif MV < 0.:MV = 0.
+            MVV = int(round(MV))
+            pidstring = "ET pid = %i "%MVV
+            ##### end of ET pid
+            img = self.qmc.grab()
+            Wwidth = self.qmc.size().width()
+            Wheight = self.qmc.size().height()
+            #Draw begins
+            p = QPainter(img)
+            p.setOpacity(0.8)
+            p.setPen(QColor("slategrey"))
+            p.drawText(QPoint(Wwidth/7,Wheight - Wheight/4.5),text1)
+            p.drawText(QPoint(Wwidth/7,Wheight - Wheight/5.3),text2)
+            p.drawText(QPoint(Wwidth/7,Wheight - Wheight/6.6),text3)
+            p.drawText(QPoint(Wwidth/7,Wheight - Wheight/8.5),text4)
+            #draw pid
+            p.drawText(QPoint(Wwidth/7,Wheight - Wheight/3),pidstring)
+            p.drawRect(Wwidth/7+140, Wheight - Wheight/3-12, 100, 12)
+            p.fillRect(Wwidth/7+140, Wheight - Wheight/3-12, MVV, 12, QColor("pink"))
+            delta = QApplication.translate("Label","ET - BT = {0}", None).format("%.1f"%(self.qmc.temp1[-1] - self.qmc.temp2[-1]))
+            p.drawText(QPoint(Wwidth/7,Wheight - Wheight/3.5),delta)
+            #draw phase texts
+            p.drawText(QPoint(Wwidth/2 + 100,Wheight - Wheight/6),phasetext1)
+            p.drawText(QPoint(Wwidth/2 + 100,Wheight - Wheight/8),phasetext2)
+            p.end()
+            self.HUD.setPixmap(img)
+
+    def showHUDthermal(self):
+        if self.qmc.hudresizeflag:
+            self.qmc.refreshHUD()
+            self.qmc.hudresizeflag = False
+        if len(self.qmc.temp2) > 0:
+            img = self.qmc.grab()
+            p = QPainter(img)
+            Wwidth= self.qmc.size().width()
+            Wheight = self.qmc.size().height()
+            p.setOpacity(1)
+            p.setPen(QColor(96,255,237)) #color the rectangle the same as HUD button
+            p.drawRect(10,10, Wwidth - 20, Wheight - 20)
+            if self.qmc.mode == "F" and self.qmc.temp1:
+                ETradius = int(self.qmc.temp1[-1]/3)
+                BTradius = int(self.qmc.temp2[-1]/3)
+            elif self.qmc.mode == "C" and self.qmc.temp1:
+                ETradius = int(fromCtoF(self.qmc.temp1[-1]/3))
+                BTradius = int(fromCtoF(self.qmc.temp2[-1]/3))
+            else:
+                ETradius = 50
+                BTradius = 50
+            Tradius = 300
+            p.setOpacity(0.5)
+            g = QRadialGradient(Wwidth/2, Wheight/2, ETradius)
+            beanbright =  max(100 - ETradius,0)
+            g.setColorAt(0.0, QColor(240,255,beanbright))  #bean center
+            g.setColorAt(.5, Qt.GlobalColor.yellow)
+            g.setColorAt(.8, Qt.GlobalColor.red)
+            g.setColorAt(1.,QColor("lightgrey"))
+            p.setBrush(QBrush(g))
+            #draw thermal circle
+            p.setPen(0)
+            p.drawEllipse(Wwidth/2 -Tradius/2 , Wheight/2 - Tradius/2 , Tradius,Tradius)
+            #draw ET circle
+            p.setBrush(0)
+            p.setPen(QColor("black"))
+            p.drawEllipse(Wwidth/2 -ETradius/2 , Wheight/2 - ETradius/2 , ETradius,ETradius)
+            #draw BT circle
+            p.drawEllipse(Wwidth/2 -BTradius/2 , Wheight/2 - BTradius/2 , BTradius,BTradius)
+            delta = QApplication.translate("Label","ET - BT = {0}{1}", None).format("%.1f"%(self.qmc.temp1[-1] - self.qmc.temp2[-1]),self.qmc.mode)
+            p.setFont(QFont('Utopia', 14, -1))
+            p.drawText(QPoint(Wwidth/2,Wheight/2),delta)
+            p.end()
+            self.HUD.setPixmap(img)
+
     #used by WheelGraphDlg()
     #wrap values in unicode(.) if and only if those are of type string
     def getWheelGraph(self):
@@ -36283,8 +36908,8 @@ class ApplicationWindow(QMainWindow):
         if bool(self.simulator):
             self.simulator = None
             self.qmc.timeclock.setBase(1000)
-            aw.buttonONOFF.setStyleSheet(aw.pushbuttonstyles["OFF"])
-            aw.buttonSTARTSTOP.setStyleSheet(aw.pushbuttonstyles["STOP"])
+            aw.button_1.setStyleSheet(aw.pushbuttonstyles["OFF"])
+            aw.button_2.setStyleSheet(aw.pushbuttonstyles["STOP"])
             self.sendmessage(QApplication.translate("Message","Simulator stopped", None))
         else:
             try:
@@ -36312,8 +36937,8 @@ class ApplicationWindow(QMainWindow):
                         self.qmc.timeclock.setBase(1000*speed)
                         self.simulator = Simulator(self.deserialize(filename))
                         self.simulatorpath = filename
-                        aw.buttonONOFF.setStyleSheet(aw.pushbuttonstyles_simulator["OFF"])
-                        aw.buttonSTARTSTOP.setStyleSheet(aw.pushbuttonstyles_simulator["STOP"])
+                        aw.button_1.setStyleSheet(aw.pushbuttonstyles_simulator["OFF"])
+                        aw.button_2.setStyleSheet(aw.pushbuttonstyles_simulator["STOP"])
                         self.sendmessage(QApplication.translate("Message","Simulator started @{}x", None).format(speed))
                     else:
                         self.sendmessage(QApplication.translate("Message","Invalid artisan format", None))
