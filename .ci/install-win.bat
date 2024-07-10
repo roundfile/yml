@@ -38,7 +38,7 @@ echo Python Version
 ::
 :: get pip up to date
 ::
-%PYTHON_PATH%\python.exe -m pip install --upgrade pip
+rem %PYTHON_PATH%\python.exe -m pip install --upgrade pip
 %PYTHON_PATH%\python.exe -m pip install wheel
 
 ::
