@@ -1,40 +1,62 @@
+# ABOUT
+# Appveyor CI configuration to build Artisan install packages
+#     for Windows, Windows legacy, macOS, and Linux
+#
+# LICENSE
+# This program or module is free software: you can redistribute it and/or
+# modify it under the terms of the GNU General Public License as published
+# by the Free Software Foundation, either version 2 of the License, or
+# version 3 of the License, or (at your option) any later versison. It is
+# provided for educational purposes and is distributed in the hope that
+# it will be useful, but WITHOUT ANY WARRANTY; without even the implied
+# warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
+# the GNU General Public License for more details.
+#
+# AUTHOR
+# Dave Baxter, Marko Luther 2023
+
+# Include "skip ci" in the commit message to prevent this build process from running
+environment:
+  # Set the default Appveyor Python version here. Does not affect windows_legacy. Can be overridden in platform environment.
+  PYTHON_V: 3.12
+  # Upgrade to specific version (for platforms supporting upgrade). Upgrade skipped if env var is missing or blank.
+  #PYUPGRADE_WIN_V: 3.11.6
+  #PYUPGRADE_MACOS_V: 3.12.1
+
+  matrix:
+#  - job_name: windows_legacy
+#    appveyor_build_worker_image: Visual Studio 2019
+  - job_name: windows
+    appveyor_build_worker_image: Visual Studio 2022
+#  - job_name: macos
+#    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
+#  - job_name: linux
+#    appveyor_build_worker_image: Ubuntu2204
+
+
 # Generic build number, later set to commit hash by init
 version: '{build}'
 
-# Do not build on tags (GitHub only)
+# Do not build on tags
 skip_tags: true
 clone_depth: 1
 
-# Include "nodeploy" in the commit message to prevent deployment to github
-
-environment:
-  matrix:
-  - job_name: windows_legacy
-    appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: windows
-#    appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: macos
-#   appveyor_build_worker_image: macos
-#  - job_name: linux
-#   appveyor_build_worker_image: Ubuntu2004
-#  - job_name: rpi
-#    appveyor_build_worker_image: Ubuntu1604
-
-matrix:
-  allow_failures:
-    - job_name: rpi
-
 init:
-  # Set "build version number" shown in appveyor build status to the commit hash, the build number keeps it unique
+  # Sets the commit hash to "build version number" shown in appveyor build status, the build number keeps it unique
   - ps: Update-AppveyorBuild -Version "$($env:APPVEYOR_REPO_COMMIT.substring(0,7)) ($env:APPVEYOR_BUILD_NUMBER)"
-  - ps: if($Env:inhibit_deploy -eq 'true'){Write-Host "**** Deploy Inhibited ****"}
+  # Env used to enable artifact upload for PR builds by providing a valid file name, invalid for REPO builds
+  - ps: |
+      $env:artifact_prefix = 'disable_artifact'
+      if ([bool]$env:APPVEYOR_PULL_REQUEST_NUMBER -eq $true) {
+        $env:artifact_prefix = 'artisan'
+      }
 
 branches:
   only:
     - master
 
 stack:
-  python 3.9
+  python ${PYTHON_V}
 
 for:
 -
@@ -44,63 +66,61 @@ for:
     fast_finish: false
 
   environment:
-    PYTHON: "C:\\Python38-x64"
-  #  PYINSTALLER_VER: "4.3"
-    UPLOADTOOL_BODY:
-      "WARNING: pre-release builds may not work. Use at your own risk."
+    PYTHON_PATH: "C:/Python38-x64"
+    QT_PATH: "C:/qt/5.15/msvc2019_64"
+    PYUIC: "pyuic5.exe"
+    PYQT: "5"
+    BUILD_PYINSTALLER: "True"
+    ARTISAN_LEGACY: "True"
+    VC_REDIST: "https://aka.ms/vs/16/release/vc_redist.x64.exe"  #redistributable for VS 2015-2019
+    VCVARSALL: "C:/Program Files (x86)/Microsoft Visual Studio/2019/Community/VC/Auxiliary/Build/vcvarsall.bat"
 
   install:
-    - echo "Windows Legacy Install"
-    - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
-    - echo "Python Version"
-    - python -V
-#    - "%PYTHON%\\python.exe -m pip install --upgrade pip"
-    - "%PYTHON%\\python.exe -m pip install wheel"
-    - "%PYTHON%\\python.exe -m pip install .ci\\pyinstaller-4.3-py3-none-any.whl"
-  #  # start: build the pyinstaller bootloader and install (using the default VS 2015)
-  #  - curl -L -O https://github.com/pyinstaller/pyinstaller/releases/download/v%PYINSTALLER_VER%/PyInstaller-%PYINSTALLER_VER%.tar.gz
-  #  - tar xzf PyInstaller-%PYINSTALLER_VER%.tar.gz
-  #  - del PyInstaller-%PYINSTALLER_VER%.tar.gz
-  #  - cd pyinstaller-%PYINSTALLER_VER%\bootloader
-  #  - "%PYTHON%\\python.exe ./waf all --target-arch=64bit"
-  #  - cd ..
-  #  - "%PYTHON%\\python.exe setup.py install"
-  #  - cd ..
-  #  # end: build the pyinstaller bootloader and install
-    - "%PYTHON%\\python.exe -m pip install -r src\\requirements.txt"
-    - "%PYTHON%\\python.exe -m pip install -r src\\requirements-win-legacy.txt"
-    - curl -L -O https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe
-    - curl -k -L -O https://netcologne.dl.sourceforge.net/project/snap7/1.4.2/snap7-full-1.4.2.7z
-    - 7z x snap7-full-1.4.2.7z
-    - copy snap7-full-1.4.2\build\bin\win64\snap7.dll c:\windows
-    - curl -k -L -O https://netcologne.dl.sourceforge.net/project/libusb-win32/libusb-win32-releases/1.2.6.0/libusb-win32-bin-1.2.6.0.zip
-    - 7z x libusb-win32-bin-1.2.6.0.zip
-    - copy libusb-win32-bin-1.2.6.0\bin\amd64\libusb0.dll C:\Windows\SysWOW64
+    - cmd: echo Windows Legacy Install
+
+    # generate the path to PyQt translations files
+    - ps: $env:QT_TRANSL = "$env:PYTHON_PATH/Lib/site-packages/PyQt5/Qt5/translations"
+
+    # pull library versions from requirments file
+    - ps: $env:PYINSTALLER_VER = Select-String -Path ./src/requirements.txt "pyinstaller==([\d\.]*).*platform_system='Windows'" -List | ForEach-Object {$_.Matches.Groups[1].Value}
+    - ps: Write-Host "PYINSTALLER_VER= $env:PYINSTALLER_VER"
+
+    # update path env var
+    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
+
+    # run the install script
+    - cmd: .ci\install-win.bat
 
   build_script:
-    - echo "Windows Legacy Build"
+    - cmd: echo Windows Legacy Build
     - cmd: cd src
 
-    # downgrade artisan-win.spec to use python 3.8
-    - ps: gc artisan-win.spec | %{ $_ -replace "PYTHON = r'c\:\\python39-x64'", "PYTHON = r'c:\python38-x64'" } | out-file newfile -encoding ascii
-    - ps: move -force newfile artisan-win.spec
+    #update the copyright year used by pyinstaller to set exe properties for Windows
+    - ps: $YEAR=(Get-Date).year
+    - ps: gc version-metadata.yml | %{ $_ -replace "yyyy", "$YEAR" } | out-file newfile -encoding ascii
+    - ps: move -force newfile version-metadata.yml
 
     # update the __revision__ field with the left seven of the GIT commit hash
     - ps: $GIT_VERSION=git rev-parse --verify --short HEAD
-    - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '0'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
+    - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '.*'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
     - ps: move -force newfile artisanlib/__init__.py
 
-    # run the install script
-    - cmd: build-win3-pi.bat LEGACY
-    - cmd: copy ..\LICENSE LICENSE.txt
-    - cmd: 7z a artisan-win-legacy-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
+    # run the build script
+    - cmd: build-win3-pi.bat
 
-#  artifacts:
-#    - path: 'src\artisan-*.zip'
+#  test_script:
+#    - cmd: python -m unittest discover
+
+  artifacts:
+#    - path: 'generated-win-legacy.zip'
+    - path: 'src\%artifact_prefix%-*.zip'
 
   deploy_script:
-    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-    - cmd: bash upload.sh artisan-*.zip
+    - cmd: bash ../.ci/upload.sh artisan-*.zip
+
+#  # uncomment this section for remote desktop connection to build image
+#  on_finish:
+#    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 
 -
@@ -110,61 +130,72 @@ for:
     fast_finish: false
 
   environment:
-    PYTHON: "C:\\Python39-x64"
-  #  PYINSTALLER_VER: "4.3"
-    UPLOADTOOL_BODY:
-      "WARNING: pre-release builds may not work. Use at your own risk."
+    QT_PATH: "C:/qt/6.5.1/msvc2019_64"  #there is no msvc2022_64 under /qt*
+    PYQT: "6"
+    PYUIC: "pyuic6.exe"
+    BUILD_PYINSTALLER: "True"
+    ARTISAN_LEGACY: "False"
+    VC_REDIST: "https://aka.ms/vs/17/release/vc_redist.x64.exe"  #redistributable for VS 2015-2022
+    VCVARSALL: "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvarsall.bat"
 
   install:
-    - echo "Windows Install"
-    - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
-    - echo "Python Version"
-    - python -V
-    - "%PYTHON%\\python.exe -m pip install --upgrade pip"
-    - "%PYTHON%\\python.exe -m pip install wheel"
-    - "%PYTHON%\\python.exe -m pip install .ci\\pyinstaller-4.3-py3-none-any.whl"
-  ## start: build the pyinstaller bootloader and install (using the default VS 2015)
-  #  - curl -L -O https://github.com/pyinstaller/pyinstaller/releases/download/v%PYINSTALLER_VER%/PyInstaller-%PYINSTALLER_VER%.tar.gz
-  #  - tar xzf PyInstaller-%PYINSTALLER_VER%.tar.gz
-  #  - del PyInstaller-%PYINSTALLER_VER%.tar.gz
-  #  - cd pyinstaller-%PYINSTALLER_VER%\bootloader
-  #  - "%PYTHON%\\python.exe ./waf all --target-arch=64bit"
-  #  - cd ..
-  #  - "%PYTHON%\\python.exe setup.py install"
-  #  - cd ..
-  ## end: build the pyinstaller bootloader and install
-    - "%PYTHON%\\python.exe -m pip install -r src\\requirements.txt"
-    - "%PYTHON%\\python.exe -m pip install -r src\\requirements-win.txt"
-    - curl -L -O https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe
-  #  - curl -k -L -O https://kent.dl.sourceforge.net/project/snap7/1.4.2/snap7-full-1.4.2.7z
-    - curl -k -L -O https://netcologne.dl.sourceforge.net/project/snap7/1.4.2/snap7-full-1.4.2.7z
-    - 7z x snap7-full-1.4.2.7z
-    - copy snap7-full-1.4.2\build\bin\win64\snap7.dll c:\windows
-    - curl -k -L -O https://netcologne.dl.sourceforge.net/project/libusb-win32/libusb-win32-releases/1.2.6.0/libusb-win32-bin-1.2.6.0.zip
-    - 7z x libusb-win32-bin-1.2.6.0.zip
-    - copy libusb-win32-bin-1.2.6.0\bin\amd64\libusb0.dll C:\Windows\SysWOW64
+    - cmd: echo Windows Install
+
+    # Update the Python version when PYUPGRADE_WIN_V is set.  The upgrade happens in install-win.bat
+    # Note that the paths set below may not exist yet.
+    - ps: |
+        if (Test-Path env:PYUPGRADE_WIN_V) {
+            $env:PREV_PYTHON_V = $env:PYTHON_V
+            $env:PYTHON_V = ($env:PYUPGRADE_WIN_V -split '\.')[0..1] -join '.'
+        }
+
+    # derive the python path from the version number
+    - ps: $env:PYTHON_PATH = "C:/Python$($env:PYTHON_V -replace '\.','')-x64"
+    - ps: Write-Host $env:PYTHON_PATH
+
+    # generate the path to PyQt translations files
+    - ps: $env:QT_TRANSL = "$env:PYTHON_PATH/Lib/site-packages/PyQt6/Qt6/translations"
+
+    # pull library versions from requirments file
+    - ps: $env:PYINSTALLER_VER = Select-String -Path ./src/requirements.txt "pyinstaller==([\d\.]*).*platform_system='Windows'" -List | ForEach-Object {$_.Matches.Groups[1].Value}
+    - ps: Write-Host "PYINSTALLER_VER= $env:PYINSTALLER_VER"
+
+    # update path env var
+    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
+
+    # run the install script
+    - cmd: .ci/install-win.bat
 
   build_script:
-    - echo "Windows Build"
+    - cmd: echo Windows Build
     - cmd: cd src
+
+    #update the copyright year used by pyinstaller to set exe properties for Windows
+    - ps: $YEAR=(Get-Date).year
+    - ps: gc version-metadata.yml | %{ $_ -replace "yyyy", "$YEAR" } | out-file newfile -encoding ascii
+    - ps: move -force newfile version-metadata.yml
+
     # update the __revision__ field with the left seven of the GIT commit hash
     - ps: $GIT_VERSION=git rev-parse --verify --short HEAD
-    - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '0'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
+    - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '.*'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
     - ps: move -force newfile artisanlib/__init__.py
-    # run the install script
+
+    # run the build script
     - cmd: build-win3-pi.bat
-    - cmd: copy ..\LICENSE LICENSE.txt
-    - cmd: 7z a artisan-win-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
 
-  test_script:
-    - python -m unittest discover
+#  test_script:
+#    - cmd: python -m unittest discover
 
-#  artifacts:
-#    - path: 'src\artisan-*.zip'
+  artifacts:
+#    - path: 'generated-win.zip'
+    - path: 'src\%artifact_prefix%-*.zip'
 
   deploy_script:
-    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-    - cmd: bash upload.sh artisan-*.zip
+    - cmd: bash ../.ci/upload.sh artisan-*.zip
+
+#  # uncomment this section for remote desktop connection to build image
+#  on_finish:
+#    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 
 -
@@ -174,39 +205,56 @@ for:
     fast_finish: false
 
   environment:
-    ARTISAN_OS: osx
-    PYTHON: ~/venv3.9
-    language: generic
-    HOMEBREW_NO_INSTALL_CLEANUP: 1
-    HOMEBREW_NO_ANALYTICS: 1
-    MACOSX_DEPLOYMENT_TARGET: 10.15
+    ARTISAN_OS: macos
+    MACOSX_DEPLOYMENT_TARGET: 11.0
+    PYTHONSITEPKGS: /Users/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
+    QT_PATH: ${PYTHONSITEPKGS}/PyQt6/Qt6
+    QT_SRC_PATH: /Users/appveyor/Qt/6.6/macos
+    PYUIC: pyuic6
+    PYLUPDATE: ./pylupdate6pro.py  #the dot slash is necessary
 
   install:
     - echo "MacOS Install"
     - chmod +x .ci/*.sh
+
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
-    - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
+    - sed -i'' -e "s/__revision__ = '.*'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
+
     # run the install script
-    - .ci/install-${ARTISAN_OS}.sh
+    - .ci/install-macos.sh
+    - export PATH=/Users/appveyor/venv${PYTHON_V}/bin:${PATH} # required after updating Python in venv
 
   build_script:
     - echo "MacOS Build"
     - chmod +x src/*.sh
-    - .ci/script-${ARTISAN_OS}.sh
+    - chmod +x src/pylupdate6pro.py
 
-  test_script:
-    - python -m unittest discover -s src
+    # run the build script
+    - cd src
+    - ./build-macos3.sh
 
-#  artifacts:
-#    - path: 'src/artisan-*.dmg'
+# unit test fails as it runs on Py3.9 while the build installs under brew installed Py3.10 (see build-mac3.py)
+#  test_script:
+#    - python -m unittest discover -s src
+
+  artifacts:
+#    - path: 'generated-macos.zip'
+    - path: 'src/%artifact_prefix%-*.dmg'
 
   deploy_script:
-    - cd src
-    - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
-    - export UPLOADTOOL_ISPRERELEASE=true
-    - bash upload.sh artisan-*.dmg
+    # we upgrade libidn2 and curl to prevent issues caused by the previous python update
+    # on running curl for later upload (libunistring.2.dylib not found)
+    # this is done here after generating the build to prevent SSL issues
+    - brew upgrade libidn2 # 2.3.4 -> 2.3.4_1
+    - ../.ci/upload.sh artisan-*.dmg
+
+#  # uncomment this section for vnc or ssh connection to the build image
+#  on_finish:
+#    - sh: export APPVEYOR_VNC_BLOCK=true
+#    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-vnc.sh' | bash -e -
+#    #- sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+
 
 -
   matrix:
@@ -215,67 +263,56 @@ for:
     fast_finish: false
 
   environment:
+    #PYTHON_V: 3.11
     ARTISAN_OS: linux
-    PYTHON: $HOME/venv3.9
+    PYTHONSITEPKGS: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
+    QT_PATH: $PYTHON_PATH/PyQt6/Qt6
+    QT_SRC_PATH: /home/appveyor/Qt/6.4/gcc_64 # latest points still to 5.15.2
+    PYUIC: pyuic6
+    PYLUPDATE: ./pylupdate6pro.py  #the dot slash is necessary
 
   install:
+    #- ls -la /home/appveyor/Qt/
     - echo "Linux Install"
     - chmod +x .ci/*.sh
+
+    # pull library versions from requirments file
+    - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements.txt "libusb==([\d\.]*).*platform_system='Linux'" -List | ForEach-Object {$_.Matches.Groups[1].Value}
+    - ps: Write-Host "LIBUSB_VER= $env:LIBUSB_VER"
+    - ps: $env:DOTENV_VER = Select-String -Path ./src/requirements.txt "dotenv==([\d\.]*).*platform_system='Linux'" -List | ForEach-Object {$_.Matches.Groups[1].Value}
+    - ps: Write-Host "DOTENV_VER= $env:DOTENV_VER"
+
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
-    - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
+    - sed -i'' -e "s/__revision__ = '.*'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
+
     # run the install script
-    - .ci/install-${ARTISAN_OS}.sh
+    - .ci/install-linux.sh
 
   build_script:
     - echo "Linux Build"
     - chmod +x src/*.sh
-    - .ci/script-${ARTISAN_OS}.sh
+    - cd src
 
-  test_script:
-    - QT_QPA_PLATFORM=offscreen python -m unittest discover -s src
+    # run the build scripts
+    - ./build-linux.sh
+    - ./build-linux-pkg.sh
 
-#  artifacts:
-#    - path: 'src/artisan-*.deb'
-#    - path: 'src/artisan-*.rpm'
+#  test_script:
+#    - QT_QPA_PLATFORM=offscreen python -m unittest discover -s src
+
+  artifacts:
+#    - path: 'generated-linux.zip'
+    - path: 'src/%artifact_prefix%-*.deb'
+    - path: 'src/%artifact_prefix%-*.rpm'
+    - path: 'src/%artifact_prefix%-*.AppImage'
 
   deploy_script:
-    - cd src
-    - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
-    - export UPLOADTOOL_ISPRERELEASE=true
-    - bash upload.sh artisan-*.deb
-    - bash upload.sh artisan-*.rpm
-    - bash upload.sh artisan-*.AppImage
+    - ../.ci/upload.sh artisan-*.deb
+    - ../.ci/upload.sh artisan-*.rpm
+    - ../.ci/upload.sh artisan-*.AppImage
 
--
-  matrix:
-    only:
-      - job_name: rpi
-    fast_finish: false
-
-  environment:
-    ARTISAN_OS: rpi
-    PYTHON: $HOME/venv3.9
-
-  install:
-    - echo "RPI Install"
-    - chmod +x ./.ci/*.sh
-    - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
-    - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
-    - .ci/install-${ARTISAN_OS}.sh
-
-  build_script:
-    - echo "RPI Build"
-    - chmod +x src/*.sh
-    - .ci/script-${ARTISAN_OS}.sh
-
-#  artifacts:
-#    - path: 'src/artisan-*.deb'
-
-  deploy_script:
-    - cd src
-    - curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-    - export UPLOADTOOL_BODY="WARNING pre-release builds may not work. Use at your own risk."
-    - export UPLOADTOOL_ISPRERELEASE=true
-    - bash upload.sh artisan-*.deb
+#  # uncomment this section for ssh connection to build image
+#  on_finish:
+#    - sh: export APPVEYOR_SSH_BLOCK=true
+#    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -

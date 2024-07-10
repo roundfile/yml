@@ -24,7 +24,7 @@
         </tr>
         <tr>
             <td>Factor</td>
-            <td>Scale factor, Slider value is multplied by this value.</td>
+            <td>Scale factor, Slider value is multiplied by this value.</td>
         </tr>
         <tr>
             <td>Min</td>
@@ -50,7 +50,7 @@
 </table><br/><br/><b>COMMANDS</b><table width="100%" border="1" padding="1" border-collapse="collapse">
     <tbody>
         <tr>
-            <td>Note: &quot;{}&quot; can be used as a placeholder, it will be subsituted by (value*factor + offset). In all slider command actions, but for IO, VOUT, S7 and RC Commands, the bound value is converted from a float to an int.<br><br>Note: The placeholders {ET}, {BT}, {time}, {ETB}, {BTB} will be substituted by the current ET, BT, time, ET background, BT background value in Serial/CallProgram/MODBUS/S7/WebSocket commands<br><br>Note: commands can be sequenced, separated by semicolons like in “&lt;cmd1&gt;;&lt;cmd2&gt;;&lt;cmd3&gt;”<br><br>Note: in PHIDGET commands, the optional parameter &lt;sn&gt; has the form &lt;hub_serial&gt;[:&lt;hub_port&gt;] allows to refer to a specific Phidget HUB by given its serial number, and optionally specifying the port number the addressed module is connected to.<br><br>Note: in YOCTOPUCE commands, the optional parameters &lt;sn&gt; holds either the modules serial number or its name</td>
+            <td>Note: &quot;{}&quot; can be used as a placeholder, it will be substituted by (value*factor + offset). In all slider command actions, but for IO, VOUT, S7 and RC Commands, the bound value is converted from a float to an int.<br><br>Note: The placeholders {ET}, {BT}, {time}, {ETB}, {BTB}, and {WEIGHTin} will be substituted by the current ET, BT, time, ET background, BT background value, and batch size (in g) in Serial/Artisan/CallProgram/MODBUS/S7/WebSocket commands<br><br>Note: commands can be sequenced, separated by semicolons like in “&lt;cmd1&gt;;&lt;cmd2&gt;;&lt;cmd3&gt;”<br><br>Note: in PHIDGET commands, the optional parameter &lt;sn&gt; has the form &lt;hub_serial&gt;[:&lt;hub_port&gt;] allows to refer to a specific Phidget HUB by given its serial number, and optionally specifying the port number the addressed module is connected to.<br><br>Note: in YOCTOPUCE commands, the optional parameters &lt;sn&gt; holds either the modules serial number or its name</td>
         </tr>
     </tbody>
 </table><table width="100%" border="1" padding="1" border-collapse="collapse">
@@ -89,6 +89,36 @@
         </tr>
         <tr>
             <td>&#160;</td>
+            <td>readSigned(slaveId,register)</td>
+            <td>reads 1 16bit register from slave slaveID using function 3 (Read Multiple Holding Registers) interpreted as signed integer. The result is bound to the placeholder `_` and thus can be accessed in later commands.</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>readBCD(slaveID,register)</td>
+            <td>reads 1 16bit register from slave slaveID using function 3 (Read Multiple Holding Registers) interpreted as BCD. The result is bound to the placeholder `_` and thus can be accessed in later commands.</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>read32(slaveID,register)</td>
+            <td>reads 2 16bit registers from slave slaveID using function 3 (Read Multiple Holding Registers) interpreted as unsigned integer. The result is bound to the placeholder `_` and thus can be accessed in later commands.</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>read32Signed(slaveID,register)</td>
+            <td>reads 2 16bit registers from slave slaveID using function 3 (Read Multiple Holding Registers) interpreted as signed integer. The result is bound to the placeholder `_` and thus can be accessed in later commands.</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>read32BCD(slaveID,register)</td>
+            <td>reads 2 16bit register from slave slaveID using function 3 (Read Multiple Holding Registers) interpreted as BCD. The result is bound to the placeholder `_` and thus can be accessed in later commands.</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>readFloat(slaveID,register)</td>
+            <td>reads 2 16bit registers from slave slaveID using function 3 (Read Multiple Holding Registers) interpreted as float. The result is bound to the placeholder `_` and thus can be accessed in later commands.</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
             <td>write(slaveId,register,value) or write([slaveId,register,value],..,[slaveId,register,value])</td>
             <td>write register: MODBUS function 6 (int) or function 16 (float)</td>
         </tr>
@@ -121,6 +151,11 @@
             <td>&#160;</td>
             <td>writeWord(slaveId,register,value) or writeWord([slaveId,register,value],..,[slaveId,register,value])</td>
             <td>write 32bit float to two 16bit int registers: MODBUS function 16</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>writeLong(slaveId,register,value) or writeLong([slaveId,register,value],..,[slaveId,register,value])</td>
+            <td>write 32bit integer to two 16bit int registers: MODBUS function 16</td>
         </tr>
         <tr>
             <td>&#160;</td>
@@ -210,7 +245,7 @@
         <tr>
             <td>VOUT Command</td>
             <td>range(c,r[,sn])</td>
-            <td>for PHIDGET OUTPUT modules: sets voltage voltage range (r=5 fo r5V and r=10 for 10V)</td>
+            <td>for PHIDGET OUTPUT modules: sets voltage voltage range (r=5 for r5V and r=10 for 10V)</td>
         </tr>
         <tr>
             <td>&#160;</td>
@@ -279,6 +314,11 @@
         </tr>
         <tr>
             <td>&#160;</td>
+            <td>yset(c,b[,sn])</td>
+            <td>YOCTOPUCE Relay Output: switches channel c of the relay module off (b=0) and on (b=1)</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
             <td>flip(c[,sn])</td>
             <td>YOCTOPUCE Relay Output: toggle the state of channel c</td>
         </tr>
@@ -289,18 +329,48 @@
         </tr>
         <tr>
             <td>&#160;</td>
+            <td>powerReset([sn])</td>
+            <td>YOCTOPUCE resets the power counter of the Yocto-Watt module</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
             <td>slider(c,v)</td>
             <td>move slider c to value v</td>
         </tr>
         <tr>
             <td>&#160;</td>
             <td>button(i,c,b[,sn])</td>
-            <td>switches channel c off (b=0) and on (b=1) and sets button i to pressed or normal depending on the value b</td>
+            <td>switches PHIDGET Binary Output channel c off (b=0) and on (b=1) and sets button i to pressed or normal depending on the value b</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>button(i,b)</td>
+            <td>sets button i to pressed if value b is yes, true, t, or 1, otherwise to normal</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>button(b)</td>
+            <td>sets button to pressed if value b is yes, true, t, or 1, otherwise to normal</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>button()</td>
+            <td>toggles the state of the button</td>
         </tr>
         <tr>
             <td>&#160;</td>
             <td>sleep(&lt;float&gt;)</td>
             <td>sleep: add a delay of &lt;float&gt; seconds</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>santoker(&lt;target&gt;,&lt;value&gt;)</td>
+            <td>sends integer &lt;value&gt; to &lt;target&gt; register specified by as byte in hex notation like “fa” via the Santoker Network protocol</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>kaleido(&lt;target&gt;,&lt;value&gt;)</td>
+            <td>sends &lt;value&gt; to &lt;target&gt; via the Kaleido Serial or Network protocol</td>
         </tr>
         <tr>
             <td>S7 Command</td>
@@ -424,6 +494,11 @@
         </tr>
         <tr>
             <td>&#160;</td>
+            <td>pidSVC(&lt;int&gt;)</td>
+            <td>sets the PID target set value SV given in C</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
             <td>pidRS(&lt;rs&gt;)</td>
             <td>activates the PID Ramp-Soak pattern number &lt;rs&gt; (1-based!) or the one labeled &lt;rs&gt;</td>
         </tr>
@@ -446,6 +521,16 @@
             <td>&#160;</td>
             <td>message(&lt;msg&gt;)</td>
             <td>shows message &lt;msg&gt; in the message line</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>notifications(&lt;bool&gt;)</td>
+            <td>enables/disables notifications; while disabled issued notifications are ignored</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>notify(&lt;title&gt;,[&lt;msg&gt;])</td>
+            <td>sends notification with title &lt;title&gt; and optional message &lt;msg&gt;</td>
         </tr>
         <tr>
             <td>&#160;</td>
@@ -501,6 +586,31 @@
             <td>&#160;</td>
             <td>keyboard(&lt;bool&gt;)</td>
             <td>enables/disables keyboard mode</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>keepON(&lt;bool&gt;)</td>
+            <td>enables/disables the Keep ON flag</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>showCurve(&lt;name&gt;,&lt;bool&gt;)</td>
+            <td>shows/hides the curve indicated by &lt;name&gt; which is one of { ET, BT, DeltaET, DeltaBT, BackgroundET, BackgroundBT}</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>showExtraCurve(&lt;extra_device&gt;,&lt;curve&gt;,&lt;bool&gt;)</td>
+            <td>shows/hides the &lt;curve&gt; (one of {T1,T2}) of the zero-based &lt;extra_device&gt; number</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>showEvents(&lt;event_type&gt;, &lt;bool&gt;)</td>
+            <td>shows/hides the events of &lt;event_type&gt; in [1,..,5]</td>
+        </tr>
+        <tr>
+            <td>&#160;</td>
+            <td>showBackgroundEvents(&lt;bool&gt;)</td>
+            <td>shows/hides the events of the background profile</td>
         </tr>
         <tr>
             <td>RC Command</td>

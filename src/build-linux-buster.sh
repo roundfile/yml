@@ -31,8 +31,16 @@ else
     ln -s /usr/lib/libusb-1.0.so.0
 fi
 
-pyinstaller -D -n artisan -y -c --hidden-import scipy._lib.messagestream \
-	    --log-level=INFO artisan-linux.spec
+# update UI
+find ui -iname "*.ui" | while read f
+do
+    fullfilename=$(basename $f)
+    fn=${fullfilename%.*}
+    python3 -m PyQt5.uic.pyuic -o uic/${fn}.py --from-imports ui/${fn}.ui
+done
+
+
+pyinstaller -y --log-level=INFO artisan-linux.spec
 
 mv dist/artisan dist/artisan.d
 mv dist/artisan.d/* dist
@@ -49,7 +57,7 @@ do
      if [ -e ${QTBASE_FILE} ]
           then cp ${QTBASE_FILE} dist/translations
      fi
-     if [ -e ${QT_FILE} ] 
+     if [ -e ${QT_FILE} ]
           then cp ${QT_FILE} dist/translations
      fi
 done
@@ -57,8 +65,15 @@ done
 cp translations/*.qm dist/translations
 
 # copy data
-cp -R $PYTHON_PATH/matplotlib/mpl-data dist
-rm -rf dist/mpl-data/sample_data
+#cp -R $PYTHON_PATH/matplotlib/mpl-data dist
+#rm -rf dist/mpl-data/sample_data
+rm -rf dist/matplotlib/sample_data
+
+rm -f dist/libphidget22.so.0
+
+mkdir dist/yoctopuce
+mkdir dist/yoctopuce/cdll
+cp $PYTHON_PATH/yoctopuce/cdll/*.so dist/yoctopuce/cdll
 
 # copy file icon and other includes
 cp artisan-alog.xml dist
@@ -69,6 +84,7 @@ cp artisan-aset.xml dist
 cp artisan-wg.xml dist
 cp includes/Humor-Sans.ttf dist
 cp includes/WenQuanYiZenHei-01.ttf dist
+cp includes/WenQuanYiZenHeiMonoMedium.ttf dist
 cp includes/SourceHanSansCN-Regular.otf dist
 cp includes/SourceHanSansHK-Regular.otf dist
 cp includes/SourceHanSansJP-Regular.otf dist
@@ -79,6 +95,16 @@ cp includes/alarmclock.eot dist
 cp includes/alarmclock.svg dist
 cp includes/alarmclock.ttf dist
 cp includes/alarmclock.woff dist
+cp includes/android-chrome-192x192.png dist
+cp includes/android-chrome-512x512.png dist
+cp includes/apple-touch-icon.png dist
+cp includes/browserconfig.xml dist
+cp includes/favicon-16x16.png dist
+cp includes/favicon-32x32.png dist
+cp includes/favicon.ico dist
+cp includes/mstile-150x150.png dist
+cp includes/safari-pinned-tab.svg dist
+cp includes/site.webmanifest dist
 cp includes/artisan.tpl dist
 cp includes/bigtext.js dist
 cp includes/sorttable.js dist
@@ -124,6 +150,3 @@ cp ../LICENSE dist/LICENSE.txt
 #rm -f dist/libglib-2.0.so.0 # removed for v1.6 and later
 
 #rm -f dist/libusb-1.0.so.0
-
-
-

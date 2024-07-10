@@ -32,16 +32,16 @@ You need to (temporarily during installation) tick "Allow applications downloade
 #### Alternative: Homebrew
 Artisan is available on [Homebrew](https://brew.sh/). To install Homebrew:
 ```
-ruby -e "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/master/install)"
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 ```
 To install Artisan via Homebrew:
 ```
-brew cask install artisan
+brew install --cask artisan
 ```
 
 ### Linux
 
-Install the downloaded installer file by a double-click or run the installer via the following console command on 
+Install the downloaded installer file by a double-click or run the installer via the following console command on
 
 __Redhat/CentOS__
 
@@ -56,12 +56,14 @@ __Debian/Ubuntu/Raspian__
 ```
 
 
-## Step 3: Install serial driver (if needed)
+## Step 3: Install (serial/Phidget/..) device driver if needed
 
 To operate some devices like Phidget modules or certain meters you need to install corresponding drivers. See the corresponding Section under [Supported Devices](https://artisan-scope.org/devices/index) for further details.
 
 
 ### Linux
+
+Under Manjaro (and presumably Arch and derivatives), the user has to be part of the uucp group. To do this, use `sudo gpasswd -a <username> uucp`, It is required to log out and back in for this to take effect.
 
 In case you run into permission problems such that Artisan is not allowed to read or write to the selected /dev/_USB_ device, you might need to add your account (username) to the dialout group via
 
@@ -80,6 +82,26 @@ that your account was successful added to the dialout group.
 
 Note that for apps running by non-root users access to Phidgets or Yoctopuce devices require the installation of corresponding udev rules. Check the [Phidgets](https://www.phidgets.com/docs/OS_-_Linux#Advanced_Information) and [Yoctopuce](https://www.yoctopuce.com/EN/article/how-to-begin-with-yoctopuce-devices-on-linux) platform installation notes. Those rules are installed automatically by Artisan, but require the users to be in the `sudo` group for security considerations.
 
+To allow Artisan to remember the artisan.plus password gnome-keyring needs to be installed. You can install this on Ubuntu and Raspbian via
+
+```
+sudo apt-get update
+sudo apt-get install gnome-keyring
+```
+
+---
+
+[A bug in Ubuntu 22.04 has been reported](https://bugs.launchpad.net/ubuntu/+source/brltty/+bug/1958224) that deactivates certain `/dev/ttyUSB` device ports, eg. the one used by the Mastech 6514. The culprit is a package called BRLTTY, which is installed automatically in 22.04. This package is for blind folks who use a TTY. A work around is to use synaptic or the following terminal commands to remove this package.
+
+```
+# sudo apt-get remove brltty
+```
+
+There is an [alternative, but more complex fix](https://askubuntu.com/questions/1403705/dev-ttyusb0-not-present-in-ubuntu-22-04) that works without deinstalling that package.
+
+---
+
+
 
 
 ## Step 4: Configure Artisan for your setup
@@ -93,7 +115,7 @@ The serial settings for meters are already configured by Artisan automatically w
 
 ## Consistent USB names on Debian (by Rob Gardner)
 
-On some Debian-based systems the USB device names are different, once /dev/tty/USB0 another time /dev/tty/USB1, on each connect of the same device. The solution is to add a udev rule that creates a symbolic link with a constant name to point to the actual device. In my situation, I added a file called 
+On some Debian-based systems the USB device names are different, once /dev/tty/USB0 another time /dev/tty/USB1, on each connect of the same device. The solution is to add a udev rule that creates a symbolic link with a constant name to point to the actual device. In my situation, I added a file called
 
 ```
   /etc/udev/rules.d/datalogger.rules

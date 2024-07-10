@@ -229,11 +229,11 @@
     <tbody>
         <tr>
             <td>k</td>
-            <td>Scaling factor from time to RoR axis. The range of the temperature scale divided by the range of the delta scale. </td>
+            <td>Scaling factor from RoR to Temp axis. The range of the temperature scale divided by the range of the delta scale. </td>
         </tr>
         <tr>
             <td>o</td>
-            <td>Offset from time to RoR axis. </td>
+            <td>Offset from RoR to Temp axis. </td>
         </tr>
     </tbody>
 </table><table width="100%" border="1" padding="1" border-collapse="collapse">
@@ -308,7 +308,55 @@
 </table><table width="100%" border="1" padding="1" border-collapse="collapse">
     <tbody>
         <tr>
-            <td>Note: The same rules as for the corresponding PhasesLCDs apply to pDRY and pFCs:<br><br>If there is no background profile the DRY or FCs bean temperature used for the prediction is taken from the Config&gt;Phases setup.<br><br>If there is a background profile and there is DRY or FCs event in the background profile, the DRY or FCs bean temperature used for the prediction is taken from the background profile.<br><br>Exception to the above for DRY only: if AutoDRY is checked the DRY temperature used for the prediction is taken from the Config&gt;Phases setup.  This does not apply to FCs and AutoFCS.<br><br>The prediction value is the calculated time in seconds to reach the DRY or FCs temperature.</td>
+            <td>Note: The same rules as for the corresponding PhasesLCDs apply to pDRY and pFCs:<br><br>If there is no background profile the DRY or FCs bean temperature used for the prediction is taken from the Config&gt;Phases setup.<br><br>If there is a background profile and there is DRY or FCs event in the background profile, the DRY or FCs bean temperature used for the prediction is taken from the background profile.<br><br>Exception to the above for DRY only: if AutoDRY is checked the DRY temperature used for the prediction is taken from the Config&gt;Phases setup.  This does not apply to FCs and AutoFCs.<br><br>The prediction value is the calculated time in seconds to reach the DRY or FCs temperature.</td>
+        </tr>
+    </tbody>
+</table><br/><br/><b>AMBIENT</b><table width="100%" border="1" padding="1" border-collapse="collapse">
+    <thead>
+        <tr>
+            <th>Symbol</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>aTMP</td>
+            <td>ambient temperature (default 0)</td>
+        </tr>
+        <tr>
+            <td>aHUM</td>
+            <td>ambient humidity (default 0)</td>
+        </tr>
+        <tr>
+            <td>aPRE</td>
+            <td>ambient pressure (default 0)</td>
+        </tr>
+    </tbody>
+</table><table width="100%" border="1" padding="1" border-collapse="collapse">
+    <tbody>
+        <tr>
+            <td>Note: The data is (re-)sampled some seconds after the start of recording</td>
+        </tr>
+    </tbody>
+</table><br/><br/><b>ROAST PROPERTIES</b><table width="100%" border="1" padding="1" border-collapse="collapse">
+    <thead>
+        <tr>
+            <th>Symbol</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>WEIGHTin</td>
+            <td>batch size (g)</td>
+        </tr>
+        <tr>
+            <td>MOISTUREin</td>
+            <td>green moisture (%)</td>
+        </tr>
+        <tr>
+            <td>TEMPunit</td>
+            <td>temperature unit (Celsius: 0, Fahrenheit: 1)</td>
         </tr>
     </tbody>
 </table><br/><br/><b>EXPRESSIONS</b><table width="100%" border="1" padding="1" border-collapse="collapse">

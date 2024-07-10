@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # ABOUT
 # Artisan Batches Dialog
@@ -14,57 +13,61 @@
 # the GNU General Public License for more details.
 
 # AUTHOR
-# Marko Luther, 2020
+# Marko Luther, 2023
 
 from artisanlib.dialogs import ArtisanDialog
 
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from artisanlib.main import ApplicationWindow # pylint: disable=unused-import
+    from PyQt6.QtWidgets import QWidget # pylint: disable=unused-import
+
 try:
-    #pylint: disable = E, W, R, C
     from PyQt6.QtCore import Qt, pyqtSlot, QSettings # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtWidgets import (QApplication, QLabel, QHBoxLayout, QVBoxLayout, QCheckBox, # @UnusedImport @Reimport  @UnresolvedImport
                                  QDialogButtonBox, QGridLayout, QLineEdit, QSpinBox, QLayout) # @UnusedImport @Reimport  @UnresolvedImport
-except Exception:
-    #pylint: disable = E, W, R, C
-    from PyQt5.QtCore import Qt, pyqtSlot, QSettings # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt5.QtWidgets import (QApplication, QLabel, QHBoxLayout, QVBoxLayout, QCheckBox, # @UnusedImport @Reimport  @UnresolvedImport
+except ImportError:
+    from PyQt5.QtCore import Qt, pyqtSlot, QSettings # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt5.QtWidgets import (QApplication, QLabel, QHBoxLayout, QVBoxLayout, QCheckBox, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
                                  QDialogButtonBox, QGridLayout, QLineEdit, QSpinBox, QLayout) # @UnusedImport @Reimport  @UnresolvedImport
 
 class batchDlg(ArtisanDialog):
-    def __init__(self, parent = None, aw = None):
+    def __init__(self, parent:'QWidget', aw:'ApplicationWindow') -> None:
         super().__init__(parent, aw)
         self.setModal(True)
-        self.setWindowTitle(QApplication.translate("Form Caption","Batch", None))
+        self.setWindowTitle(QApplication.translate('Form Caption','Batch'))
         self.prefixEdit = QLineEdit(self.aw.qmc.batchprefix)
-        self.prefixEdit.setToolTip(QApplication.translate("Tooltip", "Batch prefix",None))
+        self.prefixEdit.setToolTip(QApplication.translate('Tooltip', 'Batch prefix'))
         self.counterSpinBox = QSpinBox()
         self.counterSpinBox.setRange(0,999999)
         self.counterSpinBox.setSingleStep(1)
         self.counterSpinBox.setAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignTrailing|Qt.AlignmentFlag.AlignVCenter)
-        batchchecklabel = QLabel(QApplication.translate("CheckBox","Batch Counter", None))
+        batchchecklabel = QLabel(QApplication.translate('CheckBox','Batch Counter'))
         self.batchcheckbox = QCheckBox()
-        self.batchcheckbox.setToolTip(QApplication.translate("Tooltip", "ON/OFF batch counter",None))
+        self.batchcheckbox.setToolTip(QApplication.translate('Tooltip', 'ON/OFF batch counter'))
         if self.aw.qmc.batchcounter > -1:
             self.batchcheckbox.setChecked(True)
         else:
             self.batchcheckbox.setChecked(False)
         prefixlabel = QLabel()
         prefixlabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
-        prefixlabel.setText(QApplication.translate("Label", "Prefix",None))
+        prefixlabel.setText(QApplication.translate('Label', 'Prefix'))
         counterlabel = QLabel()
         counterlabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
-        counterlabel.setText(QApplication.translate("Label", "Counter",None))
-        descrLabel = QLabel("<i>" + QApplication.translate("Message", "Next batch: counter+1",None) + "</i>")
-        
-        neverOverwriteCounterlabel = QLabel(QApplication.translate("CheckBox","Never overwrite counter", None))
+        counterlabel.setText(QApplication.translate('Label', 'Counter'))
+        descrLabel = QLabel('<i>' + QApplication.translate('Message', 'Next batch: counter+1') + '</i>')
+
+        neverOverwriteCounterlabel = QLabel(QApplication.translate('CheckBox','Never overwrite counter'))
         self.neverOverwriteCheckbox = QCheckBox()
-        self.neverOverwriteCheckbox.setToolTip(QApplication.translate("Tooltip", "If ticked, the batch counter is never modified by loading a settings file",None))
+        self.neverOverwriteCheckbox.setToolTip(QApplication.translate('Tooltip', 'If ticked, the batch counter is never modified by loading a settings file'))
         if self.aw.qmc.neverUpdateBatchCounter:
             self.neverOverwriteCheckbox.setChecked(True)
         else:
             self.neverOverwriteCheckbox.setChecked(False)
-        
+
         if self.aw.qmc.batchcounter > -1:
-            self.counterSpinBox.setValue(self.aw.qmc.batchcounter)
+            self.counterSpinBox.setValue(int(round(self.aw.qmc.batchcounter)))
             self.counterSpinBox.setEnabled(True)
             self.prefixEdit.setEnabled(True)
             self.neverOverwriteCheckbox.setEnabled(True)
@@ -73,11 +76,11 @@ class batchDlg(ArtisanDialog):
             self.counterSpinBox.setEnabled(False)
             self.prefixEdit.setEnabled(False)
             self.neverOverwriteCheckbox.setEnabled(False)
-        
+
         # connect the ArtisanDialog standard OK/Cancel buttons
         self.dialogbuttons.accepted.connect(self.batchChanged)
         self.dialogbuttons.rejected.connect(self.close)
-        
+
         self.batchcheckbox.stateChanged.connect(self.toggleCounterFlag)
         buttonLayout = QHBoxLayout()
         buttonLayout.addStretch()
@@ -92,23 +95,25 @@ class batchDlg(ArtisanDialog):
         batchlayout.addWidget(descrLabel,3,0,1,3)
         batchlayout.addWidget(self.neverOverwriteCheckbox,4,0,Qt.AlignmentFlag.AlignRight)
         batchlayout.addWidget(neverOverwriteCounterlabel,4,1)
-        
+
         mainLayout = QVBoxLayout()
         mainLayout.addLayout(batchlayout)
         mainLayout.addStretch()
         mainLayout.addSpacing(10)
         mainLayout.addLayout(buttonLayout)
         self.setLayout(mainLayout)
-        self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok).setFocus()
+        ok_button = self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok)
+        if ok_button is not None:
+            ok_button.setFocus()
 
         settings = QSettings()
-        if settings.contains("BatchPosition"):
-            self.move(settings.value("BatchPosition"))
-        
+        if settings.contains('BatchPosition'):
+            self.move(settings.value('BatchPosition'))
+
         mainLayout.setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
 
     @pyqtSlot(int)
-    def toggleCounterFlag(self,_):
+    def toggleCounterFlag(self, _:int) -> None:
         if self.batchcheckbox.isChecked():
             self.prefixEdit.setEnabled(True)
             self.counterSpinBox.setEnabled(True)
@@ -119,20 +124,20 @@ class batchDlg(ArtisanDialog):
             self.neverOverwriteCheckbox.setEnabled(False)
 
     @pyqtSlot()
-    def batchChanged(self):
+    def batchChanged(self) -> None:
         self.aw.qmc.batchprefix = self.prefixEdit.text()
         if self.batchcheckbox.isChecked():
             self.aw.qmc.batchcounter = self.counterSpinBox.value()
         else:
             self.aw.qmc.batchcounter = -1
             self.aw.qmc.batchsequence = 1
-        self.aw.qmc.neverUpdateBatchCounter = self.neverOverwriteCheckbox.isChecked()
-        self.aw.closeEventSettings()
+        self.aw.qmc.neverUpdateBatchCounter = bool(self.neverOverwriteCheckbox.isChecked())
+#        self.aw.closeEventSettings()
         self.close()
-    
+
     @pyqtSlot()
-    def close(self):
+    def close(self) -> bool:
         #save window position (only; not size!)
         settings = QSettings()
-        settings.setValue("BatchPosition",self.frameGeometry().topLeft())
-        super().close()
+        settings.setValue('BatchPosition',self.frameGeometry().topLeft())
+        return super().close()

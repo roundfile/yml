@@ -1,8 +1,10 @@
 [General]
 Delay=1000
-ExtraEventSamplingDelay=20000
+ExtraEventSamplingDelay=10000
 Oversampling=false
 roastertype_setup=Probat Sample
+roastersize_setup=0.2
+roasterheating_setup=3
 
 [DefaultButtons]
 buttonactions=0, 21, 21, 21, 21, 21, 0, 0
@@ -85,6 +87,7 @@ slideroffsets=0, 0, 0, 0
 slidervisibilities=0, 0, 0, 1
 
 [WebSocket]
+compression=true
 DRY_node=colorChangeEvent
 FCe_node=firstCrackEndEvent
 FCs_node=firstCrackBeginningEvent
@@ -94,7 +97,7 @@ SCs_node=secondCrackBeginningEvent
 STARTonCHARGE=false
 addEvent_message=addEvent
 channel_modes=1, 1, 0, 0, 0, 0, 0, 0, 0, 1
-channel_nodes=beanTemp, exhaustAirTemp, burner, airPressure, , , , , , rateOfRise
+channel_nodes=beanTemp, exhaustAirTemp, burner, airPressure, , , , , , exhaustAirTempRor
 channel_requests=, , , , , , , , , 
 charge_message=startRoasting
 command_node=command

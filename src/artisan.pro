@@ -23,9 +23,9 @@ SOURCES = \
     artisanlib/background.py \
     artisanlib/batches.py \
     artisanlib/calculator.py \
+    artisanlib/canvas.py \
     artisanlib/colors.py \
     artisanlib/comm.py \
-    artisanlib/command_utility.py \
     artisanlib/comparator.py \
     artisanlib/cropster.py \
     artisanlib/cup_profile.py \
@@ -38,15 +38,18 @@ SOURCES = \
     artisanlib/ikawa.py \
     artisanlib/large_lcds.py \
     artisanlib/logs.py \
+    artisanlib/loring.py \
     artisanlib/main.py \
     artisanlib/modbusport.py \
+    artisanlib/petroncini.py \
     artisanlib/phases.py \
+    artisanlib/phases_canvas.py \
     artisanlib/pid_control.py \
     artisanlib/pid_dialogs.py \
-    artisanlib/platform.py \
+    artisanlib/platformdlg.py \
     artisanlib/ports.py \
     artisanlib/roast_properties.py \
-    artisanlib/rubase.py \
+    artisanlib/rubasse.py \
     artisanlib/s7port.py \
     artisanlib/sampling.py \
     artisanlib/statistics.py \
@@ -65,14 +68,16 @@ SOURCES = \
     help/s7_help.py \
     help/symbolic_help.py \
     help/transposer_help.py \
+    plus/blend.py \
     plus/controller.py \
     plus/countries.py \
     plus/login.py \
     plus/queue.py \
+    plus/schedule.py \
     plus/stock.py \
-    plus/sync.py \
-    plus/util.py
-    
+    plus/sync.py
+
+# the list of translation has to be synced with the script pylupdate6pro (for pylupdate6)
 TRANSLATIONS = \
 	translations/artisan_ar.ts \
 	translations/artisan_da.ts \
@@ -92,14 +97,15 @@ TRANSLATIONS = \
 	translations/artisan_lv.ts \
 	translations/artisan_nl.ts \
 	translations/artisan_no.ts \
-	translations/artisan_pt.ts \
-	translations/artisan_pt_BR.ts \
 	translations/artisan_pl.ts \
+	translations/artisan_pt_BR.ts \
+	translations/artisan_pt.ts \
 	translations/artisan_ru.ts \
 	translations/artisan_sk.ts \
 	translations/artisan_sv.ts \
 	translations/artisan_th.ts \
 	translations/artisan_tr.ts \
+	translations/artisan_uk.ts \
 	translations/artisan_vi.ts \
 	translations/artisan_zh_CN.ts \
 	translations/artisan_zh_TW.ts

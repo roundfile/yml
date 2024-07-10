@@ -4,9 +4,10 @@ BTlcd=true
 Delay=2000
 ETcurve=false
 ETlcd=false
-ExtraEventSamplingDelay=0
+ExtraEventSamplingDelay=5000
 Oversampling=true
 roastertype_setup=Probatone
+roastersize_setup_default=5
 
 [DefaultButtons]
 buttonactions=0, 0, 0, 0, 0, 0, 0, 0
@@ -134,7 +135,7 @@ parity=N
 port=502
 stopbits=1
 timeout=0.5
-type=4
+type=3
 optimizer=true
 fetch_max_blocks=false
 
@@ -159,6 +160,7 @@ slidermax=100, 100, 100, 100
 slidermin=0, 0, 0, 0
 slideroffsets=0, 0, 0, 0
 slidervisibilities=0, 0, 0, 1
+eventsliderunits=, , , %
 
 [background]
 BTBflag=true

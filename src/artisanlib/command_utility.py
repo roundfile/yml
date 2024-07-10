@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # ABOUT
 # Handling of Commandline Utility Functions
@@ -14,12 +13,12 @@
 # the GNU General Public License for more details.
 
 # AUTHOR
-# FilePhil, 2020
+# FilePhil, 2023
 
 from artisanlib import __version__
 import sys
 
-def handleCommands():
+def handleCommands() -> bool:
     """ Handles incoming commands and decides on an action.
 
     args -- given command line arguments
@@ -28,16 +27,16 @@ def handleCommands():
 
     for arg in sys.argv:
 
-        if arg in ('-v', '--Version'):
-            print ('Artisan  Verison {}'.format(__version__))
+        if arg in {'-v', '--Version'}:
+            print (f'Artisan  Version {__version__}')
 
             return False
 
-        if arg in ('-h', '--Help'):
+        if arg in {'-h', '--Help'}:
             # To write a text that is not indented
             # the text must be written like this
-            helpText ="""
-Artisan  Verison {}
+            helpText = """
+Artisan Version {}
 
 Usage:
 artisan
@@ -53,7 +52,7 @@ Options:
     -v, --Version Show version number
 """
 
-            print(helpText)
+            print(helpText.format(__version__))
             return False
 
     return True
