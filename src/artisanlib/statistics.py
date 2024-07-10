@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
-
+# -*- coding: utf-8 -*-
+#
 # ABOUT
 # Artisan Statistics Dialog
 
@@ -7,7 +7,7 @@
 # This program or module is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
 # by the Free Software Foundation, either version 2 of the License, or
-# version 3 of the License, or (at your option) any later versison. It is
+# version 3 of the License, or (at your option) any later version. It is
 # provided for educational purposes and is distributed in the hope that
 # it will be useful, but WITHOUT ANY WARRANTY; without even the implied
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
@@ -18,23 +18,32 @@
 
 from artisanlib.dialogs import ArtisanDialog
 
-from PyQt5.QtCore import Qt, pyqtSlot, QSettings
-from PyQt5.QtWidgets import (QApplication, QLabel, QDialogButtonBox, QGridLayout, 
-    QComboBox, QHBoxLayout, QVBoxLayout, QCheckBox, QGroupBox, QLayout,
-    QSpinBox)
+try:
+    #pylint: disable = E, W, R, C
+    from PyQt6.QtCore import Qt, pyqtSlot, QSettings # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt6.QtWidgets import (QApplication, QLabel, QDialogButtonBox, QGridLayout, # @UnusedImport @Reimport  @UnresolvedImport
+        QComboBox, QHBoxLayout, QVBoxLayout, QCheckBox, QGroupBox, QLayout, # @UnusedImport @Reimport  @UnresolvedImport
+        QSpinBox) # @UnusedImport @Reimport  @UnresolvedImport
+except Exception:
+    #pylint: disable = E, W, R, C
+    from PyQt5.QtCore import Qt, pyqtSlot, QSettings # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt5.QtWidgets import (QApplication, QLabel, QDialogButtonBox, QGridLayout, # @UnusedImport @Reimport  @UnresolvedImport
+        QComboBox, QHBoxLayout, QVBoxLayout, QCheckBox, QGroupBox, QLayout, # @UnusedImport @Reimport  @UnresolvedImport
+        QSpinBox) # @UnusedImport @Reimport  @UnresolvedImport
+
 from artisanlib.util import deltaLabelUTF8
 
 class StatisticsDlg(ArtisanDialog):
     def __init__(self, parent = None, aw = None):
-        super(StatisticsDlg,self).__init__(parent, aw)
-        self.setWindowTitle(QApplication.translate("Form Caption","Statistics",None))
+        super().__init__(parent, aw)
+        self.setWindowTitle(QApplication.translate("Form Caption","Statistics"))
         self.setModal(True)
-        self.timez = QCheckBox(QApplication.translate("CheckBox","Time",None))
-        self.bar = QCheckBox(QApplication.translate("CheckBox","Bar",None))
+        self.timez = QCheckBox(QApplication.translate("CheckBox","Time"))
+        self.bar = QCheckBox(QApplication.translate("CheckBox","Bar"))
         self.dt = QCheckBox(deltaLabelUTF8 + self.aw.qmc.mode)
-        self.ror = QCheckBox(self.aw.qmc.mode + QApplication.translate("CheckBox","/min",None))
-        self.area = QCheckBox(QApplication.translate("CheckBox","Characteristics",None))
-        self.ShowStatsSummary = QCheckBox(QApplication.translate("CheckBox", "Summary",None))
+        self.ror = QCheckBox(self.aw.qmc.mode + QApplication.translate("CheckBox","/min"))
+        self.area = QCheckBox(QApplication.translate("CheckBox","Characteristics"))
+        self.ShowStatsSummary = QCheckBox(QApplication.translate("CheckBox", "Summary"))
         self.ShowStatsSummary.setChecked(self.aw.qmc.statssummary)
         self.ShowStatsSummary.stateChanged.connect(self.changeStatsSummary)         #toggle
         #temp fix for possible bug self.aw.qmc.statisticsflags=[] > empty list out of range
@@ -66,7 +75,7 @@ class StatisticsDlg(ArtisanDialog):
         
         # connect the ArtisanDialog standard OK/Cancel buttons
         self.dialogbuttons.accepted.connect(self.accept)
-        self.dialogbuttons.removeButton(self.dialogbuttons.button(QDialogButtonBox.Cancel))
+        self.dialogbuttons.removeButton(self.dialogbuttons.button(QDialogButtonBox.StandardButton.Cancel))
         flagsLayout = QGridLayout()
         flagsLayout.addWidget(self.timez,0,0)
         flagsLayout.addWidget(self.bar,0,1)
@@ -75,68 +84,68 @@ class StatisticsDlg(ArtisanDialog):
         flagsLayout.addWidget(self.area,0,4)
         flagsLayout.addWidget(self.ShowStatsSummary,0,5)
         
-        beginlabel =QLabel(QApplication.translate("Label", "From",None))
+        beginlabel =QLabel(QApplication.translate("Label", "From"))
         beginitems = [
-                    QApplication.translate("Label","CHARGE",None),
-                    QApplication.translate("Label","TP",None),
-                    QApplication.translate("Label","DRY END",None),
-                    QApplication.translate("Label","FC START",None)]
+                    QApplication.translate("Label","CHARGE"),
+                    QApplication.translate("Label","TP"),
+                    QApplication.translate("Label","DRY END"),
+                    QApplication.translate("Label","FC START")]
         self.beginComboBox = QComboBox()
-        self.beginComboBox.setFocusPolicy(Qt.NoFocus)
+        self.beginComboBox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.beginComboBox.setMaximumWidth(120)
         self.beginComboBox.addItems(beginitems)
         self.beginComboBox.setCurrentIndex(self.aw.qmc.AUCbegin)
-        baselabel =QLabel(QApplication.translate("Label", "Base",None))
+        baselabel =QLabel(QApplication.translate("Label", "Base"))
         self.baseedit = QSpinBox()
-        self.baseedit.setAlignment(Qt.AlignRight)
+        self.baseedit.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.baseedit.setRange(0,999)
         self.baseedit.setValue(self.aw.qmc.AUCbase)
         if self.aw.qmc.mode == "F":
             self.baseedit.setSuffix(" F")
         else:
             self.baseedit.setSuffix(" C")
-        self.baseFlag = QCheckBox(QApplication.translate("CheckBox","From Event", None))
+        self.baseFlag = QCheckBox(QApplication.translate("CheckBox","From Event"))
         self.baseedit.setEnabled(not self.aw.qmc.AUCbaseFlag)
         self.baseFlag.setChecked(self.aw.qmc.AUCbaseFlag)
         self.baseFlag.stateChanged.connect(self.switchAUCbase)
-        targetlabel =QLabel(QApplication.translate("Label", "Target",None))
+        targetlabel =QLabel(QApplication.translate("Label", "Target"))
         self.targetedit = QSpinBox()
-        self.targetedit.setAlignment(Qt.AlignRight)
+        self.targetedit.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.targetedit.setRange(0,9999)
         self.targetedit.setValue(self.aw.qmc.AUCtarget)
-        self.targetFlag = QCheckBox(QApplication.translate("CheckBox","Background", None))
+        self.targetFlag = QCheckBox(QApplication.translate("CheckBox","Background"))
         self.targetedit.setEnabled(not self.aw.qmc.AUCtargetFlag)
         self.targetFlag.setChecked(self.aw.qmc.AUCtargetFlag)
         self.targetFlag.stateChanged.connect(self.switchAUCtarget)
-        self.guideFlag = QCheckBox(QApplication.translate("CheckBox","Guide", None))
+        self.guideFlag = QCheckBox(QApplication.translate("CheckBox","Guide"))
         self.guideFlag.setChecked(self.aw.qmc.AUCguideFlag)
-        self.AUClcdFlag = QCheckBox(QApplication.translate("CheckBox","LCD", None))
+        self.AUClcdFlag = QCheckBox(QApplication.translate("CheckBox","LCD"))
         self.AUClcdFlag.setChecked(self.aw.qmc.AUClcdFlag)
         self.AUClcdFlag.stateChanged.connect(self.AUCLCFflagChanged)
-        self.AUCshowFlag = QCheckBox(QApplication.translate("CheckBox","Show Area", None))
+        self.AUCshowFlag = QCheckBox(QApplication.translate("CheckBox","Show Area"))
         self.AUCshowFlag.setChecked(self.aw.qmc.AUCshowFlag)
         self.AUCshowFlag.stateChanged.connect(self.changeAUCshowFlag)
 
-        statsmaxchrperlinelabel =QLabel(QApplication.translate("Label", "Max characters per line",None))
+        statsmaxchrperlinelabel =QLabel(QApplication.translate("Label", "Max characters per line"))
         self.statsmaxchrperlineedit = QSpinBox()
-        self.statsmaxchrperlineedit.setAlignment(Qt.AlignRight)
+        self.statsmaxchrperlineedit.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.statsmaxchrperlineedit.setRange(1,120)
         self.statsmaxchrperlineedit.setValue(self.aw.qmc.statsmaxchrperline)
-        self.statsmaxchrperlineedit.setFocusPolicy(Qt.StrongFocus)
+        self.statsmaxchrperlineedit.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         statsmaxchrperlineHorizontal = QHBoxLayout()
         statsmaxchrperlineHorizontal.addWidget(statsmaxchrperlinelabel)
         statsmaxchrperlineHorizontal.addWidget(self.statsmaxchrperlineedit)
         statsmaxchrperlineHorizontal.addStretch()
-        statsmaxchrperlineGroupLayout = QGroupBox(QApplication.translate("GroupBox","Stats Summary",None))
+        statsmaxchrperlineGroupLayout = QGroupBox(QApplication.translate("GroupBox","Stats Summary"))
         statsmaxchrperlineGroupLayout.setLayout(statsmaxchrperlineHorizontal)
 
         AUCgrid = QGridLayout()
-        AUCgrid.addWidget(beginlabel,0,0,Qt.AlignRight)
+        AUCgrid.addWidget(beginlabel,0,0,Qt.AlignmentFlag.AlignRight)
         AUCgrid.addWidget(self.beginComboBox,0,1,1,2)
-        AUCgrid.addWidget(baselabel,1,0,Qt.AlignRight)
+        AUCgrid.addWidget(baselabel,1,0,Qt.AlignmentFlag.AlignRight)
         AUCgrid.addWidget(self.baseedit,1,1)
         AUCgrid.addWidget(self.baseFlag,1,2)
-        AUCgrid.addWidget(targetlabel,2,0,Qt.AlignRight)
+        AUCgrid.addWidget(targetlabel,2,0,Qt.AlignmentFlag.AlignRight)
         AUCgrid.addWidget(self.targetedit,2,1)
         AUCgrid.addWidget(self.targetFlag,2,2)
         AUCgrid.setRowMinimumHeight(3, 20)
@@ -154,9 +163,9 @@ class StatisticsDlg(ArtisanDialog):
         AUCvertical.addLayout(AUCgrid)
         AUCvertical.addLayout(aucFlagsLayout)
         AUCvertical.addStretch()
-        AUCgroupLayout = QGroupBox(QApplication.translate("GroupBox","AUC",None))
+        AUCgroupLayout = QGroupBox(QApplication.translate("GroupBox","AUC"))
         AUCgroupLayout.setLayout(AUCvertical)
-        displayGroupLayout = QGroupBox(QApplication.translate("GroupBox","Display",None))
+        displayGroupLayout = QGroupBox(QApplication.translate("GroupBox","Display"))
         displayGroupLayout.setLayout(flagsLayout)
         buttonsLayout = QHBoxLayout()
         buttonsLayout.addWidget(self.dialogbuttons)
@@ -168,15 +177,15 @@ class StatisticsDlg(ArtisanDialog):
         mainLayout.addLayout(vgroupLayout)
         mainLayout.addStretch()
         mainLayout.addLayout(buttonsLayout)
-        mainLayout.setSizeConstraint(QLayout.SetFixedSize)
+        mainLayout.setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
         self.setLayout(mainLayout)
-        self.dialogbuttons.button(QDialogButtonBox.Ok).setFocus()
+        self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok).setFocus()
         
         settings = QSettings()
         if settings.contains("StatisticsPosition"):
             self.move(settings.value("StatisticsPosition"))
         
-        mainLayout.setSizeConstraint(QLayout.SetFixedSize)
+        mainLayout.setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
 
     def AUCLCFflagChanged(self,_):
         self.aw.qmc.AUClcdFlag = not self.aw.qmc.AUClcdFlag
@@ -253,7 +262,7 @@ class StatisticsDlg(ArtisanDialog):
             else:
                 _,_,auc,_ = self.aw.ts(tp=0,background=True)
             self.aw.qmc.AUCbackground = auc
-        except:
+        except Exception: # pylint: disable=broad-except
             pass
         if self.timez.isChecked(): 
             self.aw.qmc.statisticsflags[0] = 1

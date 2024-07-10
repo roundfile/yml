@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
-
+# -*- coding: utf-8 -*-
+#
 # ABOUT
 # RoastPATH HTML Roast Profile importer for Artisan
 
@@ -11,7 +11,12 @@ import re
 import json
 from lxml import html
 
-from PyQt5.QtCore import QDateTime, Qt
+try:
+    #pylint: disable = E, W, R, C
+    from PyQt6.QtCore import QDateTime, Qt # @UnusedImport @Reimport  @UnresolvedImport
+except Exception:
+    #pylint: disable = E, W, R, C
+    from PyQt5.QtCore import QDateTime, Qt # @UnusedImport @Reimport  @UnresolvedImport
 
 from artisanlib.util import encodeLocal
 
@@ -32,9 +37,9 @@ def extractProfileRoastPathHTML(url,_):
                 dateQt = QDateTime.fromString(date_str[-2]+date_str[-1], "yyyy-MM-ddhh:mm")
                 if dateQt.isValid():
                     res["roastdate"] = encodeLocal(dateQt.date().toString())
-                    res["roastisodate"] = encodeLocal(dateQt.date().toString(Qt.ISODate))
+                    res["roastisodate"] = encodeLocal(dateQt.date().toString(Qt.DateFormat.ISODate))
                     res["roasttime"] = encodeLocal(dateQt.time().toString())
-                    res["roastepoch"] = int(dateQt.toTime_t())
+                    res["roastepoch"] = int(dateQt.toSecsSinceEpoch())
                     res["roasttzoffset"] = libtime.timezone
                 title = "".join(date_str[:-2]).strip()
                 if len(title)>0 and title[-1] == "-": # we remove a trailing -
@@ -53,7 +58,7 @@ def extractProfileRoastPathHTML(url,_):
                         res["operator"] = meta
                     elif m == "Coffee":
                         coffee = meta
-                        if title == "" or title == "Roast":
+                        if title in ["", "Roast"]:
                             res["title"] = coffee
                     elif m == "Notes":
                         res["roastingnotes"] = meta
@@ -62,7 +67,7 @@ def extractProfileRoastPathHTML(url,_):
                         res["weight"] = [float(v),0,("Kg" if u.strip() == "kg" else "lb")]
                     elif m == "Organization":
                         res["organization"] = meta
-                except:
+                except Exception: # pylint: disable=broad-except
                     pass
         
         beans = ""
@@ -88,7 +93,7 @@ def extractProfileRoastPathHTML(url,_):
         
         data = {}
         for e in ["btData", "etData", "atData", "eventData", "rorData", "noteData", "fuelData", "fanData", "drumData"]:
-            d = re.findall("var {} = JSON\.parse\('(.+?)'\);".format(e), page.content.decode("utf-8"), re.S)  # @UndefinedVariable
+            d = re.findall(r"var {} = JSON\.parse\('(.+?)'\);".format(e), page.content.decode("utf-8"), re.S)  # @UndefinedVariable
             bt = []
             if d:
                 data[e] = json.loads(d[0])
@@ -128,7 +133,7 @@ def extractProfileRoastPathHTML(url,_):
 #                            tx_idx = res["timex"].index(tx) # does not cope with dropouts as the next line:
                             tx_idx = next(i for i,item in enumerate(res["timex"]) if item >= tx)
                             timeindex[marks[d["EventName"]]] = max(0,tx_idx)
-                        except:
+                        except Exception: # pylint: disable=broad-except
                             pass
             res["timeindex"] = timeindex
             
@@ -164,10 +169,10 @@ def extractProfileRoastPathHTML(url,_):
                                 v = float(n["Note"])
                                 v = v/10. + 1
                                 specialeventsvalue.append(v)
-                            except:
+                            except Exception: # pylint: disable=broad-except
                                 specialeventsvalue.append(0)
                             specialeventsStrings.append(n["Note"])
-                        except:
+                        except Exception: # pylint: disable=broad-except
                             pass
                 if len(specialevents) > 0:
                     res["specialevents"] = specialevents
@@ -271,7 +276,7 @@ def extractProfileRoastPathHTML(url,_):
                     res["extratemp1"].append([d["StandardValue"] for d in ror])
                     res["extratemp2"].append([-1]*len(timex))
 
-    except Exception:
+    except Exception: # pylint: disable=broad-except
 #        import traceback
 #        import sys
 #        traceback.print_exc(file=sys.stdout)

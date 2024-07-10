@@ -1,11 +1,39 @@
-import imp
+# -*- coding: utf-8 -*-
+#
+
+import logging
 import platform
 import sys
+import os
 import codecs
 import math
+import functools
+from pathlib import Path
+from typing import Final, Optional
+from matplotlib import colors
 
 import urllib.parse as urlparse  # @Reimport
 import urllib.request as urllib  # @Reimport
+
+##
+
+_log: Final = logging.getLogger(__name__)
+
+application_name: Final = "Artisan"
+application_viewer_name: Final = "ArtisanViewer"
+application_organization_name: Final = "artisan-scope"
+application_organization_domain: Final = "artisan-scope.org"
+
+
+try:
+    #pylint: disable = E, W, R, C
+    from PyQt6.QtCore import QStandardPaths, QCoreApplication # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt6.QtGui import QColor  # @UnusedImport @Reimport  @UnresolvedImport
+except Exception:
+    #pylint: disable = E, W, R, C
+    from PyQt5.QtCore import QStandardPaths, QCoreApplication # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt5.QtGui import QColor  # @UnusedImport @Reimport  @UnresolvedImport
+
 
 deltaLabelPrefix = "<html>&Delta;&thinsp;</html>" # prefix constant for labels to compose DeltaET/BT by prepending this prefix to ET/BT labels
 if platform.system() == 'Linux':
@@ -13,7 +41,7 @@ if platform.system() == 'Linux':
 else:
     deltaLabelUTF8 = "\u0394\u2009" # u("\u03B4") # prefix for non HTML Qt Widgets like QPushbuttons
 deltaLabelBigPrefix = "<big><b>&Delta;</b></big>&thinsp;<big><b>" # same as above for big/bold use cases
-deltaLabelMathPrefix = "$\Delta\/$"  # prefix for labels in matplibgraphs to compose DeltaET/BT by prepending this prefix to ET/BT labels
+deltaLabelMathPrefix = r"$\Delta\/$"  # prefix for labels in matplibgraphs to compose DeltaET/BT by prepending this prefix to ET/BT labels
 
 def appFrozen():
     ib = False
@@ -24,50 +52,47 @@ def appFrozen():
             if getattr( sys, 'frozen', False ):
                 ib = True
         elif platf == "Windows":
-            ib = (hasattr(sys, "frozen") or # new py2exe
-                hasattr(sys, "importers") # old py2exe
-                or imp.is_frozen("__main__")) # tools/freeze
+            ib = hasattr(sys, "frozen")
         elif platf == "Linux":
             if getattr(sys, 'frozen', False):
                 # The application is frozen
                 ib = True
-    except Exception:
+    except Exception: # pylint: disable=broad-except
         pass
     return ib
 
 def decs2string(x):
     if len(x) > 0:
         return bytes(x)
-    else:
-        return b""
+    return b""
 def stringp(x):
     return isinstance(x, str)
 def uchr(x):
     return chr(x)
-# the historical u() needed for Python2/Qt4 got eliminated or replaced by str()
-#def u(x): # convert to unicode string
-#    return str(x)
-def d(x):
+def decodeLocal(x):
     if x is not None:
         return codecs.unicode_escape_decode(x)[0]
-    else:
-        return None
+    return None
 def encodeLocal(x):
     if x is not None:
         return codecs.unicode_escape_encode(str(x))[0].decode("utf8")
-    else:
-        return None
+    return None
 def hex2int(h1,h2=None):
     if h2 is not None:
         return int(h1*256 + h2)
-    else:
-        return int(h1)
+    return int(h1)
 def str2cmd(s):
     return bytes(s,"ascii")
 def cmd2str(c):
     return str(c,"latin1")
 def s2a(s):
     return s.encode('ascii','ignore').decode("ascii")
+
+# returns the prefix of length l of s and adds eclipse
+def abbrevString(s,l):
+    if len(s) > l:
+        return f"{s[:l-1]}..."
+    return s
 
 # used to convert time from int seconds to string (like in the LCD clock timer). input int, output string xx:xx
 def stringfromseconds(seconds_raw, leadingzero=True):
@@ -76,12 +101,10 @@ def stringfromseconds(seconds_raw, leadingzero=True):
     if seconds >= 0:
         if leadingzero:
             return "%02d:%02d"% divmod(seconds, 60)
-        else:
-            return ("%2d:%02d"% divmod(seconds, 60)).strip()
-    else:
-        #usually the timex[timeindex[0]] is alreday taken away in seconds before calling stringfromseconds()
-        negtime = abs(seconds)
-        return "-%02d:%02d"% divmod(negtime, 60)
+        return ("%2d:%02d"% divmod(seconds, 60)).strip()
+    #usually the timex[timeindex[0]] is alreday taken away in seconds before calling stringfromseconds()
+    negtime = abs(seconds)
+    return "-%02d:%02d"% divmod(negtime, 60)
 
 #Converts a string into a seconds integer. Use for example to interpret times from Roaster Properties Dlg inputs
 #accepted formats: "00:00","-00:00"
@@ -89,67 +112,55 @@ def stringtoseconds(string):
     timeparts = string.split(":")
     if len(timeparts) != 2:
         return -1
-    else:
-        if timeparts[0][0] != "-":  #if number is positive
-            seconds = int(timeparts[1])
-            seconds += int(timeparts[0])*60
-            return seconds
-        else:
-            seconds = int(timeparts[0])*60
-            seconds -= int(timeparts[1])
-            return seconds    #return negative number
+    if timeparts[0][0] != "-":  #if number is positive
+        seconds = int(timeparts[1])
+        seconds += int(timeparts[0])*60
+        return seconds
+    seconds = int(timeparts[0])*60
+    seconds -= int(timeparts[1])
+    return seconds    #return negative number
 
 def fromFtoC(Ffloat):
     if Ffloat in [-1,None]:
         return Ffloat
-    else:
-        return (Ffloat-32.0)*(5.0/9.0)
+    return (Ffloat-32.0)*(5.0/9.0)
 
 def fromCtoF(Cfloat):
     if Cfloat in [-1,None]:
         return Cfloat
-    else:
-        return (Cfloat*9.0/5.0)+32.0
+    return (Cfloat*9.0/5.0)+32.0
         
 def RoRfromCtoF(CRoR):
     if CRoR in [-1,None]:
         return CRoR
-    else:
-        return (CRoR*9.0/5.0)
+    return (CRoR*9.0/5.0)
 
 def RoRfromFtoC(FRoR):
     if FRoR in [-1,None]:
         return FRoR
-    else:
-        return FRoR*(5.0/9.0)
+    return FRoR*(5.0/9.0)
 
 def convertRoR(r,source_unit,target_unit):
     if source_unit == "C":
         if target_unit == "C":
             return r
-        else:
-            return RoRfromCtoF(r)
-    elif source_unit == "F":
+        return RoRfromCtoF(r)
+    if source_unit == "F":
         if target_unit == "F":
             return r
-        else:
-            return RoRfromFtoC(r)
-    else:
-        return r
+        return RoRfromFtoC(r)
+    return r
         
 def convertTemp(t,source_unit,target_unit):
     if source_unit == "C":
         if target_unit == "C":
             return t
-        else:
-            return fromCtoF(t)
-    elif source_unit == "F":
+        return fromCtoF(t)
+    if source_unit == "F":
         if target_unit == "F":
             return t
-        else:
-            return fromFtoC(t)
-    else:
-        return t
+        return fromFtoC(t)
+    return t
 
 
 def path2url(path):
@@ -157,46 +168,40 @@ def path2url(path):
       'file:', urllib.pathname2url(path))
         
 # remaining artifacts from Qt4/5 compatibility layer:
-# note: those conversion functions are sometimes called with string arguments thus a simple int(round(s)) won't work and a int(round(float(s))) needs to be applied
+# note: those conversion functions are sometimes called with string arguments
+# thus a simple int(round(s)) won't work and a int(round(float(s))) needs to be applied
 def toInt(x):
     if x is None:
         return 0
-    else:
-        try:
-            return int(round(float(x)))
-        except:
-            return 0
+    try:
+        return int(round(float(x)))
+    except Exception: # pylint: disable=broad-except
+        return 0
 def toString(x):
     return str(x)
 def toList(x):
     if x is None:
         return []
-    else:
-        return list(x)
+    return list(x)
 def toFloat(x):
     if x is None:
         return 0.
-    else:
-        try:
-            return float(x)
-        except:
-            return 0.
+    try:
+        return float(x)
+    except Exception: # pylint: disable=broad-except
+        return 0.
 def toBool(x):
     if x is None:
         return False
-    else:
-        if isinstance(x,str):
-            if x in ["false","False"]:
-                return False
-            else:
-                return True
-        else:
-            return bool(x)
+    if isinstance(x,str):
+        if x in ["false","False"]:
+            return False
+        return True
+    return bool(x)
 def toStringList(x):
     if x:
         return [str(s) for s in x]
-    else:
-        return []
+    return []
 def toMap(x):
     return x
 def removeAll(l,s):
@@ -217,9 +222,9 @@ def fill_gaps(l):
             if e == -1 and last_val == -1:
                 # a prefix of -1 will be replaced by the first value in l that is not -1
                 s = -1
-                for e in l:
-                    if e != -1:
-                        s = e
+                for ee in l:
+                    if ee != -1:
+                        s = ee
                         break
                 res.append(s)
                 last_val = s
@@ -235,14 +240,185 @@ def fill_gaps(l):
                     # no further valid values, we append the tail
                     res.extend(l[i:])
                     return res
-                else:
-                    # compute intermediate values
-                    step = (next_val - last_val) / (j-i+1.)
-                    for _ in range(j-i):
-                        last_val = last_val + step
-                        res.append(last_val)
-                    skip = next_idx
+                # compute intermediate values
+                step = (next_val - last_val) / (j-i+1.)
+                for _ in range(j-i):
+                    last_val = last_val + step
+                    res.append(last_val)
+                skip = next_idx
             else:
                 res.append(e)
                 last_val = e
     return res
+
+
+# we store data in the user- and app-specific local default data directory
+# for the platform
+# note that the path is based on the ApplicationName and OrganizationName
+# setting of the app
+# eg. ~/Library/Application Support/Artisan-Scope/Artisan (macOS)
+#     C:/Users/<USER>/AppData/Local/Artisan-Scope/Artisan" (Windows)
+
+# getDataDirectory() returns the Artisan data directory
+# if app is not yet initialized None is returned
+# otherwise the path is computed on first call and then memorized
+# if the computed path does not exists it is created
+# if creation or access of the path fails None is returned and memorized
+def getDataDirectory():
+    app = QCoreApplication.instance()
+    if app is not None:
+        return _getAppDataDirectory(app)
+    return None
+
+# internal function to return
+@functools.lru_cache
+def _getAppDataDirectory(app):
+    # temporarily switch app name to Artisan (as it might be ArtisanViewer)
+    appName = app.applicationName()
+    app.setApplicationName(application_name)
+    data_dir = QStandardPaths.standardLocations(
+        QStandardPaths.StandardLocation.AppLocalDataLocation
+    )[0]
+    app.setApplicationName(appName)
+    try:
+        if not os.path.exists(data_dir):
+            os.makedirs(data_dir)
+        return data_dir
+    except Exception:  # pylint: disable=broad-except
+        return None
+
+@functools.lru_cache
+def getAppPath():
+    res = ""
+    platf = platform.system()
+    if platf in ['Darwin','Linux']:
+        if appFrozen():
+            res = QCoreApplication.applicationDirPath() + "/../../../"
+        else:
+            res = os.path.dirname(os.path.realpath(__file__)) + "/../"
+    elif platf == "Windows":
+        if appFrozen():
+            res = os.path.dirname(sys.executable) + "\\"
+        else:
+            res = os.path.dirname(os.path.realpath(__file__)) + "\\..\\"
+    else:
+        res = QCoreApplication.applicationDirPath() + "/"
+    return res
+
+@functools.lru_cache
+def getResourcePath():
+    res = ""
+    platf = platform.system()
+    if platf == 'Darwin':
+        if appFrozen():
+            res = QCoreApplication.applicationDirPath() + "/../Resources/"
+        else:
+            res = os.path.dirname(os.path.realpath(__file__)) + "/../includes/"
+    elif platf == 'Linux':
+        if appFrozen():
+            res = QCoreApplication.applicationDirPath() + "/"
+        else:
+            res = os.path.dirname(os.path.realpath(__file__)) + "/../includes/"
+    elif platf == "Windows":
+        if appFrozen():
+            res = os.path.dirname(sys.executable) + "\\"
+        else:
+            res = os.path.dirname(os.path.realpath(__file__)) + "\\..\\includes\\"
+    else:
+        res = QCoreApplication.applicationDirPath() + "/"
+    return res
+
+# if share is True, the same (cache) file is shared between the Artisan and
+# ArtisanViewer apps
+# and locks have to be used to avoid race conditions
+def getDirectory(
+    filename: str, ext: Optional[str] = None, share: bool = False
+):
+    fn = filename
+    if not share:
+        app = QCoreApplication.instance()
+        if app.artisanviewerMode:
+            fn = filename + "_viewer"
+    fp = Path(getDataDirectory(), fn)
+    if ext is not None:
+        fp = fp.with_suffix(ext)
+    try:
+        fp = (
+            fp.resolve()
+        )  # older pathlib raise an exception if a path does not exist
+    except Exception:  # pylint: disable=broad-except
+        pass
+    return str(fp)
+
+
+        
+# creates QLinearGradient style from light to dark by default, or from dark to light if reverse is True
+@functools.lru_cache
+def createGradient(rgb, tint_factor=0.1, shade_factor=0.1, reverse=False):
+    light_grad,dark_grad = createRGBGradient(rgb,tint_factor,shade_factor)
+    if reverse:
+        # dark to light
+        return f"QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {dark_grad}, stop: 1 {light_grad})"
+    # light to dark (default)
+    return f"QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1, stop: 0 {light_grad}, stop: 1 {dark_grad})"
+
+def createRGBGradient(rgb, tint_factor=0.3, shade_factor=0.3):
+    try:
+        if isinstance(rgb, QColor):
+            r,g,b,_ = rgb.getRgbF()
+            rgb_tuple = (r,g,b)
+        elif rgb[0:1] == "#":   # hex input like "#ffaa00"
+            rgb_tuple = tuple(int(rgb[i:i+2], 16)/255 for i in (1, 3 ,5))
+        else:                 # color name
+            rgb_tuple = colors.hex2color(colors.cnames[rgb])
+        #ref: https://stackoverflow.com/questions/6615002/given-an-rgb-value-how-do-i-create-a-tint-or-shade
+        r,g,b = tuple(int(255 * (x * (1 - shade_factor))) for x in rgb_tuple)
+        darker_rgb = f"#{r:02x}{g:02x}{b:02x}"
+        r,g,b = tuple(int(255 * (x + (1 - x) * tint_factor)) for x in rgb_tuple)
+        lighter_rgb = f"#{r:02x}{g:02x}{b:02x}"
+    except Exception as e: # pylint: disable=broad-except
+        _log.exception(e)
+        lighter_rgb = darker_rgb = "#000000"
+    return lighter_rgb,darker_rgb
+
+
+# Logging
+
+@functools.lru_cache
+def getLoggers():
+    return [logging.getLogger(name) for name in logging.root.manager.loggerDict if ("." not in name)]  # @UndefinedVariable pylint: disable=no-member
+
+def debugLogLevelActive() -> bool:
+    try:
+        return logging.getLogger("artisanlib").isEnabledFor(logging.DEBUG)
+    except Exception: # pylint: disable=broad-except
+        return False
+    
+def setDebugLogLevel(state: bool) -> None:
+    if state:
+        # debug logging on
+        setFileLogLevels(logging.DEBUG)
+        _log.info("debug logging ON")
+    else:
+        # debug logging off
+        setFileLogLevels(logging.INFO)
+        _log.info("debug logging OFF")
+
+def setFileLogLevel(logger, level) -> None:
+    logger.setLevel(level)
+    for handler in logger.handlers:
+        if handler.get_name() == "file":
+            handler.setLevel(level)
+
+def setFileLogLevels(level) -> None:
+    loggers = getLoggers()
+    for logger in loggers:
+        setFileLogLevel(logger, level)
+
+# returns True if new log level of loggers is DEBUG, False otherwise
+def debugLogLevelToggle() -> bool:
+    _log.info("debugLogLevelToggle()")
+    # first get all module loggers
+    newDebugLevel = not debugLogLevelActive()
+    setDebugLogLevel(newDebugLevel)
+    return newDebugLevel

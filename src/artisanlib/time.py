@@ -1,5 +1,5 @@
-#!/usr/bin/env python
-
+# -*- coding: utf-8 -*-
+#
 # results in a three digits resolution (eg. 1.234)
 #class ArtisanTime():
 #    def __init__(self):
@@ -17,7 +17,7 @@
 import time
 
 # higher resultion time signal (at least on Mac OS X)
-class ArtisanTime(object):
+class ArtisanTime():
 
     __slots__ = ['clock','base']
     
@@ -36,5 +36,8 @@ class ArtisanTime(object):
         
     def elapsed(self):
         return (time.perf_counter() - self.clock)*self.base
+        
+    def elapsedMilli(self):
+        return (time.perf_counter() - self.clock)
 
     

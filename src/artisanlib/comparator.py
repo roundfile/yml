@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
-
+# -*- coding: utf-8 -*-
+#
 # ABOUT
 # Artisan Roast Comparator
 
@@ -7,7 +7,7 @@
 # This program or module is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
 # by the Free Software Foundation, either version 2 of the License, or
-# version 3 of the License, or (at your option) any later versison. It is
+# version 3 of the License, or (at your option) any later version. It is
 # provided for educational purposes and is distributed in the hope that
 # it will be useful, but WITHOUT ANY WARRANTY; without even the implied
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
@@ -19,15 +19,16 @@
 import sys
 import platform
 import numpy
-import matplotlib.ticker as ticker
-import matplotlib.transforms as transforms
+from matplotlib import ticker, transforms
 import matplotlib.patheffects as PathEffects
 from matplotlib import rcParams
 if sys.platform.startswith("darwin"):
     # import module to detect if OS X dark mode is active or not
-    import darkdetect # @UnresolvedImport
+    import darkdetect # @UnresolvedImport # pylint: disable=import-error
+import logging
+from typing import Final
 
-from artisanlib.util import deltaLabelUTF8, d, stringfromseconds, appFrozen, fromFtoC, fromCtoF, fill_gaps
+from artisanlib.util import deltaLabelUTF8, decodeLocal, stringfromseconds, appFrozen, fromFtoC, fromCtoF, fill_gaps
 from artisanlib.suppress_errors import suppress_stdout_stderr
 from artisanlib.dialogs import ArtisanDialog
 from artisanlib.widgets import MyQComboBox
@@ -36,14 +37,32 @@ from artisanlib.qcheckcombobox import CheckComboBox
 with suppress_stdout_stderr():
     from matplotlib import cm
 
-from PyQt5.QtCore import (Qt, pyqtSignal, pyqtSlot, QSettings, QFile, QTextStream, QUrl, 
-    QCoreApplication, QFileInfo, QDate, QTime, QDateTime)
-from PyQt5.QtGui import (QColor, QDesktopServices)
-from PyQt5.QtWidgets import (QApplication, QWidget, QLabel, QTableWidget, QPushButton, 
-    QComboBox, QSizePolicy, QHBoxLayout, QVBoxLayout, QHeaderView, QTableWidgetItem, QCheckBox)
+try:
+    #pylint: disable = E, W, R, C
+    from PyQt6.QtCore import (Qt, pyqtSignal, pyqtSlot, QSettings, QFile, QTextStream, QUrl,  # @UnusedImport @Reimport  @UnresolvedImport
+        QCoreApplication, QFileInfo, QDate, QTime, QDateTime) # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt6.QtGui import (QColor, QDesktopServices) # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt6.QtWidgets import (QApplication, QWidget, QLabel, QTableWidget, QPushButton,  # @UnusedImport @Reimport  @UnresolvedImport
+        QComboBox, QSizePolicy, QHBoxLayout, QVBoxLayout, QHeaderView, QTableWidgetItem, QCheckBox) # @UnusedImport @Reimport  @UnresolvedImport
+except Exception:
+    #pylint: disable = E, W, R, C
+    from PyQt5.QtCore import (Qt, pyqtSignal, pyqtSlot, QSettings, QFile, QTextStream, QUrl,  # @UnusedImport @Reimport  @UnresolvedImport
+        QCoreApplication, QFileInfo, QDate, QTime, QDateTime) # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt5.QtGui import (QColor, QDesktopServices) # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt5.QtWidgets import (QApplication, QWidget, QLabel, QTableWidget, QPushButton,  # @UnusedImport @Reimport  @UnresolvedImport
+        QComboBox, QSizePolicy, QHBoxLayout, QVBoxLayout, QHeaderView, QTableWidgetItem, QCheckBox) # @UnusedImport @Reimport  @UnresolvedImport
 
+
+_log: Final = logging.getLogger(__name__)
 
 class RoastProfile():
+    __slots__ = ['aw', 'visible', 'aligned', 'active', 'color', 'gray', 'label', 'title', 'curve_visibilities', 'event_visibility', 'zorder',
+        'zorder_offsets', 'alpha', 'alpha_dim_factor', 'timeoffset', 'max_DeltaET', 'max_DeltaBT', 'startTimeIdx', 'endTimeIdx', 'min_time', 'max_time',
+        'UUID', 'filepath', 'timeindex', 'timex', 'temp1', 'temp2', 'E1', 'E2', 'E3', 'E4', 'stemp1', 'stemp2', 'delta1', 'delta2', 'events1',
+        'events2', 'events_timex', 'l_temp1', 'l_temp2', 'l_delta1', 'l_delta2', 'l_mainEvents1', 'l_mainEvents2', 'l_events1', 'l_events2',
+        'l_events3', 'l_events4', 'ambientTemp', 'metadata', 'specialevents', 'specialeventstype', 'specialeventsvalue', 'TP']
+    
+    # NOTE: filepath/filename can also be a URL string
     def __init__(self, aw, profile, filepath, color):
         self.aw = aw
         # state:
@@ -110,7 +129,7 @@ class RoastProfile():
         #
         # fill profile data:
         if "roastUUID" in profile:
-            self.UUID = d(profile["roastUUID"])
+            self.UUID = profile["roastUUID"]
         if "timex" in profile:
             self.timex = profile["timex"]
         if "temp1" in profile:
@@ -150,15 +169,15 @@ class RoastProfile():
                         self.timeindex[i] = self.aw.qmc.timearray2index(self.timex,times[i])
                     else:
                         self.timeindex[i] = 0
-            except:
-                pass
+            except Exception as e: # pylint: disable=broad-except
+                _log.exception(e)
             ###########      END OLD PROFILE FORMAT
             
         # temperature conversion
         if "mode" in profile:
             m = str(profile["mode"])
         else:
-            m = self.qmc.mode
+            m = self.aw.qmc.mode
         if "ambientTemp" in profile:
             self.ambientTemp = profile["ambientTemp"]
         else:
@@ -175,11 +194,11 @@ class RoastProfile():
             self.temp2 = [fromCtoF(t) for t in self.temp2]
             self.ambientTemp = fromCtoF(self.ambientTemp)
         if "title" in profile:
-            self.title = d(profile["title"])
+            self.title = decodeLocal(profile["title"])
         if "roastbatchnr" in profile and profile["roastbatchnr"] != 0:
             try:
-                self.label = d(profile["roastbatchprefix"]) + str(int(profile["roastbatchnr"]))[:10]
-            except:
+                self.label = decodeLocal(profile["roastbatchprefix"]) + str(int(profile["roastbatchnr"]))[:10]
+            except Exception: # pylint: disable=broad-except
                 pass
         self.specialevents = None
         self.specialeventstype = None
@@ -194,45 +213,45 @@ class RoastProfile():
         self.metadata = {}
         if "roastdate" in profile:
             try:
-                date = QDate.fromString(d(profile["roastdate"]))
+                date = QDate.fromString(decodeLocal(profile["roastdate"]))
                 if not date.isValid():
                     date = QDate.currentDate()
                 if "roasttime" in profile:
                     try:
-                        time = QTime.fromString(d(profile["roasttime"]))
+                        time = QTime.fromString(decodeLocal(profile["roasttime"]))
                         self.metadata["roastdate"] = QDateTime(date,time)
-                    except Exception:
+                    except Exception: # pylint: disable=broad-except
                         self.metadata["roastdate"] = QDateTime(date)
                 else:
                     self.metadata["roastdate"] = QDateTime(date)
-            except Exception:
+            except Exception: # pylint: disable=broad-except
                 pass
         # the new dates have the locale independent isodate format:
         if "roastisodate" in profile:
             try:
-                date = QDate.fromString(d(profile["roastisodate"]),Qt.ISODate)
+                date = QDate.fromString(decodeLocal(profile["roastisodate"]),Qt.DateFormat.ISODate)
                 if "roasttime" in profile:
                     try:
-                        time = QTime.fromString(d(profile["roasttime"]))
+                        time = QTime.fromString(decodeLocal(profile["roasttime"]))
                         self.metadata["roastdate"] = QDateTime(date,time)
-                    except Exception:
+                    except Exception: # pylint: disable=broad-except
                         self.metadata["roastdate"] = QDateTime(date)
                 else:
                     self.metadata["roastdate"] = QDateTime(date)
-            except Exception:
+            except Exception: # pylint: disable=broad-except
                 pass
         if "roastepoch" in profile:
             try:
-                self.metadata["roastdate"] = QDateTime.fromTime_t(profile["roastepoch"])
-            except Exception:
+                self.metadata["roastdate"] = QDateTime.fromSecsSinceEpoch(profile["roastepoch"])
+            except Exception: # pylint: disable=broad-except
                 pass
         if "beans" in profile:
-            self.metadata["beans"] = d(profile["beans"])
+            self.metadata["beans"] = decodeLocal(profile["beans"])
         if "weight" in profile and profile["weight"][0] != 0.0:
             w = profile["weight"][0]
-            if d(profile["weight"][2]) != "g":
+            if decodeLocal(profile["weight"][2]) != "g":
                 w = self.aw.float2float(w,1)
-            self.metadata["weight"] = "%g%s"%(w,d(profile["weight"][2]))
+            self.metadata["weight"] = "%g%s"%(w,decodeLocal(profile["weight"][2]))
         if "moisture_greens" in profile and profile["moisture_greens"] != 0.0:
             self.metadata["moisture_greens"] = profile["moisture_greens"]
         if "ambientTemp" in profile:
@@ -250,9 +269,9 @@ class RoastProfile():
                 profile["computed"]["AUC"] != 0:
             self.metadata["AUC"] = "%sC*min" % profile["computed"]["AUC"]
         if "roastingnotes" in profile:
-            self.metadata["roastingnotes"] = d(profile["roastingnotes"])
+            self.metadata["roastingnotes"] = decodeLocal(profile["roastingnotes"])
         if "cuppingnotes" in profile:
-            self.metadata["cuppingnotes"] = d(profile["cuppingnotes"])       
+            self.metadata["cuppingnotes"] = decodeLocal(profile["cuppingnotes"])       
         # TP time in time since DROP
         if "computed" in profile and profile["computed"] is not None and "TP_time" in profile["computed"]:
             self.TP = profile["computed"]["TP_time"]
@@ -292,13 +311,13 @@ class RoastProfile():
         if len(self.delta1) > 0:
             try:
                 self.max_DeltaET = max(filter(None,self.delta1))
-            except:
+            except Exception: # pylint: disable=broad-except
                 pass
         self.max_DeltaBT = 1
         if len(self.delta2) > 0:
             try:
                 self.max_DeltaBT = max(filter(None,self.delta2))
-            except:
+            except Exception: # pylint: disable=broad-except
                 pass
         self.events1 = []
         self.events2 = []
@@ -347,8 +366,8 @@ class RoastProfile():
                             self.E3.append((etime,evalue))
                         elif etype == 3:
                             self.E4.append((etime,evalue))
-                except:
-                    pass
+                except Exception as e: # pylint: disable=broad-except
+                    _log.exception(e)
             # add a last event at DROP/END to extend the lines to the end of roast
             end = (self.timex[-1] if self.timeindex[6] == 0 else self.timex[self.timeindex[6]])
             if self.E1: 
@@ -363,13 +382,13 @@ class RoastProfile():
     def startTime(self):
         try:
             return self.timex[self.startTimeIdx]
-        except:
+        except Exception: # pylint: disable=broad-except
             return 0
     
     def endTime(self):
         try:
             return self.timex[self.endTimeIdx]
-        except:
+        except Exception: # pylint: disable=broad-except
             return self.timex[-1]
     
     def setVisible(self,b):
@@ -495,20 +514,20 @@ class RoastProfile():
         # an artist transformation is supplied with data in data coordinates and should return data in display coordinates
         # ax.transData : transforms from data to display coordinates
         # transforms.Affine2D().translate() : applies its transformation
-        return transforms.Affine2D().translate(-offset,0) + self.aw.qmc.ax.transData
+        return transforms.Affine2D().translate(-offset,0) + self.aw.qmc.ax.transData # pylint: disable=invalid-unary-operand-type
     
     # returns the time transformation for the delta curves
     def getDeltaTrans(self,offset=None):
         if offset is None:
             offset = self.timeoffset
-        return transforms.Affine2D().translate(-offset,0) + self.aw.qmc.delta_ax.transData
+        return transforms.Affine2D().translate(-offset,0) + self.aw.qmc.delta_ax.transData # pylint: disable=invalid-unary-operand-type
     
     def undraw(self):
         for l in [self.l_temp1,self.l_temp2,self.l_delta1,self.l_delta2,self.l_mainEvents1,self.l_mainEvents2,
                 self.l_events1,self.l_events2,self.l_events3,self.l_events4]:
             try:
                 l.remove()
-            except:
+            except Exception: # pylint: disable=broad-except
                 pass
         self.l_temp1 = None
         self.l_temp2 = None
@@ -540,7 +559,7 @@ class RoastProfile():
                 linewidth=self.aw.qmc.BTlinewidth,linestyle=self.aw.qmc.BTlinestyle,drawstyle=self.aw.qmc.BTdrawstyle,
                 alpha=(self.alpha[0] if self.active else self.alpha[0]*self.alpha_dim_factor),
                 color=(self.color if self.active else self.gray),
-                label="{} {}".format(self.label,self.aw.arabicReshape(QApplication.translate("Label", "BT", None))))
+                label="{} {}".format(self.label,self.aw.arabicReshape(QApplication.translate("Label", "BT"))))
 
     def drawET(self):
         if self.timex is not None and self.stemp1 is not None:
@@ -549,7 +568,7 @@ class RoastProfile():
                 linewidth=self.aw.qmc.ETlinewidth,linestyle=self.aw.qmc.ETlinestyle,drawstyle=self.aw.qmc.ETdrawstyle,
                 alpha=(self.alpha[1] if self.active else self.alpha[1]*self.alpha_dim_factor),
                 color=(self.color if self.active else self.gray),
-                label="{} {}".format(self.label,self.aw.arabicReshape(QApplication.translate("Label", "ET", None))))
+                label="{} {}".format(self.label,self.aw.arabicReshape(QApplication.translate("Label", "ET"))))
 
     def drawDeltaBT(self):
         if self.timex is not None and self.delta2 is not None:
@@ -561,7 +580,7 @@ class RoastProfile():
                 alpha=(self.alpha[2] if self.active else self.alpha[2]*self.alpha_dim_factor),
 #                clip_path=self.l_delta2_clipping,clip_on=True,
                 color=(self.color if self.active else self.gray),
-                label="{} {}".format(self.label,self.aw.arabicReshape(deltaLabelUTF8 + QApplication.translate("Label", "BT", None))))
+                label="{} {}".format(self.label,self.aw.arabicReshape(deltaLabelUTF8 + QApplication.translate("Label", "BT"))))
 
     def drawDeltaET(self):
         if self.timex is not None and self.delta1 is not None:
@@ -573,7 +592,7 @@ class RoastProfile():
                 alpha=(self.alpha[3] if self.active else self.alpha[3]*self.alpha_dim_factor),
 #                clip_path=self.l_delta1_clipping,clip_on=True,
                 color=(self.color if self.active else self.gray),
-                label="{} {}".format(self.label,self.aw.arabicReshape(deltaLabelUTF8 + QApplication.translate("Label", "ET", None))))
+                label="{} {}".format(self.label,self.aw.arabicReshape(deltaLabelUTF8 + QApplication.translate("Label", "ET"))))
 
     def drawMainEvents1(self):
         if self.events_timex is not None and self.events1 is not None:
@@ -587,7 +606,7 @@ class RoastProfile():
 #                picker=5, # deprecated in MPL 3.3.x
                 picker=True,
                 pickradius=5,
-                label="{} {}".format(self.label,self.aw.arabicReshape(QApplication.translate("Label", "Events", None))))
+                label="{} {}".format(self.label,self.aw.arabicReshape(QApplication.translate("Label", "Events"))))
             if self.aw.qmc.graphstyle == 1:
                 self.l_mainEvents1.set_sketch_params(1,700,12)
     
@@ -603,7 +622,7 @@ class RoastProfile():
 #                picker=5, # deprecated in MPL 3.3.x
                 picker=True,
                 pickradius=5,
-                label="{} {}".format(self.label,self.aw.arabicReshape(QApplication.translate("Label", "Events", None))))
+                label="{} {}".format(self.label,self.aw.arabicReshape(QApplication.translate("Label", "Events"))))
             if self.aw.qmc.graphstyle == 1:
                 self.l_mainEvents2.set_sketch_params(4,800,20)
     
@@ -639,12 +658,9 @@ class RoastProfile():
 
 class CompareTableWidget(QTableWidget):
     deleteKeyPressed = pyqtSignal()
-    
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
 
     def keyPressEvent(self, event):
-        if event.key() in [Qt.Key_Delete,Qt.Key_Backspace]:
+        if event.key() in [Qt.Key.Key_Delete,Qt.Key.Key_Backspace]:
             self.deleteKeyPressed.emit()
         else:
             super().keyPressEvent(event)
@@ -657,30 +673,33 @@ class CompareTableWidget(QTableWidget):
                 selectedRows.append(item.row())
         if selectedRows == []:
             return self.getLastRow()
-        else:
-            return selectedRows
+        return selectedRows
     
     def getLastRow(self):
         rows = self.rowCount()
         if rows > 0:
             return [rows-1]
-        else:
-            return []
+        return []
 
 class roastCompareDlg(ArtisanDialog):
+
+    __slots__ = [ 'foreground', 'background', 'maxentries', 'basecolors', 'profiles', 'label_number', 'l_align', 'legend', 'legendloc_pos', 'addButton',
+        'deleteButton', 'alignnames', 'alignComboBox', 'etypes', 'eventsComboBox', 'cb', 'model', 'button_7_org_state_hidden', 'button_1_org_state_hidden',
+        'button_2_org_state_hidden', 'button_10_org_state_hidden', 'pick_handler_id' ]
+    
     def __init__(self, parent = None, aw = None, foreground = None, background = None):
-        super(roastCompareDlg,self).__init__(parent, aw)
+        super().__init__(parent, aw)
         
         if platform.system() == 'Darwin':
-            self.setAttribute(Qt.WA_MacAlwaysShowToolWindow)
+            self.setAttribute(Qt.WidgetAttribute.WA_MacAlwaysShowToolWindow)
         
         self.setAcceptDrops(True)
         
         self.foreground = foreground
         self.background = background
-        self.setWindowTitle(QApplication.translate("Form Caption","Comparator",None))
+        self.setWindowTitle(QApplication.translate("Form Caption","Comparator"))
         self.maxentries = 10 # maxium number of profiles to be compared
-        self.basecolors = list(cm.tab10(numpy.linspace(0,1,10)))  # @UndefinedVariable
+        self.basecolors = list(cm.tab10(numpy.linspace(0,1,10)))  # @UndefinedVariable # pylint: disable=maybe-no-member
         self.profiles = []
         self.label_number = 0
         # align line
@@ -692,26 +711,26 @@ class roastCompareDlg(ArtisanDialog):
         self.profileTable = CompareTableWidget()
         self.createProfileTable()
         # buttons
-        self.addButton = QPushButton(QApplication.translate("Button","Add",None))
+        self.addButton = QPushButton(QApplication.translate("Button","Add"))
         self.addButton.clicked.connect(self.add)
-        self.addButton.setFocusPolicy(Qt.NoFocus)
-        self.deleteButton = QPushButton(QApplication.translate("Button","Delete",None))
-        self.deleteButton.setFocusPolicy(Qt.NoFocus)
+        self.addButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.deleteButton = QPushButton(QApplication.translate("Button","Delete"))
+        self.deleteButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.deleteButton.clicked.connect(self.delete)
         # configurations
-        alignLabel = QLabel(QApplication.translate("Label","Align",None))
+        alignLabel = QLabel(QApplication.translate("Label","Align"))
         self.alignnames = [
-            QApplication.translate("Label","CHARGE", None),
-            QApplication.translate("Label","TP", None),
-            QApplication.translate("Label","DRY", None),
-            QApplication.translate("Label","FCs", None),
-            QApplication.translate("Label","FCe", None),
-            QApplication.translate("Label","SCs", None),
-            QApplication.translate("Label","SCe", None),
-            QApplication.translate("Label","DROP", None),
+            QApplication.translate("Label","CHARGE"),
+            QApplication.translate("Label","TP"),
+            QApplication.translate("Label","DRY"),
+            QApplication.translate("Label","FCs"),
+            QApplication.translate("Label","FCe"),
+            QApplication.translate("Label","SCs"),
+            QApplication.translate("Label","SCe"),
+            QApplication.translate("Label","DROP"),
             ]
         self.alignComboBox = MyQComboBox()
-        self.alignComboBox.setFocusPolicy(Qt.NoFocus)
+        self.alignComboBox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.alignComboBox.addItems(self.alignnames)
         self.alignComboBox.setCurrentIndex(self.aw.qmc.compareAlignEvent)
         self.alignComboBox.currentIndexChanged.connect(self.changeAlignEventidx)
@@ -719,32 +738,32 @@ class roastCompareDlg(ArtisanDialog):
         self.etypes = self.aw.qmc.etypes[:-1]
         self.etypes.insert(0,"")
         self.eventsComboBox = MyQComboBox()
-        self.eventsComboBox.setFocusPolicy(Qt.NoFocus)
-        self.eventsComboBox.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+        self.eventsComboBox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.eventsComboBox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         self.eventsComboBox.addItems(self.etypes)
-        self.eventsComboBox.setSizePolicy(QSizePolicy.Maximum,QSizePolicy.Maximum)
+        self.eventsComboBox.setSizePolicy(QSizePolicy.Policy.Maximum,QSizePolicy.Policy.Maximum)
         self.eventsComboBox.setCurrentIndex(self.aw.qmc.compareEvents)
         self.eventsComboBox.currentIndexChanged.connect(self.changeEventsidx)
         #
         self.cb = CheckComboBox(placeholderText="")
-        self.cb.setFocusPolicy(Qt.NoFocus)
+        self.cb.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.model = self.cb.model()
-        self.cb.addItem(QApplication.translate("Label","ET",None))
+        self.cb.addItem(QApplication.translate("Label","ET"))
         self.model.item(0).setCheckable(True)
-        self.cb.setItemCheckState(0,(Qt.Checked if self.aw.qmc.compareET else Qt.Unchecked))
-        self.cb.addItem(QApplication.translate("Label","BT",None))
+        self.cb.setItemCheckState(0,(Qt.CheckState.Checked if self.aw.qmc.compareET else Qt.CheckState.Unchecked))
+        self.cb.addItem(QApplication.translate("Label","BT"))
         self.model.item(1).setCheckable(True)
-        self.cb.setItemCheckState(1,(Qt.Checked if self.aw.qmc.compareBT else Qt.Unchecked))
-        self.cb.addItem(deltaLabelUTF8 + QApplication.translate("Label","ET",None))
+        self.cb.setItemCheckState(1,(Qt.CheckState.Checked if self.aw.qmc.compareBT else Qt.CheckState.Unchecked))
+        self.cb.addItem(deltaLabelUTF8 + QApplication.translate("Label","ET"))
         self.model.item(2).setCheckable(True)
-        self.cb.setItemCheckState(2,(Qt.Checked if self.aw.qmc.compareDeltaET else Qt.Unchecked))
-        self.cb.addItem(deltaLabelUTF8 + QApplication.translate("Label","BT",None))
+        self.cb.setItemCheckState(2,(Qt.CheckState.Checked if self.aw.qmc.compareDeltaET else Qt.CheckState.Unchecked))
+        self.cb.addItem(deltaLabelUTF8 + QApplication.translate("Label","BT"))
         self.model.item(3).setCheckable(True)
-        self.cb.setItemCheckState(3,(Qt.Checked if self.aw.qmc.compareDeltaBT else Qt.Unchecked))
+        self.cb.setItemCheckState(3,(Qt.CheckState.Checked if self.aw.qmc.compareDeltaBT else Qt.CheckState.Unchecked))
         self.cb.insertSeparator(4)
-        self.cb.addItem(QApplication.translate("CheckBox","Events",None))
+        self.cb.addItem(QApplication.translate("CheckBox","Events"))
         self.model.item(5).setCheckable(True)
-        self.cb.setItemCheckState(5,(Qt.Checked if self.aw.qmc.compareMainEvents else Qt.Unchecked))
+        self.cb.setItemCheckState(5,(Qt.CheckState.Checked if self.aw.qmc.compareMainEvents else Qt.CheckState.Unchecked))
         self.cb.flagChanged.connect(self.flagChanged)
         
         settings1Layout = QHBoxLayout()
@@ -778,18 +797,17 @@ class roastCompareDlg(ArtisanDialog):
         self.setLayout(mainLayout)
         
         windowFlags = self.windowFlags()
-        windowFlags |= Qt.Tool
+        windowFlags |= Qt.WindowType.Tool
         if platform.system() == 'Windows':
-            windowFlags |= Qt.WindowMinimizeButtonHint  # Add minimize  button
+            windowFlags |= Qt.WindowType.WindowMinimizeButtonHint  # Add minimize  button
         self.setWindowFlags(windowFlags)
         
         self.redraw()
         
-        self.button_7_org_state_hidden = self.aw.button_7.isHidden() # RESET
-        self.button_1_org_state_hidden = self.aw.button_1.isHidden() # ON/OFF
-        self.button_2_org_state_hidden = self.aw.button_2.isHidden() # START/STOP
-        self.button_10_org_state_hidden = self.aw.button_10.isHidden() # CONTROL
-        self.button_18_org_state_hidden = self.aw.button_18.isHidden() # HUD
+        self.buttonRESET_org_state_hidden = self.aw.buttonRESET.isHidden() # RESET
+        self.buttonONOFF_org_state_hidden = self.aw.buttonONOFF.isHidden() # ON/OFF
+        self.buttonSTARTSTOP_org_state_hidden = self.aw.buttonSTARTSTOP.isHidden() # START/STOP
+        self.buttonCONTROL_org_state_hidden = self.aw.buttonCONTROL.isHidden() # CONTROL
         
         self.disableButtons()
         self.aw.disableEditMenus(compare=True)
@@ -800,7 +818,8 @@ class roastCompareDlg(ArtisanDialog):
         if settings.contains("CompareGeometry"):
             self.restoreGeometry(settings.value("CompareGeometry"))
     
-    def dragEnterEvent(self, event):
+    @staticmethod
+    def dragEnterEvent(event):
         if event.mimeData().hasUrls():
             event.accept()
         else:
@@ -812,7 +831,7 @@ class roastCompareDlg(ArtisanDialog):
             res = []
             for url in urls:
                 if url.scheme() == "file":
-                    filename = url.toString(QUrl.PreferLocalFile)
+                    filename = url.toString(QUrl.UrlFormattingOption.PreferLocalFile)
                     qfile = QFileInfo(filename)
                     file_suffix = qfile.suffix()
                     if file_suffix == "alog":
@@ -821,23 +840,20 @@ class roastCompareDlg(ArtisanDialog):
                 self.addProfiles(res)
     
     def enableButtons(self):
-        if not self.button_7_org_state_hidden:
-            self.aw.button_7.show() # RESET
-        if not self.button_1_org_state_hidden:
-            self.aw.button_1.show() # ON/OFF
-        if not self.button_2_org_state_hidden:
-            self.aw.button_2.show() # START/STOP
-        if not self.button_10_org_state_hidden:
-            self.aw.button_10.show() # CONTROL
-        if not self.button_18_org_state_hidden:
-            self.aw.button_18.show() # HUD
+        if not self.buttonRESET_org_state_hidden:
+            self.aw.buttonRESET.show() # RESET
+        if not self.buttonONOFF_org_state_hidden:
+            self.aw.buttonONOFF.show() # ON/OFF
+        if not self.buttonSTARTSTOP_org_state_hidden:
+            self.aw.buttonSTARTSTOP.show() # START/STOP
+        if not self.buttonCONTROL_org_state_hidden:
+            self.aw.buttonCONTROL.show() # CONTROL
         
     def disableButtons(self):
-        self.aw.button_7.hide() # RESET
-        self.aw.button_1.hide() # ON/OFF
-        self.aw.button_2.hide() # START/STOP
-        self.aw.button_10.hide() # CONTROL
-        self.aw.button_18.hide() # HUD
+        self.aw.buttonRESET.hide() # RESET
+        self.aw.buttonONOFF.hide() # ON/OFF
+        self.aw.buttonSTARTSTOP.hide() # START/STOP
+        self.aw.buttonCONTROL.hide() # CONTROL
     
     ### DRAWING
     
@@ -897,7 +913,7 @@ class roastCompareDlg(ArtisanDialog):
         fontprop_large.set_size("large")
         
         self.aw.qmc.ax.set_ylabel(self.aw.qmc.mode,color=self.aw.qmc.palette["ylabel"],rotation=0,labelpad=10,fontproperties=fontprop_large)
-        self.aw.qmc.ax.set_xlabel(self.aw.arabicReshape(QApplication.translate("Label", "min",None)),color = self.aw.qmc.palette["xlabel"],fontproperties=fontprop_medium)
+        self.aw.qmc.ax.set_xlabel(self.aw.arabicReshape(QApplication.translate("Label", "min")),color = self.aw.qmc.palette["xlabel"],fontproperties=fontprop_medium)
 
         tick_dir = 'inout'
         self.aw.qmc.ax.tick_params(\
@@ -939,16 +955,20 @@ class roastCompareDlg(ArtisanDialog):
             labelbottom=False)   # labels along the bottom edge are on
 
         self.aw.qmc.ax.patch.set_visible(True)
-        self.aw.qmc.delta_ax.set_ylabel(self.aw.qmc.mode + self.aw.arabicReshape(QApplication.translate("Label", "/min", None)),color = self.aw.qmc.palette["ylabel"],fontproperties=fontprop_large)
+        self.aw.qmc.delta_ax.set_ylabel(self.aw.qmc.mode + self.aw.arabicReshape(QApplication.translate("Label", "/min")),color = self.aw.qmc.palette["ylabel"],fontproperties=fontprop_large)
         self.aw.qmc.delta_ax.set_ylim(self.aw.qmc.zlimit_min,self.aw.qmc.zlimit)
-        self.aw.qmc.delta_ax.yaxis.set_major_locator(ticker.MultipleLocator(self.aw.qmc.zgrid))
-        self.aw.qmc.delta_ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
-        for i in self.aw.qmc.delta_ax.get_yticklines():
-            i.set_markersize(10)
-        for i in self.aw.qmc.delta_ax.yaxis.get_minorticklines():
-            i.set_markersize(5)
-        for label in self.aw.qmc.delta_ax.get_yticklabels() :
-            label.set_fontproperties(prop)
+        if self.aw.qmc.zgrid > 0:
+            self.aw.qmc.delta_ax.yaxis.set_major_locator(ticker.MultipleLocator(self.aw.qmc.zgrid))
+            self.aw.qmc.delta_ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
+            for i in self.aw.qmc.delta_ax.get_yticklines():
+                i.set_markersize(10)
+            for i in self.aw.qmc.delta_ax.yaxis.get_minorticklines():
+                i.set_markersize(5)
+            for label in self.aw.qmc.delta_ax.get_yticklabels() :
+                label.set_fontproperties(prop)
+        else:
+            self.aw.qmc.delta_ax.yaxis.set_major_locator(ticker.NullLocator())
+            self.aw.qmc.delta_ax.yaxis.set_minor_locator(ticker.NullLocator())
 
         # translate y-coordinate from delta into temp range to ensure the cursor position display (x,y) coordinate in the temp axis
         self.aw.qmc.delta_ax.fmt_ydata = self.aw.qmc.fmt_data
@@ -959,13 +979,22 @@ class roastCompareDlg(ArtisanDialog):
         self.aw.qmc.ax.spines['left'].set_color("0.40")
         self.aw.qmc.ax.spines['right'].set_color("0.40")
 
-        self.aw.qmc.ax.yaxis.set_major_locator(ticker.MultipleLocator(self.aw.qmc.ygrid))
-        self.aw.qmc.ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
-        for i in self.aw.qmc.ax.get_yticklines():
-            i.set_markersize(10)
-        for i in self.aw.qmc.ax.yaxis.get_minorticklines():
-            i.set_markersize(5)
-
+        if self.aw.qmc.ygrid > 0:
+            self.aw.qmc.ax.yaxis.set_major_locator(ticker.MultipleLocator(self.aw.qmc.ygrid))
+            self.aw.qmc.ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
+            for i in self.aw.qmc.ax.get_yticklines():
+                i.set_markersize(10)
+            for i in self.aw.qmc.ax.yaxis.get_minorticklines():
+                i.set_markersize(5)
+        else:
+            self.aw.qmc.ax.yaxis.set_major_locator(ticker.NullLocator())
+            self.aw.qmc.ax.yaxis.set_minor_locator(ticker.NullLocator())
+        
+        if self.aw.qmc.xgrid <= 0:
+            self.aw.qmc.ax.xaxis.set_major_locator(ticker.NullLocator())
+            self.aw.qmc.ax.xaxis.set_minor_locator(ticker.NullLocator())
+            
+            
         #update X ticks, labels, and colors
         self.aw.qmc.xaxistosm()
     
@@ -986,7 +1015,7 @@ class roastCompareDlg(ArtisanDialog):
                 else:
                     loc = self.legendloc_pos
             else:
-                loc = self.legend._loc
+                loc = self.legend._loc # pylint: disable=protected-access
             handles = []
             labels = []
             for p in self.profiles:
@@ -1008,11 +1037,11 @@ class roastCompareDlg(ArtisanDialog):
                     fancybox=True,prop=prop,shadow=False,frameon=True)
                 try:
                     self.legend.set_in_layout(False) # remove legend from tight_layout calculation
-                except: # set_in_layout not available in mpl<3.x
+                except Exception: # set_in_layout not available in mpl<3.x # pylint: disable=broad-except
                     pass
                 try:
                     self.legend.set_draggable(state=True,use_blit=True)  #,update='bbox')
-                except: # not available in mpl<3.x
+                except Exception: # not available in mpl<3.x # pylint: disable=broad-except
                     self.legend.draggable(state=True) # for mpl 2.x
                 frame = self.legend.get_frame()
                 frame.set_facecolor(self.aw.qmc.palette["legendbg"])
@@ -1052,7 +1081,7 @@ class roastCompareDlg(ArtisanDialog):
         c = QColor.fromRgbF(*profile.color)
         color = QTableWidgetItem()
         color.setBackground(c)
-        color.setFlags(Qt.ItemIsEnabled) # do not change background color on row selection of the color items
+        color.setFlags(Qt.ItemFlag.ItemIsEnabled) # do not change background color on row selection of the color items
         self.profileTable.setItem(i,0,color)
         flag = QCheckBox()
         flag.setChecked(profile.visible)
@@ -1060,7 +1089,7 @@ class roastCompareDlg(ArtisanDialog):
         flagWidget = QWidget()
         flagLayout = QHBoxLayout(flagWidget)
         flagLayout.addWidget(flag)
-        flagLayout.setAlignment(Qt.AlignCenter|Qt.AlignVCenter)
+        flagLayout.setAlignment(Qt.AlignmentFlag.AlignCenter|Qt.AlignmentFlag.AlignVCenter)
         flagLayout.setContentsMargins(0,0,0,0)
         self.profileTable.setCellWidget(i,1,flagWidget)
         title_item = QTableWidgetItem(profile.title)
@@ -1130,11 +1159,8 @@ class roastCompareDlg(ArtisanDialog):
                     if tooltip != "":
                         tooltip += "\n"
                     tooltip += profile.metadata["cuppingnotes"].strip()
-            except:
-#                import traceback
-#                import sys
-#                traceback.print_exc(file=sys.stdout)
-                pass
+            except Exception as e: # pylint: disable=broad-except
+                _log.exception(e)
         return tooltip.strip()
     
     def createProfileTable(self):
@@ -1143,21 +1169,21 @@ class roastCompareDlg(ArtisanDialog):
             self.profileTable.setTabKeyNavigation(True)
             self.profileTable.setColumnCount(3)
             self.profileTable.setAlternatingRowColors(True)
-#            self.profileTable.setEditTriggers(QTableWidget.NoEditTriggers) # we allow the editing/renaming of items
-            self.profileTable.setSelectionBehavior(QTableWidget.SelectRows)
-            self.profileTable.setSelectionMode(QTableWidget.MultiSelection)
+#            self.profileTable.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers) # we allow the editing/renaming of items
+            self.profileTable.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+            self.profileTable.setSelectionMode(QTableWidget.SelectionMode.MultiSelection)
             self.profileTable.setShowGrid(False)
-            self.profileTable.verticalHeader().setSectionResizeMode(2)
+            self.profileTable.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
 #            self.profileTable.horizontalHeader().setVisible(False)
             self.profileTable.setHorizontalHeaderLabels(["",
-                                                         QApplication.translate("Label","ON",None),
-                                                         QApplication.translate("Label","Title",None)])
+                                                         QApplication.translate("Label","ON"),
+                                                         QApplication.translate("Label","Title")])
             self.profileTable.horizontalHeader().sectionClicked.connect(self.columnHeaderClicked)
             self.profileTable.setCornerButtonEnabled(True) # click in the left header corner selects all entries in the table
             self.profileTable.setSortingEnabled(False)
             
             self.profileTable.verticalHeader().setSectionsMovable(True)
-            self.profileTable.verticalHeader().setDragDropMode(QTableWidget.InternalMove)
+            self.profileTable.verticalHeader().setDragDropMode(QTableWidget.DragDropMode.InternalMove)
             self.profileTable.verticalHeader().sectionMoved.connect(self.sectionMoved)
             self.profileTable.verticalHeader().sectionDoubleClicked.connect(self.tableSectionClicked)
             
@@ -1168,17 +1194,18 @@ class roastCompareDlg(ArtisanDialog):
             header.setStretchLastSection(True)
             header.setMinimumSectionSize(10)       # color column size
             self.profileTable.setColumnWidth(0,10) # color column size
-            header.setSectionResizeMode(0, QHeaderView.Fixed)
-            header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
-            header.setSectionResizeMode(2, QHeaderView.Stretch)
+            header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
+            header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
+            header.setSectionResizeMode(2, QHeaderView.ResizeMode.Stretch)
             
-            self.profileTable.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+            self.profileTable.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
             self.profileTable.horizontalScrollBar().setEnabled(False)
             self.profileTable.setAutoScroll(False) # disable scrolling to selected cell
 
-        except Exception as ex:
+        except Exception as ex: # pylint: disable=broad-except
+            _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " createProfileTable() {0}").format(str(ex)),exc_tb.tb_lineno)
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " createProfileTable() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
     
     ### SLOTS
     
@@ -1210,9 +1237,9 @@ class roastCompareDlg(ArtisanDialog):
                 self.profileTable.selectAll()
     
     @pyqtSlot(int,int,int)
-    def sectionMoved(self,logicalIndex, oldVisualIndex, newVisualIndex):
+    def sectionMoved(self,_logicalIndex, _oldVisualIndex, _newVisualIndex):
         self.updateAlignMenu()
-        self.realign(updateDeltaAxis=False)
+        self.realign()
         self.updateZorders()
         self.repaint()
     
@@ -1270,7 +1297,7 @@ class roastCompareDlg(ArtisanDialog):
         app = QCoreApplication.instance()
         fileURL = QUrl.fromLocalFile(self.profiles[i].filepath)
         if platform.system() == "Windows" and not app.artisanviewerMode:
-            self.aw.app.sendMessage2ArtisanInstance(fileURL.toString(),app._viewer_id)
+            self.aw.app.sendMessage2ArtisanInstance(fileURL.toString(),app._viewer_id) # pylint: disable=protected-access
         else:
             QDesktopServices.openUrl(fileURL)
 
@@ -1296,11 +1323,11 @@ class roastCompareDlg(ArtisanDialog):
             dmax = 0
             for rp in self.profiles:
                 if rp.visible and rp.aligned:
-                    if (self.cb.itemCheckState(2) == Qt.Checked and self.aw.qmc.autodeltaxET) or \
-                        (self.cb.itemCheckState(2) == Qt.Checked and self.cb.itemCheckState(3) != Qt.Checked and self.aw.qmc.autodeltaxBT): # DeltaET
+                    if (self.cb.itemCheckState(2) == Qt.CheckState.Checked and self.aw.qmc.autodeltaxET) or \
+                        (self.cb.itemCheckState(2) == Qt.CheckState.Checked and self.cb.itemCheckState(3) != Qt.CheckState.Checked and self.aw.qmc.autodeltaxBT): # DeltaET
                         dmax = max(dmax,rp.max_DeltaET)
-                    if (self.cb.itemCheckState(3) == Qt.Checked and self.aw.qmc.autodeltaxBT) or \
-                        (self.cb.itemCheckState(3) == Qt.Checked and self.cb.itemCheckState(2) != Qt.Checked and self.aw.qmc.autodeltaxET) : # DeltaBT
+                    if (self.cb.itemCheckState(3) == Qt.CheckState.Checked and self.aw.qmc.autodeltaxBT) or \
+                        (self.cb.itemCheckState(3) == Qt.CheckState.Checked and self.cb.itemCheckState(2) != Qt.CheckState.Checked and self.aw.qmc.autodeltaxET) : # DeltaBT
                         dmax = max(dmax,rp.max_DeltaBT)
             if dmax > 0:
                 self.aw.qmc.delta_ax.set_ylim(top=dmax) # we only autoadjust the upper limit
@@ -1320,11 +1347,11 @@ class roastCompareDlg(ArtisanDialog):
     def updateVisibilities(self):
         for p in self.profiles:
             p.setVisibilities([
-                self.cb.itemCheckState(0) == Qt.Checked, # ET
-                self.cb.itemCheckState(1) == Qt.Checked, # BT
-                self.cb.itemCheckState(2) == Qt.Checked, # DeltaET
-                self.cb.itemCheckState(3) == Qt.Checked, # DeltaBT
-                self.cb.itemCheckState(5) == Qt.Checked, # Main events
+                self.cb.itemCheckState(0) == Qt.CheckState.Checked, # ET
+                self.cb.itemCheckState(1) == Qt.CheckState.Checked, # BT
+                self.cb.itemCheckState(2) == Qt.CheckState.Checked, # DeltaET
+                self.cb.itemCheckState(3) == Qt.CheckState.Checked, # DeltaBT
+                self.cb.itemCheckState(5) == Qt.CheckState.Checked, # Main events
                 ],self.aw.qmc.compareEvents)
 
     def updateAlignMenu(self):
@@ -1343,11 +1370,11 @@ class roastCompareDlg(ArtisanDialog):
             if w is not None:
                 if p.aligned:
                     if sys.platform.startswith("darwin") and darkdetect.isDark() and appFrozen():
-                        w.setForeground(Qt.white)
+                        w.setForeground(Qt.GlobalColor.white)
                     else:
-                        w.setForeground(Qt.black)
+                        w.setForeground(Qt.GlobalColor.black)
                 else:
-                    w.setForeground(Qt.lightGray)
+                    w.setForeground(Qt.GlobalColor.lightGray)
     
     def updateProfileTableColors(self):
         for i,p in enumerate(self.profiles):
@@ -1361,7 +1388,7 @@ class roastCompareDlg(ArtisanDialog):
     
     # align all profiles to the first one w.r.t. to the event self.aw.qmc.compareAlignEvent
     #   0:CHARGE, 1:TP, 2:DRY, 3:FCs, 4:FCe, 5:SCs, 6:SCe, 7:DROP
-    def realign(self,updateDeltaAxis=True):
+    def realign(self):
         if len(self.profiles) > 0:
             profiles = self.getProfilesVisualOrder()
             # align top profile to its CHARGE event or first reading to 00:00
@@ -1433,42 +1460,58 @@ class roastCompareDlg(ArtisanDialog):
     
     ### ADD/DELETE table items
     
-    def addProfile(self,filename,active):
+    def addProfile(self,filename,obj):
+        selected = [self.aw.findWidgetsRow(self.profileTable,si,2) for si in self.profileTable.selectedItems()]
+        active = not bool(selected)
+        # assign next color
+        rp = RoastProfile(self.aw,obj,filename,self.basecolors[0])
+        self.basecolors = self.basecolors[1:] # remove used color from list of available basecolors
+        # set default label number if no batch number is available
+        if rp.label == "":
+            self.label_number += 1
+            rp.label = str(self.label_number)
+        # set initially inactive if currently any another profile is selected
+        rp.setActive(active)
+        # add profile to the list
+        self.profiles.append(rp)
+        # add profile to the table
+        self.profileTable.setRowCount(len(self.profiles))
+        self.setProfileTableRow(len(self.profiles)-1)
+    
+    def addProfileFromURL(self,extractor,url):
+        _log.debug("addProfileFromURL(%s)", url)
         try:
-            self.profiles
+            obj = extractor(url,self.aw)
+            if obj:
+                self.addProfile(url,obj)
+                self.updateAlignMenu()
+                self.realign()
+                self.updateZorders()
+                self.repaint()
+        except Exception as ex: # pylint: disable=broad-except
+            _log.exception(ex)
+    
+    # Internal function not to be called directly. Use addProfiles() which also handles the repainting!
+    def addProfileFromFile(self,filename):
+        _log.debug("addProfileFromFile(%s)", filename)
+        try:
             if len(self.profiles) < self.maxentries and not any(filename == p.filepath for p in self.profiles):
                 f = QFile(filename)
-                if not f.open(QFile.ReadOnly):
+                if not f.open(QFile.OpenModeFlag.ReadOnly):
                     raise IOError(f.errorString())
                 stream = QTextStream(f)
                 firstChar = stream.read(1)
                 if firstChar == "{":
                     f.close()
                     obj = self.aw.deserialize(filename)
-                    # assign next color
-                    rp = RoastProfile(self.aw,obj,filename,self.basecolors[0])
-                    self.basecolors = self.basecolors[1:] # remove used color from list of available basecolors
-                    # set default label number if no batch number is available
-                    if rp.label == "":
-                        self.label_number += 1
-                        rp.label = str(self.label_number)
-                    # set initially inactive if currently any another profile is selected
-                    rp.setActive(active)
-                    # add profile to the list
-                    self.profiles.append(rp)
-                    # add profile to the table
-                    self.profileTable.setRowCount(len(self.profiles))
-                    self.setProfileTableRow(len(self.profiles)-1)
-        except:
-#            import traceback
-#            traceback.print_exc(file=sys.stdout)
-            pass
+                    self.addProfile(filename,obj)
+        except Exception as ex: # pylint: disable=broad-except
+            _log.exception(ex)
     
     def addProfiles(self,filenames):
         if filenames:
-            selected = [self.aw.findWidgetsRow(self.profileTable,si,2) for si in self.profileTable.selectedItems()]
             for filename in filenames:
-                self.addProfile(filename,not bool(selected))
+                self.addProfileFromFile(filename)
             self.updateAlignMenu()
             self.realign()
             self.updateZorders()

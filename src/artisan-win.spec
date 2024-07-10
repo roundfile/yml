@@ -2,11 +2,10 @@
 
 block_cipher = None
 
-
 import os
 if os.environ.get('APPVEYOR'):
   ARTISAN_SRC = r'C:\projects\artisan\src'
-  PYTHON = r'c:\python38-x64'
+  PYTHON = r'c:\python39-x64'
 else:
   ARTISAN_SRC = r'C:\Users\luther\Desktop\src'
   PYTHON = r'C:\Program Files\Python37'
@@ -44,9 +43,6 @@ a = Analysis(['artisan.py'],
 
 pyz = PYZ(a.pure, a.zipped_data,cipher=block_cipher)
 
-
-
-
 exe = EXE(pyz,
           a.scripts,
           exclude_binaries=True,
@@ -55,6 +51,7 @@ exe = EXE(pyz,
           strip=False, # =True fails
           upx=True, # not installed
           icon='artisan.ico',
+          version='version_info-win.txt',
           console=False) # was True
 
 coll = COLLECT(exe,
@@ -115,7 +112,6 @@ os.system('copy "' + SNAP7_BIN + r'\snap7.dll" ' + TARGET)
 
 os.system('copy "' + LIBUSB_BIN + r'\libusb0.dll" ' + TARGET)
 
-
 for fn in [
     'artisan.png',
     'artisanAlarms.ico',
@@ -143,6 +139,7 @@ for fn in [
     r'includes\roast-template.htm',
     r'includes\ranking-template.htm',
     r'includes\jquery-1.11.1.min.js',
+    r'includes\logging.yaml',
     ]:
   os.system('copy ' + fn + ' ' + TARGET)
 
