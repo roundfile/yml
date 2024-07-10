@@ -100,19 +100,19 @@ def getBinaryPayloadDecoderFromRegisters(registers,byteorderLittle=True,wordorde
 # pymodbus version
 class modbusport():
     """ this class handles the communications with all the modbus devices"""
-    
+
     __slots__ = [ 'aw', 'modbus_serial_read_delay', 'modbus_serial_write_delay', 'readRetries', 'comport', 'baudrate', 'bytesize', 'parity', 'stopbits', 
         'timeout', 'PID_slave_ID', 'PID_SV_register', 'PID_p_register', 'PID_i_register', 'PID_d_register', 'PID_ON_action', 'PID_OFF_action',
         'channels', 'inputSlaves', 'inputRegisters', 'inputFloats', 'inputBCDs', 'inputFloatsAsInt', 'inputBCDsAsInt', 'inputCodes', 'inputDivs',
         'inputModes', 'optimizer', 'fetch_max_blocks', 'reset_socket', 'activeRegisters', 'readingsCache', 'SVmultiplier', 'PIDmultiplier',
         'byteorderLittle', 'wordorderLittle', 'master', 'COMsemaphore', 'host', 'port', 'type', 'lastReadResult', 'commError' ]
-    
+
     def __init__(self,aw):
         self.aw = aw
-        
+
         self.modbus_serial_read_delay = 0.035 # in seconds
         self.modbus_serial_write_delay = 0.080 # in seconds
-        
+
         # retries
         self.readRetries = 0
         #default initial settings. They are changed by settingsload() at initiation of program acording to the device chosen
@@ -129,7 +129,7 @@ class modbusport():
         self.PID_d_register = 0
         self.PID_ON_action = ""
         self.PID_OFF_action = ""
-        
+
         self.channels = 8
         self.inputSlaves = [0]*self.channels
         self.inputRegisters = [0]*self.channels
@@ -140,20 +140,20 @@ class modbusport():
         self.inputCodes = [3]*self.channels
         self.inputDivs = [0]*self.channels # 0: none, 1: 1/10, 2:1/100
         self.inputModes = ["C"]*self.channels
-        
+
         self.optimizer = True # if set, values of consecutive register addresses are requested in single requests
         # MODBUS functions associated to dicts associating MODBUS slave ids to registers in use 
         # for optimized read of full register segments with single requests
         # this dict is re-computed on each connect() by a call to updateActiveRegisters()
         # NOTE: for registers of type float and BCD (32bit = 2x16bit) also the succeeding registers are registered
         self.fetch_max_blocks = False # if set, the optimizer fetches only one sequence per area from the minimum to the maximum register ignoring gaps
-        
+
         self.reset_socket = False # reset socket connection on error (True by default in pymodbus>v2.5.2, False by default in pymodbus v2.3)
-        
+
         self.activeRegisters = {}        
         # the readings cache that is filled by requesting sequences of values in blocks
         self.readingsCache = {}
-        
+
         self.SVmultiplier = 0
         self.PIDmultiplier = 0
         self.byteorderLittle = False
@@ -170,9 +170,9 @@ class modbusport():
         #    3: TCP
         #    4: UDP
         self.lastReadResult = 0 # this is set by eventaction following some custom button/slider Modbus actions with "read" command
-        
+
         self.commError = False # True after a communication error was detected and not yet cleared by receiving proper data
-        
+
     # this garantees a minimum of 30 miliseconds between readings and 80ms between writes (according to the Modbus spec) on serial connections
     # this sleep delays between requests seems to be beneficial on slow RTU serial connections like those of the FZ-94
     def sleepBetween(self,write=False):
@@ -196,7 +196,7 @@ class modbusport():
 
     def isConnected(self):
         return not (self.master is None) and self.master.socket
-        
+
     def disconnect(self):
         _log.debug("disconnect()")
         try:
@@ -205,7 +205,7 @@ class modbusport():
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
         self.master = None
-    
+
     # t a duration between start and end time in seconds to be formated in a string as ms
     @staticmethod
     def formatMS(start, end):
@@ -305,12 +305,12 @@ class modbusport():
                 self.clearReadingsCache()
                 time.sleep(.5) # avoid possible hickups on startup
                 if self.isConnected() != None:
-                    self.aw.sendmessage(QApplication.translate("Message", "Connected via MODBUS", None))
+                    self.aw.sendmessage(QApplication.translate("Message", "Connected via MODBUS"))
             except Exception as ex: # pylint: disable=broad-except
                 _log.exception(ex)
                 _, _, exc_tb = sys.exc_info()
-                self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:",None) + " connect() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
-    
+                self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " connect() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+
 ########## MODBUS optimizer for fetching register data in batches
 
     # MODBUS code => slave => [registers]
@@ -331,7 +331,8 @@ class modbusport():
                     self.activeRegisters[code][slave].extend(registers)
                 else:
                     self.activeRegisters[code][slave] = registers
-    
+        _log.debug("active registers: %s",self.activeRegisters)
+
     def clearReadingsCache(self):
         self.readingsCache = {}
 
@@ -377,8 +378,7 @@ class modbusport():
                         if just_send:
                             self.sleepBetween() # we start with a sleep, as it could be that just a send command happend before the semaphore was catched
                         just_send = True
-                        if self.aw.seriallogflag:
-                            tx = time.time()
+                        tx = time.time()
                         while True:
                             try:
                                 # we cache only MODBUS function 3 and 4 (not 1 and 2!)
@@ -401,7 +401,7 @@ class modbusport():
                         #note: logged chars should be unicode not binary
                         if self.aw.seriallogflag:
                             if self.type < 3: # serial MODBUS
-                                ser_str = "MODBUS readActiveRegisters : {}ms => {},{},{},{},{},{} || Slave = {} || Register = {} || Code = {} || Rx# = {} results".format(
+                                ser_str = "MODBUS readActiveRegisters : {}ms => {},{},{},{},{},{} || Slave = {} || Register = {} || Code = {} || Rx# = {}".format(
                                     self.formatMS(tx,time.time()),
                                     self.comport,
                                     self.baudrate,
@@ -414,7 +414,7 @@ class modbusport():
                                     code,
                                     len(res.registers))
                             else: # IP MODBUS
-                                ser_str = "MODBUS readActiveRegisters : {}ms => {}:{} || Slave = {} || Register = {} || Code = {} || Rx# = {} results".format(
+                                ser_str = "MODBUS readActiveRegisters : {}ms => {}:{} || Slave = {} || Register = {} || Code = {} || Rx# = {}".format(
                                     self.formatMS(tx,time.time()),
                                     self.host,
                                     self.port,
@@ -423,11 +423,19 @@ class modbusport():
                                     code,
                                     len(res.registers))
                             self.aw.addserial(ser_str)
+                        _log.debug("readActiveRegisters : %s ms => %s:%s || Slave = %s || Register = %s || Code == %s || Rx# == %s",
+                            self.formatMS(tx,time.time()),
+                            self.host,
+                            self.port,
+                            slave,
+                            register,
+                            code,
+                            len(res.registers))
                         
                         if res is not None:
                             if self.commError: # we clear the previous error and send a message
                                 self.commError = False
-                                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Resumed",None))
+                                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Resumed"))
                             self.cacheReadings(code,slave,register,res.registers)
 
         except Exception as ex: # pylint: disable=broad-except
@@ -436,13 +444,13 @@ class modbusport():
 #            import traceback
 #            traceback.print_exc(file=sys.stdout)
 #            _, _, exc_tb = sys.exc_info()
-#            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:",None) + " readSingleRegister() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
-            self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Error",None))
+#            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " readSingleRegister() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Error"))
             self.commError = True
         finally:
             if self.COMsemaphore.available() < 1:
                 self.COMsemaphore.release(1)
-                
+
 ##########
 
     # function 15 (Write Multiple Coils)
@@ -461,14 +469,14 @@ class modbusport():
 #            traceback.print_exc(file=sys.stdout)
             _, _, exc_tb = sys.exc_info()
             if self.aw.qmc.flagon:
-                self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:",None) + " writeCoils() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " writeCoils() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         finally:
             if self.COMsemaphore.available() < 1:
-                self.COMsemaphore.release(1)    
-                
+                self.COMsemaphore.release(1)
+
     # function 5 (Write Single Coil)
     def writeCoil(self,slave,register,value):
-        _log.debug("writeCoil(%d,%d,%d)", slave, register, value)
+        _log.debug("writeCoil(%d,%d,%s)", slave, register, value)
         try:
             #### lock shared resources #####
             self.COMsemaphore.acquire(1)
@@ -480,15 +488,15 @@ class modbusport():
 #            self.disconnect()
             _, _, exc_tb = sys.exc_info()
             if self.aw.qmc.flagon:
-                self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:",None) + " writeCoil() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " writeCoil() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         finally:
             if self.COMsemaphore.available() < 1:
                 self.COMsemaphore.release(1)
-        
+
     # write value to register on slave (function 6 for int or function 16 for float)
     # value can be one of string (containing an int or float), an int or a float
     def writeRegister(self,slave,register,value):
-        _log.debug("writeRegister(%d,%d,%d)", slave, register, value)
+        _log.debug("writeRegister(%d,%d,%s)", slave, register, value)
         if stringp(value):
             if "." in value:
                 self.writeWord(slave,register,value)
@@ -501,7 +509,7 @@ class modbusport():
 
     # function 6 (Write Single Holding Register)
     def writeSingleRegister(self,slave,register,value):
-        _log.debug("writeSingleRegister(%d,%d,%d)", slave, register, value)
+        _log.debug("writeSingleRegister(%d,%d,%s)", slave, register, value)
         try:
             #### lock shared resources #####
             self.COMsemaphore.acquire(1)
@@ -516,7 +524,7 @@ class modbusport():
 #            self.disconnect()
             _, _, exc_tb = sys.exc_info()
             if self.aw.qmc.flagon:
-                self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:",None) + " writeSingleRegister() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " writeSingleRegister() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         finally:
             if self.COMsemaphore.available() < 1:
                 self.COMsemaphore.release(1)
@@ -539,7 +547,7 @@ class modbusport():
 #            self.disconnect()
             _, _, exc_tb = sys.exc_info()
             if self.aw.qmc.flagon:
-                self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:",None) + " writeMask() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " writeMask() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         finally:
             if self.COMsemaphore.available() < 1:
                 self.COMsemaphore.release(1)
@@ -550,7 +558,7 @@ class modbusport():
     def localMaskWriteRegister(self,slave,register,and_mask,or_mask,value):
         new_val = (int(round(value)) & and_mask) | (or_mask & (and_mask ^ 0xFFFF))
         self.writeSingleRegister(slave,register,int(new_val))
-            
+
     # function 16 (Write Multiple Holding Registers)
     # values is a list of integers or one integer
     def writeRegisters(self,slave,register,values):
@@ -566,7 +574,7 @@ class modbusport():
 #            self.disconnect()
             _, _, exc_tb = sys.exc_info()
             if self.aw.qmc.flagon:
-                self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:",None) + " writeRegisters() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " writeRegisters() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         finally:
             if self.COMsemaphore.available() < 1:
                 self.COMsemaphore.release(1)
@@ -575,7 +583,7 @@ class modbusport():
     # value=int or float
     # writes a single precision 32bit float (2-registers)
     def writeWord(self,slave,register,value):
-        _log.debug("writeWord(%d,%d,%d)", slave, register, value)
+        _log.debug("writeWord(%d,%d,%s)", slave, register, value)
         try:
             #### lock shared resources #####
             self.COMsemaphore.acquire(1)
@@ -590,14 +598,14 @@ class modbusport():
 #            self.disconnect()
             _, _, exc_tb = sys.exc_info()
             if self.aw.qmc.flagon:
-                self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:",None) + " writeWord() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " writeWord() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         finally:
             if self.COMsemaphore.available() < 1:
                 self.COMsemaphore.release(1)
 
     # translates given int value int a 16bit BCD and writes it into one register
     def writeBCD(self,slave,register,value):
-        _log.debug("writeBCD(%d,%d,%d)", slave, register, value)
+        _log.debug("writeBCD(%d,%d,%s)", slave, register, value)
         try:
             #### lock shared resources #####
             self.COMsemaphore.acquire(1)
@@ -613,11 +621,11 @@ class modbusport():
 #            self.disconnect()
             _, _, exc_tb = sys.exc_info()
             if self.aw.qmc.flagon:
-                self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:",None) + " writeWord() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " writeWord() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         finally:
             if self.COMsemaphore.available() < 1:
                 self.COMsemaphore.release(1)
-                
+
     # function 3 (Read Multiple Holding Registers) and 4 (Read Input Registers)
     # if force the readings cache is ignored and fresh readings are requested
     def readFloat(self,slave,register,code=3,force=False):
@@ -657,7 +665,7 @@ class modbusport():
             r = decoder.decode_32bit_float()
             if self.commError: # we clear the previous error and send a message
                 self.commError = False
-                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Resumed",None))
+                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Resumed"))
             return r
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
@@ -665,9 +673,9 @@ class modbusport():
 #            traceback.print_exc(file=sys.stdout)
 #            self.disconnect()
 #            _, _, exc_tb = sys.exc_info()
-#            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:",None) + " readFloat() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+#            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " readFloat() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             if self.aw.qmc.flagon:
-                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Error",None))
+                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Error"))
             return None
         finally:
             if self.COMsemaphore.available() < 1:
@@ -699,8 +707,8 @@ class modbusport():
                         r,
                         self.readRetries-retry)
                 self.aw.addserial(ser_str)
-            
-            
+
+
     # function 3 (Read Multiple Holding Registers) and 4 (Read Input Registers)
     # if force the readings cache is ignored and fresh readings are requested
     def readBCD(self,slave,register,code=3,force=False):
@@ -740,7 +748,7 @@ class modbusport():
             r = decoder.decode_32bit_uint()
             if self.commError: # we clear the previous error and send a message
                 self.commError = False
-                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Resumed",None))
+                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Resumed"))
             time.sleep(0.020) # we add a small sleep between requests to help out the slow Loring electronic
             return convert_from_bcd(r)
         except Exception as ex: # pylint: disable=broad-except
@@ -749,9 +757,9 @@ class modbusport():
 #            traceback.print_exc(file=sys.stdout)
 #            self.disconnect()
 #            _, _, exc_tb = sys.exc_info()
-#            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:",None) + " readBCD() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+#            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " readBCD() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             if self.aw.qmc.flagon:
-                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Error",None))
+                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Error"))
             self.commError = True
             return None
         finally:
@@ -869,13 +877,13 @@ class modbusport():
                     r = 0
                 if self.commError: # we clear the previous error and send a message
                     self.commError = False
-                    self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Resumed",None))
+                    self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Resumed"))
                 return r
             decoder = getBinaryPayloadDecoderFromRegisters(res.registers, self.byteorderLittle, self.wordorderLittle)
             r = decoder.decode_16bit_uint()
             if self.commError: # we clear the previous error and send a message
                 self.commError = False
-                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Resumed",None))
+                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Resumed"))
             return r
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
@@ -883,9 +891,9 @@ class modbusport():
 #            import traceback
 #            traceback.print_exc(file=sys.stdout)
 #            _, _, exc_tb = sys.exc_info()
-#            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:",None) + " readSingleRegister() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+#            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " readSingleRegister() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             if self.aw.qmc.flagon:
-                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Error",None))
+                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Error"))
             self.commError = True
             return None
         finally:
@@ -958,7 +966,7 @@ class modbusport():
             r = decoder.decode_32bit_uint()
             if self.commError: # we clear the previous error and send a message
                 self.commError = False
-                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Resumed",None))
+                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Resumed"))
             return r
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
@@ -966,9 +974,9 @@ class modbusport():
 #            traceback.print_exc(file=sys.stdout)
 #            self.disconnect()
 #            _, _, exc_tb = sys.exc_info()
-#            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:",None) + " readFloat() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+#            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " readFloat() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             if self.aw.qmc.flagon:
-                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Error",None))
+                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Error"))
             return None
         finally:
             if self.COMsemaphore.available() < 1:
@@ -1048,7 +1056,7 @@ class modbusport():
             r = decoder.decode_16bit_uint()
             if self.commError: # we clear the previous error and send a message
                 self.commError = False
-                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Resumed",None))
+                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Resumed"))
             time.sleep(0.020) # we add a small sleep between requests to help out the slow Loring electronic
             return convert_from_bcd(r)
         except Exception: # pylint: disable=broad-except
@@ -1056,9 +1064,9 @@ class modbusport():
 #            import traceback
 #            traceback.print_exc(file=sys.stdout)
 #            _, _, exc_tb = sys.exc_info()
-#            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:",None) + " readBCDint() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+#            self.aw.qmc.adderror((QApplication.translate("Error Message","Modbus Error:") + " readBCDint() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             if self.aw.qmc.flagon:
-                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Error",None))
+                self.aw.qmc.adderror(QApplication.translate("Error Message","Modbus Communication Error"))
             self.commError = True
             return None
         finally:
@@ -1113,4 +1121,4 @@ class modbusport():
             self.writeSingleRegister(self.PID_slave_ID,self.PID_p_register,p*multiplier)
             self.writeSingleRegister(self.PID_slave_ID,self.PID_i_register,i*multiplier)
             self.writeSingleRegister(self.PID_slave_ID,self.PID_d_register,d*multiplier)
-        
+
