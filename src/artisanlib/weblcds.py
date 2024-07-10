@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
-#
+#!/usr/bin/env python3
+
 # ABOUT
 # WebLCDs for Artisan
 
@@ -7,7 +7,7 @@
 # This program or module is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
 # by the Free Software Foundation, either version 2 of the License, or
-# version 3 of the License, or (at your option) any later version. It is
+# version 3 of the License, or (at your option) any later versison. It is
 # provided for educational purposes and is distributed in the hope that
 # it will be useful, but WITHOUT ANY WARRANTY; without even the implied
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
@@ -56,7 +56,7 @@ static_path = ""
         
 # pickle hack:
 def work(p,rp,nonesym,timec,timebg,btc,btbg,etc,etbg,showetflag,showbtflag):
-    global port, static_path, nonesymbol, timecolor, timebackground, btcolor, btbackground, etcolor, etbackground, showbt, showet # pylint: disable=global-statement
+    global port, static_path, nonesymbol, timecolor, timebackground, btcolor, btbackground, etcolor, etbackground, showbt, showet
     port = p
     static_path = rp
     nonesymbol = nonesym
@@ -73,7 +73,7 @@ def work(p,rp,nonesym,timec,timebg,btc,btbg,etc,etbg,showetflag,showbtflag):
     s.serve_forever()
         
 def startWeb(p,resourcePath,nonesym,timec,timebg,btc,btbg,etc,etbg,showetflag,showbtflag):
-    global port, process, static_path, nonesymbol, timecolor, timebackground, btcolor, btbackground, etcolor, etbackground, showet, showbt # pylint: disable=global-statement
+    global port, process, static_path, nonesymbol, timecolor, timebackground, btcolor, btbackground, etcolor, etbackground, showet, showbt
     port = p
     static_path = resourcePath
     nonesymbol = nonesym
@@ -106,14 +106,18 @@ def startWeb(p,resourcePath,nonesym,timec,timebg,btc,btbg,etc,etbg,showetflag,sh
     
     if process.is_alive():    
         # check successful start
-        url = f"http://127.0.0.1:{port}/status"
+        url = "http://127.0.0.1:" + str(port) + "/status"
         r = rget(url,timeout=2)
         
-        return bool(r.status_code == 200)
-    return False
+        if r.status_code == 200:
+            return True
+        else:
+            return False
+    else:
+        return False
     
 def stopWeb():
-    global wsocks, process # pylint: disable=global-statement
+    global wsocks, process
     for ws in wsocks:
         ws.close()
     wsocks = []
@@ -134,14 +138,14 @@ def send_all(msg):
                 if ws.closed:
                     try:
                         wsocks.remove(ws)
-                    except Exception: # pylint: disable=broad-except
+                    except:
                         pass
                 else:
                     ws.send(msg)
-        except Exception: # pylint: disable=broad-except
+        except Exception:
             try:
                 wsocks.remove(ws)
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
 
 # route to push new data to the client
@@ -161,20 +165,21 @@ def handle_websocket():
             if wsock.closed:
                 try:
                     wsocks.remove(wsock)
-                except Exception: # pylint: disable=broad-except
+                except:
                     pass
                 break
-            message = wsock.receive()
-            if message is None:
-                try:
-                    wsocks.remove(wsock)
-                except Exception: # pylint: disable=broad-except
-                    pass
-                break
-        except Exception: # pylint: disable=broad-except
+            else:
+                message = wsock.receive()
+                if message is None:
+                    try:
+                        wsocks.remove(wsock)
+                    except:
+                        pass
+                    break
+        except Exception:
             try:
                 wsocks.remove(wsock)
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
             break
             

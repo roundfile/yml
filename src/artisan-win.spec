@@ -2,19 +2,20 @@
 
 block_cipher = None
 
+
 import os
 if os.environ.get('APPVEYOR'):
   ARTISAN_SRC = r'C:\projects\artisan\src'
-  PYTHON = r'c:\python310-x64'
+  PYTHON = r'c:\python38-x64'
 else:
-  ARTISAN_SRC = r'C:\Users\roast\Documents\artisan-roaster-scope\src'
-  PYTHON = r'C:\Program Files\Python310-x64'
+  ARTISAN_SRC = r'C:\Users\luther\Desktop\src'
+  PYTHON = r'C:\Program Files\Python37'
 NAME = 'artisan'
 
 ##
 TARGET = 'dist\\' + NAME + '\\'
 PYTHON_PACKAGES = PYTHON + r'\Lib\site-packages'
-PYQT_QT = PYTHON_PACKAGES + r'\PyQt6\Qt'
+PYQT_QT = PYTHON_PACKAGES + r'\PyQt5\Qt'
 PYQT_QT_BIN = PYQT_QT + r'\bin'
 PYQT_QT_TRANSLATIONS = PYQT_QT + r'\translations'
 YOCTO_BIN = PYTHON_PACKAGES + r'\yoctopuce\cdll'
@@ -36,12 +37,15 @@ a = Analysis(['artisan.py'],
              hookspath=[],
              runtime_hooks=[],
              excludes=[],
-             hiddenimports=['PyQt6.QtWebChannel','PyQt6.QtWebEngineCore','scipy.spatial.transform._rotation_groups', 'scipy._lib.messagestream','pywintypes','win32cred','win32timezone', 'pkg_resources.py2_warn','scipy.special.cython_special'],
+             hiddenimports=['scipy.spatial.transform._rotation_groups', 'scipy._lib.messagestream','pywintypes','win32cred','win32timezone', 'pkg_resources.py2_warn','scipy.special.cython_special'],
              win_no_prefer_redirects=False,
              win_private_assemblies=False,
              cipher=block_cipher)
 
 pyz = PYZ(a.pure, a.zipped_data,cipher=block_cipher)
+
+
+
 
 exe = EXE(pyz,
           a.scripts,
@@ -51,7 +55,6 @@ exe = EXE(pyz,
           strip=False, # =True fails
           upx=True, # not installed
           icon='artisan.ico',
-          version='version_info-win.txt',
           console=False) # was True
 
 coll = COLLECT(exe,
@@ -63,7 +66,7 @@ coll = COLLECT(exe,
                name=NAME)
 
 
-# assumes the Microsoft Visual C++ Redistributable Package (x64), vc_redist.x64.exe, is located above the source directory
+# assumes the Microsoft Visual C++ 2015 Redistributable Package (x64), vc_redist.x64.exe, is located above the source directory
 os.system(r'copy ..\vc_redist.x64.exe ' + TARGET)
 
 os.system('copy README.txt ' + TARGET)
@@ -92,7 +95,7 @@ for tr in [
     'qtbase_ja.qm',
     'qtbase_ko.qm',
     'qtbase_pl.qm',
-    'qtbase_uk.qm',
+    'qtbase_ru.qm',
     'qtbase_tr.qm',
     'qtbase_zh_TW.qm',
     ]:
@@ -100,9 +103,9 @@ for tr in [
 
 os.system('rmdir /q /s ' + TARGET + 'mpl-data\\sample_data')
 # YOCTO HACK BEGIN: manually copy over the dlls
-os.system(r'mkdir ' + TARGET + 'yoctopuce\cdll')
-os.system(r'copy "' + YOCTO_BIN + r'\yapi.dll" ' + TARGET + 'yoctopuce\cdll')
-os.system(r'copy "' + YOCTO_BIN + r'\yapi64.dll" ' + TARGET + 'yoctopuce\cdll')
+os.system(r'mkdir ' + TARGET + 'lib')
+os.system(r'copy "' + YOCTO_BIN + r'\yapi.dll" ' + TARGET + 'lib')
+os.system(r'copy "' + YOCTO_BIN + r'\yapi64.dll" ' + TARGET + 'lib')
 # YOCTO HACK END
 
 # copy Snap7 lib
@@ -111,6 +114,7 @@ os.system('copy "' + SNAP7_BIN + r'\snap7.dll" ' + TARGET)
 # copy libusb0.1 lib
 
 os.system('copy "' + LIBUSB_BIN + r'\libusb0.dll" ' + TARGET)
+
 
 for fn in [
     'artisan.png',
@@ -139,7 +143,6 @@ for fn in [
     r'includes\roast-template.htm',
     r'includes\ranking-template.htm',
     r'includes\jquery-1.11.1.min.js',
-    r'includes\logging.yaml',
     ]:
   os.system('copy ' + fn + ' ' + TARGET)
 

@@ -1,11 +1,23 @@
-# -*- coding: utf-8 -*-
+#!/usr/bin/env python
+
+# results in a three digits resolution (eg. 1.234)
+#class ArtisanTime():
+#    def __init__(self):
+#        self.clock = QTime()
 #
+#    def setHMS(self,a,b,c,d):
+#        self.clock.setHMS(a,b,c,d)
+#        
+#    def start(self):
+#        self.clock.start()
+#        
+#    def elapsed(self):
+#        return self.clock.elapsed()
 
 import time
 
 # higher resultion time signal (at least on Mac OS X)
-# base can change (eg. depending on the simulator mode)
-class ArtisanTime():
+class ArtisanTime(object):
 
     __slots__ = ['clock','base']
     
@@ -15,23 +27,14 @@ class ArtisanTime():
     
     def setBase(self,b):
         self.base = b
-    
-    def getBase(self):
-        return self.base
 
     def setHMS(self,*_):
         self.start()
         
     def start(self):
         self.clock = time.perf_counter()
-    
-    def addClock(self, period):
-        self.clock = self.clock + period
         
     def elapsed(self):
         return (time.perf_counter() - self.clock)*self.base
-        
-    def elapsedMilli(self):
-        return (time.perf_counter() - self.clock)*self.base/1000.
 
     

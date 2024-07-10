@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
-#
+#!/usr/bin/env python3
+
 # ABOUT
 # Artisan Cup Profile Dialog
 
@@ -7,7 +7,7 @@
 # This program or module is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
 # by the Free Software Foundation, either version 2 of the License, or
-# version 3 of the License, or (at your option) any later version. It is
+# version 3 of the License, or (at your option) any later versison. It is
 # provided for educational purposes and is distributed in the hope that
 # it will be useful, but WITHOUT ANY WARRANTY; without even the implied
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
@@ -21,38 +21,30 @@ from matplotlib import rcParams
 from artisanlib.dialogs import ArtisanResizeablDialog
 from artisanlib.widgets import MyQDoubleSpinBox
 
-try:
-    #pylint: disable = E, W, R, C
-    from PyQt6.QtCore import (Qt, pyqtSlot, QSettings) # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt6.QtWidgets import (QApplication, QCheckBox, QHBoxLayout, QVBoxLayout, QLabel, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QLineEdit,QPushButton, QComboBox, QDialogButtonBox, QHeaderView, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QTableWidget, QDoubleSpinBox, QGroupBox) # @UnusedImport @Reimport  @UnresolvedImport
-except Exception:
-    #pylint: disable = E, W, R, C
-    from PyQt5.QtCore import (Qt, pyqtSlot, QSettings) # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt5.QtWidgets import (QApplication, QCheckBox, QHBoxLayout, QVBoxLayout, QLabel,# @UnusedImport @Reimport  @UnresolvedImport
-                                 QLineEdit,QPushButton, QComboBox, QDialogButtonBox, QHeaderView, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QTableWidget, QDoubleSpinBox, QGroupBox) # @UnusedImport @Reimport  @UnresolvedImport
+from PyQt5.QtCore import (Qt, pyqtSlot, QSettings)
+from PyQt5.QtWidgets import (QApplication, QCheckBox, QHBoxLayout, QVBoxLayout, QLabel, 
+                             QLineEdit,QPushButton, QComboBox, QDialogButtonBox, QHeaderView,
+                             QTableWidget, QDoubleSpinBox, QGroupBox)
 
 class flavorDlg(ArtisanResizeablDialog):
     def __init__(self, parent = None, aw = None):
-        super().__init__(parent, aw)
+        super(flavorDlg,self).__init__(parent, aw)
         self.setModal(True)
         rcParams['path.effects'] = []
         #avoid question mark context help
         flags = self.windowFlags()
-        helpFlag = Qt.WindowType.WindowContextHelpButtonHint
+        helpFlag = Qt.WindowContextHelpButtonHint
         flags = flags & (~helpFlag)
         self.setWindowFlags(flags)
-        self.setWindowTitle(QApplication.translate("Form Caption","Cup Profile"))
+        self.setWindowTitle(QApplication.translate("Form Caption","Cup Profile",None))
         
         settings = QSettings()
         if settings.contains("FlavorProperties"):
             self.restoreGeometry(settings.value("FlavorProperties"))
             
-        defaultlabel = QLabel(QApplication.translate("Label","Default"))
+        defaultlabel = QLabel(QApplication.translate("Label","Default",None))
         self.defaultcombobox = QComboBox()
-        self.defaultcombobox.addItems(["","Artisan","SCA","SCAA","CQI","SweetMarias","C","E","CoffeeGeek","Intelligentsia","IIAC","WCRC","*CUSTOM*"])
+        self.defaultcombobox.addItems(["","Artisan","SCCA","CQI","SweetMarias","C","E","CoffeeGeek","Intelligentsia","IIAC","WCRC","*CUSTOM*"])
         self.defaultcombobox.setCurrentIndex(0)
         self.lastcomboboxIndex = 0
         self.defaultcombobox.currentIndexChanged.connect(self.setdefault)
@@ -60,32 +52,32 @@ class flavorDlg(ArtisanResizeablDialog):
         self.flavortable.setTabKeyNavigation(True)
         self.createFlavorTable()
         leftButton = QPushButton("<")
-        leftButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        leftButton.setFocusPolicy(Qt.NoFocus)
         leftButton.clicked.connect(self.moveLeft)
         rightButton = QPushButton(">")
-        rightButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        rightButton.setFocusPolicy(Qt.NoFocus)
         rightButton.clicked.connect(self.moveRight)
-        addButton = QPushButton(QApplication.translate("Button","Add"))
-        addButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        addButton = QPushButton(QApplication.translate("Button","Add",None))
+        addButton.setFocusPolicy(Qt.NoFocus)
         addButton.clicked.connect(self.addlabel)
-        delButton = QPushButton(QApplication.translate("Button","Del"))
-        delButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        delButton = QPushButton(QApplication.translate("Button","Del",None))
+        delButton.setFocusPolicy(Qt.NoFocus)
         delButton.clicked.connect(self.poplabel)
-        saveImgButton = QPushButton(QApplication.translate("Button","Save Image"))
-        saveImgButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        saveImgButton = QPushButton(QApplication.translate("Button","Save Image",None))
+        saveImgButton.setFocusPolicy(Qt.NoFocus)
         saveImgButton.clicked.connect(self.aw.saveVectorGraph_PDF) # save as PDF (vector)
         
         # connect the ArtisanDialog standard OK/Cancel buttons
         self.dialogbuttons.accepted.connect(self.close)
-        self.dialogbuttons.removeButton(self.dialogbuttons.button(QDialogButtonBox.StandardButton.Cancel))
+        self.dialogbuttons.removeButton(self.dialogbuttons.button(QDialogButtonBox.Cancel))
         
-        self.backgroundCheck = QCheckBox(QApplication.translate("CheckBox","Background"))
+        self.backgroundCheck = QCheckBox(QApplication.translate("CheckBox","Background", None))
         if self.aw.qmc.flavorbackgroundflag:
             self.backgroundCheck.setChecked(True)
         self.backgroundCheck.clicked.connect(self.showbackground)
-        aspectlabel = QLabel(QApplication.translate("Label","Aspect Ratio"))
+        aspectlabel = QLabel(QApplication.translate("Label","Aspect Ratio",None))
         self.aspectSpinBox = QDoubleSpinBox()
-        self.aspectSpinBox.setToolTip(QApplication.translate("Tooltip","Aspect Ratio"))
+        self.aspectSpinBox.setToolTip(QApplication.translate("Tooltip","Aspect Ratio",None))
         self.aspectSpinBox.setRange(0.,2.)
         self.aspectSpinBox.setSingleStep(.1)
         self.aspectSpinBox.setValue(self.aw.qmc.flavoraspect)
@@ -129,7 +121,7 @@ class flavorDlg(ArtisanResizeablDialog):
         mainLayout.addLayout(mainButtonsLayout)
         self.setLayout(mainLayout)
         self.aw.qmc.flavorchart()
-        self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok).setFocus()
+        self.dialogbuttons.button(QDialogButtonBox.Ok).setFocus()
 
     @pyqtSlot(float)
     def setaspect(self,_):
@@ -147,15 +139,15 @@ class flavorDlg(ArtisanResizeablDialog):
         if nflavors:
             self.flavortable.setRowCount(nflavors)
             self.flavortable.setColumnCount(3)
-            self.flavortable.setHorizontalHeaderLabels([QApplication.translate("Table", "Label"),
-                                                        QApplication.translate("Table", "Value"),
+            self.flavortable.setHorizontalHeaderLabels([QApplication.translate("Table", "Label",None),
+                                                        QApplication.translate("Table", "Value",None),
                                                         ""])
             self.flavortable.setAlternatingRowColors(True)
-            self.flavortable.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-            self.flavortable.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-            self.flavortable.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+            self.flavortable.setEditTriggers(QTableWidget.NoEditTriggers)
+            self.flavortable.setSelectionBehavior(QTableWidget.SelectRows)
+            self.flavortable.setSelectionMode(QTableWidget.SingleSelection)
             self.flavortable.setShowGrid(True)
-            #self.flavortable.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+            #self.flavortable.verticalHeader().setSectionResizeMode(2)
             #populate table
             for i in range(nflavors):
                 labeledit = QLineEdit(self.aw.qmc.flavorlabels[i])
@@ -163,7 +155,7 @@ class flavorDlg(ArtisanResizeablDialog):
                 valueSpinBox = MyQDoubleSpinBox()
                 valueSpinBox.setRange(0.,10.)
                 valueSpinBox.setSingleStep(.25)
-                valueSpinBox.setAlignment(Qt.AlignmentFlag.AlignRight)
+                valueSpinBox.setAlignment(Qt.AlignRight)
                 val = self.aw.qmc.flavors[i]
                 if self.aw.qmc.flavors[0] < 1. and self.aw.qmc.flavors[-1] < 1.: # < 0.5.0 version style compatibility
                     val *= 10.
@@ -174,18 +166,18 @@ class flavorDlg(ArtisanResizeablDialog):
                 self.flavortable.setCellWidget(i,1,valueSpinBox)
             self.flavortable.resizeColumnsToContents()
             header = self.flavortable.horizontalHeader()
-            header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+            header.setSectionResizeMode(0, QHeaderView.Stretch)
 
     @pyqtSlot(bool)
     def showbackground(self,_):
         if self.backgroundCheck.isChecked():
             if not self.aw.qmc.background:
-                message = QApplication.translate("Message","Background profile not found")
+                message = QApplication.translate("Message","Background profile not found", None)
                 self.aw.sendmessage(message)
                 self.backgroundCheck.setChecked(False)
             else:
                 if len(self.aw.qmc.backgroundFlavors) != len(self.aw.qmc.flavors):
-                    message = QApplication.translate("Message","Background does not match number of labels")
+                    message = QApplication.translate("Message","Background does not match number of labels", None)
                     self.aw.sendmessage(message)
                     self.aw.qmc.flavorbackgroundflag = False
                     self.backgroundCheck.setChecked(False)
@@ -216,7 +208,7 @@ class flavorDlg(ArtisanResizeablDialog):
                 label = chr(10).join(parts)
             self.aw.qmc.flavorlabels[i] = label
             self.aw.qmc.flavors[i] = valueSpinBox.value()
-        if self.lastcomboboxIndex == self.defaultcombobox.count()-1:
+        if self.lastcomboboxIndex == 10:
             # store the current labels as *CUSTOM*
             self.aw.qmc.customflavorlabels = self.aw.qmc.flavorlabels
 
@@ -240,36 +232,34 @@ class flavorDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(int)
     def setdefault(self,_):
-        if self.lastcomboboxIndex == self.defaultcombobox.count()-1:
+        if self.lastcomboboxIndex == 10:
             # store the current labels as *CUSTOM*
             self.aw.qmc.customflavorlabels = self.aw.qmc.flavorlabels
         dindex =  self.defaultcombobox.currentIndex()
-        #["","Artisan","SCAA","CQI","SweetMarias","C","E","coffeegeek","Intelligentsia","WCRC"]
-        if dindex > 0 or dindex < self.defaultcombobox.count()-1:
+        #["","Artisan","SCCA","CQI","SweetMarias","C","E","coffeegeek","Intelligentsia","WCRC"]
+        if dindex > 0 or dindex < 11:
             self.aw.qmc.flavorstartangle = 90
         if dindex == 1:
             self.aw.qmc.flavorlabels = list(self.aw.qmc.artisanflavordefaultlabels)
         elif dindex == 2:
-            self.aw.qmc.flavorlabels = list(self.aw.qmc.SCAflavordefaultlabels)
+            self.aw.qmc.flavorlabels = list(self.aw.qmc.SCCAflavordefaultlabels)
         elif dindex == 3:
-            self.aw.qmc.flavorlabels = list(self.aw.qmc.SCAAflavordefaultlabels)
-        elif dindex == 4:
             self.aw.qmc.flavorlabels = list(self.aw.qmc.CQIflavordefaultlabels)
-        elif dindex == 5:
+        elif dindex == 4:
             self.aw.qmc.flavorlabels = list(self.aw.qmc.SweetMariasflavordefaultlabels)
-        elif dindex == 6:
+        elif dindex == 5:
             self.aw.qmc.flavorlabels = list(self.aw.qmc.Cflavordefaultlabels)
-        elif dindex == 7:
+        elif dindex == 6:
             self.aw.qmc.flavorlabels = list(self.aw.qmc.Eflavordefaultlabels)
-        elif dindex == 8:
+        elif dindex == 7:
             self.aw.qmc.flavorlabels = list(self.aw.qmc.coffeegeekflavordefaultlabels)
-        elif dindex == 9:
+        elif dindex == 8:
             self.aw.qmc.flavorlabels = list(self.aw.qmc.Intelligentsiaflavordefaultlabels)
-        elif dindex == 10:
+        elif dindex == 9:
             self.aw.qmc.flavorlabels = list(self.aw.qmc.IstitutoInternazionaleAssaggiatoriCaffe)
-        elif dindex == 11:
+        elif dindex == 10:
             self.aw.qmc.flavorlabels = list(self.aw.qmc.WorldCoffeeRoastingChampionship)
-        elif dindex == 12:
+        elif dindex == 11:
             self.aw.qmc.flavorlabels = list(self.aw.qmc.customflavorlabels)
         else:
             return
@@ -306,12 +296,12 @@ class flavorDlg(ArtisanResizeablDialog):
         if self.aw.qmc.ax1 is not None:
             try:
                 self.aw.qmc.fig.delaxes(self.aw.qmc.ax1)
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
         self.aw.qmc.fig.clf()
         self.aw.qmc.clearFlavorChart()
         self.aw.redrawOnResize = True
         self.aw.qmc.redraw(recomputeAllDeltas=False)
         self.aw.showControls()
-#        self.aw.closeEventSettings() # save all app settings
+        self.aw.closeEventSettings() # save all app settings
         self.accept()

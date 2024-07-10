@@ -9,14 +9,12 @@ clone_depth: 1
 
 environment:
   matrix:
-  - job_name: windows_legacy
+  - job_name: windows
     appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: windows
-#    appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: macos
-#    appveyor_build_worker_image: macos
-#  - job_name: linux
-#    appveyor_build_worker_image: Ubuntu2004
+  - job_name: macos
+    appveyor_build_worker_image: macos
+  - job_name: linux
+    appveyor_build_worker_image: Ubuntu2004
 #  - job_name: rpi
 #    appveyor_build_worker_image: Ubuntu1604
 
@@ -26,7 +24,7 @@ matrix:
 
 init:
   # Set "build version number" shown in appveyor build status to the commit hash, the build number keeps it unique
-  - ps: Update-AppveyorBuild -Version "$($env:APPVEYOR_REPO_COMMIT.substring(0,7)) ($env:APPVEYOR_BUILD_NUMBER)"
+  - ps: Update-AppveyorBuild -Version "$($env:APPVEYOR_REPO_COMMIT.substring(0,7)) ($env:APPVEYOR_BUILD_VERSION)"
   - ps: if($Env:inhibit_deploy -eq 'true'){Write-Host "**** Deploy Inhibited ****"}
 
 branches:
@@ -34,53 +32,9 @@ branches:
     - master
 
 stack:
-  python 3.10 # if nothing else is specified per platform, this indicates the Python version to be used
+  python 3.9
 
 for:
--
-  matrix:
-    only:
-      - job_name: windows_legacy
-    fast_finish: false
-
-  environment:
-    PYTHON_PATH: "C:\\Python38-x64"
-    QT_PATH: "c:\\qt\\5.15\\msvc2019_64"
-    PYUIC: "pyuic5.exe"
-    PYINSTALLER_VER: "4.3"
-    BUILD_PYINSTALLER: "True"
-    ARTISAN_LEGACY: "True"
-    VC_REDIST: "https://aka.ms/vs/16/release/vc_redist.x64.exe"
-    UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
-
-  install:
-    - cmd: echo Windows Legacy Install
-    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
-    - cmd: .ci\install-win.bat LEGACY
-
-  build_script:
-    - cmd: echo Windows Legacy Build
-    - cmd: cd src
-
-    # update the __revision__ field with the left seven of the GIT commit hash
-    - ps: $GIT_VERSION=git rev-parse --verify --short HEAD
-    - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '0'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
-    - ps: move -force newfile artisanlib/__init__.py
-
-    # run the install script
-    - cmd: build-win3-pi.bat LEGACY
-
-#  test_script:
-#    - cmd: python -m unittest discover
-
-#  artifacts:
-#    - path: 'src\artisan-*.zip'
-
-  deploy_script:
-    - cmd: curl -L -O https://github.com/roasterdave/uploadtool/raw/master/upload.sh
-    - cmd: bash upload.sh artisan-*.zip
-
-
 -
   matrix:
     only:
@@ -88,34 +42,57 @@ for:
     fast_finish: false
 
   environment:
-    PYTHON_PATH: "C:\\Python310-x64"
-    QT_PATH: "C:\\qt\\6.2\\msvc2019_64"
-    PYUIC: "pyuic6.exe"
-    PYINSTALLER_VER: "4.9"
-    BUILD_PYINSTALLER: "True"
-    ARTISAN_LEGACY: "False"
-    VC_REDIST: "https://aka.ms/vs/17/release/vc_redist.x64.exe"
-    UPLOADTOOL_BODY: "WARNING: pre-release builds may not work. Use at your own risk."
+    PYTHON: "C:\\Python38-x64"
+    UPLOADTOOL_BODY:
+      "WARNING: pre-release builds may not work. Use at your own risk."
 
   install:
-    - cmd: echo Windows Install
-    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
-    - cmd: .ci\install-win.bat
+    - echo "Windows Install"
+    - "SET PATH=%PYTHON%;%PYTHON%\\Scripts;%PATH%"
+    - echo "Python Version"
+    - python -V
+    - "%PYTHON%\\python.exe -m pip install --upgrade pip"
+    - "%PYTHON%\\python.exe -m pip install wheel"
+    - "%PYTHON%\\python.exe -m pip install .ci\\pyinstaller-4.3-py3-none-any.whl"
+  ## start: build the pyinstaller bootloader and install (using the default VS 2015)
+  #  - curl -L -O https://github.com/pyinstaller/pyinstaller/releases/download/v%PYINSTALLER_VER%/PyInstaller-%PYINSTALLER_VER%.tar.gz
+  #  - tar xzf PyInstaller-%PYINSTALLER_VER%.tar.gz
+  #  - del PyInstaller-%PYINSTALLER_VER%.tar.gz
+  #  - cd pyinstaller-%PYINSTALLER_VER%\bootloader
+  #  - "%PYTHON%\\python.exe ./waf all --target-arch=64bit"
+  #  - cd ..
+  #  - "%PYTHON%\\python.exe setup.py install"
+  #  - cd ..
+  ## end: build the pyinstaller bootloader and install
+    - "%PYTHON%\\python.exe -m pip install -r src\\requirements.txt"
+    - "%PYTHON%\\python.exe -m pip install -r src\\requirements-win.txt"
+    - curl -L -O https://download.microsoft.com/download/9/3/F/93FCF1E7-E6A4-478B-96E7-D4B285925B00/vc_redist.x64.exe
+  #  - curl -k -L -O https://kent.dl.sourceforge.net/project/snap7/1.4.2/snap7-full-1.4.2.7z
+    - curl -k -L -O https://netcologne.dl.sourceforge.net/project/snap7/1.4.2/snap7-full-1.4.2.7z
+    - 7z x snap7-full-1.4.2.7z
+    - copy snap7-full-1.4.2\build\bin\win64\snap7.dll c:\windows
+    - curl -k -L -O https://netcologne.dl.sourceforge.net/project/libusb-win32/libusb-win32-releases/1.2.6.0/libusb-win32-bin-1.2.6.0.zip
+    - 7z x libusb-win32-bin-1.2.6.0.zip
+    - copy libusb-win32-bin-1.2.6.0\bin\amd64\libusb0.dll C:\Windows\SysWOW64
+  ## Phidget Python lib no installed via pip
+  #  - curl -L -O https://www.phidgets.com/downloads/phidget22/libraries/any/Phidget22Python.zip
+  #  - 7z x Phidget22Python.zip
+  #  - cd Phidget22Python
+  #  - python setup.py install
+  #  - cd ..
 
   build_script:
-    - cmd: echo Windows Build
+    - echo "Windows Build"
     - cmd: cd src
-
-    # update the __revision__ field with the left seven of the GIT commit hash
     - ps: $GIT_VERSION=git rev-parse --verify --short HEAD
     - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '0'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
     - ps: move -force newfile artisanlib/__init__.py
-
-    # run the install script
+    - cmd: FOR /F "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanlib.__version__)"`) DO (set ARTISAN_VERSION=%%~a)
+    - ps: gc setup-install3-pi.nsi | %{ $_ -replace "!define PRODUCT_VERSION.*", "!define PRODUCT_VERSION ""$Env:ARTISAN_VERSION.0""" } | out-file newfile -encoding ascii -force
+    - ps: move -force newfile setup-install3-pi.nsi
     - cmd: build-win3-pi.bat
-
-#  test_script:
-#    - cmd: python -m unittest discover
+    - cmd: copy ..\LICENSE LICENSE.txt
+    - cmd: 7z a artisan-win-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
 
 #  artifacts:
 #    - path: 'src\artisan-*.zip'
@@ -133,7 +110,7 @@ for:
 
   environment:
     ARTISAN_OS: osx
-    PYTHON: ~/venv3.10
+    PYTHON: ~/venv3.8
     language: generic
     HOMEBREW_NO_INSTALL_CLEANUP: 1
     HOMEBREW_NO_ANALYTICS: 1
@@ -142,20 +119,14 @@ for:
   install:
     - echo "MacOS Install"
     - chmod +x .ci/*.sh
-    # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
-    # run the install script
     - .ci/install-${ARTISAN_OS}.sh
 
   build_script:
     - echo "MacOS Build"
     - chmod +x src/*.sh
     - .ci/script-${ARTISAN_OS}.sh
-
-# unit test fails as it runs on Py3.9 while the build installs under brew isntalled Py3.10 (see build-mac3.py)
-#  test_script:
-#    - python -m unittest discover -s src
 
 #  artifacts:
 #    - path: 'src/artisan-*.dmg'
@@ -175,27 +146,19 @@ for:
 
   environment:
     ARTISAN_OS: linux
-    PYTHON: $HOME/venv3.10.2
-    #PYTHON: $HOME/venv3.9.10
-    # NOTE: there is an issue with Python 3.10.0 and pyinstaller fixed in Python 3.10.1 (not yet available on appveyor)
-    # see pyinstaller Issue #6301
+    PYTHON: $HOME/venv3.8
 
   install:
     - echo "Linux Install"
     - chmod +x .ci/*.sh
-    # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
     - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
-    # run the install script
     - .ci/install-${ARTISAN_OS}.sh
 
   build_script:
     - echo "Linux Build"
     - chmod +x src/*.sh
     - .ci/script-${ARTISAN_OS}.sh
-
-  test_script:
-    - QT_QPA_PLATFORM=offscreen python -m unittest discover -s src
 
 #  artifacts:
 #    - path: 'src/artisan-*.deb'
@@ -218,7 +181,7 @@ for:
 
   environment:
     ARTISAN_OS: rpi
-    PYTHON: $HOME/venv3.9
+    PYTHON: $HOME/venv3.8
 
   install:
     - echo "RPI Install"

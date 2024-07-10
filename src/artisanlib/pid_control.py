@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
-#
+#!/usr/bin/env python3
+
 # ABOUT
 # Artisan PID Controllers (Fuji, DTA, Arduino TC4)
 
@@ -7,7 +7,7 @@
 # This program or module is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
 # by the Free Software Foundation, either version 2 of the License, or
-# version 3 of the License, or (at your option) any later version. It is
+# version 3 of the License, or (at your option) any later versison. It is
 # provided for educational purposes and is distributed in the hope that
 # it will be useful, but WITHOUT ANY WARRANTY; without even the implied
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
@@ -29,28 +29,13 @@
 
 import time as libtime
 import numpy
-import logging
-try:
-    from typing import Final
-except ImportError:
-    # for Python 3.7:
-    from typing_extensions import Final
 
-from artisanlib.util import decs2string, fromCtoF, fromFtoC, hex2int, str2cmd, stringfromseconds, cmd2str
+from artisanlib.util import decs2string, fromCtoF, fromFtoC, hex2int, str2cmd, stringfromseconds
 
-try:
-    #pylint: disable = E, W, R, C
-    from PyQt6.QtCore import pyqtSlot # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt6.QtWidgets import QApplication # @UnusedImport @Reimport  @UnresolvedImport
-except Exception:
-    #pylint: disable = E, W, R, C
-    from PyQt5.QtCore import pyqtSlot # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt5.QtWidgets import QApplication # @UnusedImport @Reimport  @UnresolvedImport
+from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtWidgets import QApplication
 
-
-_log: Final = logging.getLogger(__name__)
-
-class FujiPID():
+class FujiPID(object):
     def __init__(self,aw):
         self.aw = aw
     
@@ -320,14 +305,14 @@ class FujiPID():
                 self.aw.fujipid.PXG4[pkey][0] = float(newPvalue)
                 self.aw.fujipid.PXG4[ikey][0] = float(newIvalue)
                 self.aw.fujipid.PXG4[dkey][0] = float(newDvalue)
-                message = QApplication.translate("StatusBar","pid #{0} successfully set to ({1},{2},{3})"
+                message = QApplication.translate("StatusBar","pid #{0} successfully set to ({1},{2},{3})",None
                                                        ).format(str(k),str(newPvalue),str(newIvalue),str(newDvalue))
                 self.aw.sendmessage(message)
             else:
                 lp = len(p)
                 li = len(i)
                 ld = len(d)
-                message = QApplication.translate("StatusBar","pid command failed. Bad data at pid{0} (8,8,8): ({1},{2},{3}) "
+                message = QApplication.translate("StatusBar","pid command failed. Bad data at pid{0} (8,8,8): ({1},{2},{3}) ",None
                                                        ).format(str(k),str(lp),str(li),str(ld))
                 self.aw.sendmessage(message)
                 self.aw.qmc.adderror(message)
@@ -365,14 +350,14 @@ class FujiPID():
                 self.aw.fujipid.PXF[pkey][0] = float(newPvalue)
                 self.aw.fujipid.PXF[ikey][0] = float(newIvalue)
                 self.aw.fujipid.PXF[dkey][0] = float(newDvalue)
-                message = QApplication.translate("StatusBar","pid #{0} successfully set to ({1},{2},{3})"
+                message = QApplication.translate("StatusBar","pid #{0} successfully set to ({1},{2},{3})",None
                                                        ).format(str(k),str(newPvalue),str(newIvalue),str(newDvalue))
                 self.aw.sendmessage(message)
             else:
                 lp = len(p)
                 li = len(i)
                 ld = len(d)
-                message = QApplication.translate("StatusBar","pid command failed. Bad data at pid{0} (8,8,8): ({1},{2},{3}) "
+                message = QApplication.translate("StatusBar","pid command failed. Bad data at pid{0} (8,8,8): ({1},{2},{3}) ",None
                                                        ).format(str(k),str(lp),str(li),str(ld))
                 self.aw.sendmessage(message)
                 self.aw.qmc.adderror(message)
@@ -450,7 +435,7 @@ class FujiPID():
                 r = self.aw.ser.sendFUJIcommand(command,8)
 
         if len(r) == 8:
-            message = QApplication.translate("StatusBar","{0} successfully sent to pid ").format(var)
+            message = QApplication.translate("StatusBar","{0} successfully sent to pid ",None).format(var)
             self.aw.sendmessage(message)
             if var == "p":
                 self.aw.fujipid.PXR["p"][0] = int(v)
@@ -459,7 +444,7 @@ class FujiPID():
             elif var == "d":
                 self.aw.fujipid.PXR["d"][0] = int(v)
         else:
-            message = QApplication.translate("StatusBar","setpid(): There was a problem setting {0}").format(var)
+            message = QApplication.translate("StatusBar","setpid(): There was a problem setting {0}",None).format(var)
             self.aw.sendmessage(message)
             self.aw.qmc.adderror(message)
                     
@@ -470,12 +455,16 @@ class FujiPID():
                 res = self.aw.qmc.backgroundSmoothedBTat(tx + self.lookahead) # smoothed and approximated background
                 if res == -1:
                     return None # no background value for that time point
-                return res
-            res = self.aw.qmc.backgroundSmoothedETat(tx + self.lookahead) # smoothed and approximated background
-            if res == -1:
-                return None # no background value for that time point
-            return res
-        return None
+                else:
+                    return res
+            else: # we observe the ET
+                res = self.aw.qmc.backgroundSmoothedETat(tx + self.lookahead) # smoothed and approximated background
+                if res == -1:
+                    return None # no background value for that time point
+                else:
+                    return res
+        else:
+            return None
     
     ##TX/RX FUNCTIONS
     #This function reads read-only memory (with 3xxxx memory we need function=4)
@@ -493,8 +482,9 @@ class FujiPID():
         if self.aw.ser.useModbusPort:
             # we use the pymodbus implementation
             return self.aw.modbus.readSingleRegister(stationNo,self.aw.modbus.address2register(reg,4),4)
-        #we compose a message then we send it by using self.readoneword()
-        return self.readoneword(self.message2send(stationNo,4,reg,1))
+        else:
+            #we compose a message then we send it by using self.readoneword()
+            return self.readoneword(self.message2send(stationNo,4,reg,1))
 
     # activates the SV slider
     def activateONOFFsliderSV(self,flag):
@@ -529,7 +519,8 @@ class FujiPID():
             val = self.readoneword(command)/10.
         if val != -0.1:
             return val
-        return -1
+        else:
+            return -1
 
     # returns Fuji duty signal in the range 0-100 or -1
     def readdutycycle(self):
@@ -573,6 +564,50 @@ class FujiPID():
         #val range -3 to 103%. Check for possible decimal digit user settings
         return val
 
+    #turns ON turns OFF current ramp soak mode
+    #flag =0 OFF, flag = 1 ON, flag = 2 hold
+    #A ramp soak pattern defines a whole profile. They have a minimum of 4 segments.
+    # returns True on success, False otherwise
+    def setrampsoak(self,flag):
+        register = None
+        if self.aw.ser.controlETpid[0] == 0: #Fuji PXG
+            register = self.PXG4["rampsoak"][1]        
+        elif self.aw.ser.controlETpid[0] == 1: #Fuji PXR
+            register = self.PXR["rampsoak"][1]
+        elif self.aw.ser.controlETpid[0] == 4:
+            register = self.PXF["rampsoak"][1]
+        if self.aw.ser.useModbusPort:
+            if register is not None:
+                reg = self.aw.modbus.address2register(register,6)
+                self.aw.modbus.writeSingleRegister(self.aw.ser.controlETpid[1],reg,flag)
+                if flag == 1:
+                    self.aw.fujipid.rampsoak = True
+                    self.aw.sendmessage(QApplication.translate("Message","RS ON", None))
+                elif flag == 0:
+                    self.aw.fujipid.rampsoak = False
+                    self.aw.sendmessage(QApplication.translate("Message","RS OFF", None))
+                else:
+                    self.aw.sendmessage(QApplication.translate("Message","RS on HOLD", None))
+                return True         
+        elif register is not None:
+            command = self.message2send(self.aw.ser.controlETpid[1],6,register,flag)
+            r = self.aw.ser.sendFUJIcommand(command,8)
+            #if OK
+            if r == command:
+                if flag == 1:
+                    self.aw.fujipid.rampsoak = True
+                    self.aw.sendmessage(QApplication.translate("Message","RS ON", None))
+                elif flag == 0:
+                    self.aw.fujipid.rampsoak = False
+                    self.aw.sendmessage(QApplication.translate("Message","RS OFF", None))
+                else:
+                    self.aw.sendmessage(QApplication.translate("Message","RS on HOLD", None))
+                return True
+            else:
+                self.aw.qmc.adderror(QApplication.translate("Error Message","RampSoak could not be changed",None))
+                return False
+        return False
+        
     def getrampsoakmode(self):
         if self.aw.ser.controlETpid[0] == 0: #Fuji PXG
             register = self.PXG4["rampsoakpattern"][1]
@@ -605,7 +640,6 @@ class FujiPID():
         if self.aw.ser.useModbusPort:
             reg = self.aw.modbus.address2register(register,3)
             self.aw.modbus.writeSingleRegister(self.aw.ser.controlETpid[1],reg,mode)
-            r = ""
         else:                
             command = self.aw.fujipid.message2send(self.aw.ser.controlETpid[1],6,register,mode)
             r = self.aw.ser.sendFUJIcommand(command,8)
@@ -617,54 +651,11 @@ class FujiPID():
             elif self.aw.ser.controlETpid[0] == 4: #Fuji PXF
                 self.PXF["rampsoakpattern"][0] = mode
             return True
-        return False
-            
-    #turns ON turns OFF current ramp soak mode
-    #flag =0 OFF, flag = 1 ON, flag = 2 hold
-    #A ramp soak pattern defines a whole profile. They have a minimum of 4 segments.
-    # returns True on success, False otherwise
-    def setrampsoak(self,flag):
-        register = None
-        if self.aw.ser.controlETpid[0] == 0: #Fuji PXG
-            register = self.PXG4["rampsoak"][1]        
-        elif self.aw.ser.controlETpid[0] == 1: #Fuji PXR
-            register = self.PXR["rampsoak"][1]
-        elif self.aw.ser.controlETpid[0] == 4: #Fuji PXF
-            register = self.PXF["rampsoak"][1]
-        if self.aw.ser.useModbusPort:
-            if register is not None:
-                reg = self.aw.modbus.address2register(register,6)
-                self.aw.modbus.writeSingleRegister(self.aw.ser.controlETpid[1],reg,flag)
-                if flag == 1:
-                    self.aw.fujipid.rampsoak = True
-                    self.aw.sendmessage(QApplication.translate("Message","RS ON"))
-                elif flag == 0:
-                    self.aw.fujipid.rampsoak = False
-                    self.aw.sendmessage(QApplication.translate("Message","RS OFF"))
-                else:
-                    self.aw.sendmessage(QApplication.translate("Message","RS on HOLD"))
-                return True         
-        elif register is not None:
-            command = self.message2send(self.aw.ser.controlETpid[1],6,register,flag)
-            r = self.aw.ser.sendFUJIcommand(command,8)
-            #if OK
-            if r == command:
-                if flag == 1:
-                    self.aw.fujipid.rampsoak = True
-                    self.aw.sendmessage(QApplication.translate("Message","RS ON"))
-                elif flag == 0:
-                    self.aw.fujipid.rampsoak = False
-                    self.aw.sendmessage(QApplication.translate("Message","RS OFF"))
-                else:
-                    self.aw.sendmessage(QApplication.translate("Message","RS on HOLD"))
-                return True
-            self.aw.qmc.adderror(QApplication.translate("Error Message","RampSoak could not be changed"))
+        else:
             return False
-        return False
 
     # returns True on success, False otherwise
     def setONOFFstandby(self,flag):
-        _log.debug("setONOFFstandby(%s)",flag)
         #flag = 0 standby OFF, flag = 1 standby ON (pid off)
         #standby ON (pid off) will reset: rampsoak modes/autotuning/self tuning
         #Fuji PXG
@@ -681,7 +672,7 @@ class FujiPID():
             command = self.aw.fujipid.message2send(self.aw.ser.controlETpid[1],6,register,flag)
             #TX and RX
             r = self.aw.ser.sendFUJIcommand(command,8)
-        if self.aw.ser.useModbusPort or r == command:
+        if r == command or self.aw.ser.useModbusPort:
             if self.aw.ser.controlETpid[0] == 0:
                 self.aw.fujipid.PXG4["runstandby"][0] = flag
             elif self.aw.ser.controlETpid[0] == 1:
@@ -689,18 +680,10 @@ class FujiPID():
             elif self.aw.ser.controlETpid[0] == 4:
                 self.aw.fujipid.PXF["runstandby"][0] = flag
             return True
-        mssg = QApplication.translate("Error Message","Exception:") + " setONOFFstandby()"
-        self.aw.qmc.adderror(mssg)
-        return False
-    
-    def getONOFFstandby(self):
-        if self.aw.ser.controlETpid[0] == 0:
-            return self.aw.fujipid.PXG4["runstandby"][0]
-        if self.aw.ser.controlETpid[0] == 1:
-            return self.aw.fujipid.PXR["runstandby"][0]
-        if self.aw.ser.controlETpid[0] == 4:
-            return self.aw.fujipid.PXF["runstandby"][0]
-        return None
+        else:
+            mssg = QApplication.translate("Error Message","Exception:",None) + " setONOFFstandby()"
+            self.aw.qmc.adderror(mssg)
+            return False
                 
     #sets a new sv value (if slient=False, no output nor event recording is done, if move is True the SV slider is moved)
     def setsv(self,value,silent=False,move=True):
@@ -714,32 +697,30 @@ class FujiPID():
             
             #send command to the current sv (1-7)
             
-#            #-- experimental begin
-#            # read the current svN (1-7) being used
-#            if self.aw.ser.useModbusPort:
-#                reg = self.aw.modbus.address2register(reg_dict["selectsv"][1],3)
-#                N = self.aw.modbus.readSingleRegister(self.aw.ser.controlETpid[1],reg,3)
-#            else:
-#                command = self.message2send(self.aw.ser.controlETpid[1],3,reg_dict["selectsv"][1],1)
-#                N = self.readoneword(command)
-#            if N > 0:
-#                reg_dict["selectsv"][0] = N
-#            #-- experimental end
+            #-- experimental begin
+            # read the current svN (1-7) being used
+            if self.aw.ser.useModbusPort:
+                reg = self.aw.modbus.address2register(reg_dict["selectsv"][1],3)
+                N = self.aw.modbus.readSingleRegister(self.aw.ser.controlETpid[1],reg,3)
+            else:
+                command = self.aw.fujipid.message2send(self.aw.ser.controlETpid[1],3,reg_dict["selectsv"][1],1)
+                N = self.aw.fujipid.readoneword(command)
+            if N > 0:
+                reg_dict["selectsv"][0] = N
+            #-- experimental end
             
             svkey = "sv"+ str(reg_dict["selectsv"][0]) #current sv
             if self.aw.ser.useModbusPort:
                 reg = self.aw.modbus.address2register(reg_dict[svkey][1],6)
                 self.aw.modbus.writeSingleRegister(self.aw.ser.controlETpid[1],reg,int(value*10))
             else:
-#                value = int(round(value)) # not sure why this is needed, but a FUJI PXF seems not to work without this and value as full floating point numbers!?
-# this hack seems not to help
                 command = self.message2send(self.aw.ser.controlETpid[1],6,reg_dict[svkey][1],int(value*10))
                 r = self.aw.ser.sendFUJIcommand(command,8)
             #check response
             if self.aw.ser.useModbusPort or r == command:
                 if not silent:
                     # [Not sure the following will translate or even format properly... Need testing!]
-                    message = QApplication.translate("Message","PXG/PXF sv#{0} set to {1}").format(reg_dict["selectsv"][0],"%.1f" % float(value))
+                    message = QApplication.translate("Message","PXG/PXF sv#{0} set to {1}",None).format(reg_dict["selectsv"][0],"%.1f" % float(value))
                     self.aw.sendmessage(message)
                     reg_dict[svkey][0] = value
                     #record command as an Event 
@@ -749,12 +730,8 @@ class FujiPID():
                 if move:
                     self.aw.moveSVslider(value,setValue=False)
             else:
-                # error response
-                Rx = ""
-                if len(r):
-                    import binascii
-                    Rx = cmd2str(binascii.hexlify(r))
-                self.aw.qmc.adderror(QApplication.translate("Error Message","Exception:") + " setsv(): Rx = " + Rx)
+                self.aw.qmc.adderror(QApplication.translate("Error Message","Exception:",None) + " setsv()")
+                return -1
         #Fuji PXR
         elif self.aw.ser.controlETpid[0] == 1:  
             if self.aw.ser.useModbusPort:
@@ -767,7 +744,7 @@ class FujiPID():
             if self.aw.ser.useModbusPort or r == command:
                 if not silent:
                     # [Not sure the following will translate or even format properly... Need testing!]
-                    message = QApplication.translate("Message","PXR sv set to {0}").format("%.1f" % float(value))
+                    message = QApplication.translate("Message","PXR sv set to {0}",None).format("%.1f" % float(value))
                     self.aw.fujipid.PXR["sv0"][0] = value
                     self.aw.sendmessage(message)
                     #record command as an Event 
@@ -777,7 +754,8 @@ class FujiPID():
                 if move:
                     self.aw.moveSVslider(value,setValue=False)
             else:
-                self.aw.qmc.adderror(QApplication.translate("Error Message","Exception:") + " setPXRsv()")
+                self.aw.qmc.adderror(QApplication.translate("Error Message","Exception:",None) + " setPXRsv()")
+                return -1
 
     #used to set up or down SV by diff degrees from current sv setting; if move is True the SV slider is moved
     def adjustsv(self,diff,move=True):
@@ -814,7 +792,7 @@ class FujiPID():
                     command = self.message2send(self.aw.ser.controlETpid[1],6,reg_dict[svkey][1],newsv)
                     r = self.aw.ser.sendFUJIcommand(command,8)
                 if self.aw.ser.useModbusPort or len(r) == 8:
-                    message = QApplication.translate("Message","SV{0} changed from {1} to {2})").format(str(N),str(currentsv),str(newsv/10.))
+                    message = QApplication.translate("Message","SV{0} changed from {1} to {2})",None).format(str(N),str(currentsv),str(newsv/10.))
                     self.aw.sendmessage(message)
                     reg_dict[svkey][0] = newsv/10
                     #record command as an Event to replay (not binary as it needs to be stored in a text file)
@@ -824,7 +802,7 @@ class FujiPID():
                     if move:
                         self.aw.moveSVslider(newsv/10.,setValue=False)
                 else:
-                    msg = QApplication.translate("Message","Unable to set sv{0}").format(str(N))
+                    msg = QApplication.translate("Message","Unable to set sv{0}",None).format(str(N))
                     self.aw.sendmessage(msg)
             #   or if control pid is fuji PXR
             elif self.aw.ser.controlETpid[0] == 1:
@@ -835,7 +813,7 @@ class FujiPID():
                     command = self.message2send(self.aw.ser.controlETpid[1],6,self.PXR["sv0"][1],newsv)
                     r = self.aw.ser.sendFUJIcommand(command,8)
                 if self.aw.ser.useModbusPort or len(r) == 8:
-                    message = QApplication.translate("Message","SV changed from {0} to {1}").format(str(currentsv),str(newsv/10.))                           
+                    message = QApplication.translate("Message","SV changed from {0} to {1}",None).format(str(currentsv),str(newsv/10.))                           
                     self.aw.sendmessage(message)
                     self.PXR["sv0"][0] = newsv/10
                     #record command as an Event to replay (not binary as it needs to be stored in a text file)
@@ -845,9 +823,9 @@ class FujiPID():
                     if move:
                         self.aw.moveSVslider(newsv/10.,setValue=False)
                 else:
-                    self.aw.sendmessage(QApplication.translate("Message","Unable to set sv"))
+                    self.aw.sendmessage(QApplication.translate("Message","Unable to set sv", None))
         else:
-            self.aw.sendmessage(QApplication.translate("Message","Unable to set new sv"))
+            self.aw.sendmessage(QApplication.translate("Message","Unable to set new sv", None))
 
     #format of the input string Command: COMMAND::VALUE1::VALUE2::VALUE3::ETC
     def replay(self,CommandString):
@@ -857,8 +835,9 @@ class FujiPID():
         if command == "SETSV":
             self.setsv(float(values[0]))
             return
-        if command == "SETRS":
+        elif command == "SETRS":
             self.replaysetrs(CommandString)
+            return
 
     #example of command string with four segments (minimum for Fuji PIDs)
     # SETRS::270.0::3::0::SETRS::300.0::3::0::SETRS::350.0::3::0::SETRS::400.0::3::0
@@ -891,7 +870,7 @@ class FujiPID():
                 soakkey = "segment" + str(i+1) + "soak"
                 if self.aw.ser.controlETpid[0] == 0:             #PXG4
                     if not n%4 or n > 16:
-                        self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " PXG4 replaysetrs(): {0}").format(n))
+                        self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " PXG4 replaysetrs(): {0}").format(n))
                         return
                     if self.PXG4[svkey][0] != float(rs[i][0]):
                         self.PXG4[svkey][0] = float(rs[i][0])
@@ -907,7 +886,7 @@ class FujiPID():
                         changeflag = 0
                 elif self.aw.ser.controlETpid[0] == 1:           #PXR
                     if not n%4 or n > 8:
-                        self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " PXR replaysetrs(): {0}").format(n))
+                        self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " PXR replaysetrs(): {0}").format(n))
                         return
                     if self.PXR[svkey][0] != float(rs[i][0]):
                         self.PXR[svkey][0] = float(rs[i][0])
@@ -922,7 +901,7 @@ class FujiPID():
                         self.setsegment((i+1), self.PXR[svkey][0], self.PXR[rampkey][0] ,self.PXR[soakkey][0])
                         changeflag = 0
             else:
-                self.aw.qmc.adderror(QApplication.translate("Error Message","Exception:") + " replaysetrs()")
+                self.aw.qmc.adderror(QApplication.translate("Error Message","Exception:",None) + " replaysetrs()")
                 return
         #start ramp soak ON
         self.setrampsoak(1)
@@ -943,7 +922,7 @@ class FujiPID():
             svcommand = self.aw.fujipid.message2send(self.aw.ser.controlETpid[1],3,register,1)
             sv = self.aw.fujipid.readoneword(svcommand)
         if sv == -1:
-            return
+            return -1
         reg_dict[svkey][0] = sv/10.              #divide by 10 because the decimal point is not sent by the PID
         
         rampkey = "segment" + str(idn) + "ramp"
@@ -956,7 +935,7 @@ class FujiPID():
             ramp = self.aw.fujipid.readoneword(rampcommand)
         
         if ramp == -1:
-            return
+            return -1
         reg_dict[rampkey][0] = ramp
         
         soakkey = "segment" + str(idn) + "soak"
@@ -968,7 +947,7 @@ class FujiPID():
             soakcommand = self.aw.fujipid.message2send(self.aw.ser.controlETpid[1],3,register,1)
             soak = self.aw.fujipid.readoneword(soakcommand)
         if soak == -1:
-            return
+            return -1
         reg_dict[soakkey][0] = soak
         
 
@@ -1009,10 +988,9 @@ class FujiPID():
             r3 = self.aw.ser.sendFUJIcommand(soakcommand,8)
         #check if OK
         if len(r1)!=8 or len(r2)!=8 or len(r3)!=8:
-            self.aw.qmc.adderror(QApplication.translate("Error Message","Segment values could not be written into PID"))
+            self.aw.qmc.adderror(QApplication.translate("Error Message","Segment values could not be written into PID",None))
 
-    @staticmethod
-    def dec2HexRaw(decimal):
+    def dec2HexRaw(self,decimal):
         # This method converts a decimal to a raw string appropiate for Fuji serial TX
         # Used to compose serial messages
         Nbytes = []
@@ -1063,14 +1041,14 @@ class FujiPID():
             s1 = hex2int(r[3],r[4])
             #conversion from hex to dec
             return s1
-        #bad number of RX bytes 
-        errorcode = QApplication.translate("Error Message","pid.readoneword(): {0} RX bytes received (7 needed) for unit ID={1}").format(len(r),command[0])
-        self.aw.qmc.adderror(errorcode)
-        return -1
+        else:
+            #bad number of RX bytes 
+            errorcode = QApplication.translate("Error Message","pid.readoneword(): {0} RX bytes received (7 needed) for unit ID={1}",None).format(len(r),command[0])
+            self.aw.qmc.adderror(errorcode)
+            return -1
 
     #FUJICRC16 function calculates the CRC16 of the data. It expects a binary string as input and returns an int
-    @staticmethod
-    def fujiCrc16(string):
+    def fujiCrc16(self,string):
         crc16tab = (0x0000,
                     0xC0C1, 0xC181, 0x0140, 0xC301, 0x03C0, 0x0280, 0xC241, 0xC601, 0x06C0, 0x0780, 0xC741, 0x0500, 0xC5C1, 0xC481, 0x0440,
                     0xCC01, 0x0CC0, 0x0D80, 0xCD41, 0x0F00, 0xCFC1, 0xCE81, 0x0E40, 0x0A00, 0xCAC1, 0xCB81, 0x0B40, 0xC901, 0x09C0, 0x0880,
@@ -1100,7 +1078,7 @@ class FujiPID():
 ##########################  ARDUINO CLASS DEFINITION  ############################
 ###################################################################################
 
-class PIDcontrol():
+class PIDcontrol(object):
     def __init__(self,aw):
         self.aw = aw
         self.pidActive = False
@@ -1142,6 +1120,7 @@ class PIDcontrol():
         self.pidKp = 15.0
         self.pidKi = 0.01
         self.pidKd = 20.0
+        self.lastEnergy = None
         # Proposional on Measurement mode see: http://brettbeauregard.com/blog/2017/06/introducing-proportional-on-measurement/
         self.pOnE = True # True for Proposional on Error mode, False for Proposional on Measurement Mode
         # pidSource
@@ -1166,8 +1145,7 @@ class PIDcontrol():
         self.ramp_soak_engaged = 1 # set to 0, disengaged, after the RS pattern was processed fully
         self.RS_total_time = 0 # holds the total time of the current Ramp/Soak pattern
 
-    @staticmethod
-    def RStotalTime(ramps,soaks):
+    def RStotalTime(self,ramps,soaks):
         return sum(ramps) + sum(soaks)
         
     # returns True if an external PID controller is in use (MODBUS or TC4 PID firmware)
@@ -1181,39 +1159,45 @@ class PIDcontrol():
         # TC4 with PID firmware or MODBUS and SV register set or S7 and SV area set
         if self.aw.modbus.PID_slave_ID != 0:
             return 1
-        if self.aw.s7.PID_area != 0:
+        elif self.aw.s7.PID_area != 0:
             return 2
-        if (self.aw.qmc.device == 19 and self.aw.qmc.PIDbuttonflag):
+        elif (self.aw.qmc.device == 19 and self.aw.qmc.PIDbuttonflag):
             return 3
-        return 0
+        else:
+            return 0
              
     # v is from [-min,max]
     def setEnergy(self,v):
-        try: 
-            if self.aw.pidcontrol.pidPositiveTarget:
-                slidernr = self.aw.pidcontrol.pidPositiveTarget - 1
-                if self.aw.pidcontrol.invertControl:
-                    vp = abs(100 - v)
-                else:
-                    vp = v
-                vp = min(100,max(0,int(round(vp))))
-                # we need to map the duty [0%,100%] to the [slidermin,slidermax] range
-                heat = int(round(numpy.interp(vp,[0,100],[self.aw.eventslidermin[slidernr],self.aw.eventslidermax[slidernr]])))
-                self.aw.block_quantification_sampling_ticks[slidernr] = self.aw.sampling_ticks_to_block_quantifiction
-                self.aw.qmc.temporarymovepositiveslider = (slidernr,heat)
-            if self.aw.pidcontrol.pidNegativeTarget:
-                slidernr = self.aw.pidcontrol.pidNegativeTarget - 1
-                if self.aw.pidcontrol.invertControl:
-                    vn = 0 - v
-                else:
-                    vn = v
-                vn = min(0,max(-100,int(vn)))
-                # we need to map the duty [0%,-100%] to the [slidermin,slidermax] range
-                self.aw.block_quantification_sampling_ticks[slidernr] = self.aw.sampling_ticks_to_block_quantifiction
-                cool = int(round(numpy.interp(vn,[-100,0],[self.aw.eventslidermax[slidernr],self.aw.eventslidermin[slidernr]])))
-                self.aw.qmc.temporarymovenegativeslider = (slidernr,cool)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        # only update control signal if different to previous (cache reset by PID_ON)
+        if self.lastEnergy is None or self.lastEnergy != v:
+            try: 
+                if self.aw.pidcontrol.pidPositiveTarget:
+                    slidernr = self.aw.pidcontrol.pidPositiveTarget - 1
+                    if self.aw.pidcontrol.invertControl:
+                        vp = abs(100 - v)
+                    else:
+                        vp = v
+                    vp = min(100,max(0,int(vp)))
+                    # we need to map the duty [0%,100%] to the [slidermin,slidermax] range
+                    heat = int(round(numpy.interp(vp,[0,100],[self.aw.eventslidermin[slidernr],self.aw.eventslidermax[slidernr]])))
+                    self.aw.block_quantification_sampling_ticks[slidernr] = self.aw.sampling_ticks_to_block_quantifiction
+                    self.aw.qmc.temporarymovepositiveslider = (slidernr,heat)
+                if self.aw.pidcontrol.pidNegativeTarget:
+                    slidernr = self.aw.pidcontrol.pidNegativeTarget - 1
+                    if self.aw.pidcontrol.invertControl:
+                        vn = 0 - v
+                    else:
+                        vn = v
+                    vn = min(0,max(-100,int(vn)))
+                    # we need to map the duty [0%,-100%] to the [slidermin,slidermax] range
+                    self.aw.block_quantification_sampling_ticks[slidernr] = self.aw.sampling_ticks_to_block_quantifiction
+                    cool = int(round(numpy.interp(vn,[-100,0],[self.aw.eventslidermax[slidernr],self.aw.eventslidermin[slidernr]])))
+                    self.aw.qmc.temporarymovenegativeslider = (slidernr,cool)
+            except:
+#                import traceback
+#                traceback.print_exc(file=sys.stdout)
+                pass
+        self.lastEnergy = v
 
     def conv2celsius(self):
         try:
@@ -1234,8 +1218,8 @@ class PIDcontrol():
                 for j in range(len(self.RS_svValues[n])):
                     if self.RS_svValues[n][j] != 0:
                         self.RS_svValues[n][j] = fromFtoC(self.RS_svValues[n][j])
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
         finally:
             if self.aw.qmc.rampSoakSemaphore.available() < 1:
                 self.aw.qmc.rampSoakSemaphore.release(1)
@@ -1247,8 +1231,8 @@ class PIDcontrol():
             self.svSliderMin = fromCtoF(self.svSliderMin)
             self.svSliderMax = fromCtoF(self.svSliderMax)
             # establish ne limits on sliders
-            self.aw.sliderSV.setMinimum(int(round(self.svSliderMin)))
-            self.aw.sliderSV.setMaximum(int(round(self.svSliderMax)))
+            self.aw.sliderSV.setMinimum(self.svSliderMin)
+            self.aw.sliderSV.setMaximum(self.svSliderMax)
             self.pidKp = self.pidKp / (9/5.)
             self.pidKi = self.pidKi / (9/5.)
             self.pidKd = self.pidKd / (9/5.)
@@ -1259,8 +1243,8 @@ class PIDcontrol():
                 for j in range(len(self.RS_svValues[n])):
                     if self.RS_svValues[n][j] != 0:
                         self.RS_svValues[n][j] = fromCtoF(self.RS_svValues[n][j])
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
         finally:
             if self.aw.qmc.rampSoakSemaphore.available() < 1:
                 self.aw.qmc.rampSoakSemaphore.release(1)
@@ -1286,39 +1270,26 @@ class PIDcontrol():
                 self.time_pidON = self.aw.qmc.on_timex[-1]
                 if self.svMode == 1:
                     # turn the timer LCD color blue if in RS mode and not recording
-                    self.aw.setTimerColor("rstimer")
-
-    # the internal software PID should be configured on ON, but not be activated yet to warm it up
-    def confSoftwarePID(self):
-        if self.aw.pidcontrol.externalPIDControl() not in [1, 2] and not(self.aw.qmc.device == 19 and self.aw.qmc.PIDbuttonflag) and self.aw.qmc.Controlbuttonflag:
-            # software PID
-            self.aw.qmc.pid.setPID(self.pidKp,self.pidKi,self.pidKd,self.pOnE)
-            self.aw.qmc.pid.setLimits((-100 if self.aw.pidcontrol.pidNegativeTarget else 0),(100 if self.aw.pidcontrol.pidPositiveTarget else 0))
-            self.aw.qmc.pid.setDutySteps(self.aw.pidcontrol.dutySteps)
-            self.aw.qmc.pid.setDutyMin(self.aw.pidcontrol.dutyMin)
-            self.aw.qmc.pid.setDutyMax(self.aw.pidcontrol.dutyMax)
-            self.aw.qmc.pid.setControl(self.aw.pidcontrol.setEnergy)
-            if self.aw.pidcontrol.svMode == 0:
-                self.aw.pidcontrol.setSV(self.aw.sliderSV.value())
+                    self.aw.lcd1.setStyleSheet("QLCDNumber { border-radius: 4; color: %s; background-color: %s;}"%(self.aw.lcdpaletteF["rstimer"],self.aw.lcdpaletteB["rstimer"]))
+                    self.aw.qmc.setTimerLargeLCDcolorSignal.emit(self.aw.lcdpaletteF["rstimer"],self.aw.lcdpaletteB["rstimer"])
 
     def pidOn(self):
         if self.aw.qmc.flagon:
-            if not self.pidActive:
-                self.aw.sendmessage(QApplication.translate("StatusBar","PID ON"))
             self.pidModeInit()
                     
             self.aw.qmc.temporayslider_force_move = True
+            self.lastEnergy = None
             # TC4 hardware PID
             # MODBUS hardware PID
             if (self.aw.pidcontrol.externalPIDControl() == 1 and self.aw.modbus.PID_ON_action and self.aw.modbus.PID_ON_action != ""):
                 self.aw.eventaction(4,self.aw.modbus.PID_ON_action)
                 self.pidActive = True
-                self.aw.buttonCONTROL.setStyleSheet(self.aw.pushbuttonstyles["PIDactive"])
+                self.aw.button_10.setStyleSheet(self.aw.pushbuttonstyles["PIDactive"])
             # S7 hardware PID
             elif (self.aw.pidcontrol.externalPIDControl() == 2 and self.aw.s7.PID_ON_action and self.aw.s7.PID_ON_action != ""):
                 self.aw.eventaction(15,self.aw.s7.PID_ON_action)
                 self.pidActive = True
-                self.aw.buttonCONTROL.setStyleSheet(self.aw.pushbuttonstyles["PIDactive"]) 
+                self.aw.button_10.setStyleSheet(self.aw.pushbuttonstyles["PIDactive"]) 
             elif self.aw.qmc.device == 19 and self.aw.qmc.PIDbuttonflag: # ArduinoTC4 firmware PID
                 if self.aw.ser.ArduinoIsInitialized:
                     self.confPID(self.pidKp,self.pidKi,self.pidKd,self.pidSource,self.pidCycle,self.aw.pidcontrol.pOnE) # first configure PID according to the actual settings
@@ -1331,8 +1302,8 @@ class PIDcontrol():
                             self.aw.ser.SP.write(str2cmd("PID;LIMIT;" + str(duty_min) + ";" + str(duty_max) + "\n"))
                             self.aw.ser.SP.write(str2cmd("PID;ON\n"))
                             self.pidActive = True
-                            self.aw.buttonCONTROL.setStyleSheet(self.aw.pushbuttonstyles["PIDactive"])
-                            self.aw.sendmessage(QApplication.translate("Message","PID turned on"))
+                            self.aw.button_10.setStyleSheet(self.aw.pushbuttonstyles["PIDactive"])
+                            self.aw.sendmessage(QApplication.translate("Message","PID turned on", None))
                     finally:
                         if self.aw.ser.COMsemaphore.available() < 1:
                             self.aw.ser.COMsemaphore.release(1)
@@ -1343,32 +1314,33 @@ class PIDcontrol():
                 self.aw.qmc.pid.setDutySteps(self.aw.pidcontrol.dutySteps)
                 self.aw.qmc.pid.setDutyMin(self.aw.pidcontrol.dutyMin)
                 self.aw.qmc.pid.setDutyMax(self.aw.pidcontrol.dutyMax)
-                self.aw.qmc.pid.setControl(self.aw.pidcontrol.setEnergy)
+                self.aw.qmc.pid.setControl(lambda v: self.aw.pidcontrol.setEnergy(v))
                 if self.aw.pidcontrol.svMode == 0:
                     self.aw.pidcontrol.setSV(self.aw.sliderSV.value())
+#                    self.aw.pidcontrol.setSV(self.aw.pidcontrol.svValue)
                 self.pidActive = True
                 self.aw.qmc.pid.on()
-                self.aw.buttonCONTROL.setStyleSheet(self.aw.pushbuttonstyles["PIDactive"])
+                self.aw.button_10.setStyleSheet(self.aw.pushbuttonstyles["PIDactive"])
             if self.sv is None:
                 self.setSV(self.svValue)
 
     def pidOff(self):
-        if self.pidActive:
-            self.aw.sendmessage(QApplication.translate("Message","PID OFF"))
-        self.aw.setTimerColor("timer")
+        self.aw.sendmessage(QApplication.translate("Message","PID OFF", None))
+        self.aw.lcd1.setStyleSheet("QLCDNumber { border-radius: 4; color: %s; background-color: %s;}"%(self.aw.lcdpaletteF["timer"],self.aw.lcdpaletteB["timer"]))
+        self.aw.qmc.setTimerLargeLCDcolorSignal.emit(self.aw.lcdpaletteF["timer"],self.aw.lcdpaletteB["timer"])
         if self.aw.qmc.flagon and not self.aw.qmc.flagstart:
             self.aw.qmc.setLCDtime(0)
         # MODBUS hardware PID
         if (self.aw.pidcontrol.externalPIDControl() == 1 and self.aw.modbus.PID_OFF_action and self.aw.modbus.PID_OFF_action != ""):
             self.aw.eventaction(4,self.aw.modbus.PID_OFF_action)
             if not self.aw.HottopControlActive:
-                self.aw.buttonCONTROL.setStyleSheet(self.aw.pushbuttonstyles["PID"])
+                self.aw.button_10.setStyleSheet(self.aw.pushbuttonstyles["PID"])
             self.pidActive = False  
         # S7 hardware PID
         elif (self.aw.pidcontrol.externalPIDControl() == 2 and self.aw.s7.PID_OFF_action and self.aw.s7.PID_OFF_action != ""):
             self.aw.eventaction(15,self.aw.s7.PID_OFF_action)
             if not self.aw.HottopControlActive:
-                self.aw.buttonCONTROL.setStyleSheet(self.aw.pushbuttonstyles["PID"])
+                self.aw.button_10.setStyleSheet(self.aw.pushbuttonstyles["PID"])
             self.pidActive = False   
         # TC4 hardware PID
         elif self.aw.qmc.device == 19 and self.aw.qmc.PIDbuttonflag and self.aw.qmc.Controlbuttonflag: # ArduinoTC4 firmware PID
@@ -1380,12 +1352,12 @@ class PIDcontrol():
                         self.aw.ser.SP.reset_input_buffer() # self.aw.ser.SP.flushInput() # deprecated in v3
                         self.aw.ser.SP.reset_output_buffer() # self.aw.ser.SP.flushOutput() # deprecated in v3
                         self.aw.ser.SP.write(str2cmd("PID;OFF\n"))
-                        self.aw.sendmessage(QApplication.translate("Message","PID turned off"))
+                        self.aw.sendmessage(QApplication.translate("Message","PID turned off", None))
                 finally:
                     if self.aw.ser.COMsemaphore.available() < 1:
                         self.aw.ser.COMsemaphore.release(1)
                 if not self.aw.HottopControlActive:
-                    self.aw.buttonCONTROL.setStyleSheet(self.aw.pushbuttonstyles["PID"])
+                    self.aw.button_10.setStyleSheet(self.aw.pushbuttonstyles["PID"])
                 self.pidActive = False
         # software PID
         elif self.aw.qmc.Controlbuttonflag:
@@ -1393,7 +1365,7 @@ class PIDcontrol():
             self.pidActive = False
             self.aw.qmc.pid.off()
             if not self.aw.HottopControlActive:
-                self.aw.buttonCONTROL.setStyleSheet(self.aw.pushbuttonstyles["PID"])
+                self.aw.button_10.setStyleSheet(self.aw.pushbuttonstyles["PID"])
 
     @pyqtSlot(int)
     def sliderMinValueChanged(self,i):
@@ -1412,47 +1384,48 @@ class PIDcontrol():
             self.aw.qmc.rampSoakSemaphore.acquire(1)
             if self.ramp_soak_engaged == 0:
                 return None
-            if self.aw.qmc.flagon and not self.aw.qmc.flagstart:
-                self.aw.qmc.setLCDtime(self.RS_total_time-t)
-            segment_end_time = 0 # the (end) time of the segments
-            prev_segment_end_time = 0 # the (end) time of the previous segment
-            segment_start_sv = 0 # the (target) sv of the segment
-            prev_segment_start_sv = 0 # the (target) sv of the previous segment
-            for i in range(len(self.svValues)):
-                # Ramp
-                if self.svRamps[i] != 0:
-                    segment_end_time = segment_end_time + self.svRamps[i]
-                    segment_start_sv = self.svValues[i]
-                    if segment_end_time > t:
-                        # t is within the current segment
-                        k = float(segment_start_sv - prev_segment_start_sv) / float(segment_end_time - prev_segment_end_time)                        
-                        if self.current_ramp_segment != i+1:
-                            self.aw.sendmessage(QApplication.translate("Message","Ramp {0}: in {1} to SV {2}".format(i+1,stringfromseconds(self.svRamps[i]),self.svValues[i])))
-                            self.current_ramp_segment = i+1
-                        return prev_segment_start_sv + k*(t - prev_segment_end_time)
-                prev_segment_end_time = segment_end_time
-                prev_segment_start_sv = segment_start_sv
-                # Soak
-                if self.svSoaks[i] != 0:
-                    segment_end_time = segment_end_time + self.svSoaks[i]
-                    segment_start_sv = self.svValues[i]
-                    if segment_end_time > t:
-                        prev_segment_start_sv = segment_start_sv # ensure that the segment sv is set even then the segments ramp is 00:00
-                        # t is within the current segment
-                        if self.current_soak_segment != i+1:
-                            self.current_soak_segment = i+1
-                            self.aw.sendmessage(QApplication.translate("Message","Soak {0}: for {1} at SV {2}".format(i+1,stringfromseconds(self.svSoaks[i]),self.svValues[i])))
-                        return prev_segment_start_sv
-                prev_segment_end_time = segment_end_time
-                prev_segment_start_sv = segment_start_sv
-                if (self.current_ramp_segment > i or self.current_soak_segment > 1) and not self.svTriggeredAlarms[i]:
-                    self.svTriggeredAlarms[i] = True
-                    if self.svActions[i] > -1:
-                        self.aw.qmc.processAlarmSignal.emit(0,self.svBeeps[i],self.svActions[i],self.svDescriptions[i])
-            self.aw.sendmessage(QApplication.translate("Message","Ramp/Soak pattern finished"))
-            self.aw.qmc.setLCDtime(0)       
-            self.ramp_soak_engaged = 0 # stop the ramp/soak process
-            return None
+            else:
+                if self.aw.qmc.flagon and not self.aw.qmc.flagstart:
+                    self.aw.qmc.setLCDtime(self.RS_total_time-t)
+                segment_end_time = 0 # the (end) time of the segments
+                prev_segment_end_time = 0 # the (end) time of the previous segment
+                segment_start_sv = 0 # the (target) sv of the segment
+                prev_segment_start_sv = 0 # the (target) sv of the previous segment
+                for i in range(len(self.svValues)):
+                    # Ramp
+                    if self.svRamps[i] != 0:
+                        segment_end_time = segment_end_time + self.svRamps[i]
+                        segment_start_sv = self.svValues[i]
+                        if segment_end_time > t:
+                            # t is within the current segment
+                            k = float(segment_start_sv - prev_segment_start_sv) / float(segment_end_time - prev_segment_end_time)                        
+                            if self.current_ramp_segment != i+1:
+                                self.aw.sendmessage(QApplication.translate("Message","Ramp {0}: in {1} to SV {2}".format(i+1,stringfromseconds(self.svRamps[i]),self.svValues[i]), None))
+                                self.current_ramp_segment = i+1
+                            return prev_segment_start_sv + k*(t - prev_segment_end_time)
+                    prev_segment_end_time = segment_end_time
+                    prev_segment_start_sv = segment_start_sv
+                    # Soak
+                    if self.svSoaks[i] != 0:
+                        segment_end_time = segment_end_time + self.svSoaks[i]
+                        segment_start_sv = self.svValues[i]
+                        if segment_end_time > t:
+                            prev_segment_start_sv = segment_start_sv # ensure that the segment sv is set even then the segments ramp is 00:00
+                            # t is within the current segment
+                            if self.current_soak_segment != i+1:
+                                self.current_soak_segment = i+1
+                                self.aw.sendmessage(QApplication.translate("Message","Soak {0}: for {1} at SV {2}".format(i+1,stringfromseconds(self.svSoaks[i]),self.svValues[i]), None))
+                            return prev_segment_start_sv
+                    prev_segment_end_time = segment_end_time
+                    prev_segment_start_sv = segment_start_sv
+                    if (self.current_ramp_segment > i or self.current_soak_segment > 1) and not self.svTriggeredAlarms[i]:
+                        self.svTriggeredAlarms[i] = True
+                        if self.svActions[i] > -1:
+                            self.aw.qmc.processAlarmSignal.emit(0,self.svBeeps[i],self.svActions[i],self.svDescriptions[i])
+                self.aw.sendmessage(QApplication.translate("Message","Ramp/Soak pattern finished", None))
+                self.aw.qmc.setLCDtime(0)       
+                self.ramp_soak_engaged = 0 # stop the ramp/soak process
+                return None
         finally:
             if self.aw.qmc.rampSoakSemaphore.available() < 1:
                 self.aw.qmc.rampSoakSemaphore.release(1)
@@ -1472,7 +1445,8 @@ class PIDcontrol():
             else:
                 res = numpy.average(self.previous_svs,weights=self.sv_decay_weights)
             return res
-        return sv
+        else:
+            return sv
 
     # returns None if in manual mode or no other sv (via ramp/soak or follow mode) defined
     def calcSV(self,tx):
@@ -1480,7 +1454,7 @@ class PIDcontrol():
             # Ramp/Soak mode
             # actual time (after CHARGE) on recording and time after PID ON on monitoring:
             return self.svRampSoak(tx - self.time_pidON)
-        if self.svMode == 2 and self.aw.qmc.background:
+        elif self.svMode == 2 and self.aw.qmc.background:
             # Follow Background mode
             followBT = True # if false, follow ET
             if self.aw.qmc.device == 19 and self.aw.pidcontrol.externalPIDControl(): # in case we run TC4 with the PIDfirmware
@@ -1491,42 +1465,50 @@ class PIDcontrol():
                 else:
                     return None
             else:
-                followBT = bool(self.pidSource == 1)
+                if self.pidSource == 1: # we observe the BT
+                    followBT = True
+                else:
+                    followBT = False
                     
 #            if self.aw.qmc.timeindex[0] < 0 or self.aw.qmc.timeindex[6] > 0:
 #                # before and after DROP the SV configured in the dialog is returned (min/maxed)
 #                return max(self.aw.pidcontrol.svSliderMin,(min(self.aw.pidcontrol.svSliderMax,self.aw.pidcontrol.svValue)))
             if self.aw.qmc.timeindex[6] > 0: # after DROP, the SV configured in the dialog is returned (min/maxed)
-                return max(self.aw.pidcontrol.svSliderMin, min(self.aw.pidcontrol.svSliderMax, self.aw.pidcontrol.svValue))
-            if self.aw.qmc.timeindex[0] < 0: # before CHARGE, the CHARGE temp of the background profile is returned
+                return max(self.aw.pidcontrol.svSliderMin,(min(self.aw.pidcontrol.svSliderMax,self.aw.pidcontrol.svValue)))
+            elif self.aw.qmc.timeindex[0] < 0: # before CHARGE, the CHARGE temp of the background profile is returned
                 if self.aw.qmc.timeindexB[0] < 0:
                     # no CHARGE in background, return manual SV
                     return max(self.aw.pidcontrol.svSliderMin,(min(self.aw.pidcontrol.svSliderMax,self.aw.pidcontrol.svValue)))
-                # if background contains a CHARGE event
-                if followBT:
-                    res = self.aw.qmc.backgroundBTat(self.aw.qmc.timeB[self.aw.qmc.timeindexB[0]]) # smoothed and approximated background
-                else: # in all other cases we observe the ET
-                    res = self.aw.qmc.backgroundETat(self.aw.qmc.timeB[self.aw.qmc.timeindexB[0]]) # smoothed and approximated background
-                return self.smooth_sv(res)
-            if ((not self.aw.qmc.timeB or tx+self.svLookahead > self.aw.qmc.timeB[-1]) or (self.aw.qmc.timeindexB[6] > 0 and tx+self.svLookahead > self.aw.qmc.timeB[self.aw.qmc.timeindexB[6]])):
+                else:
+                    # if background contains a CHARGE event
+                    if followBT:
+                        res = self.aw.qmc.backgroundBTat(self.aw.qmc.timeB[self.aw.qmc.timeindexB[0]]) # smoothed and approximated background
+                    else: # in all other cases we observe the ET
+                        res = self.aw.qmc.backgroundETat(self.aw.qmc.timeB[self.aw.qmc.timeindexB[0]]) # smoothed and approximated background
+                    return self.smooth_sv(res)
+            elif ((not self.aw.qmc.timeB or tx+self.svLookahead > self.aw.qmc.timeB[-1]) or (self.aw.qmc.timeindexB[6] > 0 and tx+self.svLookahead > self.aw.qmc.timeB[self.aw.qmc.timeindexB[6]])):
                 # if tx+self.svLookahead > last background data or background has a DROP and tx+self.svLookahead index is beyond that DROP index
                 return None # "deactivate" background follow mode
-            if followBT:
-                res = self.aw.qmc.backgroundSmoothedBTat(tx + self.svLookahead) # smoothed and approximated background
-                if res == -1:
-                    return None # no background value for that time point
-#                j = self.aw.qmc.backgroundtime2index(tx + self.svLookahead)
-#                res = self.aw.qmc.stemp2B[j] # smoothed background  
-                return self.smooth_sv(res)
-            # in all other cases we observe the ET
-            res = self.aw.qmc.backgroundSmoothedETat(tx + self.svLookahead) # smoothed and approximated background
-            if res == -1:
-                return None
-#                 j = self.aw.qmc.backgroundtime2index(tx + self.svLookahead)
-#                 res = self.aw.qmc.stemp1B[j] # smoothed background
-            return self.smooth_sv(res)
-        # return None in manual mode
-        return None
+            else:
+                if followBT:
+                    res = self.aw.qmc.backgroundSmoothedBTat(tx + self.svLookahead) # smoothed and approximated background
+                    if res == -1:
+                        return None # no background value for that time point
+                    else:
+    #                    j = self.aw.qmc.backgroundtime2index(tx + self.svLookahead)
+    #                    res = self.aw.qmc.stemp2B[j] # smoothed background  
+                        return self.smooth_sv(res)
+                else: # in all other cases we observe the ET
+                    res = self.aw.qmc.backgroundSmoothedETat(tx + self.svLookahead) # smoothed and approximated background
+                    if res == -1:
+                        return None
+    #                    j = self.aw.qmc.backgroundtime2index(tx + self.svLookahead)
+    #                    res = self.aw.qmc.stemp1B[j] # smoothed background
+                    else:
+                        return self.smooth_sv(res)
+        else:
+            # return None in manual mode
+            return None
 
     def setDutySteps(self,dutySteps):
         if self.aw.qmc.Controlbuttonflag and not self.aw.pidcontrol.externalPIDControl():
@@ -1535,7 +1517,7 @@ class PIDcontrol():
     
     def setSV(self,sv,move=True,init=False):
 #        if not move:            
-#            self.aw.sendmessage(QApplication.translate("Message","SV set to %s"%sv))
+#            self.aw.sendmessage(QApplication.translate("Message","SV set to %s"%sv, None))
         if (self.aw.pidcontrol.externalPIDControl() == 1): # MODBUS PID and Control ticked
             self.sv = max(0,sv)
             if move:
@@ -1584,8 +1566,8 @@ class PIDcontrol():
                 self.svActions = self.RS_svActions[n]
                 self.svBeeps = self.RS_svBeeps[n]
                 self.svDescriptions = self.RS_svDescriptions[n]
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
         finally:
             if self.aw.qmc.rampSoakSemaphore.available() < 1:
                 self.aw.qmc.rampSoakSemaphore.release(1)
@@ -1595,8 +1577,7 @@ class PIDcontrol():
         try:
             self.aw.qmc.rampSoakSemaphore.acquire(1)
             return self.RS_svLabels.index(label)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
             return None
         finally:
             if self.aw.qmc.rampSoakSemaphore.available() < 1:
@@ -1617,8 +1598,7 @@ class PIDcontrol():
             if self.aw.pidcontrol.sv is not None:
                 sv = self.aw.pidcontrol.sv
             else:
-                sv = min(self.svSliderMax, max(self.svSliderMin, self.aw.pidcontrol.svValue))
-            sv = int(round(sv))
+                sv = self.svSliderMin
             self.aw.updateSVSliderLCD(sv)
             self.aw.sliderSV.setValue(sv)
             self.aw.sliderSV.blockSignals(False)
@@ -1632,19 +1612,19 @@ class PIDcontrol():
     def activateONOFFeasySV(self,flag):
         if flag:
             if self.aw.qmc.flagon:
-                self.aw.buttonSVp5.setVisible(True)
-                self.aw.buttonSVp10.setVisible(True)
-                self.aw.buttonSVp20.setVisible(True)
-                self.aw.buttonSVm20.setVisible(True)
-                self.aw.buttonSVm10.setVisible(True)
-                self.aw.buttonSVm5.setVisible(True)
+                self.aw.button_12.setVisible(True)
+                self.aw.button_13.setVisible(True)
+                self.aw.button_14.setVisible(True)
+                self.aw.button_15.setVisible(True)
+                self.aw.button_16.setVisible(True)
+                self.aw.button_17.setVisible(True)
         else:
-            self.aw.buttonSVp5.setVisible(False)
-            self.aw.buttonSVp10.setVisible(False)
-            self.aw.buttonSVp20.setVisible(False)
-            self.aw.buttonSVm20.setVisible(False)
-            self.aw.buttonSVm10.setVisible(False)
-            self.aw.buttonSVm5.setVisible(False)
+            self.aw.button_12.setVisible(False)
+            self.aw.button_13.setVisible(False)
+            self.aw.button_14.setVisible(False)
+            self.aw.button_15.setVisible(False)
+            self.aw.button_16.setVisible(False)
+            self.aw.button_17.setVisible(False)
 
     # just store the p-i-d configuration
     def setPID(self,kp,ki,kd,source=None,cycle=None,pOnE=True):
@@ -1664,13 +1644,13 @@ class PIDcontrol():
             self.pidKp = kp
             self.pidKi = ki
             self.pidKd = kd
-            self.aw.sendmessage(QApplication.translate("Message","p-i-d values updated"))
+            self.aw.sendmessage(QApplication.translate("Message","p-i-d values updated", None))
         elif (self.aw.pidcontrol.externalPIDControl() == 2): # S7 (external) Control active
             self.aw.s7.setPID(kp,ki,kd,self.aw.s7.PIDmultiplier)
             self.pidKp = kp
             self.pidKi = ki
             self.pidKd = kd
-            self.aw.sendmessage(QApplication.translate("Message","p-i-d values updated"))
+            self.aw.sendmessage(QApplication.translate("Message","p-i-d values updated", None))
         elif self.aw.qmc.device == 19 and self.aw.pidcontrol.externalPIDControl(): # ArduinoTC4 firmware PID
             if self.aw.ser.ArduinoIsInitialized:
                 try:
@@ -1692,7 +1672,7 @@ class PIDcontrol():
                         if cycle is not None:
                             libtime.sleep(.03)
                             self.aw.ser.SP.write(str2cmd("PID;CT;" + str(cycle) + "\n"))
-                        self.aw.sendmessage(QApplication.translate("Message","p-i-d values updated"))
+                        self.aw.sendmessage(QApplication.translate("Message","p-i-d values updated", None))
                 finally:
                     if self.aw.ser.COMsemaphore.available() < 1:
                         self.aw.ser.COMsemaphore.release(1)
@@ -1703,14 +1683,14 @@ class PIDcontrol():
             self.pidKd = kd
             self.pOnE = pOnE
             self.aw.qmc.pid.setLimits((-100 if self.aw.pidcontrol.pidNegativeTarget else 0),(100 if self.aw.pidcontrol.pidPositiveTarget else 0))
-            self.aw.sendmessage(QApplication.translate("Message","p-i-d values updated"))
+            self.aw.sendmessage(QApplication.translate("Message","p-i-d values updated", None))
 
 ###################################################################################
 ##########################  DTA PID CLASS DEFINITION  ############################
 ###################################################################################
 # documentation
 # http://www.deltaww.hu/homersekletszabalyozok/DTA_series_temperature_controller_instruction_sheet_English.pdf
-class DtaPID():
+class DtaPID(object):
     def __init__(self,aw):
         self.aw = aw
         
@@ -1755,9 +1735,8 @@ class DtaPID():
         checksum = hex(self.DTACalcChecksum(cmd))[2:].zfill(2).upper()
         command = ":" + cmd + checksum + "\r\n"
         return command
-    
-    @staticmethod
-    def DTACalcChecksum(string):
+
+    def DTACalcChecksum(self,string):
         def tobin(x, count=8):
             return "".join([str((x>>y)&1) for y in range(count-1, -1, -1)])
         def twoscomp(num_str):

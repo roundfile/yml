@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
-#
+#!/usr/bin/env python3
+
 # ABOUT
 # Artisan Sampling Dialog
 
@@ -7,7 +7,7 @@
 # This program or module is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
 # by the Free Software Foundation, either version 2 of the License, or
-# version 3 of the License, or (at your option) any later version. It is
+# version 3 of the License, or (at your option) any later versison. It is
 # provided for educational purposes and is distributed in the hope that
 # it will be useful, but WITHOUT ANY WARRANTY; without even the implied
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
@@ -17,43 +17,35 @@
 # Marko Luther, 2020
 
 from artisanlib.dialogs import ArtisanDialog
-from artisanlib.widgets import MyQDoubleSpinBox
 
-try:
-    #pylint: disable = E, W, R, C
-    from PyQt6.QtCore import Qt, pyqtSlot, QSettings # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt6.QtWidgets import (QApplication, QHBoxLayout, QVBoxLayout, QCheckBox, QGridLayout, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QDialogButtonBox, QLayout, QMessageBox) # @UnusedImport @Reimport  @UnresolvedImport
-except Exception:
-    #pylint: disable = E, W, R, C
-    from PyQt5.QtCore import Qt, pyqtSlot, QSettings # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QVBoxLayout, QCheckBox, QGridLayout, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QDialogButtonBox, QLayout, QMessageBox) # @UnusedImport @Reimport  @UnresolvedImport
+from PyQt5.QtCore import Qt, pyqtSlot, QSettings
+from PyQt5.QtWidgets import (QApplication, QHBoxLayout, QVBoxLayout, QCheckBox, QGridLayout,
+                             QDialogButtonBox, QDoubleSpinBox, QLayout, QMessageBox)
 
 class SamplingDlg(ArtisanDialog):
     def __init__(self, parent = None, aw = None):
-        super().__init__(parent, aw)
-        self.setWindowTitle(QApplication.translate("Message","Sampling"))
+        super(SamplingDlg,self).__init__(parent, aw)
+        self.setWindowTitle(QApplication.translate("Message","Sampling", None))
         self.setModal(True)
         
         self.org_delay = self.aw.qmc.delay
         self.org_flagKeepON = self.aw.qmc.flagKeepON
         self.org_flagOpenCompleted = self.aw.qmc.flagOpenCompleted
         
-        self.keepOnFlag = QCheckBox(QApplication.translate("Label","Keep ON"))
-        self.keepOnFlag.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.keepOnFlag = QCheckBox(QApplication.translate("Label","Keep ON", None))
+        self.keepOnFlag.setFocusPolicy(Qt.NoFocus)
         self.keepOnFlag.setChecked(bool(self.aw.qmc.flagKeepON))
         
-        self.openCompletedFlag = QCheckBox(QApplication.translate("Label","Open Completed Roast in Viewer"))
-        self.openCompletedFlag.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.openCompletedFlag = QCheckBox(QApplication.translate("Label","Open Completed Roast in Viewer", None))
+        self.openCompletedFlag.setFocusPolicy(Qt.NoFocus)
         self.openCompletedFlag.setChecked(bool(self.aw.qmc.flagOpenCompleted))
         
-        self.interval = MyQDoubleSpinBox()
+        self.interval = QDoubleSpinBox()
         self.interval.setSingleStep(1)
         self.interval.setValue(self.aw.qmc.delay/1000.)
         self.interval.setRange(self.aw.qmc.min_delay/1000.,40.)
-        self.interval.setDecimals(2)
-        self.interval.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.interval.setDecimals(1)
+        self.interval.setAlignment(Qt.AlignRight)
         self.interval.setSuffix("s")
         
         intervalLayout = QHBoxLayout()
@@ -84,13 +76,13 @@ class SamplingDlg(ArtisanDialog):
         layout.addStretch()
         layout.addLayout(buttonsLayout)
         self.setLayout(layout) 
-        self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok).setFocus()
+        self.dialogbuttons.button(QDialogButtonBox.Ok).setFocus()
         
         settings = QSettings()
         if settings.contains("SamplingPosition"):
             self.move(settings.value("SamplingPosition"))
         
-        layout.setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
+        layout.setSizeConstraint(QLayout.SetFixedSize)
     
     #window close box
     def closeEvent(self,_):
@@ -116,9 +108,9 @@ class SamplingDlg(ArtisanDialog):
         self.aw.qmc.flagKeepON = bool(self.keepOnFlag.isChecked())
         self.aw.qmc.flagOpenCompleted = bool(self.openCompletedFlag.isChecked())
         self.aw.qmc.delay = int(self.interval.value()*1000.)
-#        if self.aw.qmc.delay < self.aw.qmc.default_delay:
-#            QMessageBox.warning(self.aw,QApplication.translate("Message", "Warning",None),QApplication.translate("Message", "A tight sampling interval might lead to instability on some machines. We suggest a minimum of 3s.")) 
+        if self.aw.qmc.delay < self.aw.qmc.default_delay:
+            QMessageBox.warning(self.aw,QApplication.translate("Message", "Warning",None),QApplication.translate("Message", "A tight sampling interval might lead to instability on some machines. We suggest a minimum of 3s.",None)) 
         self.storeSettings() 
-#        self.aw.closeEventSettings()
+        self.aw.closeEventSettings()
         self.accept()
 

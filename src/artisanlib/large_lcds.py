@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
-#
+#!/usr/bin/env python3
+
 # ABOUT
 # Artisan Large LCDs
 
@@ -7,7 +7,7 @@
 # This program or module is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
 # by the Free Software Foundation, either version 2 of the License, or
-# version 3 of the License, or (at your option) any later version. It is
+# version 3 of the License, or (at your option) any later versison. It is
 # provided for educational purposes and is distributed in the hope that
 # it will be useful, but WITHOUT ANY WARRANTY; without even the implied
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
@@ -16,25 +16,16 @@
 # AUTHOR
 # Marko Luther, 2020
 
+from const import UIconst
 from artisanlib.dialogs import ArtisanDialog
 from artisanlib.widgets import MyQLabel
 
-try:
-    #pylint: disable = E, W, R, C
-    from PyQt6.QtCore import (Qt, QSettings) # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt6.QtWidgets import (QApplication, QFrame, QWidget, QLCDNumber, QHBoxLayout, QVBoxLayout) # @UnusedImport @Reimport  @UnresolvedImport
-except Exception:
-    #pylint: disable = E, W, R, C
-    from PyQt5.QtCore import (Qt, QSettings) # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt5.QtWidgets import (QApplication, QFrame, QWidget, QLCDNumber, QHBoxLayout, QVBoxLayout) # @UnusedImport @Reimport  @UnresolvedImport
+from PyQt5.QtCore import (Qt, QSettings)
+from PyQt5.QtWidgets import (QApplication, QFrame, QWidget, QLCDNumber, QHBoxLayout, QVBoxLayout)
 
 class LargeLCDs(ArtisanDialog):
-
-    __slots__ = ['lcds1', 'lcds2', 'lcds1styles', 'lcds2styles', 'lcds1labelsUpper', 'lcds2labelsUpper', 'lcds1labelsLower', 'lcds2labelsLower', 
-        'lcds1frames', 'lcds2frames', 'visibleFrames', 'tight', 'layoutNr', 'swaplcds']
-    
     def __init__(self, parent = None, aw = None):
-        super().__init__(parent, aw)
+        super(LargeLCDs,self).__init__(parent, aw)
         # it is assumed that both lists of lcds (lcd1 & lcd2) have the same length
         # the same is assumed for the other lists below:
         self.lcds1 = []
@@ -52,11 +43,11 @@ class LargeLCDs(ArtisanDialog):
         self.layoutNr = -1 # 0: landscape, 1: portrait
         self.swaplcds = False
         windowFlags = self.windowFlags()
-        windowFlags |= Qt.WindowType.Tool
+        windowFlags |= Qt.Tool
         self.setWindowFlags(windowFlags)
     
     def resizeEvent(self, event):
-        super().resizeEvent(event)
+        super(LargeLCDs, self).resizeEvent(event)
         w = event.size().width()
         h = event.size().height()
         self.chooseLayout(w,h)
@@ -66,6 +57,7 @@ class LargeLCDs(ArtisanDialog):
         self.makeLCDs()
         landscapelayout = QHBoxLayout()
         for i in range(min(len(self.lcds1frames),len(self.lcds2frames))):
+            self.lcds1labelsLower
             if self.swaplcds:
                 landscapelayout.addWidget(self.lcds2frames[i])
                 landscapelayout.addWidget(self.lcds1frames[i])
@@ -126,7 +118,7 @@ class LargeLCDs(ArtisanDialog):
                     if not l.isHidden():
                         l.setVisible(False)
                 elif len(self.visibleFrames) > i and self.visibleFrames[i] and l.isHidden():
-                    l.setVisible(True)
+                        l.setVisible(True)
     
     def lowerLabelssvisibility(self,b):
         lower_labels = [val for pair in zip(self.lcds1labelsLower, self.lcds2labelsLower) for val in pair]
@@ -148,7 +140,8 @@ class LargeLCDs(ArtisanDialog):
                 newLayoutNr = self.layoutNr
             else:
                 newLayoutNr = n
-            newLayoutNr = max(newLayoutNr, 0)
+            if newLayoutNr < 0:
+                newLayoutNr = 0
             # release old layout
             if self.layout():
                 QWidget().setLayout(self.layout())
@@ -173,21 +166,19 @@ class LargeLCDs(ArtisanDialog):
     
     def makeLCD(self,s):
         lcd = QLCDNumber()
-        lcd.setSegmentStyle(QLCDNumber.SegmentStyle.Flat)
-        lcd.setFrameStyle(QFrame.Shadow.Plain)
+        lcd.setSegmentStyle(2)
+        lcd.setFrameStyle(QFrame.Plain)
         lcd.setSmallDecimalPoint(False)
         lcd.setStyleSheet("QLCDNumber { color: %s; background-color: %s;}"%(self.aw.lcdpaletteF[s],self.aw.lcdpaletteB[s]))
         return lcd
     
-    @staticmethod
-    def makeLabel(name):
+    def makeLabel(self,name):
         label = MyQLabel(name)
-        label.setTextFormat(Qt.TextFormat.RichText)
-        label.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
+        label.setTextFormat(Qt.RichText)
+        label.setAlignment(Qt.AlignVCenter | Qt.AlignRight)
         return label
     
-    @staticmethod
-    def makeLCDframe(lcdUpper,lcd,lcdLower):
+    def makeLCDframe(self,lcdUpper,lcd,lcdLower):
         lcdlayout = QVBoxLayout()
         lcdlayout.addWidget(lcdUpper,1)
         lcdlayout.addWidget(lcd,5)
@@ -200,7 +191,7 @@ class LargeLCDs(ArtisanDialog):
         return frame
         
     # to be implemented in subclasses
-    def makeLCDs(self): # pylint: disable=no-self-use
+    def makeLCDs(self):
         return None
 
     def updateVisibilities(self,l1,l2):
@@ -208,40 +199,40 @@ class LargeLCDs(ArtisanDialog):
         for i in range(len(l1)):
             try:
                 self.lcds1frames[i].setVisible(l1[i])
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
         for i in range(len(l2)):
             try:
                 self.lcds2frames[i].setVisible(l2[i])
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
     
     def updateStyles(self):
         for i,s in enumerate(self.lcds1styles):
             try:
                 self.lcds1labelsUpper[i].setStyleSheet("QLabel { color: %s; background-color: %s;}"%(self.aw.lcdpaletteF[s],self.aw.lcdpaletteB[s]))
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
             try:
                 self.lcds1[i].setStyleSheet("QLCDNumber { color: %s; background-color: %s;}"%(self.aw.lcdpaletteF[s],self.aw.lcdpaletteB[s]))
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
             try:
                 self.lcds1labelsLower[i].setStyleSheet("QLabel { color: %s; background-color: %s;}"%(self.aw.lcdpaletteF[s],self.aw.lcdpaletteB[s]))
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
         for i,s in enumerate(self.lcds2styles):
             try:
                 self.lcds2labelsUpper[i].setStyleSheet("QLabel { color: %s; background-color: %s;}"%(self.aw.lcdpaletteF[s],self.aw.lcdpaletteB[s]))
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
             try:
                 self.lcds2[i].setStyleSheet("QLCDNumber { color: %s; background-color: %s;}"%(self.aw.lcdpaletteF[s],self.aw.lcdpaletteB[s]))
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
             try:
                 self.lcds2labelsLower[i].setStyleSheet("QLabel { color: %s; background-color: %s;}"%(self.aw.lcdpaletteF[s],self.aw.lcdpaletteB[s]))
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
     
     # in horizontal layouts we add one more digit per LCD than needed as spacer for separation
@@ -275,13 +266,13 @@ class LargeLCDs(ArtisanDialog):
             try:
                 if v1 is not None:
                     self.lcds1[i].display(v1)
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
         for i,v2 in enumerate(values2):
             try:
                 if v2 is not None:
                     self.lcds2[i].display(v2)
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
     
     # note that all given values can contain None indicating that those labels are not updated in this round
@@ -293,7 +284,7 @@ class LargeLCDs(ArtisanDialog):
                     if v1 is not None:
                         self.lcds1labelsLower[i].setText(v1)
                         self.lcds1labelsLower[i].repaint()
-                except Exception: # pylint: disable=broad-except
+                except:
                     pass
         if lowerlabels2 is not None:
             for i,v2 in enumerate(lowerlabels2):
@@ -301,7 +292,7 @@ class LargeLCDs(ArtisanDialog):
                     if v2 is not None:
                         self.lcds2labelsLower[i].setText(v2)
                         self.lcds2labelsLower[i].repaint()
-                except Exception: # pylint: disable=broad-except
+                except:
                     pass
         if upperlabels1 is not None:
             for i,v1 in enumerate(upperlabels1):
@@ -309,7 +300,7 @@ class LargeLCDs(ArtisanDialog):
                     if v1 is not None:
                         self.lcds1labelsUpper[i].setText(v1)
                         self.lcds1labelsUpper[i].repaint()
-                except Exception: # pylint: disable=broad-except
+                except:
                     pass
         if upperlabels2 is not None:
             for i,v2 in enumerate(upperlabels2):
@@ -317,7 +308,7 @@ class LargeLCDs(ArtisanDialog):
                     if v2 is not None:
                         self.lcds2labelsUpper[i].setText(v2)
                         self.lcds2labelsUpper[i].repaint()
-                except Exception: # pylint: disable=broad-except
+                except:
                     pass
         if self.layoutNr == 1:
             # show all labels in portrait mode
@@ -327,20 +318,17 @@ class LargeLCDs(ArtisanDialog):
             self.hideAllEmptyLabels()
 
 class LargeMainLCDs(LargeLCDs):
-
-    __slots__ = ['lcd0']
-    
     def __init__(self, parent = None, aw = None):
         self.lcd0 = None # Timer
         # we add the ET lcd to the lcd1 list and the BT lcds to the lcd2 list (same for styles, labels and frames
-        super().__init__(parent, aw)
+        super(LargeMainLCDs,self).__init__(parent, aw)
         settings = QSettings()
         if settings.contains("LCDGeometry"):
             self.restoreGeometry(settings.value("LCDGeometry"))
         else:
             self.resize(200,100)
         self.chooseLayout(self.width(),self.height())
-        self.setWindowTitle(QApplication.translate("Menu", "Main LCDs"))
+        self.setWindowTitle(UIconst.TOOLKIT_MENU_LCDS)
     
     def updateVisiblitiesETBT(self):
         self.updateVisibilities([self.aw.qmc.ETlcd],[self.aw.qmc.BTlcd])
@@ -352,10 +340,10 @@ class LargeMainLCDs(LargeLCDs):
         self.setTimerLCDcolor(self.aw.lcdpaletteF["timer"],self.aw.lcdpaletteB["timer"])
         super().updateStyles()
 
-    def updateValues(self, values1, values2, *args, **kwargs):
-        super().updateValues(values1,values2,*args,**kwargs)
-        if "time" in kwargs and kwargs["time"] is not None:
-            self.lcd0.display(kwargs["time"])
+    def updateValues(self, values1, values2, time=None, *args, **kwargs):
+        super().updateValues(values1,values2,*args, **kwargs)
+        if time is not None:
+            self.lcd0.display(time)
     
     # create LCDs, LCD labels and LCD frames
     def makeLCDs(self):
@@ -443,7 +431,8 @@ class LargeMainLCDs(LargeLCDs):
                 newLayoutNr = self.layoutNr
             else:
                 newLayoutNr = n
-            newLayoutNr = max(newLayoutNr,0)
+            if newLayoutNr < 0:
+                newLayoutNr = 0
             # release old layout
             if self.layout():
                 QWidget().setLayout(self.layout())
@@ -480,15 +469,14 @@ class LargeMainLCDs(LargeLCDs):
         self.aw.lcdsAction.setChecked(False)
 
 class LargeDeltaLCDs(LargeLCDs):
-    
     def __init__(self, parent = None, aw = None):
-        super().__init__(parent, aw)
+        super(LargeDeltaLCDs,self).__init__(parent, aw)
         settings = QSettings()
         if settings.contains("DeltaLCDGeometry"):
             self.restoreGeometry(settings.value("DeltaLCDGeometry"))
         else:
             self.resize(100,200)
-        self.setWindowTitle(QApplication.translate("Menu", "Delta LCDs"))
+        self.setWindowTitle(UIconst.TOOLKIT_MENU_DELTA_LCDS)
         self.chooseLayout(self.width(),self.height())
     
     def makeLCDs(self):
@@ -529,19 +517,19 @@ class LargeDeltaLCDs(LargeLCDs):
 
 class LargePIDLCDs(LargeLCDs):
     def __init__(self, parent = None, aw = None):
-        super().__init__(parent, aw)
+        super(LargePIDLCDs,self).__init__(parent, aw)
         settings = QSettings()
         if settings.contains("PIDLCDGeometry"):
             self.restoreGeometry(settings.value("PIDLCDGeometry"))
         else:
             self.resize(100,200)
-        self.setWindowTitle(QApplication.translate("Menu", "PID LCDs"))
+        self.setWindowTitle(UIconst.TOOLKIT_MENU_PID_LCDS)
         self.chooseLayout(self.width(),self.height())
     
     def makeLCDs(self):
         self.lcds1styles = ["sv"]
         self.lcds1 = [self.makeLCD(self.lcds1styles[0])] # PID SV
-        label1Upper = self.makeLabel("<b>" + QApplication.translate("Label", "PID SV") + "</b> ")
+        label1Upper = self.makeLabel("<b>" + QApplication.translate("Label", "PID SV",None) + "</b> ")
         label1Lower = self.makeLabel(" ")
         self.lcds1labelsUpper = [label1Upper]
         self.lcds1labelsLower = [label1Lower]
@@ -549,7 +537,7 @@ class LargePIDLCDs(LargeLCDs):
         #
         self.lcds2styles = ["sv"]
         self.lcds2 = [self.makeLCD(self.lcds2styles[0])] # PID %
-        label2Upper = self.makeLabel("<b>" + QApplication.translate("Label", "PID %") + "</b> ")
+        label2Upper = self.makeLabel("<b>" + QApplication.translate("Label", "PID %",None) + "</b> ")
         label2Lower = self.makeLabel(" ")
         self.lcds2labelsUpper = [label2Upper]
         self.lcds2labelsLower = [label2Lower]
@@ -575,14 +563,14 @@ class LargePIDLCDs(LargeLCDs):
 
 class LargeExtraLCDs(LargeLCDs):
     def __init__(self, parent = None, aw = None):
-        super().__init__(parent, aw)
+        super(LargeExtraLCDs,self).__init__(parent, aw)
         settings = QSettings()
         if settings.contains("ExtraLCDGeometry"):
             self.restoreGeometry(settings.value("ExtraLCDGeometry"))
         else:
             self.resize(100,200)
         self.chooseLayout(self.width(),self.height())
-        self.setWindowTitle(QApplication.translate("Menu", "Extra LCDs"))
+        self.setWindowTitle(UIconst.TOOLKIT_MENU_EXTRA_LCDS)
     
     def makeLCDs(self):
         self.lcds1 = []
@@ -604,7 +592,7 @@ class LargeExtraLCDs(LargeLCDs):
             l1 = "<b>" + self.aw.qmc.extraname1[i] + "</b>"
             try:
                 l1 = l1.format(self.aw.qmc.etypes[0],self.aw.qmc.etypes[1],self.aw.qmc.etypes[2],self.aw.qmc.etypes[3])
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
             label1Upper = self.makeLabel(l1)
             self.lcds1labelsUpper.append(label1Upper)
@@ -618,7 +606,7 @@ class LargeExtraLCDs(LargeLCDs):
             l2 = "<b>" + self.aw.qmc.extraname2[i] + "</b>"
             try:
                 l2 = l2.format(self.aw.qmc.etypes[0],self.aw.qmc.etypes[1],self.aw.qmc.etypes[2],self.aw.qmc.etypes[3])
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
             label2Upper = self.makeLabel(l2)
             self.lcds2labelsUpper.append(label2Upper)
@@ -634,16 +622,16 @@ class LargeExtraLCDs(LargeLCDs):
         self.updateVisibilities(self.aw.extraLCDvisibility1,self.aw.extraLCDvisibility2)
 
     def updateStyles(self):
-        super().updateStyles()
+        super(LargeExtraLCDs,self).updateStyles()
         for i,s in enumerate(self.lcds1styles):
             try:
                 self.lcds1labelsUpper[i].setStyleSheet("QLabel { color: %s; background-color: %s;}"%(self.aw.qmc.extradevicecolor1[i],self.aw.lcdpaletteB[s]))
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
         for i,s in enumerate(self.lcds2styles):
             try:
                 self.lcds2labelsUpper[i].setStyleSheet("QLabel { color: %s; background-color: %s;}"%(self.aw.qmc.extradevicecolor2[i],self.aw.lcdpaletteB[s]))
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
     
     def closeEvent(self, _):
@@ -655,28 +643,25 @@ class LargeExtraLCDs(LargeLCDs):
         self.aw.extralcdsAction.setChecked(False)
 
 class LargePhasesLCDs(LargeLCDs):
-
-    __slots__ = ['labels', 'values1', 'values2']
-    
     def __init__(self, parent = None, aw = None):
         self.labels = [" ", " ", " ", self.formatLabel("AUC")] # formated labels
         self.values1 = [" "]*2
         self.values2 = [" "]*2
-        super().__init__(parent, aw)
+        super(LargePhasesLCDs,self).__init__(parent, aw)
         settings = QSettings()
         if settings.contains("PhasesLCDGeometry"):
             self.restoreGeometry(settings.value("PhasesLCDGeometry"))
         else:
             self.resize(100,200)
         self.chooseLayout(self.width(),self.height())
-        self.setWindowTitle(QApplication.translate("Menu", "Phases LCDs"))
+        self.setWindowTitle(UIconst.TOOLKIT_MENU_PHASES_LCDS)
     
-    @staticmethod
-    def formatLabel(l):
+    def formatLabel(self,l):
         if l is None:
             return None
-        label_fmt = "<b>{}</b>"
-        return label_fmt.format(l)
+        else:
+            label_fmt = "<b>{}</b>"
+            return label_fmt.format(l)
 
     def makeLCDs(self):
         self.lcds1styles = ["sv","sv"]
@@ -692,7 +677,7 @@ class LargePhasesLCDs(LargeLCDs):
         self.lcds1labelsLower = [label1Lower,label3Lower]
         self.lcds1frames = [self.makeLCDframe(label1Upper,self.lcds1[0],label1Lower),self.makeLCDframe(label3Upper,self.lcds1[1],label3Lower)]
         for f in self.lcds1frames:
-            f.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+            f.setContextMenuPolicy(Qt.CustomContextMenu)
             f.customContextMenuRequested.connect(self.aw.PhaseslcdClicked)
         #
         self.lcds2styles = ["sv","sv"]
@@ -707,9 +692,9 @@ class LargePhasesLCDs(LargeLCDs):
         self.lcds2labelsUpper = [label2Upper,label4Upper]
         self.lcds2labelsLower = [label2Lower,label4Lower]
         self.lcds2frames = [self.makeLCDframe(label2Upper,self.lcds2[0],label2Lower),self.makeLCDframe(label4Upper,self.lcds2[1],label4Lower)]
-        self.lcds2frames[0].setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.lcds2frames[0].setContextMenuPolicy(Qt.CustomContextMenu)
         self.lcds2frames[0].customContextMenuRequested.connect(self.aw.PhaseslcdClicked)
-        self.lcds2frames[1].setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.lcds2frames[1].setContextMenuPolicy(Qt.CustomContextMenu)
         self.lcds2frames[1].customContextMenuRequested.connect(self.aw.AUClcdClicked)
         ##
         for i in range(len(self.values1)):
@@ -721,8 +706,7 @@ class LargePhasesLCDs(LargeLCDs):
         self.updateStyles()
         self.updateDecimals()
     
-    def updateValues(self,values1,values2, *args, **kwargs):
-        del args, kwargs
+    def updateValues(self,values1,values2):
         # don't update None values
         for i,v in enumerate(values1):
             if v is not None:
@@ -730,7 +714,7 @@ class LargePhasesLCDs(LargeLCDs):
         for i,v in enumerate(values2):
             if v is not None:
                 self.values2[i] = v
-        super().updateValues(values1,values2)
+        super(LargePhasesLCDs,self).updateValues(values1,values2)
     
     def updateVisiblitiesPhases(self):
         self.updateVisibilities([True,True],[True,self.aw.qmc.AUClcdFlag])
@@ -739,12 +723,12 @@ class LargePhasesLCDs(LargeLCDs):
         for lcd in self.lcds1 + self.lcds2:
             lcd.setDigitCount(6)
     
-    def updatePhasesLabels(self,labels):
+    def updateLabels(self,labels):
         # don't update None values
         for i,l in enumerate(map(self.formatLabel,labels)):
             if l is not None:
                 self.labels[i] = l
-        super().updateLabels([" "]*2,[" "]*2,[self.labels[0],self.labels[2]],[self.labels[1],self.labels[3]])
+        super(LargePhasesLCDs,self).updateLabels([" "]*2,[" "]*2,[self.labels[0],self.labels[2]],[self.labels[1],self.labels[3]])
     
     def updateAUCstyle(self,style):
         self.lcds2[1].setStyleSheet(style)
@@ -756,79 +740,3 @@ class LargePhasesLCDs(LargeLCDs):
         self.aw.largePhasesLCDs_dialog = None
         self.aw.LargePhasesLCDsFlag = False
         self.aw.phaseslcdsAction.setChecked(False)
-        
-class LargeScaleLCDs(LargeLCDs):
-    def __init__(self, parent = None, aw = None):
-        super().__init__(parent, aw)
-        settings = QSettings()
-        if settings.contains("ScaleLCDGeometry"):
-            self.restoreGeometry(settings.value("ScaleLCDGeometry"))
-        else:
-            self.resize(100,200)
-        self.setWindowTitle(QApplication.translate("Menu", "Scale LCDs"))
-        self.chooseLayout(self.width(),self.height())
-        self.updateValues([""],[""])
-    
-    def weightLabel(self, unit=None):
-        if unit is None:
-            unit = self.aw.qmc.weight[2]
-        return "<b>" + QApplication.translate("Label", "Weight") + f" ({unit})</b> "
-    
-    def totalLabel(self, unit=None):
-        if unit is None:
-            unit = self.aw.qmc.weight[2]
-        return "<b>" + QApplication.translate("Label", "Total") + f" ({unit})</b> "
-    
-    def updateWeightUnitWeight(self, unit=None):
-        if len(self.lcds1labelsUpper)>0:
-            self.lcds1labelsUpper[0].setText(self.weightLabel(unit))
-    
-    def updateWeightUnitTotal(self, unit=None):
-        if len(self.lcds2labelsUpper)>0:
-            self.lcds2labelsUpper[0].setText(self.totalLabel(unit))
-        
-    def updateWeightUnit(self, unit=None):
-        self.updateWeightUnitWeight(unit)
-        self.updateWeightUnitTotal(unit)
-    
-    def makeLCDs(self):
-        self.lcds1styles = ["slowcoolingtimer"]
-        self.lcds1 = [self.makeLCD(self.lcds1styles[0])] # Weight
-        label1Upper = self.makeLabel(self.weightLabel())
-        label1Lower = self.makeLabel(" ")
-        self.lcds1labelsUpper = [label1Upper]
-        self.lcds1labelsLower = [label1Lower]
-        self.lcds1frames = [self.makeLCDframe(label1Upper,self.lcds1[0],label1Lower)]
-        #
-        self.lcds2styles = ["sv"]
-        self.lcds2 = [self.makeLCD(self.lcds2styles[0])] # Total
-        label2Upper = self.makeLabel(self.totalLabel())
-        label2Lower = self.makeLabel(" ")
-        self.lcds2labelsUpper = [label2Upper]
-        self.lcds2labelsLower = [label2Lower]
-        self.lcds2frames = [self.makeLCDframe(label2Upper,self.lcds2[0],label2Lower)]
-        ##
-        self.updateVisiblitiesScale()
-        self.updateStyles()
-        self.updateDecimals()
-    
-    def updateVisiblitiesScale(self):
-        self.updateVisibilities([True],[True])
-        
-    def updateDecimals(self):
-        for (lcd1,lcd2) in zip(self.lcds1,self.lcds2):
-            for lcd in [lcd1,lcd2]:
-                if self.tight:
-                    lcd.setDigitCount(6)
-                else:
-                    lcd.setDigitCount(7)
-                if lcd.value() == 0:
-                    lcd.display("")
-        
-    def closeEvent(self, _):
-        settings = QSettings()
-        #save window geometry
-        settings.setValue("ScaleLCDGeometry",self.saveGeometry())
-        self.aw.largeScaleLCDs_dialog = None
-        self.aw.LargeScaleLCDsFlag = False
-        self.aw.scalelcdsAction.setChecked(False)

@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
-#
+#!/usr/bin/env python3
+
 # ABOUT
 # Artisan Device Configuration Dialog
 
@@ -7,7 +7,7 @@
 # This program or module is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
 # by the Free Software Foundation, either version 2 of the License, or
-# version 3 of the License, or (at your option) any later version. It is
+# version 3 of the License, or (at your option) any later versison. It is
 # provided for educational purposes and is distributed in the hope that
 # it will be useful, but WITHOUT ANY WARRANTY; without even the implied
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
@@ -20,61 +20,45 @@ import sys
 import time as libtime
 import re
 import platform
-import logging
-try:
-    from typing import Final
-except ImportError:
-    # for Python 3.7:
-    from typing_extensions import Final
+import prettytable
 
 from artisanlib.util import deltaLabelUTF8
 from artisanlib.dialogs import ArtisanResizeablDialog
-from artisanlib.widgets import MyQComboBox, MyQDoubleSpinBox
+from artisanlib.widgets import MyQComboBox
 
+from help import programs_help
+from help import symbolic_help
 
-_log: Final = logging.getLogger(__name__)
-
-try:
-    #pylint: disable = E, W, R, C
-    from PyQt6.QtCore import (Qt, pyqtSlot, QSettings) # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt6.QtGui import (QStandardItem, QColor) # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt6.QtWidgets import (QApplication, QWidget, QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,  # @UnusedImport @Reimport  @UnresolvedImport
-                                 QPushButton, QSpinBox, QTabWidget, QComboBox, QDialogButtonBox, QGridLayout, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QGroupBox, QRadioButton, QSizePolicy, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QTableWidget, QMessageBox, QHeaderView) # @UnusedImport @Reimport  @UnresolvedImport
-except Exception:
-    #pylint: disable = E, W, R, C
-    from PyQt5.QtCore import (Qt, pyqtSlot, QSettings) # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt5.QtGui import (QStandardItem, QColor) # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt5.QtWidgets import (QApplication, QWidget, QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QPushButton, QSpinBox, QTabWidget, QComboBox, QDialogButtonBox, QGridLayout, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QGroupBox, QRadioButton, QSizePolicy, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QTableWidget, QMessageBox, QHeaderView) # @UnusedImport @Reimport  @UnresolvedImport
-
+from PyQt5.QtCore import (Qt, pyqtSlot, QSettings)
+from PyQt5.QtGui import (QStandardItem, QColor)
+from PyQt5.QtWidgets import (QApplication, QWidget, QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,
+                             QPushButton, QSpinBox, QTabWidget, QComboBox, QDialogButtonBox, QGridLayout,
+                             QGroupBox, QRadioButton, QDoubleSpinBox, QSizePolicy,
+                             QTableWidget, QMessageBox)
 
 class DeviceAssignmentDlg(ArtisanResizeablDialog):
     def __init__(self, parent = None, aw = None, activeTab = 0):
-        super().__init__(parent,aw)
-        self.setWindowTitle(QApplication.translate("Form Caption","Device Assignment"))
+        super(DeviceAssignmentDlg,self).__init__(parent,aw)
+        self.setWindowTitle(QApplication.translate("Form Caption","Device Assignment", None))
         self.setModal(True)
 
         self.helpdialog = None
                     
         ################ TAB 1   WIDGETS
         #ETcurve
-        self.ETcurve = QCheckBox(QApplication.translate("CheckBox", "ET"))
+        self.ETcurve = QCheckBox(QApplication.translate("CheckBox", "ET",None))
         self.ETcurve.setChecked(self.aw.qmc.ETcurve)
         #BTcurve
-        self.BTcurve = QCheckBox(QApplication.translate("CheckBox", "BT"))
+        self.BTcurve = QCheckBox(QApplication.translate("CheckBox", "BT",None))
         self.BTcurve.setChecked(self.aw.qmc.BTcurve)
         #ETlcd
-        self.ETlcd = QCheckBox(QApplication.translate("CheckBox", "ET"))
+        self.ETlcd = QCheckBox(QApplication.translate("CheckBox", "ET",None))
         self.ETlcd.setChecked(self.aw.qmc.ETlcd)
         #BTlcd
-        self.BTlcd = QCheckBox(QApplication.translate("CheckBox", "BT"))
+        self.BTlcd = QCheckBox(QApplication.translate("CheckBox", "BT",None))
         self.BTlcd.setChecked(self.aw.qmc.BTlcd)
         #swaplcd
-        self.swaplcds = QCheckBox(QApplication.translate("CheckBox", "Swap"))
+        self.swaplcds = QCheckBox(QApplication.translate("CheckBox", "Swap",None))
         self.swaplcds.setChecked(self.aw.qmc.swaplcds)
         self.curveHBox = QHBoxLayout()
         self.curveHBox.setContentsMargins(10,5,10,5)
@@ -83,7 +67,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         self.curveHBox.addSpacing(10)
         self.curveHBox.addWidget(self.BTcurve)
         self.curveHBox.addStretch()
-        self.curves = QGroupBox(QApplication.translate("GroupBox","Curves"))
+        self.curves = QGroupBox(QApplication.translate("GroupBox","Curves",None))
         self.curves.setLayout(self.curveHBox)
         self.lcdHBox = QHBoxLayout()
         self.lcdHBox.setContentsMargins(0,5,0,5)
@@ -93,20 +77,20 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         self.lcdHBox.addWidget(self.BTlcd)
         self.lcdHBox.addSpacing(15)
         self.lcdHBox.addWidget(self.swaplcds)
-        self.lcds = QGroupBox(QApplication.translate("GroupBox","LCDs"))
+        self.lcds = QGroupBox(QApplication.translate("GroupBox","LCDs",None))
         self.lcds.setLayout(self.lcdHBox)
         
-        self.deviceLoggingFlag = QCheckBox(QApplication.translate("Label", "Logging"))
+        self.deviceLoggingFlag = QCheckBox(QApplication.translate("Label", "Logging", None))
         self.deviceLoggingFlag.setChecked(self.aw.qmc.device_logging)
         
-        self.controlButtonFlag = QCheckBox(QApplication.translate("Label", "Control"))
+        self.controlButtonFlag = QCheckBox(QApplication.translate("Label", "Control", None))
         self.controlButtonFlag.setChecked(self.aw.qmc.Controlbuttonflag)
         self.controlButtonFlag.stateChanged.connect(self.showControlbuttonToggle)
         
-        self.nonpidButton = QRadioButton(QApplication.translate("Radio Button","Meter"))
-        self.pidButton = QRadioButton(QApplication.translate("Radio Button","PID"))
-        self.arduinoButton = QRadioButton(QApplication.translate("Radio Button","TC4"))
-        self.programButton = QRadioButton(QApplication.translate("Radio Button","Prog"))
+        self.nonpidButton = QRadioButton(QApplication.translate("Radio Button","Meter", None))
+        self.pidButton = QRadioButton(QApplication.translate("Radio Button","PID", None))
+        self.arduinoButton = QRadioButton(QApplication.translate("Radio Button","TC4", None))
+        self.programButton = QRadioButton(QApplication.translate("Radio Button","Prog", None))
         #As a main device, don't show the devices that start with a "+"
         # devices with a first letter "+" are extra devices an depend on another device
         # each device provides 2 curves
@@ -121,50 +105,49 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         self.sorted_devices = sorted(dev)
         self.devicetypeComboBox = MyQComboBox()
         
-##        self.devicetypeComboBox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
-##        self.devicetypeComboBox.view().setTextElideMode(Qt.TextElideMode.ElideNone)
-#        # HACK: only needed for the macintosh UI on Qt 5.12 onwords; without long items get cutted in the popup
-#        #  note the -7 as the width of the popup is too large if given the correct maximum characters
-##        self.devicetypeComboBox.setMinimumContentsLength(max(22,len(max(dev, key=len)) - 7)) # expects # characters, but is to wide
-# the following "hack" helped on PyQt5, but seems not to be needed on PyQt6 any longer
-#        self.devicetypeComboBox.setSizePolicy(QSizePolicy.Policy.Expanding,self.devicetypeComboBox.sizePolicy().verticalPolicy())
+#        self.devicetypeComboBox.setSizeAdjustPolicy(QComboBox.AdjustToContents)
+#        self.devicetypeComboBox.view().setTextElideMode(Qt.ElideNone)
+        # HACK: only needed for the macintosh UI on Qt 5.12 onwords; without long items get cutted in the popup
+        #  note the -7 as the width of the popup is too large if given the correct maximum characters
+#        self.devicetypeComboBox.setMinimumContentsLength(max(22,len(max(dev, key=len)) - 7)) # expects # characters, but is to wide
+        self.devicetypeComboBox.setSizePolicy(QSizePolicy.Expanding,self.devicetypeComboBox.sizePolicy().verticalPolicy())
 
         self.devicetypeComboBox.addItems(self.sorted_devices)
         self.programedit = QLineEdit(self.aw.ser.externalprogram)
         self.outprogramedit = QLineEdit(self.aw.ser.externaloutprogram)
-        self.outprogramFlag = QCheckBox(QApplication.translate("CheckBox", "Output"))
+        self.outprogramFlag = QCheckBox(QApplication.translate("CheckBox", "Output",None))
         self.outprogramFlag.setChecked(self.aw.ser.externaloutprogramFlag)
         self.outprogramFlag.stateChanged.connect(self.changeOutprogramFlag)         #toggle
-        selectprogrambutton =  QPushButton(QApplication.translate("Button","Select"))
-        selectprogrambutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        selectprogrambutton =  QPushButton(QApplication.translate("Button","Select",None))
+        selectprogrambutton.setFocusPolicy(Qt.NoFocus)
         selectprogrambutton.clicked.connect(self.loadprogramname)
         
         # hack to access the Qt automatic translation of the RestoreDefaults button
-        db_help = QDialogButtonBox(QDialogButtonBox.StandardButton.Help)
-        help_text_translated = db_help.button(QDialogButtonBox.StandardButton.Help).text()
+        db_help = QDialogButtonBox(QDialogButtonBox.Help)
+        help_text_translated = db_help.button(QDialogButtonBox.Help).text()
         helpprogrambutton =  QPushButton(help_text_translated)
-        self.setButtonTranslations(helpprogrambutton,"Help",QApplication.translate("Button","Help"))
-        helpprogrambutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.setButtonTranslations(helpprogrambutton,"Help",QApplication.translate("Button","Help", None))
+        helpprogrambutton.setFocusPolicy(Qt.NoFocus)
         helpprogrambutton.clicked.connect(self.showhelpprogram)
-        selectoutprogrambutton =  QPushButton(QApplication.translate("Button","Select"))
-        selectoutprogrambutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        selectoutprogrambutton =  QPushButton(QApplication.translate("Button","Select",None))
+        selectoutprogrambutton.setFocusPolicy(Qt.NoFocus)
         selectoutprogrambutton.clicked.connect(self.loadoutprogramname)
         ###################################################
         # PID
-        controllabel =QLabel(QApplication.translate("Label", "Control ET"))
-        # 0 = FujiPXG, 1 = FujiPXR3, 2 = DTA, 3 = not used, 4 = PXF
-        supported_ET_pids = [("Fuji PXF", 4), ("Fuji PXG", 0), ("Fuji PXR", 1), ("Delta DTA", 2)]
+        controllabel =QLabel(QApplication.translate("Label", "Control ET",None))
         self.controlpidtypeComboBox = QComboBox()
-        self.controlpidtypeComboBox.addItems([item[0] for item in supported_ET_pids])
+        self.controlpidtypeComboBox.addItems(["Fuji PXG","Fuji PXR","Delta DTA","Fuji PXF"])
         cp = self.aw.ser.controlETpid[0]
-        self.controlpidtypeComboBox.setCurrentIndex([y[1] for y in supported_ET_pids].index(cp))
-        btlabel =QLabel(QApplication.translate("Label", "Read BT"))
-        supported_BT_pids = [("", 2), ("Fuji PXF", 4), ("Fuji PXG", 0), ("Fuji PXR", 1), ("Delta DTA", 3)]
+        if cp < 3:
+            self.controlpidtypeComboBox.setCurrentIndex(cp)  #pid type is index 0
+        else:
+            self.controlpidtypeComboBox.setCurrentIndex(cp-1)  #pid type is index 0 PXF has an index offset of 1 as index 3 is not used
+        btlabel =QLabel(QApplication.translate("Label", "Read BT",None))
         self.btpidtypeComboBox = QComboBox()
-        self.btpidtypeComboBox.addItems([item[0] for item in supported_BT_pids])
-        self.btpidtypeComboBox.setCurrentIndex([y[1] for y in supported_BT_pids].index(self.aw.ser.readBTpid[0])) #pid type is index 0
-        label1 = QLabel(QApplication.translate("Label", "Type"))
-        label2 = QLabel(QApplication.translate("Label", "RS485 Unit ID"))
+        self.btpidtypeComboBox.addItems(["Fuji PXG","Fuji PXR","None","Delta DTA","Fuji PXF"])
+        self.btpidtypeComboBox.setCurrentIndex(self.aw.ser.readBTpid[0]) #pid type is index 0
+        label1 = QLabel(QApplication.translate("Label", "Type",None))
+        label2 = QLabel(QApplication.translate("Label", "RS485 Unit ID",None))
         #rs485 possible unit IDs (1-32); unit 0 is master (computer)
         unitids = list(map(str,list(range(1,33))))
         self.controlpidunitidComboBox = QComboBox()
@@ -175,22 +158,22 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         self.controlpidunitidComboBox.setCurrentIndex(unitids.index(str(self.aw.ser.controlETpid[1])))
         self.btpidunitidComboBox.setCurrentIndex(unitids.index(str(self.aw.ser.readBTpid[1])))
         #Show Fuji PID SV/% LCDs
-        self.showFujiLCDs = QCheckBox(QApplication.translate("CheckBox", "PID Duty/Power LCDs"))
+        self.showFujiLCDs = QCheckBox(QApplication.translate("CheckBox", "PID Duty/Power LCDs",None))
         self.showFujiLCDs.setChecked(self.aw.ser.showFujiLCDs)
         #Reuse Modbus port
-        self.useModbusPort = QCheckBox(QApplication.translate("CheckBox", "Modbus Port"))
+        self.useModbusPort = QCheckBox(QApplication.translate("CheckBox", "Modbus Port",None))
         self.useModbusPort.setChecked(self.aw.ser.useModbusPort)
         ####################################################
         #Arduino TC4 channel config
         arduinoChannels = ["None","1","2","3","4"]
-        arduinoETLabel =QLabel(QApplication.translate("Label", "ET Channel"))
+        arduinoETLabel =QLabel(QApplication.translate("Label", "ET Channel",None))
         self.arduinoETComboBox = QComboBox()
         self.arduinoETComboBox.addItems(arduinoChannels)
-        arduinoBTLabel =QLabel(QApplication.translate("Label", "BT Channel"))
+        arduinoBTLabel =QLabel(QApplication.translate("Label", "BT Channel",None))
         self.arduinoBTComboBox = QComboBox()
         self.arduinoBTComboBox.addItems(arduinoChannels)
         #check previous settings for radio button
-        if self.aw.qmc.device in (0, 26):   #if Fuji pid or Delta DTA pid
+        if self.aw.qmc.device == 0 or self.aw.qmc.device == 26:   #if Fuji pid or Delta DTA pid
             self.pidButton.setChecked(True)
         elif self.aw.qmc.device == 19:                       #if arduino
             self.arduinoButton.setChecked(True)
@@ -201,31 +184,31 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
             selected_device_index = 0
             try:
                 selected_device_index = self.sorted_devices.index(self.aw.qmc.devices[self.aw.qmc.device - 1])
-            except Exception: # pylint: disable=broad-except
+            except Exception:
                 pass
             self.devicetypeComboBox.setCurrentIndex(selected_device_index)
         try:
             self.arduinoETComboBox.setCurrentIndex(arduinoChannels.index(self.aw.ser.arduinoETChannel))
-        except Exception: # pylint: disable=broad-except
+        except:
             pass
         try:
             self.arduinoBTComboBox.setCurrentIndex(arduinoChannels.index(self.aw.ser.arduinoBTChannel))
-        except Exception: # pylint: disable=broad-except
+        except:
             pass
-        arduinoATLabel =QLabel(QApplication.translate("Label", "AT Channel"))
+        arduinoATLabel =QLabel(QApplication.translate("Label", "AT Channel",None))
         
         arduinoTemperatures = ["None","T1","T2","T3","T4","T5","T6"]
-        self.arduinoATComboBox = QComboBox()
+        self.arduinoATComboBox = QComboBox()        
         self.arduinoATComboBox.addItems(arduinoTemperatures)
         self.arduinoATComboBox.setCurrentIndex(arduinoTemperatures.index(self.aw.ser.arduinoATChannel))
-        self.showControlButton = QCheckBox(QApplication.translate("CheckBox", "PID Firmware"))
+        self.showControlButton = QCheckBox(QApplication.translate("CheckBox", "PID Firmware",None))
         self.showControlButton.setChecked(self.aw.qmc.PIDbuttonflag)
         self.showControlButton.stateChanged.connect(self.PIDfirmwareToggle)
-        FILTLabel =QLabel(QApplication.translate("Label", "Filter"))
+        FILTLabel =QLabel(QApplication.translate("Label", "Filter",None))
         self.FILTspinBoxes = []
         for i in range(4):
             spinBox = QSpinBox()
-            spinBox.setAlignment(Qt.AlignmentFlag.AlignRight)
+            spinBox.setAlignment(Qt.AlignRight)
             spinBox.setRange(0,99)
             spinBox.setSingleStep(5)
             spinBox.setSuffix(" %")
@@ -237,52 +220,52 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         self.dialogbuttons.accepted.connect(self.okEvent)
         self.dialogbuttons.rejected.connect(self.cancelEvent)
         
-        labelETadvanced = QLabel(QApplication.translate("Label", "ET Y(x)"))
-        labelBTadvanced = QLabel(QApplication.translate("Label", "BT Y(x)"))
+        labelETadvanced = QLabel(QApplication.translate("Label", "ET Y(x)",None))
+        labelBTadvanced = QLabel(QApplication.translate("Label", "BT Y(x)",None))
         self.ETfunctionedit = QLineEdit(str(self.aw.qmc.ETfunction))
         self.BTfunctionedit = QLineEdit(str(self.aw.qmc.BTfunction))
         symbolicHelpButton = QPushButton(help_text_translated)
-        self.setButtonTranslations(symbolicHelpButton,"Help",QApplication.translate("Button","Help"))
+        self.setButtonTranslations(symbolicHelpButton,"Help",QApplication.translate("Button","Help", None))
         symbolicHelpButton.setMaximumSize(symbolicHelpButton.sizeHint())
         symbolicHelpButton.setMinimumSize(symbolicHelpButton.minimumSizeHint())
-        symbolicHelpButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        symbolicHelpButton.setFocusPolicy(Qt.NoFocus)
         symbolicHelpButton.clicked.connect(self.showSymbolicHelp)
         ##########################    TAB 2  WIDGETS   "EXTRA DEVICES"
         #table for showing data
         self.devicetable = QTableWidget()
         self.devicetable.setTabKeyNavigation(True)
         self.createDeviceTable()
-        self.copydeviceTableButton = QPushButton(QApplication.translate("Button", "Copy Table"))
-        self.copydeviceTableButton.setToolTip(QApplication.translate("Tooltip","Copy table to clipboard, OPTION or ALT click for tabular text"))
-        self.copydeviceTableButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.copydeviceTableButton = QPushButton(QApplication.translate("Button", "Copy Table",None))
+        self.copydeviceTableButton.setToolTip(QApplication.translate("Tooltip","Copy table to clipboard, OPTION or ALT click for tabular text",None))
+        self.copydeviceTableButton.setFocusPolicy(Qt.NoFocus)
         self.copydeviceTableButton.clicked.connect(self.copyDeviceTabletoClipboard)
-        self.addButton = QPushButton(QApplication.translate("Button","Add"))
-        self.addButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.addButton = QPushButton(QApplication.translate("Button","Add",None))
+        self.addButton.setFocusPolicy(Qt.NoFocus)
         self.addButton.setMinimumWidth(100)
         #self.addButton.setMaximumWidth(100)
         self.addButton.clicked.connect(self.adddevice)
         # hack to access the Qt automatic translation of the RestoreDefaults button
-        db_reset = QDialogButtonBox(QDialogButtonBox.StandardButton.Reset)
-        reset_text_translated = db_reset.button(QDialogButtonBox.StandardButton.Reset).text()
+        db_reset = QDialogButtonBox(QDialogButtonBox.Reset)
+        reset_text_translated = db_reset.button(QDialogButtonBox.Reset).text()
         resetButton =  QPushButton(reset_text_translated)
-        self.setButtonTranslations(resetButton,"Reset",QApplication.translate("Button","Reset"))
-        resetButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.setButtonTranslations(resetButton,"Reset",QApplication.translate("Button","Reset", None))
+        resetButton.setFocusPolicy(Qt.NoFocus)
         resetButton.setMinimumWidth(100)
         resetButton.clicked.connect(self.resetextradevices)
         extradevHelpButton = QPushButton(help_text_translated)
-        self.setButtonTranslations(extradevHelpButton,"Help",QApplication.translate("Button","Help"))
+        self.setButtonTranslations(extradevHelpButton,"Help",QApplication.translate("Button","Help", None))
         extradevHelpButton.setMinimumWidth(100)
-        extradevHelpButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        extradevHelpButton.setFocusPolicy(Qt.NoFocus)
         extradevHelpButton.clicked.connect(self.showExtradevHelp)
-        self.delButton = QPushButton(QApplication.translate("Button","Delete"))
-        self.delButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.delButton = QPushButton(QApplication.translate("Button","Delete",None))
+        self.delButton.setFocusPolicy(Qt.NoFocus)
         self.delButton.setMinimumWidth(100)
         #self.delButton.setMaximumWidth(100)
         self.delButton.clicked.connect(self.deldevice)
-        self.recalcButton = QPushButton(QApplication.translate("Button","Update Profile"))
-        self.recalcButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.recalcButton = QPushButton(QApplication.translate("Button","Update Profile",None))
+        self.recalcButton.setFocusPolicy(Qt.NoFocus)
         self.recalcButton.setMinimumWidth(100)
-        self.recalcButton.setToolTip(QApplication.translate("Tooltip","Recaclulates all Virtual Devices and updates their values in the profile"))
+        self.recalcButton.setToolTip(QApplication.translate("Tooltip","Recaclulates all Virtual Devices and updates their values in the profile",None))
         self.recalcButton.clicked.connect(self.updateVirtualdevicesinprofile_clicked)
         self.enableDisableAddDeleteButtons()
         ##########     LAYOUTS
@@ -295,68 +278,64 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         self.probeTypeCombos = []
         for i in range(1,5):
             changeTriggersCombo = QComboBox()
-            changeTriggersCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            changeTriggersCombo.setFocusPolicy(Qt.NoFocus)
             model = changeTriggersCombo.model()
             changeTriggerItems = self.createItems(self.aw.qmc.phidget1048_changeTriggersStrings)
             for item in changeTriggerItems:
                 model.appendRow(item)
             try:
                 changeTriggersCombo.setCurrentIndex(self.aw.qmc.phidget1048_changeTriggersValues.index(self.aw.qmc.phidget1048_changeTriggers[i-1]))
-            except Exception: # pylint: disable=broad-except
+            except Exception:
                 pass
             
-            changeTriggersCombo.setMinimumContentsLength(1)
-            changeTriggersCombo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents) # AdjustToMinimumContentsLengthWithIcon
+            changeTriggersCombo.setMinimumContentsLength(3)
+            changeTriggersCombo.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
             changeTriggersCombo.setEnabled(bool(self.aw.qmc.phidget1048_async[i-1]))
-            width = changeTriggersCombo.minimumSizeHint().width()
-            changeTriggersCombo.setMinimumWidth(width)
-            if platform.system() == 'Darwin':
-                changeTriggersCombo.setMaximumWidth(width)
             
             self.changeTriggerCombos1048.append(changeTriggersCombo)
             phidgetBox1048.addWidget(changeTriggersCombo,3,i)
             asyncFlag = QCheckBox()
-            self.asyncCheckBoxes1048.append(asyncFlag)
-            asyncFlag.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            asyncFlag.setFocusPolicy(Qt.NoFocus)
             asyncFlag.setChecked(True)
-            phidgetBox1048.addWidget(asyncFlag,2,i)
             asyncFlag.stateChanged.connect(self.asyncFlagStateChanged1048)
             asyncFlag.setChecked(self.aw.qmc.phidget1048_async[i-1])
+            self.asyncCheckBoxes1048.append(asyncFlag)
+            phidgetBox1048.addWidget(asyncFlag,2,i)
             probeTypeCombo = QComboBox()
-            probeTypeCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            probeTypeCombo.setFocusPolicy(Qt.NoFocus)
             model = probeTypeCombo.model()
             probeTypeItems = self.createItems(phidgetProbeTypeItems)
             for item in probeTypeItems:
                 model.appendRow(item)
             try:
                 probeTypeCombo.setCurrentIndex(self.aw.qmc.phidget1048_types[i-1]-1)
-            except Exception: # pylint: disable=broad-except
+            except Exception:
                 pass
                 
-            probeTypeCombo.setMinimumContentsLength(1)
-            probeTypeCombo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents) # AdjustToMinimumContentsLengthWithIcon
-            width = probeTypeCombo.minimumSizeHint().width()
-            probeTypeCombo.setMinimumWidth(width)
-            if platform.system() == 'Darwin':
-                probeTypeCombo.setMaximumWidth(width)
+            probeTypeCombo.setMinimumContentsLength(0)
+            probeTypeCombo.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
+#            width = probeTypeCombo.minimumSizeHint().width()
+#            probeTypeCombo.setMinimumWidth(width)
+#            if platf == 'Darwin':
+#                probeTypeCombo.setMaximumWidth(width)
             
             self.probeTypeCombos.append(probeTypeCombo)
             phidgetBox1048.addWidget(probeTypeCombo,1,i)
             rowLabel = QLabel(str(i-1))
             phidgetBox1048.addWidget(rowLabel,0,i)
      
-        self.dataRateCombo1048 = QComboBox()
-        self.dataRateCombo1048.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.dataRateCombo1048 = QComboBox()             
+        self.dataRateCombo1048.setFocusPolicy(Qt.NoFocus)
         model = self.dataRateCombo1048.model()
         dataRateItems = self.createItems(self.aw.qmc.phidget_dataRatesStrings)
         for item in dataRateItems:
             model.appendRow(item)
         try:
             self.dataRateCombo1048.setCurrentIndex(self.aw.qmc.phidget_dataRatesValues.index(self.aw.qmc.phidget1048_dataRate))
-        except Exception: # pylint: disable=broad-except
+        except Exception:
             pass
         self.dataRateCombo1048.setMinimumContentsLength(5)
-        self.dataRateCombo1048.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents) # AdjustToContents
+        self.dataRateCombo1048.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
         width = self.dataRateCombo1048.minimumSizeHint().width()
         self.dataRateCombo1048.setMinimumWidth(width)
         if platform.system() == 'Darwin':
@@ -365,14 +344,14 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         phidgetBox1048.addWidget(self.dataRateCombo1048,4,1,1,2)
         phidgetBox1048.setSpacing(1)
             
-        typeLabel = QLabel(QApplication.translate("Label","Type"))
-        asyncLabel = QLabel(QApplication.translate("Label","Async"))
-        changeTriggerLabel = QLabel(QApplication.translate("Label","Change"))
-        rateLabel = QLabel(QApplication.translate("Label","Rate"))
-        phidgetBox1048.addWidget(typeLabel,1,0,Qt.AlignmentFlag.AlignRight)
-        phidgetBox1048.addWidget(asyncLabel,2,0,Qt.AlignmentFlag.AlignRight)
-        phidgetBox1048.addWidget(changeTriggerLabel,3,0,Qt.AlignmentFlag.AlignRight)
-        phidgetBox1048.addWidget(rateLabel,4,0,Qt.AlignmentFlag.AlignRight)
+        typeLabel = QLabel(QApplication.translate("Label","Type", None))
+        asyncLabel = QLabel(QApplication.translate("Label","Async", None))
+        changeTriggerLabel = QLabel(QApplication.translate("Label","Change", None))
+        rateLabel = QLabel(QApplication.translate("Label","Rate", None))
+        phidgetBox1048.addWidget(typeLabel,1,0,Qt.AlignRight)
+        phidgetBox1048.addWidget(asyncLabel,2,0,Qt.AlignRight)
+        phidgetBox1048.addWidget(changeTriggerLabel,3,0,Qt.AlignRight)
+        phidgetBox1048.addWidget(rateLabel,4,0,Qt.AlignRight)
         phidget1048HBox = QHBoxLayout()
         phidget1048HBox.addStretch()
         phidget1048HBox.addLayout(phidgetBox1048)
@@ -390,63 +369,60 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         phidgetBox1045 = QGridLayout()
         phidgetBox1045.setSpacing(1)
         self.changeTriggerCombos1045 = QComboBox()
-        self.changeTriggerCombos1045.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.changeTriggerCombos1045.setFocusPolicy(Qt.NoFocus)
         model = self.changeTriggerCombos1045.model()
         changeTriggerItems = self.createItems(self.aw.qmc.phidget1045_changeTriggersStrings)
         for item in changeTriggerItems:
             model.appendRow(item)
         try:
             self.changeTriggerCombos1045.setCurrentIndex(self.aw.qmc.phidget1045_changeTriggersValues.index(self.aw.qmc.phidget1045_changeTrigger))
-        except Exception: # pylint: disable=broad-except
+        except Exception:
             pass
-        
-        self.changeTriggerCombos1045.setMinimumContentsLength(3)
-        self.changeTriggerCombos1045.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents) # AdjustToMinimumContentsLengthWithIcon
-        width = self.changeTriggerCombos1045.minimumSizeHint().width()
-        self.changeTriggerCombos1045.setMinimumWidth(width)
-        if platform.system() == 'Darwin':
-            self.changeTriggerCombos1045.setMaximumWidth(width)
+            
+        #self.changeTriggerCombos1045.setMaximumSize(65,100)
+        self.changeTriggerCombos1045.setMinimumContentsLength(4)
+        self.changeTriggerCombos1045.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
         
         phidgetBox1045.addWidget(self.changeTriggerCombos1045,3,1)
         self.asyncCheckBoxe1045 = QCheckBox()
-        phidgetBox1045.addWidget(self.asyncCheckBoxe1045,2,1)
-        self.asyncCheckBoxe1045.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.asyncCheckBoxe1045.setFocusPolicy(Qt.NoFocus)
         self.asyncCheckBoxe1045.setChecked(True)
         self.asyncCheckBoxe1045.stateChanged.connect(self.asyncFlagStateChanged1045)
         self.asyncCheckBoxe1045.setChecked(self.aw.qmc.phidget1045_async)
-        asyncLabel = QLabel(QApplication.translate("Label","Async"))
-        changeTriggerLabel = QLabel(QApplication.translate("Label","Change"))
-        rateLabel = QLabel(QApplication.translate("Label","Rate")) 
+        phidgetBox1045.addWidget(self.asyncCheckBoxe1045,2,1)
+        asyncLabel = QLabel(QApplication.translate("Label","Async", None))
+        changeTriggerLabel = QLabel(QApplication.translate("Label","Change", None))
+        rateLabel = QLabel(QApplication.translate("Label","Rate", None)) 
                 
         self.dataRateCombo1045 = QComboBox()
-        self.dataRateCombo1045.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.dataRateCombo1045.setFocusPolicy(Qt.NoFocus)
         model = self.dataRateCombo1045.model()
         dataRateItems = self.createItems(self.aw.qmc.phidget_dataRatesStrings)
         for item in dataRateItems:
             model.appendRow(item)
         try:
             self.dataRateCombo1045.setCurrentIndex(self.aw.qmc.phidget_dataRatesValues.index(self.aw.qmc.phidget1045_dataRate))
-        except Exception: # pylint: disable=broad-except
+        except Exception:
             pass
-        self.dataRateCombo1045.setMinimumContentsLength(3)
-        self.dataRateCombo1045.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents) # AdjustToMinimumContentsLengthWithIcon
+        self.dataRateCombo1045.setMinimumContentsLength(5)
+        self.dataRateCombo1045.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
         width = self.dataRateCombo1045.minimumSizeHint().width()
         self.dataRateCombo1045.setMinimumWidth(width)
         if platform.system() == 'Darwin':
             self.dataRateCombo1045.setMaximumWidth(width)
         
-        EmissivityLabel = QLabel(QApplication.translate("Label","Emissivity"))
-        self.emissivitySpinBox = MyQDoubleSpinBox()
-        self.emissivitySpinBox.setAlignment(Qt.AlignmentFlag.AlignRight)
+        EmissivityLabel = QLabel(QApplication.translate("Label","Emissivity", None))
+        self.emissivitySpinBox = QDoubleSpinBox()
+        self.emissivitySpinBox.setAlignment(Qt.AlignRight)
         self.emissivitySpinBox.setRange(0.,1.)
         self.emissivitySpinBox.setSingleStep(.1) 
         self.emissivitySpinBox.setValue(self.aw.qmc.phidget1045_emissivity) 
 
-        phidgetBox1045.addWidget(asyncLabel,2,0,Qt.AlignmentFlag.AlignRight)
-        phidgetBox1045.addWidget(changeTriggerLabel,3,0,Qt.AlignmentFlag.AlignRight)
-        phidgetBox1045.addWidget(rateLabel,4,0,Qt.AlignmentFlag.AlignRight)
-        phidgetBox1045.addWidget(EmissivityLabel,5,0,Qt.AlignmentFlag.AlignRight)
+        phidgetBox1045.addWidget(asyncLabel,2,0,Qt.AlignRight)
+        phidgetBox1045.addWidget(changeTriggerLabel,3,0,Qt.AlignRight)
+        phidgetBox1045.addWidget(rateLabel,4,0,Qt.AlignRight) 
         phidgetBox1045.addWidget(self.dataRateCombo1045,4,1)
+        phidgetBox1045.addWidget(EmissivityLabel,5,0,Qt.AlignRight)
         phidgetBox1045.addWidget(self.emissivitySpinBox,5,1)
         phidget1045VBox = QVBoxLayout()
         phidget1045VBox.addStretch()
@@ -466,7 +442,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         self.asyncCheckBoxes1046 = []
         for i in range(1,5):
             gainCombo = QComboBox()
-            gainCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            gainCombo.setFocusPolicy(Qt.NoFocus)
             
             model = gainCombo.model()
             gainItems = self.createItems(self.aw.qmc.phidget1046_gainValues)
@@ -474,32 +450,31 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 model.appendRow(item)
             try:
                 gainCombo.setCurrentIndex(self.aw.qmc.phidget1046_gain[i-1] - 1)
-            except Exception: # pylint: disable=broad-except
+            except Exception:
                 pass
           
-            gainCombo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents) # AdjustToMinimumContentsLengthWithIcon
-            gainCombo.setMinimumContentsLength(1)
+            gainCombo.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
+            gainCombo.setMinimumContentsLength(2)
             width = gainCombo.minimumSizeHint().width()
             gainCombo.setMinimumWidth(width)
-            if platform.system() == 'Darwin':
-                gainCombo.setMaximumWidth(width)
+#            gainCombo.setMaximumWidth(width)
             
             self.gainCombos1046.append(gainCombo)
             phidgetBox1046.addWidget(gainCombo,1,i)
             
             formulaCombo = QComboBox()
-            formulaCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            formulaCombo.setFocusPolicy(Qt.NoFocus)
             model = formulaCombo.model()
             formulaItems = self.createItems(self.aw.qmc.phidget1046_formulaValues)
             for item in formulaItems:
                 model.appendRow(item)
             try:
                 formulaCombo.setCurrentIndex(self.aw.qmc.phidget1046_formula[i-1])
-            except Exception: # pylint: disable=broad-except
+            except Exception:
                 pass
 
-            formulaCombo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents) # AdjustToMinimumContentsLengthWithIcon
-            formulaCombo.setMinimumContentsLength(1)
+            formulaCombo.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
+            formulaCombo.setMinimumContentsLength(3)
             width = formulaCombo.minimumSizeHint().width()
             formulaCombo.setMinimumWidth(width)
             if platform.system() == 'Darwin':
@@ -509,7 +484,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
             phidgetBox1046.addWidget(formulaCombo,2,i)
 
             asyncFlag = QCheckBox()
-            asyncFlag.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            asyncFlag.setFocusPolicy(Qt.NoFocus)
             asyncFlag.setChecked(True)
             asyncFlag.setChecked(self.aw.qmc.phidget1046_async[i-1])
             self.asyncCheckBoxes1046.append(asyncFlag)
@@ -518,16 +493,16 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
             phidgetBox1046.addWidget(rowLabel,0,i)
             
         self.dataRateCombo1046 = QComboBox()
-        self.dataRateCombo1046.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.dataRateCombo1046.setFocusPolicy(Qt.NoFocus)
         model = self.dataRateCombo1046.model()
         dataRateItems = self.createItems(self.aw.qmc.phidget_dataRatesStrings)
         for item in dataRateItems:
             model.appendRow(item)
         try:
             self.dataRateCombo1046.setCurrentIndex(self.aw.qmc.phidget_dataRatesValues.index(self.aw.qmc.phidget1046_dataRate))
-        except Exception: # pylint: disable=broad-except
+        except Exception:
             pass                
-        self.dataRateCombo1046.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents) # AdjustToMinimumContentsLengthWithIcon
+        self.dataRateCombo1046.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
         self.dataRateCombo1046.setMinimumContentsLength(5)
         width = self.dataRateCombo1046.minimumSizeHint().width()
         self.dataRateCombo1046.setMinimumWidth(width)
@@ -537,14 +512,14 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         phidgetBox1046.addWidget(self.dataRateCombo1046,4,1,1,2)
         phidgetBox1046.setSpacing(5)
      
-        gainLabel = QLabel(QApplication.translate("Label","Gain"))
-        formulaLabel = QLabel(QApplication.translate("Label","Wiring"))
-        asyncLabel = QLabel(QApplication.translate("Label","Async"))
-        rateLabel = QLabel(QApplication.translate("Label","Rate"))
-        phidgetBox1046.addWidget(gainLabel,1,0,Qt.AlignmentFlag.AlignRight)
-        phidgetBox1046.addWidget(formulaLabel,2,0,Qt.AlignmentFlag.AlignRight)
-        phidgetBox1046.addWidget(asyncLabel,3,0,Qt.AlignmentFlag.AlignRight)
-        phidgetBox1046.addWidget(rateLabel,4,0,Qt.AlignmentFlag.AlignRight)
+        gainLabel = QLabel(QApplication.translate("Label","Gain", None))
+        formulaLabel = QLabel(QApplication.translate("Label","Wiring", None))
+        asyncLabel = QLabel(QApplication.translate("Label","Async", None))
+        rateLabel = QLabel(QApplication.translate("Label","Rate", None))
+        phidgetBox1046.addWidget(gainLabel,1,0,Qt.AlignRight)
+        phidgetBox1046.addWidget(formulaLabel,2,0,Qt.AlignRight)
+        phidgetBox1046.addWidget(asyncLabel,3,0,Qt.AlignRight)
+        phidgetBox1046.addWidget(rateLabel,4,0,Qt.AlignRight)
         phidget1046HBox = QHBoxLayout()
         phidget1046HBox.addStretch()
         phidget1046HBox.addLayout(phidgetBox1046)
@@ -565,14 +540,14 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         phidgetBox1200_2.setSpacing(1)
 
         self.formulaCombo1200 = QComboBox()
-        self.formulaCombo1200.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.formulaCombo1200.setFocusPolicy(Qt.NoFocus)
         model = self.formulaCombo1200.model()
         wireItems = self.createItems(self.aw.qmc.phidget1200_formulaValues)
         for item in wireItems:
             model.appendRow(item)
         try:
             self.formulaCombo1200.setCurrentIndex(self.aw.qmc.phidget1200_formula)
-        except Exception: # pylint: disable=broad-except
+        except Exception:
             pass
         self.formulaCombo1200.setMinimumContentsLength(5)
         width = self.formulaCombo1200.minimumSizeHint().width()
@@ -580,14 +555,14 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
 #        self.formulaCombo1200.setMaximumWidth(width)
         
         self.wireCombo1200 = QComboBox()
-        self.wireCombo1200.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.wireCombo1200.setFocusPolicy(Qt.NoFocus)
         model = self.wireCombo1200.model()
         wireItems = self.createItems(self.aw.qmc.phidget1200_wireValues)
         for item in wireItems:
             model.appendRow(item)
         try:
             self.wireCombo1200.setCurrentIndex(self.aw.qmc.phidget1200_wire)
-        except Exception: # pylint: disable=broad-except
+        except Exception:
             pass
         self.wireCombo1200.setMinimumContentsLength(5)
         width = self.wireCombo1200.minimumSizeHint().width()
@@ -595,19 +570,19 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
 #        self.wireCombo1200.setMaximumWidth(width)
 
         self.asyncCheckBoxe1200 = QCheckBox()
-        self.asyncCheckBoxe1200.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.asyncCheckBoxe1200.setFocusPolicy(Qt.NoFocus)
         self.asyncCheckBoxe1200.setChecked(self.aw.qmc.phidget1200_async)
         self.asyncCheckBoxe1200.stateChanged.connect(self.asyncFlagStateChanged1200)
             
         self.changeTriggerCombo1200 = QComboBox()
-        self.changeTriggerCombo1200.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.changeTriggerCombo1200.setFocusPolicy(Qt.NoFocus)
         model = self.changeTriggerCombo1200.model()
         changeTriggerItems = self.createItems(self.aw.qmc.phidget1200_changeTriggersStrings)
         for item in changeTriggerItems:
             model.appendRow(item)
         try:
             self.changeTriggerCombo1200.setCurrentIndex(self.aw.qmc.phidget1200_changeTriggersValues.index(self.aw.qmc.phidget1200_changeTrigger))
-        except Exception: # pylint: disable=broad-except
+        except Exception:
             pass
         self.changeTriggerCombo1200.setMinimumContentsLength(4)
         width = self.changeTriggerCombo1200.minimumSizeHint().width()
@@ -616,14 +591,14 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         self.changeTriggerCombo1200.setEnabled(self.aw.qmc.phidget1200_async)
         
         self.rateCombo1200 = QComboBox()
-        self.rateCombo1200.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.rateCombo1200.setFocusPolicy(Qt.NoFocus)
         model = self.rateCombo1200.model()
         dataRateItems = self.createItems(self.aw.qmc.phidget1200_dataRatesStrings)
         for item in dataRateItems:
             model.appendRow(item)
         try:
             self.rateCombo1200.setCurrentIndex(self.aw.qmc.phidget1200_dataRatesValues.index(self.aw.qmc.phidget1200_dataRate))
-        except Exception: # pylint: disable=broad-except
+        except Exception:
             pass
         self.rateCombo1200.setMinimumContentsLength(3)
         width = self.rateCombo1200.minimumSizeHint().width()
@@ -632,48 +607,49 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
 
 #---
         self.formulaCombo1200_2 = QComboBox()
-        self.formulaCombo1200_2.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.formulaCombo1200_2.setFocusPolicy(Qt.NoFocus)
         model = self.formulaCombo1200_2.model()
         wireItems = self.createItems(self.aw.qmc.phidget1200_formulaValues)
         for item in wireItems:
             model.appendRow(item)
         try:
             self.formulaCombo1200_2.setCurrentIndex(self.aw.qmc.phidget1200_2_formula)
-        except Exception: # pylint: disable=broad-except
+        except Exception:
             pass
-        self.formulaCombo1200_2.setMinimumContentsLength(4)
+        self.formulaCombo1200_2.setMinimumContentsLength(5)
         width = self.formulaCombo1200_2.minimumSizeHint().width()
         self.formulaCombo1200_2.setMinimumWidth(width)
+#        self.formulaCombo1200_2.setMaximumWidth(width)
         
         self.wireCombo1200_2 = QComboBox()
-        self.wireCombo1200_2.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.wireCombo1200_2.setFocusPolicy(Qt.NoFocus)
         model = self.wireCombo1200_2.model()
         wireItems = self.createItems(self.aw.qmc.phidget1200_wireValues)
         for item in wireItems:
             model.appendRow(item)
         try:
             self.wireCombo1200_2.setCurrentIndex(self.aw.qmc.phidget1200_2_wire)
-        except Exception: # pylint: disable=broad-except
+        except Exception:
             pass
-        self.wireCombo1200_2.setMinimumContentsLength(4)
+        self.wireCombo1200_2.setMinimumContentsLength(5)
         width = self.wireCombo1200_2.minimumSizeHint().width()
         self.wireCombo1200_2.setMinimumWidth(width)
 #        self.wireCombo1200_2.setMaximumWidth(width)
 
         self.asyncCheckBoxe1200_2 = QCheckBox()
-        self.asyncCheckBoxe1200_2.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.asyncCheckBoxe1200_2.setFocusPolicy(Qt.NoFocus)
         self.asyncCheckBoxe1200_2.setChecked(self.aw.qmc.phidget1200_2_async)
         self.asyncCheckBoxe1200_2.stateChanged.connect(self.asyncFlagStateChanged1200_2)
             
         self.changeTriggerCombo1200_2 = QComboBox()
-        self.changeTriggerCombo1200_2.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.changeTriggerCombo1200_2.setFocusPolicy(Qt.NoFocus)
         model = self.changeTriggerCombo1200_2.model()
         changeTriggerItems = self.createItems(self.aw.qmc.phidget1200_changeTriggersStrings)
         for item in changeTriggerItems:
             model.appendRow(item)
         try:
             self.changeTriggerCombo1200_2.setCurrentIndex(self.aw.qmc.phidget1200_changeTriggersValues.index(self.aw.qmc.phidget1200_2_changeTrigger))
-        except Exception: # pylint: disable=broad-except
+        except Exception:
             pass
         self.changeTriggerCombo1200_2.setMinimumContentsLength(4)
         width = self.changeTriggerCombo1200_2.minimumSizeHint().width()
@@ -682,14 +658,14 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         self.changeTriggerCombo1200_2.setEnabled(self.aw.qmc.phidget1200_async)
         
         self.rateCombo1200_2 = QComboBox()
-        self.rateCombo1200_2.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.rateCombo1200_2.setFocusPolicy(Qt.NoFocus)
         model = self.rateCombo1200_2.model()
         dataRateItems = self.createItems(self.aw.qmc.phidget1200_dataRatesStrings)
         for item in dataRateItems:
             model.appendRow(item)
         try:
             self.rateCombo1200_2.setCurrentIndex(self.aw.qmc.phidget1200_dataRatesValues.index(self.aw.qmc.phidget1200_2_dataRate))
-        except Exception: # pylint: disable=broad-except
+        except Exception:
             pass
         self.rateCombo1200_2.setMinimumContentsLength(3)
         width = self.rateCombo1200_2.minimumSizeHint().width()
@@ -697,38 +673,38 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
 #        self.rateCombo1200_2.setMaximumWidth(width)
 #---
         
-        typeLabel = QLabel(QApplication.translate("Label","Type"))
-        wireLabel = QLabel(QApplication.translate("Label","Wiring"))
-        asyncLabel = QLabel(QApplication.translate("Label","Async"))
-        changeLabel = QLabel(QApplication.translate("Label","Change"))
-        rateLabel = QLabel(QApplication.translate("Label","Rate"))
+        typeLabel = QLabel(QApplication.translate("Label","Type", None))
+        wireLabel = QLabel(QApplication.translate("Label","Wiring", None))
+        asyncLabel = QLabel(QApplication.translate("Label","Async", None))
+        changeLabel = QLabel(QApplication.translate("Label","Change", None))
+        rateLabel = QLabel(QApplication.translate("Label","Rate", None))
         
-        typeLabel2 = QLabel(QApplication.translate("Label","Type"))
-        wireLabel2 = QLabel(QApplication.translate("Label","Wiring"))
-        asyncLabel2 = QLabel(QApplication.translate("Label","Async"))
-        changeLabel2 = QLabel(QApplication.translate("Label","Change"))
-        rateLabel2 = QLabel(QApplication.translate("Label","Rate"))
+        typeLabel2 = QLabel(QApplication.translate("Label","Type", None))
+        wireLabel2 = QLabel(QApplication.translate("Label","Wiring", None))
+        asyncLabel2 = QLabel(QApplication.translate("Label","Async", None))
+        changeLabel2 = QLabel(QApplication.translate("Label","Change", None))
+        rateLabel2 = QLabel(QApplication.translate("Label","Rate", None))
         
-        phidgetBox1200.addWidget(typeLabel,1,0,Qt.AlignmentFlag.AlignRight)
+        phidgetBox1200.addWidget(typeLabel,1,0,Qt.AlignRight)
         phidgetBox1200.addWidget(self.formulaCombo1200,1,1)
-        phidgetBox1200.addWidget(wireLabel,2,0,Qt.AlignmentFlag.AlignRight)
+        phidgetBox1200.addWidget(wireLabel,2,0,Qt.AlignRight)
         phidgetBox1200.addWidget(self.wireCombo1200,2,1)
-        phidgetBox1200.addWidget(asyncLabel,3,0,Qt.AlignmentFlag.AlignRight)
+        phidgetBox1200.addWidget(asyncLabel,3,0,Qt.AlignRight)
         phidgetBox1200.addWidget(self.asyncCheckBoxe1200,3,1)
-        phidgetBox1200.addWidget(changeLabel,4,0,Qt.AlignmentFlag.AlignRight)
+        phidgetBox1200.addWidget(changeLabel,4,0,Qt.AlignRight)
         phidgetBox1200.addWidget(self.changeTriggerCombo1200,4,1)
-        phidgetBox1200.addWidget(rateLabel,5,0,Qt.AlignmentFlag.AlignRight)
+        phidgetBox1200.addWidget(rateLabel,5,0,Qt.AlignRight)
         phidgetBox1200.addWidget(self.rateCombo1200,5,1)
         
-        phidgetBox1200_2.addWidget(typeLabel2,1,0,Qt.AlignmentFlag.AlignRight)
+        phidgetBox1200_2.addWidget(typeLabel2,1,0,Qt.AlignRight)
         phidgetBox1200_2.addWidget(self.formulaCombo1200_2,1,1)
-        phidgetBox1200_2.addWidget(wireLabel2,2,0,Qt.AlignmentFlag.AlignRight)
+        phidgetBox1200_2.addWidget(wireLabel2,2,0,Qt.AlignRight)
         phidgetBox1200_2.addWidget(self.wireCombo1200_2,2,1)
-        phidgetBox1200_2.addWidget(asyncLabel2,3,0,Qt.AlignmentFlag.AlignRight)
+        phidgetBox1200_2.addWidget(asyncLabel2,3,0,Qt.AlignRight)
         phidgetBox1200_2.addWidget(self.asyncCheckBoxe1200_2,3,1)
-        phidgetBox1200_2.addWidget(changeLabel2,4,0,Qt.AlignmentFlag.AlignRight)
+        phidgetBox1200_2.addWidget(changeLabel2,4,0,Qt.AlignRight)
         phidgetBox1200_2.addWidget(self.changeTriggerCombo1200_2,4,1)
-        phidgetBox1200_2.addWidget(rateLabel2,5,0,Qt.AlignmentFlag.AlignRight)
+        phidgetBox1200_2.addWidget(rateLabel2,5,0,Qt.AlignRight)
         phidgetBox1200_2.addWidget(self.rateCombo1200_2,5,1)
 
         phidget1200HBox = QHBoxLayout()
@@ -762,21 +738,19 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         
         phidgetGroupBoxLayout = QVBoxLayout()
         phidgetGroupBoxLayout.addWidget(phidget1200_tabs)
-           
-#        phidgetBox1200_2.setSpacing(1)
-        phidgetGroupBoxLayout.setContentsMargins(0,0,0,0) # left, top, right, bottom
         
         phidget1200GroupBox = QGroupBox("TMP1200 RTD")
+#        phidget1200GroupBox.setLayout(phidget1200VBox)
         phidget1200GroupBox.setLayout(phidgetGroupBoxLayout)
-        phidget1200GroupBox.setContentsMargins(0,2,0,0) # left, top, right, bottom
+        phidget1200GroupBox.setContentsMargins(0,10,0,0)
         
         
         # DAQ1400 VI
-        powerLabel = QLabel(QApplication.translate("Label","Power"))
-        modeLabel = QLabel(QApplication.translate("Label","Mode"))
+        powerLabel = QLabel(QApplication.translate("Label","Power", None))
+        modeLabel = QLabel(QApplication.translate("Label","Mode", None))
 
         self.powerCombo1400 = QComboBox()
-        self.powerCombo1400.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.powerCombo1400.setFocusPolicy(Qt.NoFocus)
         self.powerCombo1400.addItems(self.aw.qmc.phidgetDAQ1400_powerSupplyStrings)
         self.powerCombo1400.setCurrentIndex(self.aw.qmc.phidgetDAQ1400_powerSupply)
         self.powerCombo1400.setMinimumContentsLength(3)
@@ -784,7 +758,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         self.powerCombo1400.setMinimumWidth(width)
 
         self.modeCombo1400 = QComboBox()
-        self.modeCombo1400.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.modeCombo1400.setFocusPolicy(Qt.NoFocus)
         self.modeCombo1400.addItems(self.aw.qmc.phidgetDAQ1400_inputModeStrings)
         self.modeCombo1400.setCurrentIndex(self.aw.qmc.phidgetDAQ1400_inputMode)
         self.modeCombo1400.setMinimumContentsLength(3)
@@ -793,9 +767,9 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
 
         phidgetBox1400 = QGridLayout()
         phidgetBox1400.setSpacing(1)
-        phidgetBox1400.addWidget(powerLabel,0,0,Qt.AlignmentFlag.AlignRight)
+        phidgetBox1400.addWidget(powerLabel,0,0,Qt.AlignRight)
         phidgetBox1400.addWidget(self.powerCombo1400,0,1)
-        phidgetBox1400.addWidget(modeLabel,1,0,Qt.AlignmentFlag.AlignRight)
+        phidgetBox1400.addWidget(modeLabel,1,0,Qt.AlignRight)
         phidgetBox1400.addWidget(self.modeCombo1400,1,1)
 
         phidget1400HBox = QHBoxLayout()
@@ -830,115 +804,97 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         self.ratioCheckBoxes = []
         self.dataRateCombos = []
         self.changeTriggerCombos = []
-        self.voltageRangeCombos = []
         for i in range(1,9):
             dataRatesCombo = QComboBox()
-            dataRatesCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            dataRatesCombo.setFocusPolicy(Qt.NoFocus)
             model = dataRatesCombo.model()
             dataRateItems = self.createItems(self.aw.qmc.phidget_dataRatesStrings)
             for item in dataRateItems:
                 model.appendRow(item)
             try:
                 dataRatesCombo.setCurrentIndex(self.aw.qmc.phidget_dataRatesValues.index(self.aw.qmc.phidget1018_dataRates[i-1]))
-            except Exception: # pylint: disable=broad-except
+            except Exception:
                 pass
-            dataRatesCombo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents) # AdjustToMinimumContentsLengthWithIcon
-            dataRatesCombo.setMinimumContentsLength(4)
+
+            dataRatesCombo.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
+            dataRatesCombo.setMinimumContentsLength(5)
             width = dataRatesCombo.minimumSizeHint().width()
             dataRatesCombo.setMinimumWidth(width)
             if platform.system() == 'Darwin':
                 dataRatesCombo.setMaximumWidth(width)
+            
             self.dataRateCombos.append(dataRatesCombo)
+            
             phidgetBox1018.addWidget(dataRatesCombo,4,i)
             
             changeTriggersCombo = QComboBox()
-            changeTriggersCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            changeTriggersCombo.setFocusPolicy(Qt.NoFocus)
             changeTriggersCombo.setEnabled(bool(self.aw.qmc.phidget1018_async[i-1]))
             model = changeTriggersCombo.model()
             changeTriggerItems = self.createItems(self.aw.qmc.phidget1018_changeTriggersStrings)
             for item in changeTriggerItems:
                 model.appendRow(item)
             try:
-                changeTriggersCombo.setCurrentIndex(self.aw.qmc.phidget1018_changeTriggersValues.index(self.aw.qmc.phidget1018_changeTriggers[i-1]))
-            except Exception: # pylint: disable=broad-except
+                changeTriggersCombo.setCurrentIndex((self.aw.qmc.phidget1018_changeTriggersValues.index(self.aw.qmc.phidget1018_changeTriggers[i-1])))
+            except Exception:
                 pass
-            changeTriggersCombo.setMinimumContentsLength(4)
-            changeTriggersCombo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents) # AdjustToMinimumContentsLengthWithIcon
+
+            changeTriggersCombo.setMinimumContentsLength(5)
+            changeTriggersCombo.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
             width = changeTriggersCombo.minimumSizeHint().width()
             changeTriggersCombo.setMinimumWidth(width)
             if platform.system() == 'Darwin':
                 changeTriggersCombo.setMaximumWidth(width)
+            
             self.changeTriggerCombos.append(changeTriggersCombo)
             phidgetBox1018.addWidget(changeTriggersCombo,3,i)
-            
-            voltageRangeCombo = QComboBox()
-            voltageRangeCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-            model = voltageRangeCombo.model()
-            voltageRangeItems = self.createItems(self.aw.qmc.phidgetVCP100x_voltageRangeStrings)
-            for item in voltageRangeItems:
-                model.appendRow(item)
-            try:
-                voltageRangeCombo.setCurrentIndex(self.aw.qmc.phidgetVCP100x_voltageRangeValues.index(self.aw.qmc.phidgetVCP100x_voltageRanges[i-1]))
-            except Exception: # pylint: disable=broad-except
-                pass
-            voltageRangeCombo.setMinimumContentsLength(4)
-            voltageRangeCombo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents) # AdjustToMinimumContentsLengthWithIcon
-            width = voltageRangeCombo.minimumSizeHint().width()
-            voltageRangeCombo.setMinimumWidth(width)
-            if platform.system() == 'Darwin':
-                voltageRangeCombo.setMaximumWidth(width)
-            self.voltageRangeCombos.append(voltageRangeCombo)
-            phidgetBox1018.addWidget(voltageRangeCombo,5,i)
                         
-
             asyncFlag = QCheckBox()
-            self.asyncCheckBoxes.append(asyncFlag)
-            asyncFlag.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            asyncFlag.setFocusPolicy(Qt.NoFocus)
             asyncFlag.setChecked(True)
             asyncFlag.stateChanged.connect(self.asyncFlagStateChanged)
             asyncFlag.setChecked(self.aw.qmc.phidget1018_async[i-1])
+            self.asyncCheckBoxes.append(asyncFlag)
             phidgetBox1018.addWidget(asyncFlag,2,i)
 
             ratioFlag = QCheckBox()
-            ratioFlag.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            ratioFlag.setFocusPolicy(Qt.NoFocus)
             ratioFlag.setChecked(False)
             ratioFlag.setChecked(self.aw.qmc.phidget1018_ratio[i-1])
             self.ratioCheckBoxes.append(ratioFlag)
-            phidgetBox1018.addWidget(ratioFlag,6,i)
+            phidgetBox1018.addWidget(ratioFlag,5,i)
 
             rowLabel = QLabel(str(i-1))
             phidgetBox1018.addWidget(rowLabel,0,i)
-
-        asyncLabel = QLabel(QApplication.translate("Label","Async"))
-        dataRateLabel = QLabel(QApplication.translate("Label","Rate"))
-        changeTriggerLabel = QLabel(QApplication.translate("Label","Change"))
-        ratioLabel = QLabel(QApplication.translate("Label","Ratio"))
-        rangeLabel = QLabel(QApplication.translate("Label","Range"))
-        phidgetBox1018.addWidget(asyncLabel,2,0,Qt.AlignmentFlag.AlignRight)
-        phidgetBox1018.addWidget(changeTriggerLabel,3,0,Qt.AlignmentFlag.AlignRight)
-        phidgetBox1018.addWidget(dataRateLabel,4,0,Qt.AlignmentFlag.AlignRight)
-        phidgetBox1018.addWidget(rangeLabel,5,0,Qt.AlignmentFlag.AlignRight)
-        phidgetBox1018.addWidget(ratioLabel,6,0,Qt.AlignmentFlag.AlignRight)
+           
+        asyncLabel = QLabel(QApplication.translate("Label","Async", None))
+        dataRateLabel = QLabel(QApplication.translate("Label","Rate", None))
+        changeTriggerLabel = QLabel(QApplication.translate("Label","Change", None))
+        ratioLabel = QLabel(QApplication.translate("Label","Ratio", None))
+        phidgetBox1018.addWidget(asyncLabel,2,0,Qt.AlignRight)
+        phidgetBox1018.addWidget(changeTriggerLabel,3,0,Qt.AlignRight)
+        phidgetBox1018.addWidget(dataRateLabel,4,0,Qt.AlignRight)
+        phidgetBox1018.addWidget(ratioLabel,5,0,Qt.AlignRight)
         phidget1018HBox = QVBoxLayout()
         phidget1018HBox.addLayout(phidgetBox1018)
-        phidget1018GroupBox = QGroupBox("1010/1011/1013/1018/1019/HUB0000/SBC/DAQ1400/VCP100x IO")
+        phidget1018GroupBox = QGroupBox("1010/1011/1013/1018/1019/HUB0000/SBC IO")
         phidget1018GroupBox.setLayout(phidget1018HBox)
         phidget1018HBox.setContentsMargins(0,0,0,0)
         self.phidgetBoxRemoteFlag = QCheckBox()
-        self.phidgetBoxRemoteFlag.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.phidgetBoxRemoteFlag.setFocusPolicy(Qt.NoFocus)
         self.phidgetBoxRemoteFlag.setChecked(self.aw.qmc.phidgetRemoteFlag)
-        phidgetServerIdLabel = QLabel(QApplication.translate("Label","Host"))
+        phidgetServerIdLabel = QLabel(QApplication.translate("Label","Host", None))
         self.phidgetServerId = QLineEdit(self.aw.qmc.phidgetServerID)
         self.phidgetServerId.setMinimumWidth(200)
-        phidgetPasswordLabel = QLabel(QApplication.translate("Label","Password"))
+        phidgetPasswordLabel = QLabel(QApplication.translate("Label","Password", None))
         self.phidgetPassword = QLineEdit(self.aw.qmc.phidgetPassword)
-        self.phidgetPassword.setEchoMode(QLineEdit.EchoMode.PasswordEchoOnEdit)
+        self.phidgetPassword.setEchoMode(3)
         self.phidgetPassword.setMinimumWidth(100)
-        phidgetPortLabel = QLabel(QApplication.translate("Label","Port"))
+        phidgetPortLabel = QLabel(QApplication.translate("Label","Port", None))
         self.phidgetPort = QLineEdit(str(self.aw.qmc.phidgetPort))
         self.phidgetPort.setMaximumWidth(70)
-        self.phidgetBoxRemoteOnlyFlag = QCheckBox(QApplication.translate("Label","Remote Only"))
-        self.phidgetBoxRemoteOnlyFlag.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.phidgetBoxRemoteOnlyFlag = QCheckBox(QApplication.translate("Label","Remote Only", None))
+        self.phidgetBoxRemoteOnlyFlag.setFocusPolicy(Qt.NoFocus)
         self.phidgetBoxRemoteOnlyFlag.setChecked(self.aw.qmc.phidgetRemoteOnlyFlag)
         phidgetServerBox = QHBoxLayout()
         phidgetServerBox.addWidget(phidgetServerIdLabel)
@@ -966,7 +922,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         phidgetNetworkGrid.addWidget(self.phidgetBoxRemoteOnlyFlag)
         phidgetNetworkGrid.setContentsMargins(0,0,0,0)
         phidgetNetworkGrid.setSpacing(20)
-        phidgetNetworkGroupBox = QGroupBox(QApplication.translate("GroupBox","Network"))
+        phidgetNetworkGroupBox = QGroupBox(QApplication.translate("GroupBox","Network",None))
         phidgetNetworkGroupBox.setLayout(phidgetNetworkGrid)
         phidget10451018HBox = QHBoxLayout()
         phidget10451018HBox.addWidget(phidget1045GroupBox)
@@ -981,13 +937,13 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         phidgetVBox.setSpacing(5)
         # yoctopuce widgets
         self.yoctoBoxRemoteFlag = QCheckBox()
-        self.yoctoBoxRemoteFlag.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.yoctoBoxRemoteFlag.setFocusPolicy(Qt.NoFocus)
         self.yoctoBoxRemoteFlag.setChecked(self.aw.qmc.yoctoRemoteFlag)
-        yoctoServerIdLabel = QLabel(QApplication.translate("Label","VirtualHub"))
+        yoctoServerIdLabel = QLabel(QApplication.translate("Label","VirtualHub", None))
         self.yoctoServerId = QLineEdit(self.aw.qmc.yoctoServerID)
-        YoctoEmissivityLabel = QLabel(QApplication.translate("Label","Emissivity"))
-        self.yoctoEmissivitySpinBox = MyQDoubleSpinBox()
-        self.yoctoEmissivitySpinBox.setAlignment(Qt.AlignmentFlag.AlignRight)
+        YoctoEmissivityLabel = QLabel(QApplication.translate("Label","Emissivity", None))
+        self.yoctoEmissivitySpinBox = QDoubleSpinBox()
+        self.yoctoEmissivitySpinBox.setAlignment(Qt.AlignRight)
         self.yoctoEmissivitySpinBox.setRange(0.,1.)
         self.yoctoEmissivitySpinBox.setSingleStep(.1) 
         self.yoctoEmissivitySpinBox.setValue(self.aw.qmc.YOCTO_emissivity) 
@@ -1002,7 +958,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         yoctoNetworkGrid.addLayout(yoctoServerBox,0,1)
 #        yoctoNetworkGrid.setContentsMargins(10,10,10,10)
         yoctoNetworkGrid.setSpacing(20)
-        yoctoNetworkGroupBox = QGroupBox(QApplication.translate("GroupBox","Network"))
+        yoctoNetworkGroupBox = QGroupBox(QApplication.translate("GroupBox","Network",None))
         yoctoNetworkGroupBox.setLayout(yoctoNetworkGrid)
         yoctoIRGrid = QGridLayout()
         yoctoIRGrid.addWidget(YoctoEmissivityLabel,0,0)
@@ -1011,21 +967,21 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         yoctoIRHorizontalLayout.addLayout(yoctoIRGrid)
         yoctoIRHorizontalLayout.addStretch()
         self.yoctoDataRateCombo = QComboBox()
-        self.yoctoDataRateCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.yoctoDataRateCombo.setFocusPolicy(Qt.NoFocus)
         model = self.yoctoDataRateCombo.model()
         dataRateItems = self.createItems(self.aw.qmc.YOCTO_dataRatesStrings)
         for item in dataRateItems:
-            model.appendRow(item)
+                model.appendRow(item)
         try:
             self.yoctoDataRateCombo.setCurrentIndex(self.aw.qmc.YOCTO_dataRatesValues.index(self.aw.qmc.YOCTO_dataRate))
-        except Exception: # pylint: disable=broad-except
+        except Exception:
             pass
-        self.yoctoDataRateCombo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents) # AdjustToMinimumContentsLengthWithIcon
+        self.yoctoDataRateCombo.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
         self.yoctoDataRateCombo.setMinimumContentsLength(5)
         width = self.yoctoDataRateCombo.minimumSizeHint().width()
         self.yoctoDataRateCombo.setMinimumWidth(width)
         self.yoctoAyncChanFlag = QCheckBox()
-        self.yoctoAyncChanFlag.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.yoctoAyncChanFlag.setFocusPolicy(Qt.NoFocus)
         self.yoctoAyncChanFlag.setChecked(self.aw.qmc.YOCTO_async[0]) # only one flag for both channels, as running on async and the other sync will disturbe the readings
         yoctoAsyncGrid = QGridLayout()
         yoctoAsyncGrid.addWidget(self.yoctoAyncChanFlag,0,0)
@@ -1033,9 +989,9 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         yoctoAsyncHorizontalLayout = QHBoxLayout()
         yoctoAsyncHorizontalLayout.addLayout(yoctoAsyncGrid)
         yoctoAsyncHorizontalLayout.addStretch()
-        yoctoAsyncGroupBox = QGroupBox(QApplication.translate("GroupBox","Async"))
+        yoctoAsyncGroupBox = QGroupBox(QApplication.translate("GroupBox","Async",None))
         yoctoAsyncGroupBox.setLayout(yoctoAsyncHorizontalLayout)
-        yoctoIRGroupBox = QGroupBox(QApplication.translate("GroupBox","IR"))
+        yoctoIRGroupBox = QGroupBox(QApplication.translate("GroupBox","IR",None))
         yoctoIRGroupBox.setLayout(yoctoIRHorizontalLayout)
         yoctoVBox = QVBoxLayout()
         yoctoVBox.addWidget(yoctoNetworkGroupBox)
@@ -1046,7 +1002,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         yoctoVBox.setContentsMargins(0,0,0,0)  
         # Ambient Widgets and Layouts
         self.temperatureDeviceCombo = QComboBox()
-        self.temperatureDeviceCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.temperatureDeviceCombo.setFocusPolicy(Qt.NoFocus)
         self.temperatureDeviceCombo.addItems(self.aw.qmc.temperaturedevicefunctionlist)
 
         # HACK: only needed for the macintosh UI on Qt 5.12 onwords; withou long items get cutted in the popup
@@ -1055,32 +1011,32 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
 
         try:
             self.temperatureDeviceCombo.setCurrentIndex(self.aw.qmc.ambient_temperature_device)
-        except Exception: # pylint: disable=broad-except
+        except:
             pass
         self.humidityDeviceCombo = QComboBox()
-        self.humidityDeviceCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.humidityDeviceCombo.setFocusPolicy(Qt.NoFocus)
         self.humidityDeviceCombo.addItems(self.aw.qmc.humiditydevicefunctionlist)
         try:
             self.humidityDeviceCombo.setCurrentIndex(self.aw.qmc.ambient_humidity_device)
-        except Exception: # pylint: disable=broad-except
+        except:
             pass
         self.pressureDeviceCombo = QComboBox()
-        self.pressureDeviceCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.pressureDeviceCombo.setFocusPolicy(Qt.NoFocus)
         self.pressureDeviceCombo.addItems(self.aw.qmc.pressuredevicefunctionlist)
         try:
             self.pressureDeviceCombo.setCurrentIndex(self.aw.qmc.ambient_pressure_device)
-        except Exception: # pylint: disable=broad-except
+        except:
             pass
         self.elevationSpinBox = QSpinBox()
-        self.elevationSpinBox.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.elevationSpinBox.setAlignment(Qt.AlignRight)
         self.elevationSpinBox.setRange(0,3000)
         self.elevationSpinBox.setSingleStep(1)
         self.elevationSpinBox.setValue(self.aw.qmc.elevation)
         self.elevationSpinBox.setSuffix(" " + QApplication.translate("Label","MASL"))
-        temperatureDeviceLabel = QLabel(QApplication.translate("Label","Temperature"))
-        humidityDeviceLabel = QLabel(QApplication.translate("Label","Humidity"))
-        pressureDeviceLabel = QLabel(QApplication.translate("Label","Pressure"))
-        elevationLabel = QLabel(QApplication.translate("Label","Elevation"))
+        temperatureDeviceLabel = QLabel(QApplication.translate("Label","Temperature",None))
+        humidityDeviceLabel = QLabel(QApplication.translate("Label","Humidity",None))
+        pressureDeviceLabel = QLabel(QApplication.translate("Label","Pressure",None))
+        elevationLabel = QLabel(QApplication.translate("Label","Elevation",None))
         ambientGrid = QGridLayout()
         ambientGrid.addWidget(temperatureDeviceLabel,0,0)
         ambientGrid.addWidget(self.temperatureDeviceCombo,0,1)
@@ -1107,7 +1063,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         PIDgrid.addWidget(self.controlpidtypeComboBox,1,1)
         PIDgrid.addWidget(self.controlpidunitidComboBox,1,2)
         PIDgrid.addWidget(self.showFujiLCDs,1,3)
-        PIDgrid.addWidget(btlabel,2,0,Qt.AlignmentFlag.AlignRight)
+        PIDgrid.addWidget(btlabel,2,0,Qt.AlignRight)
         PIDgrid.addWidget(self.btpidtypeComboBox,2,1)
         PIDgrid.addWidget(self.btpidunitidComboBox,2,2)
         PIDgrid.addWidget(self.useModbusPort,2,3)
@@ -1115,7 +1071,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         PIDBox.addLayout(PIDgrid)
         PIDBox.addStretch()
         PIDBox.setContentsMargins(5,0,5,5)
-        PIDGroupBox = QGroupBox(QApplication.translate("GroupBox","PID"))
+        PIDGroupBox = QGroupBox(QApplication.translate("GroupBox","PID",None))
         PIDGroupBox.setLayout(PIDBox)
         # create arduino box
         filtgrid = QGridLayout()
@@ -1126,14 +1082,14 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         filtgridBox.addStretch()
         filtgridBox.setContentsMargins(5,5,5,5)
         arduinogrid = QGridLayout()
-        arduinogrid.addWidget(arduinoETLabel,1,0,Qt.AlignmentFlag.AlignRight)
+        arduinogrid.addWidget(arduinoETLabel,1,0,Qt.AlignRight)
         arduinogrid.addWidget(self.arduinoETComboBox,1,1)
-        arduinogrid.addWidget(arduinoBTLabel,2,0,Qt.AlignmentFlag.AlignRight)
+        arduinogrid.addWidget(arduinoBTLabel,2,0,Qt.AlignRight)
         arduinogrid.addWidget(self.arduinoBTComboBox,2,1)
         arduinogrid.addWidget(self.arduinoATComboBox,2,3)
         arduinogrid.addWidget(arduinoATLabel,2,4)
         arduinogrid.addWidget(self.showControlButton,2,5)
-        arduinogrid.addWidget(FILTLabel,1,3,Qt.AlignmentFlag.AlignRight)
+        arduinogrid.addWidget(FILTLabel,1,3,Qt.AlignRight)
         arduinogrid.addLayout(filtgridBox,1,4,1,2)
         arduinogridBox = QHBoxLayout()
         arduinogridBox.addLayout(arduinogrid)
@@ -1142,7 +1098,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         arduinoBox = QVBoxLayout()
         arduinoBox.addLayout(arduinogridBox)
         arduinoBox.setContentsMargins(5,5,5,5)
-        arduinoGroupBox = QGroupBox(QApplication.translate("GroupBox","Arduino TC4"))
+        arduinoGroupBox = QGroupBox(QApplication.translate("GroupBox","Arduino TC4",None))
         arduinoGroupBox.setLayout(arduinoBox)
         arduinoBox.setContentsMargins(0,0,0,0)
         arduinoGroupBox.setContentsMargins(0,12,0,0)
@@ -1154,21 +1110,21 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         programlayout.addWidget(self.outprogramFlag,1,0)
         programlayout.addWidget(selectoutprogrambutton,1,1)
         programlayout.addWidget(self.outprogramedit,1,2)
-        programGroupBox = QGroupBox(QApplication.translate("GroupBox","External Program"))
+        programGroupBox = QGroupBox(QApplication.translate("GroupBox","External Program",None))
         programGroupBox.setLayout(programlayout)
         programlayout.setContentsMargins(5,10,5,5)
         programGroupBox.setContentsMargins(0,12,0,0)
         #ET BT symbolic adjustments/assignments Box
-        self.updateETBTButton = QPushButton(QApplication.translate("Button","Update Profile"))
-        self.updateETBTButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.updateETBTButton.setToolTip(QApplication.translate("Tooltip","Recaclulates ET and BT and updates their values in the profile"))
+        self.updateETBTButton = QPushButton(QApplication.translate("Button","Update Profile",None))
+        self.updateETBTButton.setFocusPolicy(Qt.NoFocus)
+        self.updateETBTButton.setToolTip(QApplication.translate("Tooltip","Recaclulates ET and BT and updates their values in the profile",None))
         self.updateETBTButton.clicked.connect(self.updateETBTinprofile)
-
+        
         adjustmentHelp = QHBoxLayout()
         adjustmentHelp.addWidget(self.updateETBTButton)
         adjustmentHelp.addStretch()
         adjustmentHelp.addWidget(symbolicHelpButton)
-        adjustmentGroupBox = QGroupBox(QApplication.translate("GroupBox","Symbolic Assignments"))
+        adjustmentGroupBox = QGroupBox(QApplication.translate("GroupBox","Symbolic Assignments",None))
         adjustmentsLayout = QVBoxLayout()
         adjustmentsLayout.addWidget(labelETadvanced)
         adjustmentsLayout.addWidget(self.ETfunctionedit)
@@ -1249,22 +1205,22 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         self.TabWidget = QTabWidget()
         C1Widget = QWidget()
         C1Widget.setLayout(tab1Layout)
-        self.TabWidget.addTab(C1Widget,QApplication.translate("Tab","ET/BT"))
+        self.TabWidget.addTab(C1Widget,QApplication.translate("Tab","ET/BT",None))
         C2Widget = QWidget()
         C2Widget.setLayout(tab2Layout)
-        self.TabWidget.addTab(C2Widget,QApplication.translate("Tab","Extra Devices"))
+        self.TabWidget.addTab(C2Widget,QApplication.translate("Tab","Extra Devices",None))
         C3Widget = QWidget()
         C3Widget.setLayout(tab3Layout)
-        self.TabWidget.addTab(C3Widget,QApplication.translate("Tab","Symb ET/BT"))
+        self.TabWidget.addTab(C3Widget,QApplication.translate("Tab","Symb ET/BT",None))
         C4Widget = QWidget()
         C4Widget.setLayout(tab4Layout)
-        self.TabWidget.addTab(C4Widget,QApplication.translate("Tab","Phidgets"))
+        self.TabWidget.addTab(C4Widget,QApplication.translate("Tab","Phidgets",None))
         C5Widget = QWidget()
         C5Widget.setLayout(tab5Layout)
-        self.TabWidget.addTab(C5Widget,QApplication.translate("Tab","Yoctopuce"))
+        self.TabWidget.addTab(C5Widget,QApplication.translate("Tab","Yoctopuce",None))
         C6Widget = QWidget()
         C6Widget.setLayout(tab6Layout)
-        self.TabWidget.addTab(C6Widget,QApplication.translate("Tab","Ambient"))
+        self.TabWidget.addTab(C6Widget,QApplication.translate("Tab","Ambient",None))
         self.TabWidget.currentChanged.connect(self.tabSwitched)
         #incorporate layouts
         Mlayout = QVBoxLayout()
@@ -1274,9 +1230,9 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         Mlayout.setContentsMargins(5,10,5,5)
         self.setLayout(Mlayout)
         if platform.system() == 'Windows':
-            self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok)
+            self.dialogbuttons.button(QDialogButtonBox.Ok)
         else:
-            self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok).setFocus()
+            self.dialogbuttons.button(QDialogButtonBox.Ok).setFocus()
         settings = QSettings()
         if settings.contains("DeviceAssignmentGeometry"):
             self.restoreGeometry(settings.value("DeviceAssignmentGeometry"))
@@ -1296,8 +1252,8 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
             else:
                 # enable ChangeTrigger selection
                 self.changeTriggerCombos1048[i].setEnabled(True)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
 
     @pyqtSlot(int)
     def asyncFlagStateChanged1045(self,x):
@@ -1316,7 +1272,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         else:
             # enable ChangeTrigger selection
             self.changeTriggerCombo1200.setEnabled(True)
-
+            
     @pyqtSlot(int)
     def asyncFlagStateChanged1200_2(self,x):
         if x == 0:
@@ -1325,7 +1281,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         else:
             # enable ChangeTrigger selection
             self.changeTriggerCombo1200_2.setEnabled(True)
-
+     
     @pyqtSlot(int)
     def asyncFlagStateChanged(self,x):
         try:
@@ -1336,11 +1292,10 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
             else:
                 # enable ChangeTrigger and if that is 0 also DataRate selection
                 self.changeTriggerCombos[i].setEnabled(True)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
 
-    @staticmethod
-    def createItems(strs):
+    def createItems(self,strs):
         items = []
         for i in range(len(strs)):
             item = QStandardItem(strs[i])
@@ -1354,7 +1309,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         else:
             self.aw.qmc.PIDbuttonflag = False
         self.aw.showControlButton()
-
+    
     @pyqtSlot(int)
     def showControlbuttonToggle(self,i):
         if i:
@@ -1362,15 +1317,15 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         else:
             self.aw.qmc.Controlbuttonflag = False
         self.aw.showControlButton()
-
+            
     def createDeviceTable(self):
         try:
             columns = 15
             if self.devicetable is not None and self.devicetable.columnCount() == columns:
                 # rows have been already established
-                # save the current columnWidth to reset them after table creation
+                # save the current columnWidth to reset them afte table creation
                 self.aw.qmc.devicetablecolumnwidths = [self.devicetable.columnWidth(c) for c in range(self.devicetable.columnCount())]
-
+            
             nddevices = len(self.aw.qmc.extradevices)
             #self.devicetable.clear() # this crashes Ubuntu 16.04
 #            if nddevices != 0:
@@ -1378,27 +1333,27 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
             self.devicetable.clearSelection()
             self.devicetable.setRowCount(nddevices)
             self.devicetable.setColumnCount(columns)
-            self.devicetable.setHorizontalHeaderLabels([QApplication.translate("Table", "Device"),
-                                                        QApplication.translate("Table", "Color 1"),
-                                                        QApplication.translate("Table", "Color 2"),
-                                                        QApplication.translate("Table", "Label 1"),
-                                                        QApplication.translate("Table", "Label 2"),
-                                                        QApplication.translate("Table", "y1(x)"),
-                                                        QApplication.translate("Table", "y2(x)"),
-                                                        QApplication.translate("Table", "LCD 1"),
-                                                        QApplication.translate("Table", "LCD 2"),
-                                                        QApplication.translate("Table", "Curve 1"),
-                                                        QApplication.translate("Table", "Curve 2"),
-                                                        deltaLabelUTF8 + " " + QApplication.translate("GroupBox","Axis") + " 1",
-                                                        deltaLabelUTF8 + " " + QApplication.translate("GroupBox","Axis") + " 2",
-                                                        QApplication.translate("Table", "Fill 1"),
-                                                        QApplication.translate("Table", "Fill 2")])
+            self.devicetable.setHorizontalHeaderLabels([QApplication.translate("Table", "Device",None),
+                                                        QApplication.translate("Table", "Color 1",None),
+                                                        QApplication.translate("Table", "Color 2",None),
+                                                        QApplication.translate("Table", "Label 1",None),
+                                                        QApplication.translate("Table", "Label 2",None),
+                                                        QApplication.translate("Table", "y1(x)",None),
+                                                        QApplication.translate("Table", "y2(x)",None),
+                                                        QApplication.translate("Table", "LCD 1",None),
+                                                        QApplication.translate("Table", "LCD 2",None),
+                                                        QApplication.translate("Table", "Curve 1",None),
+                                                        QApplication.translate("Table", "Curve 2",None),
+                                                        deltaLabelUTF8 + " " + QApplication.translate("GroupBox","Axis",None) + " 1",
+                                                        deltaLabelUTF8 + " " + QApplication.translate("GroupBox","Axis",None) + " 2",
+                                                        QApplication.translate("Table", "Fill 1",None),
+                                                        QApplication.translate("Table", "Fill 2",None)])
             self.devicetable.setAlternatingRowColors(True)
-            self.devicetable.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-            self.devicetable.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-            self.devicetable.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+            self.devicetable.setEditTriggers(QTableWidget.NoEditTriggers)
+            self.devicetable.setSelectionBehavior(QTableWidget.SelectRows)
+            self.devicetable.setSelectionMode(QTableWidget.SingleSelection)
             self.devicetable.setShowGrid(True)
-            self.devicetable.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+            self.devicetable.verticalHeader().setSectionResizeMode(2)
             if nddevices:
                 dev = self.aw.qmc.devices[:]             #deep copy
                 limit = len(dev)
@@ -1411,23 +1366,22 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 for i in range(nddevices):
                     try:
                         typeComboBox =  MyQComboBox()
-#                        typeComboBox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
-#                        typeComboBox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
+                        typeComboBox.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLength)
                         typeComboBox.addItems(devices[:])
                         try:
                             dev_name = self.aw.qmc.devices[max(0,self.aw.qmc.extradevices[i]-1)]
                             if dev_name[0] == "+":
                                 dev_name = dev_name[1:]
                             typeComboBox.setCurrentIndex(devices.index(dev_name))
-                        except Exception: # pylint: disable=broad-except
+                        except Exception:
                             pass
                         color1Button = QPushButton(self.aw.qmc.extradevicecolor1[i])
-                        color1Button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                        color1Button.setFocusPolicy(Qt.NoFocus)
                         color1Button.clicked.connect(self.setextracolor1)
                         textcolor = self.aw.labelBorW(self.aw.qmc.extradevicecolor1[i])
                         color1Button.setStyleSheet("background-color: %s; color: %s"%(self.aw.qmc.extradevicecolor1[i], textcolor))
                         color2Button = QPushButton(self.aw.qmc.extradevicecolor2[i])
-                        color2Button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                        color2Button.setFocusPolicy(Qt.NoFocus)
                         color2Button.clicked.connect(self.setextracolor2)
                         textcolor = self.aw.labelBorW(self.aw.qmc.extradevicecolor2[i])
                         color2Button.setStyleSheet("background-color: %s; color: %s"%(self.aw.qmc.extradevicecolor2[i], textcolor))
@@ -1435,54 +1389,54 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                         name2edit = QLineEdit(self.aw.qmc.extraname2[i])
                         mexpr1edit = QLineEdit(self.aw.qmc.extramathexpression1[i])
                         mexpr2edit = QLineEdit(self.aw.qmc.extramathexpression2[i])
-                        mexpr1edit.setToolTip(QApplication.translate("Tooltip","Example: 100 + 2*x"))
-                        mexpr2edit.setToolTip(QApplication.translate("Tooltip","Example: 100 + x"))
+                        mexpr1edit.setToolTip(QApplication.translate("Tooltip","Example: 100 + 2*x",None))
+                        mexpr2edit.setToolTip(QApplication.translate("Tooltip","Example: 100 + x",None))
                         LCD1visibilityComboBox =  QCheckBox()
                         if self.aw.extraLCDvisibility1[i]:
-                            LCD1visibilityComboBox.setCheckState(Qt.CheckState.Checked)
+                            LCD1visibilityComboBox.setCheckState(Qt.Checked)
                         else:
-                            LCD1visibilityComboBox.setCheckState(Qt.CheckState.Unchecked)
+                            LCD1visibilityComboBox.setCheckState(Qt.Unchecked)
                         LCD1visibilityComboBox.stateChanged.connect(self.updateLCDvisibility1)
                         LCD2visibilityComboBox =  QCheckBox()
                         if self.aw.extraLCDvisibility2[i]:
-                            LCD2visibilityComboBox.setCheckState(Qt.CheckState.Checked)
+                            LCD2visibilityComboBox.setCheckState(Qt.Checked)
                         else:
-                            LCD2visibilityComboBox.setCheckState(Qt.CheckState.Unchecked)
+                            LCD2visibilityComboBox.setCheckState(Qt.Unchecked)
                         LCD2visibilityComboBox.stateChanged.connect(self.updateLCDvisibility2)
                         Curve1visibilityComboBox =  QCheckBox()
                         if self.aw.extraCurveVisibility1[i]:
-                            Curve1visibilityComboBox.setCheckState(Qt.CheckState.Checked)
+                            Curve1visibilityComboBox.setCheckState(Qt.Checked)
                         else:
-                            Curve1visibilityComboBox.setCheckState(Qt.CheckState.Unchecked)
+                            Curve1visibilityComboBox.setCheckState(Qt.Unchecked)
                         Curve1visibilityComboBox.stateChanged.connect(self.updateCurveVisibility1)
                         Curve2visibilityComboBox =  QCheckBox()
                         if self.aw.extraCurveVisibility2[i]:
-                            Curve2visibilityComboBox.setCheckState(Qt.CheckState.Checked)
+                            Curve2visibilityComboBox.setCheckState(Qt.Checked)
                         else:
-                            Curve2visibilityComboBox.setCheckState(Qt.CheckState.Unchecked)
+                            Curve2visibilityComboBox.setCheckState(Qt.Unchecked)
                         Curve2visibilityComboBox.stateChanged.connect(self.updateCurveVisibility2)
                         Delta1ComboBox =  QCheckBox()
                         if self.aw.extraDelta1[i]:
-                            Delta1ComboBox.setCheckState(Qt.CheckState.Checked)
+                            Delta1ComboBox.setCheckState(Qt.Checked)
                         else:
-                            Delta1ComboBox.setCheckState(Qt.CheckState.Unchecked)
+                            Delta1ComboBox.setCheckState(Qt.Unchecked)
                         Delta1ComboBox.stateChanged.connect(self.updateDelta1)
                         Delta2ComboBox =  QCheckBox()
                         if self.aw.extraDelta2[i]:
-                            Delta2ComboBox.setCheckState(Qt.CheckState.Checked)
+                            Delta2ComboBox.setCheckState(Qt.Checked)
                         else:
-                            Delta2ComboBox.setCheckState(Qt.CheckState.Unchecked)
+                            Delta2ComboBox.setCheckState(Qt.Unchecked)
                         Delta2ComboBox.stateChanged.connect(self.updateDelta2)
                         Fill1SpinBox =  QSpinBox()
                         Fill1SpinBox.setSingleStep(1)
                         Fill1SpinBox.setRange(0,100)
-                        Fill1SpinBox.setAlignment(Qt.AlignmentFlag.AlignRight)
+                        Fill1SpinBox.setAlignment(Qt.AlignRight)
                         Fill1SpinBox.setValue(self.aw.extraFill1[i])
                         Fill1SpinBox.editingFinished.connect(self.updateFill1)
                         Fill2SpinBox =  QSpinBox()
                         Fill2SpinBox.setSingleStep(1)
                         Fill2SpinBox.setRange(0,100)
-                        Fill2SpinBox.setAlignment(Qt.AlignmentFlag.AlignRight)
+                        Fill2SpinBox.setAlignment(Qt.AlignRight)
                         Fill2SpinBox.setValue(self.aw.extraFill2[i])
                         Fill2SpinBox.editingFinished.connect(self.updateFill2)
                         #add widgets to the table
@@ -1501,32 +1455,34 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                         self.devicetable.setCellWidget(i,12,Delta2ComboBox)
                         self.devicetable.setCellWidget(i,13,Fill1SpinBox)
                         self.devicetable.setCellWidget(i,14,Fill2SpinBox)
-                    except Exception as e: # pylint: disable=broad-except
-                        _log.exception(e)
+                    except Exception as e:
+#                        import traceback
+#                        traceback.print_exc(file=sys.stdout)
+                        pass
+                self.devicetable.resizeColumnsToContents()
+                self.devicetable.setColumnWidth(0,150)
                 header = self.devicetable.horizontalHeader()
                 header.setStretchLastSection(True)
-                self.devicetable.resizeColumnsToContents()
                 # remember the columnwidth
                 for i in range(len(self.aw.qmc.devicetablecolumnwidths)):
                     try:
-                        self.devicetable.setColumnWidth(i, self.aw.qmc.devicetablecolumnwidths[i])
-                    except Exception: # pylint: disable=broad-except
+                        self.devicetable.setColumnWidth(i,self.aw.qmc.devicetablecolumnwidths[i])
+                    except:
                         pass
-        except Exception as e: # pylint: disable=broad-except
+        except Exception as e:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " createDeviceTable(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " createDeviceTable(): {0}").format(str(e)),exc_tb.tb_lineno)
 
     @pyqtSlot(bool)
     def copyDeviceTabletoClipboard(self,_=False):
-        import prettytable
         nrows = self.devicetable.rowCount() 
         ncols = self.devicetable.columnCount()
         clipboard = ""
         modifiers = QApplication.keyboardModifiers()
-        if modifiers == Qt.KeyboardModifier.AltModifier:  #alt click
+        if modifiers == Qt.AltModifier:  #alt click
             tbl = prettytable.PrettyTable()
             fields = []
-            re_strip = re.compile('[\u2009]')  #thin space is not read properly by prettytable
+            re_strip = re.compile(u'[\u2009]')  #thin space is not read properly by prettytable
             for c in range(ncols):
                 fields.append(re_strip.sub('',self.devicetable.horizontalHeaderItem(c).text()))
             tbl.field_names = fields
@@ -1574,7 +1530,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         # copy to the system clipboard
         sys_clip = QApplication.clipboard()
         sys_clip.setText(clipboard)
-        self.aw.sendmessage(QApplication.translate("Message","Device table copied to clipboard"))
+        self.aw.sendmessage(QApplication.translate("Message","Device table copied to clipboard",None))
 
     @pyqtSlot(bool)
     def loadprogramname(self,_):
@@ -1584,7 +1540,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 self.programedit.setText('"' + fileName + '"')
             else:
                 self.programedit.setText(fileName)
-
+    
     @pyqtSlot(bool)
     def loadoutprogramname(self,_):
         fileName = self.aw.ArtisanOpenFileDialog()
@@ -1620,9 +1576,9 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
             self.enableDisableAddDeleteButtons()
             self.aw.qmc.resetlinecountcaches()
             self.aw.qmc.redraw(recomputeAllDeltas=False)
-        except Exception as e: # pylint: disable=broad-except
+        except Exception as e:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " adddevice(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " adddevice(): {0}").format(str(e)),exc_tb.tb_lineno)
 
     @pyqtSlot(bool)
     def deldevice(self,_):
@@ -1632,14 +1588,14 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
             selected = self.devicetable.selectedRanges()
             if len(selected) > 0:
                 bindex = selected[0].topRow()
-            if 0 <= bindex < len(self.aw.qmc.extradevices):
+            if bindex >= 0 and bindex < len(self.aw.qmc.extradevices):
                 self.delextradevice(bindex)
             self.aw.updateExtraLCDvisibility()
             self.aw.qmc.resetlinecountcaches()
             self.enableDisableAddDeleteButtons()
-        except Exception as e: # pylint: disable=broad-except
+        except Exception as e:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " deldevice(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " deldevice(): {0}").format(str(e)),exc_tb.tb_lineno)
 
     @pyqtSlot(bool)
     def resetextradevices(self,_):
@@ -1651,9 +1607,9 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
             self.enableDisableAddDeleteButtons()
             #redraw
             self.aw.qmc.redraw(recomputeAllDeltas=False)
-        except Exception as e: # pylint: disable=broad-except
+        except Exception as e:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " resetextradevices(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " resetextradevices(): {0}").format(str(e)),exc_tb.tb_lineno)
 
     def delextradevice(self,x):
         try:
@@ -1679,7 +1635,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
             self.aw.qmc.extramarkers2.pop(x)
             self.aw.qmc.extramarkersizes1.pop(x)
             self.aw.qmc.extramarkersizes2.pop(x)
-
+            
             # visible curves before this one
             before1 = before2 = 0
             for j in range(x):
@@ -1691,7 +1647,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 self.aw.qmc.extratemp1lines.pop(before1)
             if self.aw.extraCurveVisibility2[x]:
                 self.aw.qmc.extratemp2lines.pop(before2)
-
+            
             self.aw.extraLCDvisibility1.pop(x)
             self.aw.extraLCDvisibility1.append(True) # keep length constant (self.aw.nLCDS)
             self.aw.extraLCDvisibility2.pop(x)
@@ -1735,11 +1691,11 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
             self.createDeviceTable()
             self.aw.qmc.resetlinecountcaches()
             self.aw.qmc.redraw(recomputeAllDeltas=False)
-        except Exception as ex: # pylint: disable=broad-except
+        except Exception as ex:
 #            import traceback
 #            traceback.print_exc(file=sys.stdout)
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + "delextradevice(): {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + "delextradevice(): {0}").format(str(ex)),exc_tb.tb_lineno)
 
     def savedevicetable(self,redraw=True):
         try:
@@ -1752,10 +1708,10 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 mexpr2edit = self.devicetable.cellWidget(i,6)
                 try:
                     self.aw.qmc.extradevices[i] = self.aw.qmc.devices.index(str(typecombobox.currentText())) + 1
-                except Exception: # pylint: disable=broad-except
+                except Exception:
                     try: # might be a +device
                         self.aw.qmc.extradevices[i] = self.aw.qmc.devices.index("+" + str(typecombobox.currentText())) + 1
-                    except Exception: # pylint: disable=broad-except
+                    except Exception:
                         self.aw.qmc.extradevices[i] = 0
                 if name1edit:
                     self.aw.qmc.extraname1[i] = name1edit.text()
@@ -1769,12 +1725,12 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 l1 = "<b>" + self.aw.qmc.extraname1[i] + "</b>"
                 try:
                     self.aw.extraLCDlabel1[i].setText(l1.format(self.aw.qmc.etypes[0],self.aw.qmc.etypes[1],self.aw.qmc.etypes[2],self.aw.qmc.etypes[3]))
-                except Exception: # pylint: disable=broad-except
+                except:
                     self.aw.extraLCDlabel1[i].setText(l1)
                 l2 = "<b>" + self.aw.qmc.extraname2[i] + "</b>"
                 try:
                     self.aw.extraLCDlabel2[i].setText(l2.format(self.aw.qmc.etypes[0],self.aw.qmc.etypes[1],self.aw.qmc.etypes[2],self.aw.qmc.etypes[3]))
-                except Exception: # pylint: disable=broad-except
+                except:
                     self.aw.extraLCDlabel2[i].setText(l2)
                 if mexpr2edit:
                     self.aw.qmc.extramathexpression1[i] = mexpr1edit.text()
@@ -1787,23 +1743,23 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
             #update legend with new curves
             if redraw:
                 self.aw.qmc.redraw(recomputeAllDeltas=False)
-        except Exception as ex: # pylint: disable=broad-except
+        except Exception as ex:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + "savedevicetable(): {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + "savedevicetable(): {0}").format(str(ex)),exc_tb.tb_lineno)
 
     @pyqtSlot(bool)
     def updateVirtualdevicesinprofile_clicked(self,_):
         self.updateVirtualdevicesinprofile(redraw=True)
-
+        
     def updateVirtualdevicesinprofile(self,redraw=True):
         try:
             self.savedevicetable(redraw=False)
             if self.aw.calcVirtualdevices(update=True):
                 if redraw:
                     self.aw.qmc.redraw(recomputeAllDeltas=False)
-        except Exception as ex: # pylint: disable=broad-except
+        except Exception as ex:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + "updateVirtualdevicesinprofile(): {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + "updateVirtualdevicesinprofile(): {0}").format(str(ex)),exc_tb.tb_lineno)
 
     @pyqtSlot(bool)
     def updateETBTinprofile(self,_):
@@ -1814,10 +1770,10 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
             if (nonempty_ETfunction or nonempty_BTfunction):
 
                 # confirm the action
-                string = QApplication.translate("Message", "Clicking YES will overwrite the existing ET and BT values in this profile with the symbolic values defined here.  Click CANCEL to abort.")
-                reply = QMessageBox.warning(self.aw,QApplication.translate("Message", "Caution - About to overwrite profile data"),string,
-                            QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.Cancel)
-                if reply == QMessageBox.StandardButton.Cancel:
+                string = QApplication.translate("Message", "Clicking YES will overwrite the existing ET and BT values in this profile with the symbolic values defined here.  Click CANCEL to abort.",None)
+                reply = QMessageBox.warning(self.aw,QApplication.translate("Message", "Caution - About to overwrite profile data",None),string,
+                            QMessageBox.Yes|QMessageBox.Cancel)
+                if reply == QMessageBox.Cancel:
                     return
 
                 # confirm updating the dependent Virtual Extra Devices?
@@ -1825,10 +1781,10 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 etorbt = re.compile('Y1|Y2|T1|T2|R1|R2')
                 for j in range(len(self.aw.qmc.extradevices)):
                     if (re.search(etorbt,self.aw.qmc.extramathexpression1[j]) or re.search(etorbt,self.aw.qmc.extramathexpression2[j])):
-                        string = QApplication.translate("Message", "At least one Virtual Extra Device depends on ET or BT.  Do you want to update all the Virtual Extra Devices after ET and BT are updated?")
-                        reply = QMessageBox.warning(self.aw,QApplication.translate("Message", "Caution - About to overwrite profile data"),string,
-                                    QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.No)
-                        if reply == QMessageBox.StandardButton.Yes:
+                        string = QApplication.translate("Message", "At least one Virtual Extra Device depends on ET or BT.  Do you want to update all the Virtual Extra Devices after ET and BT are updated?",None)
+                        reply = QMessageBox.warning(self.aw,QApplication.translate("Message", "Caution - About to overwrite profile data",None),string,
+                                    QMessageBox.Yes|QMessageBox.No)
+                        if reply == QMessageBox.Yes:
                             updatevirtualextradevices = True
                         break
 
@@ -1841,14 +1797,14 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                     if updatevirtualextradevices:
                         self.updateVirtualdevicesinprofile(redraw=False)
                     self.aw.qmc.redraw(recomputeAllDeltas=True)
-                    self.aw.sendmessage(QApplication.translate("Message", "Symbolic values updated."))
+                    self.aw.sendmessage(QApplication.translate("Message", "Symbolic values updated.",None))
                 else:
-                    self.aw.sendmessage(QApplication.translate("Message", "Symbolic values were not updated."))
+                    self.aw.sendmessage(QApplication.translate("Message", "Symbolic values were not updated.",None))
             else:
-                self.aw.sendmessage(QApplication.translate("Message", "Nothing here to process."))
-        except Exception as ex: # pylint: disable=broad-except
+                self.aw.sendmessage(QApplication.translate("Message", "Nothing here to process.",None))
+        except Exception as ex:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + "updateETBTinprofile(): {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + "updateETBTinprofile(): {0}").format(str(ex)),exc_tb.tb_lineno)
 
     @pyqtSlot(int)
     def updateLCDvisibility1(self,x):
@@ -1927,8 +1883,8 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                     self.aw.setLabelColor(self.aw.extraLCDlabel1[i],QColor(colorname))
                     self.devicetable.cellWidget(i,1).setStyleSheet("background-color: %s; color: %s"%(self.aw.qmc.extradevicecolor1[i], self.aw.labelBorW(self.aw.qmc.extradevicecolor1[i])))
                     self.devicetable.cellWidget(i,1).setText(colorname)
-                    self.aw.checkColors([(self.aw.qmc.extraname1[i], self.aw.qmc.extradevicecolor1[i], QApplication.translate("Label","Background"), self.aw.qmc.palette['background'])])
-                    self.aw.checkColors([(self.aw.qmc.extraname1[i], self.aw.qmc.extradevicecolor1[i], QApplication.translate("Label","Legend bkgnd"), self.aw.qmc.palette['background'])])
+                    self.aw.checkColors([(self.aw.qmc.extraname1[i], self.aw.qmc.extradevicecolor1[i], QApplication.translate("Label","Background",None), self.aw.qmc.palette['background'])])
+                    self.aw.checkColors([(self.aw.qmc.extraname1[i], self.aw.qmc.extradevicecolor1[i], QApplication.translate("Label","Legend bkgnd",None), self.aw.qmc.palette['background'])])
             #line 2
             elif l == 2:
                 # use native no buttons dialog on Mac OS X, blocks otherwise
@@ -1940,11 +1896,12 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                     self.aw.setLabelColor(self.aw.extraLCDlabel2[i],QColor(colorname))
                     self.devicetable.cellWidget(i,2).setStyleSheet("background-color: %s; color: %s"%(self.aw.qmc.extradevicecolor2[i], self.aw.labelBorW(self.aw.qmc.extradevicecolor2[i])))
                     self.devicetable.cellWidget(i,2).setText(colorname)
-                    self.aw.checkColors([(self.aw.qmc.extraname2[i], self.aw.qmc.extradevicecolor2[i], QApplication.translate("Label","Background"), self.aw.qmc.palette['background'])])
-                    self.aw.checkColors([(self.aw.qmc.extraname2[i], self.aw.qmc.extradevicecolor2[i], QApplication.translate("Label","Legend bkgnd"),self.aw.qmc.palette['background'])])
-        except Exception as e: # pylint: disable=broad-except
+                    self.aw.checkColors([(self.aw.qmc.extraname2[i], self.aw.qmc.extradevicecolor2[i], QApplication.translate("Label","Background",None), self.aw.qmc.palette['background'])])
+                    self.aw.checkColors([(self.aw.qmc.extraname2[i], self.aw.qmc.extradevicecolor2[i], QApplication.translate("Label","Legend bkgnd",None),self.aw.qmc.palette['background'])])
+        except Exception as e:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " setextracolor(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " setextracolor(): {0}").format(str(e)),exc_tb.tb_lineno)
+
 
     def close(self):
         self.closeHelp()
@@ -1952,7 +1909,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         #save window geometry
         settings.setValue("DeviceAssignmentGeometry",self.saveGeometry()) 
         self.aw.DeviceAssignmentDlg_activeTab = self.TabWidget.currentIndex()
-#        self.aw.closeEventSettings() # save all app settings
+        self.aw.closeEventSettings() # save all app settings
     
     @pyqtSlot()
     def cancelEvent(self):
@@ -1963,15 +1920,16 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
     @pyqtSlot()
     def okEvent(self):
         try:
+        
             self.aw.qmc.device_logging = self.deviceLoggingFlag.isChecked()
             
             #save any extra devices here
             self.savedevicetable(redraw=False)
             self.aw.qmc.devicetablecolumnwidths = [self.devicetable.columnWidth(c) for c in range(self.devicetable.columnCount())]
             
-            message = QApplication.translate("Message","Device not set")
+            message = QApplication.translate("Message","Device not set", None)
             # by default switch PID buttons/LCDs off
-            self.aw.buttonCONTROL.setVisible(False)
+            self.aw.button_10.setVisible(False)
             self.aw.LCD6frame.setVisible(False)
             self.aw.LCD7frame.setVisible(False)
             self.aw.qmc.resetlinecountcaches()
@@ -2004,7 +1962,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 elif str(self.btpidtypeComboBox.currentText()) == "Fuji PXR":
                     self.aw.ser.readBTpid[0] = 1
                     str2 = "Fuji PXR"
-                elif str(self.btpidtypeComboBox.currentText()) == "":
+                elif str(self.btpidtypeComboBox.currentText()) == "None":
                     self.aw.ser.readBTpid[0] = 2
                     str2 = "None"
                 elif str(self.btpidtypeComboBox.currentText()) == "Delta DTA":
@@ -2024,154 +1982,151 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                     self.aw.ser.useModbusPort = False
                 #If fuji pid
                 if str1 != "Delta DTA":
-                    if self.aw.qmc.device != 0:
-                        self.aw.qmc.device = 0
-                        #self.aw.ser.comport = "COM4"
-                        self.aw.ser.baudrate = 9600
-                        self.aw.ser.bytesize = 8
-                        self.aw.ser.parity= 'O'
-                        self.aw.ser.stopbits = 1
-                        self.aw.ser.timeout = 1.0
+                    self.aw.qmc.device = 0
+                    #self.aw.ser.comport = "COM4"
+                    self.aw.ser.baudrate = 9600
+                    self.aw.ser.bytesize = 8
+                    self.aw.ser.parity= 'O'
+                    self.aw.ser.stopbits = 1
+                    self.aw.ser.timeout = 1.0
                 #else if DTA pid
                 else:
-                    if self.aw.qmc.device != 26:
-                        self.aw.qmc.device = 26
-                        #self.aw.ser.comport = "COM4"
-                        self.aw.ser.baudrate = 2400
-                        self.aw.ser.bytesize = 8
-                        self.aw.ser.parity= 'N'
-                        self.aw.ser.stopbits = 1
-                        self.aw.ser.timeout = 1.0
-                message = QApplication.translate("Message","PID to control ET set to {0} {1}" + \
-                                                 " ; PID to read BT set to {2} {3}").format(str1,str(self.aw.ser.controlETpid[1]),str2,str(self.aw.ser.readBTpid[1]))
-            elif self.arduinoButton.isChecked():
-                meter = "Arduino (TC4)"
-                if self.aw.qmc.device != 19:
-                    self.aw.qmc.device = 19
-                    self.aw.ser.baudrate = 115200
+                    self.aw.qmc.device = 26
+                    #self.aw.ser.comport = "COM4"
+                    self.aw.ser.baudrate = 2400
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.8
-                    self.aw.ser.ArduinoIsInitialized = 0 # ensure the Arduino gets reinitalized if settings changed
-                    message = QApplication.translate("Message","Device set to {0}. Now, check Serial Port settings").format(meter)
+                    self.aw.ser.timeout = 1.0
+                message = QApplication.translate("Message","PID to control ET set to {0} {1}" + \
+                                                 " ; PID to read BT set to {2} {3}", None).format(str1,str(self.aw.ser.controlETpid[1]),str2,str(self.aw.ser.readBTpid[1]))
+            elif self.arduinoButton.isChecked():
+                meter = "Arduino (TC4)"
+                self.aw.qmc.device = 19
+                self.aw.ser.baudrate = 115200
+                self.aw.ser.bytesize = 8
+                self.aw.ser.parity= 'N'
+                self.aw.ser.stopbits = 1
+                self.aw.ser.timeout = 1.0
+                self.aw.ser.ArduinoIsInitialized = 0 # ensure the Arduino gets reinitalized if settings changed
+                message = QApplication.translate("Message","Device set to {0}. Now, check Serial Port settings", None).format(meter)
             elif self.programButton.isChecked():
                 meter = self.programedit.text()
                 self.aw.ser.externalprogram = meter
                 self.aw.qmc.device = 27
-                message = QApplication.translate("Message","Device set to {0}. Now, check Serial Port settings").format(meter)
+                message = QApplication.translate("Message","Device set to {0}. Now, check Serial Port settings", None).format(meter)
             elif self.nonpidButton.isChecked():
                 meter = str(self.devicetypeComboBox.currentText())
-                if meter == "Omega HH806AU" and self.aw.qmc.device != 1:
+                if meter == "Omega HH806AU":
                     self.aw.qmc.device = 1
                     #self.aw.ser.comport = "COM11"
                     self.aw.ser.baudrate = 19200
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'E'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port").format(meter)
-                elif meter == "Omega HH506RA" and self.aw.qmc.device != 2:
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port", None).format(meter)
+                elif meter == "Omega HH506RA":
                     self.aw.qmc.device = 2
                     #self.aw.ser.comport = "/dev/tty.usbserial-A2001Epn"
                     self.aw.ser.baudrate = 2400
                     self.aw.ser.bytesize = 7
                     self.aw.ser.parity= 'E'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
+                    self.aw.ser.timeout = 1.0
                     self.aw.ser.HH506RAid = "X" # ensure the HH506RA gets reinitalized if settings changed
-                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port").format(meter)
-                elif meter == "CENTER 309" and self.aw.qmc.device != 3:
+                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port", None).format(meter)
+                elif meter == "CENTER 309":
                     self.aw.qmc.device = 3
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 9600
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port").format(meter)
-                elif meter == "CENTER 306" and self.aw.qmc.device != 4:
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port", None).format(meter)
+                elif meter == "CENTER 306":
                     self.aw.qmc.device = 4
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 9600
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port").format(meter)
-                elif meter == "CENTER 305" and self.aw.qmc.device != 5:
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port", None).format(meter)
+                elif meter == "CENTER 305":
                     self.aw.qmc.device = 5
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 9600
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to CENTER 305, which is equivalent to CENTER 306. Now, choose serial port").format(meter)
-                elif meter == "CENTER 304" and self.aw.qmc.device != 6:
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to CENTER 305, which is equivalent to CENTER 306. Now, choose serial port", None).format(meter)
+                elif meter == "CENTER 304":
                     self.aw.qmc.device = 6
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 9600
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to CENTER 309. Now, choose serial port").format(meter)
-                elif meter == "CENTER 303" and self.aw.qmc.device != 7:
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to CENTER 309. Now, choose serial port", None).format(meter)
+                elif meter == "CENTER 303":
                     self.aw.qmc.device = 7
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 9600
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port").format(meter)
-                elif meter == "CENTER 302" and self.aw.qmc.device != 8:
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port", None).format(meter)
+                elif meter == "CENTER 302":
                     self.aw.qmc.device = 8
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 9600
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to CENTER 303. Now, choose serial port").format(meter)
-                elif meter == "CENTER 301" and self.aw.qmc.device != 9:
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to CENTER 303. Now, choose serial port", None).format(meter)
+                elif meter == "CENTER 301":
                     self.aw.qmc.device = 9
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 9600
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to CENTER 303. Now, choose serial port").format(meter)
-                elif meter == "CENTER 300" and self.aw.qmc.device != 10:
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to CENTER 303. Now, choose serial port", None).format(meter)
+                elif meter == "CENTER 300":
                     self.aw.qmc.device = 10
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 9600
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to CENTER 303. Now, choose serial port").format(meter)
-                elif meter == "VOLTCRAFT K204" and self.aw.qmc.device != 11:
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to CENTER 303. Now, choose serial port", None).format(meter)
+                elif meter == "VOLTCRAFT K204":
                     self.aw.qmc.device = 11
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 9600
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to CENTER 309. Now, choose serial port").format(meter)
-                elif meter == "VOLTCRAFT K202" and self.aw.qmc.device != 12:
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to CENTER 309. Now, choose serial port", None).format(meter)
+                elif meter == "VOLTCRAFT K202":
                     self.aw.qmc.device = 12
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 9600
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to CENTER 306. Now, choose serial port").format(meter)
-                elif meter == "VOLTCRAFT 300K" and self.aw.qmc.device != 13:
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to CENTER 306. Now, choose serial port", None).format(meter)
+                elif meter == "VOLTCRAFT 300K":
                     self.aw.qmc.device = 13
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 9600
@@ -2179,56 +2134,59 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
                     self.aw.ser.timeout = 0.5
-                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to CENTER 303. Now, choose serial port").format(meter)
-                elif meter == "VOLTCRAFT 302KJ" and self.aw.qmc.device != 14:
+                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to CENTER 303. Now, choose serial port", None).format(meter)
+                elif meter == "VOLTCRAFT 302KJ":
                     self.aw.qmc.device = 14
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 9600
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to CENTER 303. Now, choose serial port").format(meter)
-                elif meter == "EXTECH 421509" and self.aw.qmc.device != 15:
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to CENTER 303. Now, choose serial port", None).format(meter)
+                elif meter == "EXTECH 421509":
                     self.aw.qmc.device = 15
                     #self.aw.ser.comport = "/dev/tty.usbserial-A2001Epn"
                     self.aw.ser.baudrate = 2400
                     self.aw.ser.bytesize = 7
                     self.aw.ser.parity= 'E'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to Omega HH506RA. Now, choose serial port").format(meter)
-                elif meter == "Omega HH802U" and self.aw.qmc.device != 16:
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to Omega HH506RA. Now, choose serial port", None).format(meter)
+                elif meter == "Omega HH802U":
                     self.aw.qmc.device = 16
                     #self.aw.ser.comport = "COM11"
                     self.aw.ser.baudrate = 19200
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'E'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to Omega HH806AU. Now, choose serial port").format(meter)
-                elif meter == "Omega HH309" and self.aw.qmc.device != 17:
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to Omega HH806AU. Now, choose serial port", None).format(meter)
+                elif meter == "Omega HH309":
                     self.aw.qmc.device = 17
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 9600
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port").format(meter)
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port", None).format(meter)
                 #special device manual mode. No serial settings.
                 elif meter == "NONE":
                     self.aw.qmc.device = 18
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                     st = ""
+                    if self.aw.qmc.delay != self.aw.qmc.min_delay:
+                        self.aw.qmc.delay = self.aw.qmc.min_delay
+                        st += ". Sampling rate changed to 1 second"
                     # ensure that events button is shown
                     self.aw.eventsbuttonflag = 1
-                    self.aw.buttonEVENT.setVisible(True)
-                    message = QApplication.translate("Message","Device set to {0}{1}").format(meter,st)
+                    self.aw.button_11.setVisible(True)
+                    message = QApplication.translate("Message","Device set to {0}{1}", None).format(meter,st)
                 ##########################
                 ####  DEVICE 19 is the Arduino/TC4
                 ##########################
-                elif meter == "TE VA18B" and self.aw.qmc.device != 20:
+                elif meter == "TE VA18B":
                     self.aw.qmc.device = 20
                     #self.aw.ser.comport = "COM7"
                     self.aw.ser.baudrate = 2400
@@ -2236,14 +2194,14 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
                     self.aw.ser.timeout = 1.0
-                    message = QApplication.translate("Message","Device set to {0}. Now, check Serial Port settings").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}. Now, check Serial Port settings", None).format(meter)
                 ##########################
                 ####  DEVICE 21 is +309_34 but +DEVICE cannot be set as main device
                 ##########################
                 ##########################
                 ####  DEVICE 22 is +PID DUTY% but +DEVICE cannot be set as main device
                 ##########################
-                elif meter == "Omega HHM28[6]" and self.aw.qmc.device != 23:
+                elif meter == "Omega HHM28[6]":
                     self.aw.qmc.device = 23
                     #self.aw.ser.comport = "COM1"
                     self.aw.ser.baudrate = 2400
@@ -2251,7 +2209,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
                     self.aw.ser.timeout = 1.0
-                    message = QApplication.translate("Message","Device set to {0}. Now, check Serial Port settings").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}. Now, check Serial Port settings", None).format(meter)
 # +DEVICEs cannot be set as main device
                 ##########################
                 ####  DEVICE 24 is +VOLTCRAFT 204_34 but +DEVICE cannot be set as main device
@@ -2268,33 +2226,33 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ##########################
                 ####  DEVICE 28 is +ArduinoTC4 34 but +DEVICE cannot be set as main device
                 ##########################
-                elif meter == "MODBUS" and self.aw.qmc.device != 29:
+                elif meter == "MODBUS":
                     self.aw.qmc.device = 29
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 115200
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.6
-                    message = QApplication.translate("Message","Device set to {0}. Now, choose Modbus serial port or IP address").format(meter)
-                elif meter == "VOLTCRAFT K201" and self.aw.qmc.device != 30:
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}. Now, choose Modbus serial port or IP address", None).format(meter)
+                elif meter == "VOLTCRAFT K201":
                     self.aw.qmc.device = 30
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 9600
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to CENTER 302. Now, choose serial port").format(meter)
-                elif meter == "Amprobe TMD-56" and self.aw.qmc.device != 31:
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to CENTER 302. Now, choose serial port", None).format(meter)
+                elif meter == "Amprobe TMD-56":
                     self.aw.qmc.device = 31
                     #self.aw.ser.comport = "COM11"
                     self.aw.ser.baudrate = 19200
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'E'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to Omega HH806AU. Now, choose serial port").format(meter)
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}, which is equivalent to Omega HH806AU. Now, choose serial port", None).format(meter)
                 ##########################
                 ####  DEVICE 32 is +ArduinoTC4 56 but +DEVICE cannot be set as main device
                 ##########################
@@ -2303,7 +2261,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ##########################
                 elif meter == "Phidget 1048 4xTC 01":
                     self.aw.qmc.device = 34
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 ####  DEVICE 35 is +Phidget 1048 4xTC 23 but +DEVICE cannot be set as main device
                 ##########################
@@ -2312,23 +2270,23 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ##########################
                 elif meter == "Phidget 1046 4xRTD 01":
                     self.aw.qmc.device = 37
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 ####  DEVICE 38 is +Phidget 1046 4xRTD 23 but +DEVICE cannot be set as main device
                 ##########################
-                elif meter == "Mastech MS6514" and self.aw.qmc.device != 39:
+                elif meter == "Mastech MS6514":
                     self.aw.qmc.device = 39
                     #self.aw.ser.comport = "COM11"
                     self.aw.ser.baudrate = 9600
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port").format(meter)
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port", None).format(meter)
                 ##########################
                 elif meter == "Phidget IO 01":
                     self.aw.qmc.device = 40
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 ####  DEVICE 41 is +Phidget IO 23 but +DEVICE cannot be set as main device
                 ##########################
@@ -2343,81 +2301,81 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ##########################
                 elif meter == "Yocto Thermocouple":
                     self.aw.qmc.device = 45
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 elif meter == "Yocto PT100":
                     self.aw.qmc.device = 46
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 elif meter == "Phidget 1045 IR":
                     self.aw.qmc.device = 47
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 ####  DEVICE 48 is an external program 34
                 ##########################
                 ##########################
                 ####  DEVICE 49 is an external program 56
                 ##########################
-                elif meter == "DUMMY" and self.aw.qmc.device != 50: # including a dummy serial device (can be used for serial commands)
+                elif meter == "DUMMY": # including a dummy serial device (can be used for serial commands)
                     self.aw.qmc.device = 50
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 9600
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.5
+                    self.aw.ser.timeout = 1.0
                 ##########################
                 ####  DEVICE 51 is +304_34 but +DEVICE cannot be set as main device
                 ##########################
                 elif meter == "Phidget 1051 1xTC 01":
                     self.aw.qmc.device = 52
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
-                elif meter == "Hottop BT/ET" and self.aw.qmc.device != 53:
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
+                elif meter == "Hottop BT/ET":
                     self.aw.qmc.device = 53
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 115200
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port").format(meter)
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port", None).format(meter)
                 ##########################
                 ####  DEVICE 54 is +Hottop HF but +DEVICE cannot be set as main device
                 ##########################
-                elif meter == "Omega HH806W" and self.aw.qmc.device != 55:
+                elif meter == "Omega HH806W":
                     self.aw.qmc.device = 55
                     #self.aw.ser.comport = "COM11"
                     self.aw.ser.baudrate = 38400
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'E'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port").format(meter)
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port", None).format(meter)
                 ##########################
                 ####  DEVICE 55 is +MODBUS_56 but +DEVICE cannot be set as main device
                 ##########################
-                elif meter == "Apollo DT301" and self.aw.qmc.device != 56:
+                elif meter == "Apollo DT301":
                     self.aw.qmc.device = 56
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 9600
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port").format(meter)
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port", None).format(meter)
                 ##########################
-                elif meter == "EXTECH 755" and self.aw.qmc.device != 57:
+                elif meter == "EXTECH 755":
                     self.aw.qmc.device = 57
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 9600
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port").format(meter)
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port", None).format(meter)
                 ##########################
                 elif meter == "Phidget TMP1101 4xTC 01":
                     self.aw.qmc.device = 58
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 ####  DEVICE 59 is +Phidget TMP1101 4xTC 23 but +DEVICE cannot be set as main device
                 ##########################
@@ -2427,15 +2385,15 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ##########################
                 elif meter == "Phidget TMP1100 1xTC":
                     self.aw.qmc.device = 61
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 elif meter == "Phidget 1011 IO 01":
                     self.aw.qmc.device = 62
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 elif meter == "Phidget HUB IO 01":
                     self.aw.qmc.device = 63
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 ##########################
                 ####  DEVICE 64 is +Phidget HUB IO 23 but +DEVICE cannot be set as main device
@@ -2447,24 +2405,24 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ####  DEVICE 66 is -HH806W but -DEVICE cannot be set as main device
                 ##########################
                 ##########################
-                elif meter == "VOLTCRAFT PL-125-T2" and self.aw.qmc.device != 67:
+                elif meter == "VOLTCRAFT PL-125-T2":
                     self.aw.qmc.device = 67
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 9600
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port").format(meter)
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port", None).format(meter)
                 ##########################
                 ##########################
                 elif meter == "Phidget TMP1200 1xRTD A":
                     self.aw.qmc.device = 68
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 elif meter == "Phidget IO Digital 01":
                     self.aw.qmc.device = 69
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 ####  DEVICE 70 is +Phidget IO Digital 23 but +DEVICE cannot be set as main device
                 ##########################
@@ -2477,11 +2435,11 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ##########################
                 elif meter == "Phidget 1011 IO Digital 01":
                     self.aw.qmc.device = 73
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 elif meter == "Phidget HUB IO Digital 01":
                     self.aw.qmc.device = 74
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 ##########################
                 ####  DEVICE 75 is +Phidget HUB IO Digital 23 but +DEVICE cannot be set as main device
@@ -2490,15 +2448,15 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ####  DEVICE 76 is +Phidget HUB IO Digital 45 but +DEVICE cannot be set as main device
                 ##########################
                 ##########################
-                elif meter == "VOLTCRAFT PL-125-T4" and self.aw.qmc.device != 77:
+                elif meter == "VOLTCRAFT PL-125-T4":
                     self.aw.qmc.device = 77
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 9600
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port").format(meter)
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port", None).format(meter)
                 ##########################
                 ##########################
                 ####  DEVICE 78 is +VOLTCRAFT PL-125-T4 34 but +DEVICE cannot be set as main device
@@ -2506,7 +2464,13 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ##########################
                 elif meter == "S7":
                     self.aw.qmc.device = 79
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    #self.aw.ser.comport = "COM4"
+                    self.aw.ser.baudrate = 115200
+                    self.aw.ser.bytesize = 8
+                    self.aw.ser.parity= 'N'
+                    self.aw.ser.stopbits = 1
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 ####  DEVICE 80 is +S7 34 but no serial setup
                 ##########################
@@ -2521,7 +2485,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ##########################
                 elif meter == "Aillio Bullet R1 BT/DT":
                     self.aw.qmc.device = 83
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 ####  DEVICE 88 and 89 are an external program 78 and 910
                 ##########################
@@ -2533,64 +2497,64 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ##########################
                 elif meter == "Probat Middleware":
                     self.aw.qmc.device = 92
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 ####  DEVICE 95 is Phidget DAQ1400 Current
                 ##########################
                 elif meter == "Phidget DAQ1400 Current":
                     self.aw.qmc.device = 95
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 ####  DEVICE 96 is Phidget DAQ1400 Frequency
                 ##########################
                 elif meter == "Phidget DAQ1400 Frequency":
                     self.aw.qmc.device = 96
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 ####  DEVICE 97 is Phidget DAQ1400 Digital
                 ##########################
                 elif meter == "Phidget DAQ1400 Digital":
                     self.aw.qmc.device = 97
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 ####  DEVICE 98 is Phidget DAQ1400 Voltage
                 ##########################
                 elif meter == "Phidget DAQ1400 Voltage":
                     self.aw.qmc.device = 98
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 ####  DEVICE 99 is Aillio Bullet R1 IBTS/DT
                 ##########################
                 elif meter == "Aillio Bullet R1 IBTS/DT":
                     self.aw.qmc.device = 99
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 ####  DEVICE 100 are Yocto IR
                 ##########################
                 elif meter == "Yocto IR":
                     self.aw.qmc.device = 100
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
-                elif meter == "Behmor BT/CT" and self.aw.qmc.device != 101:
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
+                elif meter == "Behmor BT/CT":
                     self.aw.qmc.device = 101
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 57600
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port").format(meter)
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port", None).format(meter)
                 ##########################
                 ####  DEVICE 102 Behmor 34 channel 3 and 4
                 ##########################
-                elif meter == "VICTOR 86B" and self.aw.qmc.device != 103:
+                elif meter == "VICTOR 86B":
                     self.aw.qmc.device = 103
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 2400
                     self.aw.ser.bytesize = 8
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.7
-                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port").format(meter)
+                    self.aw.ser.timeout = 1.0
+                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port", None).format(meter)
                 ##########################
                 ####  DEVICE 104 Behmor 56 channel 5 and 6
                 ##########################
@@ -2600,15 +2564,15 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ##########################
                 elif meter == "Phidget HUB IO 0":
                     self.aw.qmc.device = 106
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 elif meter == "Phidget HUB IO Digital 0":
                     self.aw.qmc.device = 107
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 elif meter == "Yocto 4-20ma Rx":
                     self.aw.qmc.device = 108
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 ####  DEVICE 109 is +MODBUS_78 but +DEVICE cannot be set as main device
                 ##########################
@@ -2617,7 +2581,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ##########################
                 elif meter == "WebSocket":
                     self.aw.qmc.device = 111
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}", None).format(meter)
                 ##########################
                 ####  DEVICE 112 is +WebSocket 34 but +DEVICE cannot be set as main device
                 ##########################
@@ -2627,7 +2591,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ##########################
                 ####  DEVICE 114 is +TMP1200_2 (a second TMP1200 configuration)
                 ##########################
-                elif meter == "HB BT/ET" and self.aw.qmc.device != 115:
+                elif meter == "HB BT/ET":
                     self.aw.qmc.device = 115
                     #self.aw.ser.comport = "COM11"
                     self.aw.ser.baudrate = 9600
@@ -2635,7 +2599,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                     self.aw.ser.parity= 'N'
                     self.aw.ser.stopbits = 1
                     self.aw.ser.timeout = 0.8
-                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port").format(meter)
+                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port", None).format(meter)
                 ##########################
                 ####  DEVICE 116 is +HB DT/IT
                 ##########################
@@ -2648,58 +2612,6 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ##########################
                 ####  DEVICE 119 is +WebSocket 910 but +DEVICE cannot be set as main device
                 ##########################
-                ##########################
-                ####  DEVICE 120 is Yocto 0-10V Rx
-                elif meter == "Yocto 0-10V Rx":
-                    self.aw.qmc.device = 120
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
-                ##########################
-                ##########################
-                ####  DEVICE 121 is Yocto milliVolt Rx
-                elif meter == "Yocto milliVolt Rx":
-                    self.aw.qmc.device = 121
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
-                ##########################
-                ##########################
-                ####  DEVICE 122 is Yocto Serial
-                elif meter == "Yocto Serial":
-                    self.aw.qmc.device = 122
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
-                ##########################
-                ##########################
-                ####  DEVICE 123 is Phidget VCP1000
-                elif meter == "Phidget VCP1000":
-                    self.aw.qmc.device = 123
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
-                ##########################
-                ##########################
-                ####  DEVICE 124 is Phidget VCP1001
-                elif meter == "Phidget VCP1001":
-                    self.aw.qmc.device = 124
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
-                ##########################
-                ##########################
-                ####  DEVICE 125 is Phidget VCP1002
-                elif meter == "Phidget VCP1002":
-                    self.aw.qmc.device = 125
-                    message = QApplication.translate("Message","Device set to {0}").format(meter)
-                ##########################
-                ##########################
-                elif meter == "ARC BT/ET" and self.aw.qmc.device != 126:
-                    self.aw.qmc.device = 126
-                    #self.aw.ser.comport = "COM11"
-                    self.aw.ser.baudrate = 115200
-                    self.aw.ser.bytesize = 8
-                    self.aw.ser.parity= 'N'
-                    self.aw.ser.stopbits = 1
-                    self.aw.ser.timeout = 0.4
-                    message = QApplication.translate("Message","Device set to {0}. Now, choose serial port").format(meter)
-                ##########################
-                ####  DEVICE 127 is +ARC MET/IT
-                ##########################
-                ##########################
-                ####  DEVICE 128 is +ARC AT (points to "+HB AT")
-
 
                 # ADD DEVICE:
 
@@ -2713,12 +2625,12 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
     # - add an elif entry above to specify the default serial settings
             #extra devices serial config
             #set of different serial settings modes options
-            ssettings: Final = [[9600,8,'O',1,0.5],[19200,8,'E',1,0.5],[2400,7,'E',1,1],[9600,8,'N',1,0.5],
-                         [19200,8,'N',1,0.5],[2400,8,'N',1,1],[9600,8,'E',1,0.5],[38400,8,'E',1,0.5],[115200,8,'N',1,0.4],[57600,8,'N',1,0.5]]
+            ssettings = [[9600,8,'O',1,1],[19200,8,'E',1,1],[2400,7,'E',1,1],[9600,8,'N',1,1],
+                         [19200,8,'N',1,1],[2400,8,'N',1,1],[9600,8,'E',1,1],[38400,8,'E',1,1],[115200,8,'N',1,1],[57600,8,'N',1,1]]
             #map device index to a setting mode (choose the one that matches the device)
     # ADD DEVICE: to add a device you have to modify several places. Search for the tag "ADD DEVICE:"in the code
     # - add an entry to devsettings below (and potentially to ssettings above)
-            devssettings: Final = [
+            devssettings = [
                 0, # 0
                 1, # 1
                 2, # 2
@@ -2814,10 +2726,6 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 1, # 92
                 1, # 93
                 1, # 94
-                1, # 95
-                1, # 96
-                1, # 97
-                1, # 98
                 1, # 99
                 1, # 100
                 9, # 101
@@ -2839,15 +2747,6 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 3, # 117
                 1, # 118
                 1, # 119
-                1, # 120
-                1, # 121
-                1, # 122
-                1, # 123
-                1, # 124
-                1, # 125
-                8, # 126
-                8, # 127
-                8  # 128
                 ] 
             #init serial settings of extra devices
             for i in range(len(self.aw.qmc.extradevices)):
@@ -2874,12 +2773,12 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                     else:
                         self.aw.extratimeout.append(dsettings[4])
             if self.nonpidButton.isChecked():
-                self.aw.buttonSVp5.setVisible(False)
-                self.aw.buttonSVp10.setVisible(False)
-                self.aw.buttonSVp20.setVisible(False)
-                self.aw.buttonSVm20.setVisible(False)
-                self.aw.buttonSVm10.setVisible(False)
-                self.aw.buttonSVm5.setVisible(False)
+                self.aw.button_12.setVisible(False)
+                self.aw.button_13.setVisible(False)
+                self.aw.button_14.setVisible(False)
+                self.aw.button_15.setVisible(False)
+                self.aw.button_16.setVisible(False)
+                self.aw.button_17.setVisible(False)
                 self.aw.LCD6frame.setVisible(False)
                 self.aw.LCD7frame.setVisible(False)
             self.aw.qmc.ETfunction = str(self.ETfunctionedit.text())
@@ -2888,7 +2787,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
             self.aw.qmc.BTcurve = self.BTcurve.isChecked()
             self.aw.qmc.ETlcd = self.ETlcd.isChecked()
             self.aw.qmc.BTlcd = self.BTlcd.isChecked()
-
+            
             swap = self.swaplcds.isChecked()
             # swap BT/ET lcds on leaving the dialog
             if self.aw.qmc.swaplcds != swap:
@@ -2900,7 +2799,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                     self.aw.qmc.swaplcds = swap
                     self.aw.largeLCDs_dialog.reLayout()
             self.aw.qmc.swaplcds = swap
-
+            
             # close all ports to force a reopen
             self.aw.qmc.disconnectProbes()
             
@@ -2911,16 +2810,16 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
             self.aw.qmc.YOCTO_async[0] = self.yoctoAyncChanFlag.isChecked()
             self.aw.qmc.YOCTO_async[1] = self.yoctoAyncChanFlag.isChecked() # flag for channel 1 is ignored and only that of channel 0 is respected for both channels
             self.aw.qmc.YOCTO_dataRate = self.aw.qmc.YOCTO_dataRatesValues[self.yoctoDataRateCombo.currentIndex()]
-
+            
             # Ambient confifgurations
             self.aw.qmc.ambient_temperature_device = self.temperatureDeviceCombo.currentIndex()
             self.aw.qmc.ambient_humidity_device = self.humidityDeviceCombo.currentIndex()
             self.aw.qmc.ambient_pressure_device = self.pressureDeviceCombo.currentIndex()
             try:
                 self.aw.qmc.elevation = int(self.elevationSpinBox.value())
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
-
+            
             # Phidget configurations
             for i in range(4):
                 self.aw.qmc.phidget1048_types[i] = self.probeTypeCombos[i].currentIndex()+1
@@ -2957,14 +2856,13 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
             self.aw.qmc.phidgetRemoteOnlyFlag = self.phidgetBoxRemoteOnlyFlag.isChecked()
             try:
                 self.aw.qmc.phidgetPort = int(self.phidgetPort.text())
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
             for i in range(8):
                 self.aw.qmc.phidget1018_async[i] = self.asyncCheckBoxes[i].isChecked()
                 self.aw.qmc.phidget1018_ratio[i] = self.ratioCheckBoxes[i].isChecked()
                 self.aw.qmc.phidget1018_dataRates[i] = self.aw.qmc.phidget_dataRatesValues[self.dataRateCombos[i].currentIndex()]
                 self.aw.qmc.phidget1018_changeTriggers[i] = self.aw.qmc.phidget1018_changeTriggersValues[self.changeTriggerCombos[i].currentIndex()]
-                self.aw.qmc.phidgetVCP100x_voltageRanges[i] = self.aw.qmc.phidgetVCP100x_voltageRangeValues[self.voltageRangeCombos[i].currentIndex()]
 
             # LCD visibility
             self.aw.LCD2frame.setVisible((self.aw.qmc.BTlcd if self.aw.qmc.swaplcds else self.aw.qmc.ETlcd))
@@ -2975,13 +2873,13 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 self.aw.largePIDLCDs_dialog.updateVisiblitiesPID()
             if self.aw.largeExtraLCDs_dialog:
                 self.aw.largeExtraLCDs_dialog.reLayout() # names, styles and visibilties might have changed
-
+            
             # restart PhidgetManager
             try:
                 self.aw.qmc.restartPhidgetManager()
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
-
+            except:
+                pass
+            
             self.aw.qmc.redraw(recomputeAllDeltas=False)
             self.aw.sendmessage(message)
             #open serial conf Dialog
@@ -2990,36 +2888,32 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
             if not(self.aw.qmc.device in self.aw.qmc.nonSerialDevices):
                 self.aw.setcommport()
             self.close()
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except Exception as e:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " device accept(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " device accept(): {0}").format(str(e)),exc_tb.tb_lineno)
 
     @pyqtSlot(bool)
     def showExtradevHelp(self):
-        from help import symbolic_help
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
-                QApplication.translate("Form Caption","Symbolic Formulas Help"),
+                QApplication.translate("Form Caption","Symbolic Formulas Help",None),
                 symbolic_help.content())
 
     @pyqtSlot(bool)
     def showSymbolicHelp(self):
-        from help import symbolic_help
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
-                QApplication.translate("Form Caption","Symbolic Formulas Help"),
+                QApplication.translate("Form Caption","Symbolic Formulas Help",None),
                 symbolic_help.content())
 
     @pyqtSlot(bool)
     def showhelpprogram(self,_=False):
-        from help import programs_help
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
-                QApplication.translate("Form Caption","External Programs Help"),
+                QApplication.translate("Form Caption","External Programs Help",None),
                 programs_help.content())
 
     def closeHelp(self):
@@ -3028,3 +2922,4 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
     @pyqtSlot(int)
     def tabSwitched(self,_):
         self.closeHelp()
+        

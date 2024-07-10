@@ -25,6 +25,7 @@ SOURCES = \
     artisanlib/calculator.py \
     artisanlib/colors.py \
     artisanlib/comm.py \
+    artisanlib/command_utility.py \
     artisanlib/comparator.py \
     artisanlib/cropster.py \
     artisanlib/cup_profile.py \
@@ -45,13 +46,14 @@ SOURCES = \
     artisanlib/platform.py \
     artisanlib/ports.py \
     artisanlib/roast_properties.py \
-    artisanlib/rubasse.py \
+    artisanlib/rubase.py \
     artisanlib/s7port.py \
     artisanlib/sampling.py \
     artisanlib/statistics.py \
     artisanlib/transposer.py \
     artisanlib/wheels.py \
     artisanlib/wsport.py \
+    const/UIconst.py \
     help/alarms_help.py \
     help/autosave_help.py \
     help/energy_help.py \
@@ -64,15 +66,14 @@ SOURCES = \
     help/s7_help.py \
     help/symbolic_help.py \
     help/transposer_help.py \
-    plus/blend.py \
     plus/controller.py \
     plus/countries.py \
     plus/login.py \
     plus/queue.py \
     plus/stock.py \
-    plus/sync.py
-
-# the list of translation has to be synced with the script pylupdate6pro (for pylupdate6)
+    plus/sync.py \
+    plus/util.py
+    
 TRANSLATIONS = \
 	translations/artisan_ar.ts \
 	translations/artisan_da.ts \
@@ -92,14 +93,14 @@ TRANSLATIONS = \
 	translations/artisan_lv.ts \
 	translations/artisan_nl.ts \
 	translations/artisan_no.ts \
-	translations/artisan_pl.ts \
-	translations/artisan_pt_BR.ts \
 	translations/artisan_pt.ts \
+	translations/artisan_pt_BR.ts \
+	translations/artisan_pl.ts \
+	translations/artisan_ru.ts \
 	translations/artisan_sk.ts \
 	translations/artisan_sv.ts \
 	translations/artisan_th.ts \
 	translations/artisan_tr.ts \
-	translations/artisan_uk.ts \
 	translations/artisan_vi.ts \
 	translations/artisan_zh_CN.ts \
 	translations/artisan_zh_TW.ts

@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
-#
+#!/usr/bin/env python3
+
 # ABOUT
 # Artisan serial, error and message logs
 
@@ -7,7 +7,7 @@
 # This program or module is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
 # by the Free Software Foundation, either version 2 of the License, or
-# version 3 of the License, or (at your option) any later version. It is
+# version 3 of the License, or (at your option) any later versison. It is
 # provided for educational purposes and is distributed in the hope that
 # it will be useful, but WITHOUT ANY WARRANTY; without even the implied
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
@@ -20,14 +20,9 @@ from artisanlib import __version__
 
 from artisanlib.dialogs import ArtisanDialog
 
-try:
-    #pylint: disable = E, W, R, C
-    from PyQt6.QtCore import pyqtSlot # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt6.QtWidgets import (QApplication, QLabel, QCheckBox, QTextEdit, QVBoxLayout) # @UnusedImport @Reimport  @UnresolvedImport
-except Exception:
-    #pylint: disable = E, W, R, C
-    from PyQt5.QtCore import pyqtSlot # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt5.QtWidgets import (QApplication, QLabel, QCheckBox, QTextEdit, QVBoxLayout) # @UnusedImport @Reimport  @UnresolvedImport
+
+from PyQt5.QtCore import pyqtSlot
+from PyQt5.QtWidgets import (QApplication, QLabel, QCheckBox, QTextEdit, QVBoxLayout)
 
 
 ##########################################################################
@@ -36,11 +31,11 @@ except Exception:
 
 class serialLogDlg(ArtisanDialog):
     def __init__(self, parent = None, aw = None):
-        super().__init__(parent, aw)
+        super(serialLogDlg,self).__init__(parent, aw)
         self.setModal(True)
-        self.setWindowTitle(QApplication.translate("Form Caption","Serial Log"))
-        self.serialcheckbox = QCheckBox(QApplication.translate("CheckBox","Serial Log ON/OFF"))
-        self.serialcheckbox.setToolTip(QApplication.translate("Tooltip", "ON/OFF logs serial communication"))
+        self.setWindowTitle(QApplication.translate("Form Caption","Serial Log", None))
+        self.serialcheckbox = QCheckBox(QApplication.translate("CheckBox","Serial Log ON/OFF", None))
+        self.serialcheckbox.setToolTip(QApplication.translate("Tooltip", "ON/OFF logs serial communication",None))
         self.serialcheckbox.setChecked(self.aw.seriallogflag)
         self.serialcheckbox.stateChanged.connect(self.serialcheckboxChanged)
         self.serialEdit = QTextEdit()
@@ -80,9 +75,9 @@ class serialLogDlg(ArtisanDialog):
 
 class errorDlg(ArtisanDialog):
     def __init__(self, parent = None, aw = None):
-        super().__init__(parent, aw)
+        super(errorDlg,self).__init__(parent, aw)
         self.setModal(True)
-        self.setWindowTitle(QApplication.translate("Form Caption","Error Log"))
+        self.setWindowTitle(QApplication.translate("Form Caption","Error Log", None))
         self.elabel = QLabel()
         self. errorEdit = QTextEdit()
         self.errorEdit.setReadOnly(True)
@@ -98,7 +93,7 @@ class errorDlg(ArtisanDialog):
         htmlerr = "".join(["<b>{}</b> {}<br><br>".format(lenl-i,m) for i,m in enumerate(reversed(self.aw.qmc.errorlog))])
         
         enumber = len(self.aw.qmc.errorlog)
-        labelstr =  "<b>"+ QApplication.translate("Label","Number of errors found {0}").format(str(enumber)) + "</b>"
+        labelstr =  "<b>"+ QApplication.translate("Label","Number of errors found {0}", None).format(str(enumber)) + "</b>"
         self.elabel.setText(labelstr)
         self.errorEdit.setHtml("version = " +__version__ +"<br><br>" + htmlerr)
         
@@ -113,9 +108,9 @@ class errorDlg(ArtisanDialog):
 
 class messageDlg(ArtisanDialog):
     def __init__(self, parent = None, aw = None):
-        super().__init__(parent, aw)
+        super(messageDlg,self).__init__(parent, aw)
         self.setModal(True)
-        self.setWindowTitle(QApplication.translate("Form Caption","Message History"))
+        self.setWindowTitle(QApplication.translate("Form Caption","Message History", None))
         self.messageEdit = QTextEdit()
         self.messageEdit.setReadOnly(True)
         layout = QVBoxLayout()

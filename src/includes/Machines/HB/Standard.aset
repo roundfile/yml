@@ -3,9 +3,8 @@ AmbientTempSource=5
 Delay=4000
 Oversampling=false
 dropDuplicates=true
-dropDuplicatesLimit=0.1
+dropDuplicatesLimit=0.3
 roastertype_setup=HB Standard
-ETfunction=
 
 [Device]
 id=115

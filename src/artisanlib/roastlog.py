@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
-#
+#!/usr/bin/env python3
+
 # ABOUT
 # RoastLog Roast Profile importer for Artisan
 
@@ -9,25 +9,10 @@ import requests
 from requests_file import FileAdapter  # @UnresolvedImport
 import re
 from lxml import html
-import logging
-try:
-    from typing import Final
-except ImportError:
-    # for Python 3.7:
-    from typing_extensions import Final
 
-try:
-    #pylint: disable = E, W, R, C
-    from PyQt6.QtCore import QDateTime, Qt # @UnusedImport @Reimport  @UnresolvedImport
-except Exception:
-    #pylint: disable = E, W, R, C
-    from PyQt5.QtCore import QDateTime, Qt # @UnusedImport @Reimport  @UnresolvedImport
-
+from PyQt5.QtCore import QDateTime, Qt
 
 from artisanlib.util import encodeLocal, stringtoseconds
-
-
-_log: Final = logging.getLogger(__name__)
 
 # returns a dict containing all profile information contained in the given RoastLog document pointed by the given QUrl
 def extractProfileRoastLog(url,_):
@@ -53,14 +38,14 @@ def extractProfileRoastLog(url,_):
         if "Roasted on:" in tag_values:
             try:
                 dt = dateutil.parser.parse(tag_values["Roasted on:"])
-                dateQt = QDateTime.fromSecsSinceEpoch(int(round(dt.timestamp())))
+                dateQt = QDateTime.fromTime_t(int(round(dt.timestamp())))
                 if dateQt.isValid():
                     res["roastdate"] = encodeLocal(dateQt.date().toString())
-                    res["roastisodate"] = encodeLocal(dateQt.date().toString(Qt.DateFormat.ISODate))
+                    res["roastisodate"] = encodeLocal(dateQt.date().toString(Qt.ISODate))
                     res["roasttime"] = encodeLocal(dateQt.time().toString())
-                    res["roastepoch"] = int(dateQt.toSecsSinceEpoch())
+                    res["roastepoch"] = int(dateQt.toTime_t())
                     res["roasttzoffset"] = libtime.timezone
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
         
         w_in = 0
@@ -80,7 +65,7 @@ def extractProfileRoastLog(url,_):
             try:
                 c = int(round(float(tag_values["Roast level:"])))
                 res["ground_color"] = c
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
         if "Roast Notes:" in tag_values:
             res["roastingnotes"] = tag_values["Roast Notes:"]
@@ -213,7 +198,7 @@ def extractProfileRoastLog(url,_):
                                 try:
                                     timex_idx = res["timex"].index(stringtoseconds(te["time"]))
                                     timeindex[timex_events[te["label"]]] = max(0,timex_idx)
-                                except Exception: # pylint: disable=broad-except
+                                except:
                                     pass
                             else:
                                 try:
@@ -222,7 +207,7 @@ def extractProfileRoastLog(url,_):
                                     specialevents.append(timex_idx)
                                     specialeventstype.append(4)
                                     specialeventsvalue.append(0)
-                                except Exception: # pylint: disable=broad-except
+                                except:
                                     pass
                 res["timeindex"] = timeindex
                 
@@ -238,6 +223,9 @@ def extractProfileRoastLog(url,_):
                     res["specialeventstype"] = specialeventstype
                     res["specialeventsvalue"] = specialeventsvalue
                     res["specialeventsStrings"] = specialeventsStrings
-    except Exception as e: # pylint: disable=broad-except
-        _log.exception(e)
+    except Exception as e:
+#        import traceback
+#        import sys
+#        traceback.print_exc(file=sys.stdout)
+        pass
     return res

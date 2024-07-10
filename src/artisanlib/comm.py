@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
-#
+#!/usr/bin/env python3
+
 # ABOUT
 # Artisan Device Communication
 
@@ -7,7 +7,7 @@
 # This program or module is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
 # by the Free Software Foundation, either version 2 of the License, or
-# version 3 of the License, or (at your option) any later version. It is
+# version 3 of the License, or (at your option) any later versison. It is
 # provided for educational purposes and is distributed in the hope that
 # it will be useful, but WITHOUT ANY WARRANTY; without even the implied
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
@@ -18,39 +18,27 @@
 
 import os
 import sys
+import math
 import re
+import binascii
 import time as libtime
 import numpy
-import math
 import shlex
+import subprocess
 import threading
 import platform
-import logging
-try:
-    from typing import Final
-except ImportError:
-    # for Python 3.7:
-    from typing_extensions import Final
+import wquantiles
 
 from artisanlib.util import cmd2str, RoRfromCtoF, appFrozen, fromCtoF, fromFtoC, hex2int, str2cmd, toFloat
 
-try:
-    #pylint: disable = E, W, R, C
-    from PyQt6.QtCore import Qt, QDateTime, QSemaphore, pyqtSlot # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt6.QtGui import QIntValidator # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt6.QtWidgets import (QApplication, QCheckBox, QDialog, QGridLayout, QHBoxLayout, QVBoxLayout, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QLabel, QLineEdit,QPushButton) # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt6 import sip  # @UnusedImport @Reimport  @UnresolvedImport                                
-except Exception:  
-    #pylint: disable = E, W, R, C
-    from PyQt5.QtCore import Qt, QDateTime, QSemaphore, pyqtSlot # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt5.QtGui import QIntValidator # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt5.QtWidgets import (QApplication, QCheckBox, QDialog, QGridLayout, QHBoxLayout, QVBoxLayout, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QLabel, QLineEdit,QPushButton) # @UnusedImport @Reimport  @UnresolvedImport
-    try:
-        from PyQt5 import sip # @Reimport @UnresolvedImport @UnusedImport
-    except Exception: # pylint: disable=broad-except
-        import sip  # @Reimport @UnresolvedImport @UnusedImport
+from PyQt5.QtCore import Qt, QDateTime, QSemaphore, pyqtSlot
+from PyQt5.QtGui import QIntValidator
+from PyQt5.QtWidgets import (QApplication, QCheckBox, QDialog, QGridLayout, QHBoxLayout, QVBoxLayout,
+                             QLabel, QLineEdit,QPushButton)
+try: # hidden import to allow pyinstaller build on OS X to include the PyQt5.x private sip module
+    from PyQt5 import sip # @UnusedImport
+except:
+    pass
 
 from Phidget22.DeviceID import DeviceID
 from Phidget22.Devices.TemperatureSensor import TemperatureSensor as PhidgetTemperatureSensor
@@ -65,13 +53,8 @@ from Phidget22.Devices.RCServo import RCServo # @UnusedWildImport
 from Phidget22.Devices.CurrentInput import CurrentInput # @UnusedWildImport
 from Phidget22.Devices.FrequencyCounter import FrequencyCounter # @UnusedWildImport
 from Phidget22.Devices.DCMotor import DCMotor # @UnusedWildImport
-from Phidget22.PhidgetException import PhidgetException
 
 from yoctopuce.yocto_api import YAPI, YRefParam
-
-
-_log: Final = logging.getLogger(__name__)
-
 
 # maps Artisan thermocouple types (order as listed in the menu; see phidget1048_types) to Phidget thermocouple types
 # 1 => k-type (default)
@@ -82,11 +65,12 @@ def PHIDGET_THERMOCOUPLE_TYPE(tp):
     from Phidget22.ThermocoupleType import ThermocoupleType
     if tp == 2:
         return ThermocoupleType.THERMOCOUPLE_TYPE_J
-    if tp == 3:
+    elif tp == 3:
         return ThermocoupleType.THERMOCOUPLE_TYPE_E
-    if tp == 4:
+    elif tp == 4:
         return ThermocoupleType.THERMOCOUPLE_TYPE_T
-    return ThermocoupleType.THERMOCOUPLE_TYPE_K
+    else:
+        return ThermocoupleType.THERMOCOUPLE_TYPE_K
 
 # maps Artisan RTD wire setups (order as listed in the menu; see phidget1200_wireValues) to Phdiget wire setups
 # 0 => 2-wire (default)
@@ -96,9 +80,10 @@ def PHIDGET_RTD_WIRE(tp):
     from Phidget22.RTDWireSetup import RTDWireSetup
     if tp == 1:
         return RTDWireSetup.RTD_WIRE_SETUP_3WIRE
-    if tp == 2:
+    elif tp == 2:
         return RTDWireSetup.RTD_WIRE_SETUP_4WIRE
-    return RTDWireSetup.RTD_WIRE_SETUP_2WIRE
+    else:
+        return RTDWireSetup.RTD_WIRE_SETUP_2WIRE
      
 # maps Artisan RTD types (order as listed in the menu; see phidget1200_formulaValues) to Phdiget RTD types
 # 0 => PT100 3850 (default)
@@ -109,11 +94,12 @@ def PHIDGET_RTD_TYPE(tp):
     from Phidget22.RTDType import RTDType
     if tp == 1:
         return RTDType.RTD_TYPE_PT100_3920
-    if tp == 2:
+    elif tp == 2:
         return RTDType.RTD_TYPE_PT1000_3850
-    if tp == 3:
+    elif tp == 3:
         return RTDType.RTD_TYPE_PT1000_3920
-    return RTDType.RTD_TYPE_PT100_3850
+    else:
+        return RTDType.RTD_TYPE_PT100_3850
     
 # maps Artisan gain values (see phidget1046_gainValues) to Phidgets gain values
 # defaults to no gain (BRIDGE_GAIN_1)
@@ -124,15 +110,16 @@ def PHIDGET_GAIN_VALUE(gv):
     from Phidget22.BridgeGain import BridgeGain as BG  # @UnusedImport
     if gv == 2:
         return BG.BRIDGE_GAIN_8 # 8x Amplification
-    if gv == 3:    
+    elif gv == 3:    
         return BG.BRIDGE_GAIN_16 # 16x Amplification
-    if gv == 4:    
+    elif gv == 4:    
         return BG.BRIDGE_GAIN_32 # 32x Amplification
-    if gv == 5:
+    elif gv == 5:
         return BG.BRIDGE_GAIN_64 # 64x Amplification
-    if gv == 6:    
+    elif gv == 6:    
         return BG.BRIDGE_GAIN_128 # 128x Amplification
-    return BG.BRIDGE_GAIN_1 # no gain
+    else:
+        return BG.BRIDGE_GAIN_1 # no gain
 
 class YoctoThread(threading.Thread):
     def __init__(self):
@@ -141,7 +128,7 @@ class YoctoThread(threading.Thread):
     
     def run(self):
         errmsg = YRefParam()
-        while not self._stopevent.is_set():
+        while not self._stopevent.isSet():
             YAPI.UpdateDeviceList(errmsg)  # traps plug/unplug events
             YAPI.Sleep(500, errmsg)  # traps others events
 
@@ -154,38 +141,38 @@ class YoctoThread(threading.Thread):
 #########################################################################
 
 #inputs temperature
-class nonedevDlg(QDialog): # pylint: disable=too-few-public-methods
+class nonedevDlg(QDialog):
     __slots__ = ['etEdit','btEdit','ETbox','okButton','cancelButton'] # save some memory by using slots
     def __init__(self, parent = None, aw = None):
-        super().__init__(parent)
+        super(nonedevDlg,self).__init__(parent)
         self.aw = aw
         
-        self.setWindowTitle(QApplication.translate("Form Caption","Manual Temperature Logger"))
+        self.setWindowTitle(QApplication.translate("Form Caption","Manual Temperature Logger",None))
         if len(self.aw.qmc.timex):
             if self.aw.qmc.manuallogETflag:
-                etval = str(int(round(aw.qmc.temp1[-1])))
+                etval = str(int(aw.qmc.temp1[-1]))
             else:
                 etval = "0"
-            btval = str(int(round(aw.qmc.temp2[-1])))
+            btval = str(int(aw.qmc.temp2[-1])) 
         else:
             etval = "0"
             btval = "0"
         self.etEdit = QLineEdit(etval)
-        btlabel = QLabel(QApplication.translate("Label", "BT"))
+        btlabel = QLabel(QApplication.translate("Label", "BT",None))
         self.btEdit = QLineEdit(btval)
         self.etEdit.setValidator(QIntValidator(0, 1000, self.etEdit))
         self.btEdit.setValidator(QIntValidator(0, 1000, self.btEdit))
         self.btEdit.setFocus()
-        self.ETbox = QCheckBox(QApplication.translate("CheckBox","ET"))
+        self.ETbox = QCheckBox(QApplication.translate("CheckBox","ET",None))
         if self.aw.qmc.manuallogETflag == True:
             self.ETbox.setChecked(True)
         else:
             self.ETbox.setChecked(False)
             self.etEdit.setVisible(False)
         self.ETbox.stateChanged.connect(self.changemanuallogETflag)
-        self.okButton = QPushButton(QApplication.translate("Button","OK"))
-        self.cancelButton = QPushButton(QApplication.translate("Button","Cancel"))
-        self.cancelButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.okButton = QPushButton(QApplication.translate("Button","OK",None))
+        self.cancelButton = QPushButton(QApplication.translate("Button","Cancel",None))
+        self.cancelButton.setFocusPolicy(Qt.NoFocus)
         self.okButton.clicked.connect(self.accept)
         self.cancelButton.clicked.connect(self.reject)
         buttonLayout = QHBoxLayout()
@@ -219,7 +206,7 @@ class nonedevDlg(QDialog): # pylint: disable=too-few-public-methods
 ##################### SERIAL PORT #########################################################
 ###########################################################################################
 
-class serialport():
+class serialport(object):
     """ this class handles the communications with all the devices"""
 
     __slots__ = ['aw', 'platf', 'comport','baudrate','bytesize','parity','stopbits','timeout','SP','COMsemaphore','commavailable',\
@@ -233,7 +220,7 @@ class serialport():
         'YOCTOthread','YOCTOvoltageOutputs','YOCTOcurrentOutputs','YOCTOrelays','YOCTOservos','YOCTOpwmOutputs','HH506RAid','MS6514PrevTemp1','MS6514PrevTemp2','DT301PrevTemp','EXTECH755PrevTemp',\
         'controlETpid','readBTpid','useModbusPort','showFujiLCDs','arduinoETChannel','arduinoBTChannel','arduinoATChannel',\
         'ArduinoIsInitialized','ArduinoFILT','HH806Winitflag','R1','devicefunctionlist','externalprogram',\
-        'externaloutprogram','externaloutprogramFlag','PhidgetHUMtemp','PhidgetHUMhum','PhidgetPREpre','TMP1000temp']
+        'externaloutprogram','externaloutprogramFlag']
 
     def __init__(self, aw = None):
     
@@ -294,11 +281,6 @@ class serialport():
         self.PhidgetBinaryOut = {} # a dict associating binary out serials with lists of channels
         #store the Phidget DCMotor objects
         self.PhidgetDCMotor = {} # a dict associating serials with lists of channels
-        # Phidget Ambient Sensor Channels
-        self.PhidgetHUMtemp = None
-        self.PhidgetHUMhum = None
-        self.PhidgetPREpre = None
-        self.TMP1000temp = None
         #Yoctopuce channels
         self.YOCTOlibImported = False # ensure that the YOCTOlib is only imported once
         self.YOCTOsensor = None
@@ -443,9 +425,9 @@ class serialport():
                                    self.callprogram_910,      #89
                                    self.slider_01,            #90
                                    self.slider_23,            #91
-                                   self.DUMMY,                #92 # was: self.probat_middleware
-                                   self.DUMMY,                #93 # was: self.probat_middleware_burner_drum
-                                   self.DUMMY,                #94 # was: self.probat_middleware_fan_pressure
+                                   self.probat_middleware,    #92
+                                   self.probat_middleware_burner_drum,  #93
+                                   self.probat_middleware_fan_pressure, #94
                                    self.PHIDGET_DAQ1400_CURRENT,   #95
                                    self.PHIDGET_DAQ1400_FREQUENCY, #96 
                                    self.PHIDGET_DAQ1400_DIGITAL,   #97 
@@ -472,14 +454,8 @@ class serialport():
                                    self.WS_78,  # self.probat_sample_inlet_ambient, # 118
                                    self.WS_910,  # self.probat_sample_cooling # 119
                                    self.YOCTO_generic,        #120 # Yocto-0-10V-Rx
-                                   self.YOCTO_generic,        #121 # Yocto-milliVolt-Rx
-                                   self.YOCTO_generic,        #122 # Yocto-Serial
-                                   self.PHIDGET_VCP1000,      #123 Phidget VCP1000
-                                   self.PHIDGET_VCP1001,      #124 Phidget VCP1001
-                                   self.PHIDGET_VCP1002,      #125 Phidget VCP1002
-                                   self.ARC_BTET,             #126
-                                   self.ARC_METIT,            #127
-                                   self.HB_AT                 #128 # labeled "ARC AT"
+                                   self.YOCTO_generic,        #120 # Yocto-milliVolt-Rx
+                                   self.YOCTO_generic        #120 # Yocto-Serial
                                    ]
         #string with the name of the program for device #27
         self.externalprogram = "test.py"
@@ -488,9 +464,7 @@ class serialport():
 
 #####################  FUNCTIONS  ############################
     ######### functions used by Fuji PIDs
-    # returns command binstring on success as returned from device or "0" on failure
     def sendFUJIcommand(self,binstring,nbytes):
-        _log.debug("sendFUJIcommand(%s,%s)",binstring,nbytes)
         try:
             ###  lock resources ##
             self.COMsemaphore.acquire(1)
@@ -508,40 +482,42 @@ class serialport():
                     # CHECK FOR RECEIVED ERROR CODES
                     if r[1] == 128:
                         if r[2] == 1:
-                            errorcode = QApplication.translate("Error Message","F80h Error") + " 1: A nonexistent function code was specified. Please check the function code."
-                            errorcode += (QApplication.translate("Error Message","Exception:") + " SendFUJIcommand() 1: Illegal Function in unit {0}").format(ord(binstring[0]))
+                            errorcode = QApplication.translate("Error Message","F80h Error",None) + " 1: A nonexistent function code was specified. Please check the function code."
+                            errorcode += (QApplication.translate("Error Message","Exception:",None) + " SendFUJIcommand() 1: Illegal Function in unit {0}").format(ord(binstring[0]))
                             self.aw.qmc.adderror(errorcode)
                         if r[2] == 2:
-                            errorcode = QApplication.translate("Error Message","F80h Error") + " 2: Faulty address for coil or resistor: The specified relative address for the coil number or resistor\n number cannot be used by the specified function code."
-                            errorcode += (QApplication.translate("Error Message","Exception:") + " SendFUJIcommand() 2 Illegal Address for unit {0}").format(ord(binstring[0]))
+                            errorcode = QApplication.translate("Error Message","F80h Error",None) + " 2: Faulty address for coil or resistor: The specified relative address for the coil number or resistor\n number cannot be used by the specified function code."
+                            errorcode += (QApplication.translate("Error Message","Exception:",None) + " SendFUJIcommand() 2 Illegal Address for unit {0}").format(ord(binstring[0]))
                             self.aw.qmc.adderror(errorcode)
                         if r[2] == 3:
-                            errorcode = QApplication.translate("Error Message","F80h Error") + " 3: Faulty coil or resistor number: The specified number is too large and specifies a range that does not contain\n coil numbers or resistor numbers."
-                            errorcode += (QApplication.translate("Error Message","Exception:") + " SendFUJIcommand() 3 Illegal Data Value for unit {0}").format(ord(binstring[0]))
+                            errorcode = QApplication.translate("Error Message","F80h Error",None) + " 3: Faulty coil or resistor number: The specified number is too large and specifies a range that does not contain\n coil numbers or resistor numbers."
+                            errorcode += (QApplication.translate("Error Message","Exception:",None) + " SendFUJIcommand() 3 Illegal Data Value for unit {0}").format(ord(binstring[0]))
                             self.aw.qmc.adderror(errorcode)
-                        return r
-                    #Check crc16
-                    crcRx =  hex2int(r[-1],r[-2])
-                    crcCal1 = self.aw.fujipid.fujiCrc16(r[:-2])
-                    if crcCal1 == crcRx:
-                        return r           #OK. Return r after it has been checked for errors
-                    self.aw.qmc.adderror(QApplication.translate("Error Message","CRC16 data corruption ERROR. TX does not match RX. Check wiring"))
+                    else:
+                        #Check crc16
+                        crcRx =  hex2int(r[-1],r[-2])
+                        crcCal1 = self.aw.fujipid.fujiCrc16(r[:-2])
+                        if crcCal1 == crcRx:
+                            return r           #OK. Return r after it has been checked for errors
+                        else:
+                            self.aw.qmc.adderror(QApplication.translate("Error Message","CRC16 data corruption ERROR. TX does not match RX. Check wiring",None))
+                            return "0"
+                else:
+                    self.aw.qmc.adderror(QApplication.translate("Error Message","No RX data received",None))
                     return "0"
-                self.aw.qmc.adderror(QApplication.translate("Error Message","No RX data received"))
+            else:
                 return "0"
-            return "0"
-        except Exception: # pylint: disable=broad-except
+        except Exception:
             timez = str(QDateTime.currentDateTime().toString("hh:mm:ss.zzz"))    #zzz = miliseconds
-            error = QApplication.translate("Error Message","Serial Exception:") + " ser.sendFUJIcommand()"
+            error = QApplication.translate("Error Message","Serial Exception:",None) + " ser.sendFUJIcommand()"
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror(timez + " " + error,getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror(timez + " " + error,exc_tb.tb_lineno)
             return "0"
         finally:
             if self.COMsemaphore.available() < 1:
                 self.COMsemaphore.release(1)
             #note: logged chars should be unicode not binary
             if self.aw.seriallogflag:
-                import binascii
                 settings = str(self.comport) + "," + str(self.baudrate) + "," + str(self.bytesize)+ "," + str(self.parity) + "," + str(self.stopbits) + "," + str(self.timeout)                
                 self.aw.addserial("Fuji: " + settings + " || Tx = " + cmd2str(binascii.hexlify(binstring)) + " || Rx = " + cmd2str(binascii.hexlify(r)))
 
@@ -550,16 +526,12 @@ class serialport():
         #update ET SV LCD 6
         self.aw.qmc.currentpidsv = self.aw.fujipid.readcurrentsv()
         #get time of temperature reading in seconds from start; .elapsed() returns miliseconds
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         # get the temperature for ET. self.aw.fujipid.gettemperature(unitID)
         t1 = self.aw.fujipid.gettemperature(self.controlETpid[0],self.controlETpid[1])/10.  #Need to divide by 10 because using 1 decimal point in Fuji (ie. received 843 = 84.3)
         #if Fuji for BT is not None (0= PXG, 1 = PXR, 2 = None 3 = DTA)
         if self.readBTpid[0] < 2 or self.readBTpid[0] == 4:                    
-            t2 = self.aw.fujipid.gettemperature(self.readBTpid[0],self.readBTpid[1])
-            if t2 is None:
-                t2 = -1
-            else:
-                t2 = t2/10.
+            t2 = self.aw.fujipid.gettemperature(self.readBTpid[0],self.readBTpid[1])/10.
         elif self.readBTpid[0] == 3:
             ### arguments to create command to READ TEMPERATURE
             unitID = self.readBTpid[1]
@@ -576,10 +548,10 @@ class serialport():
             dc = self.aw.fujipid.readdutycycle()
             if dc != -1: # on wrong reading we just keep the previous one
                 self.aw.qmc.dutycycle = max(0,min(100,dc))
-            self.aw.qmc.dutycycleTX = self.aw.qmc.timeclock.elapsedMilli()
-        except Exception as ex: # pylint: disable=broad-except
+            self.aw.qmc.dutycycleTX = self.aw.qmc.timeclock.elapsed()/1000.
+        except Exception as ex:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","") + " fujitemperature() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","",None) + " fujitemperature() {0}").format(str(ex)),exc_tb.tb_lineno)
         return tx,t1,t2
 
     #especial function that collects extra duty cycle % and SV
@@ -587,31 +559,26 @@ class serialport():
         if self.aw.qmc.device == 0: # FUJI
             #return saved readings from device 0
             return self.aw.qmc.dutycycleTX, self.aw.qmc.dutycycle, self.aw.qmc.currentpidsv
-        if not self.aw.pidcontrol.pidActive:
-            return self.aw.qmc.timeclock.elapsedMilli(),-1,-1
-        if (self.aw.qmc.device == 19 and not self.aw.pidcontrol.externalPIDControl()) or \
+        elif not self.aw.pidcontrol.pidActive:
+            return self.aw.qmc.timeclock.elapsed()/1000.,-1,-1
+        elif (self.aw.qmc.device == 19 and not self.aw.pidcontrol.externalPIDControl()) or \
                 (self.aw.qmc.device == 53) or \
                 (self.aw.qmc.device == 29 and not self.aw.pidcontrol.externalPIDControl()):
-                # TC4 (19), HOTTOP (53) or MODBUS (29) with Artisan Software PID
-            duty = self.aw.qmc.pid.getDuty()
-            if duty is None:
-                duty = -1
-            return self.aw.qmc.timeclock.elapsedMilli(), min(100,max(-100,duty)), self.aw.qmc.pid.target
-        if self.aw.pidcontrol.sv is not None:
-            sv = self.aw.pidcontrol.sv
+                # TC4, HOTTOP or MODBUS with Artisan Software PID
+            return self.aw.qmc.timeclock.elapsed()/1000., min(100,max(-100,self.aw.qmc.pid.getDuty())), self.aw.qmc.pid.target
         else:
-            sv = -1
-        if self.aw.qmc.device == 29: # external MODBUS PID
-            duty = -1
-        else:
-            duty = self.aw.qmc.pid.getDuty()
-            if duty is None:
+            if self.aw.pidcontrol.sv is not None:
+                sv = self.aw.pidcontrol.sv
+            else:
+                sv = -1
+            if self.aw.qmc.device == 29: # external MODBUS PID
                 duty = -1
-            duty = min(100,max(-100,duty))
-        return self.aw.qmc.timeclock.elapsedMilli(),duty,sv
+            else:
+                duty = min(100,max(-100,self.aw.qmc.pid.getDuty()))
+            return self.aw.qmc.timeclock.elapsed()/1000.,duty,sv
+            
 
     def DTAtemperature(self):
-        _log.debug("DTAtemperature")
         ###########################################################
         ### create command
         command = self.aw.dtapid.message2send(self.controlETpid[1],3,self.aw.dtapid.dtamem["sv"][1],1)
@@ -627,7 +594,7 @@ class serialport():
         command = self.aw.dtapid.message2send(self.controlETpid[1],3,self.aw.dtapid.dtamem["pv"][1],1)
         #read
         t1 = self.sendDTAcommand(command)
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         #if Fuji for BT is not None (0= PXG, 1 = PXR, 2 = None 3 = DTA)
         if self.readBTpid[0] < 2:                    
             t2 = self.aw.fujipid.gettemperature(self.readBTpid[0],self.readBTpid[1])/10.
@@ -645,7 +612,6 @@ class serialport():
         return tx,t1,t2
 
     def sendDTAcommand(self,command):
-        _log.debug("sendDTAcommand(%s)",command)
         try:
             ###  lock resources ##
             self.COMsemaphore.acquire(1)
@@ -671,9 +637,8 @@ class serialport():
                         #if CRCreceived == CRCcalculated:
                         t1 = float(int(r[7:11], 16))*0.1    #convert ascii string from bytes 8-11 (4 bytes) to a float
                         return t1
-                    return -1
 ##                        else:
-##                            self.aw.qmc.adderror(QApplication.translate("Error Message","DTAtemperature(): Data corruption. Check wiring"))
+##                            self.aw.qmc.adderror(QApplication.translate("Error Message","DTAtemperature(): Data corruption. Check wiring",None))            
 ##                            if len(self.aw.qmc.timex) > 2:
 ##                                return self.aw.qmc.temp1[-1]
 ##                            else:
@@ -687,18 +652,18 @@ class serialport():
 ##                        else:
 ##                            self.aw.sendmessage("Write operation BAD")
 ##                            return 0
-                nbytes = len(r)
-                self.aw.qmc.adderror(QApplication.translate("Error Message","DTAcommand(): {0} bytes received but 15 needed").format(nbytes))
-                if len(self.aw.qmc.timex) > 2:
-                    return self.aw.qmc.temp1[-1]
-                return -1
-            return -1
-        except Exception: # pylint: disable=broad-except
-            error = QApplication.translate("Error Message","Serial Exception:") + " ser.sendDTAcommand()"
+                else:
+                    nbytes = len(r)
+                    self.aw.qmc.adderror(QApplication.translate("Error Message","DTAcommand(): {0} bytes received but 15 needed",None).format(nbytes))
+                    if len(self.aw.qmc.timex) > 2:
+                        return self.aw.qmc.temp1[-1]
+                    else:
+                        return -1.
+        except Exception:
+            error = QApplication.translate("Error Message","Serial Exception:",None) + " ser.sendDTAcommand()"
             timez = str(QDateTime.currentDateTime().toString("hh:mm:ss.zzz"))    #zzz = miliseconds
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror(timez + " " + error,getattr(exc_tb, 'tb_lineno', '?'))
-            return -1
+            self.aw.qmc.adderror(timez + " " + error,exc_tb.tb_lineno)
         finally:
             if self.COMsemaphore.available() < 1:
                 self.COMsemaphore.release(1)
@@ -709,9 +674,7 @@ class serialport():
 
 
     def callprogram(self):
-        import subprocess
         try:
-            output = None
 #            output = os.popen(self.aw.ser.externalprogram,"r").readline()
             # we try to set the users standard environment, replacing the one pointing to the restrictive python build in Artisan
             my_env = self.aw.calc_env()
@@ -725,12 +688,12 @@ class serialport():
             
             if self.platf == 'Windows':
                 cmd_str = os.path.expanduser(self.aw.ser.externalprogram)
-                p = subprocess.Popen(cmd_str,env=my_env,stdout=subprocess.PIPE,startupinfo=startupinfo,shell=True) # pylint: disable=consider-using-with
+                p = subprocess.Popen(cmd_str,env=my_env,stdout=subprocess.PIPE,startupinfo=startupinfo,shell=True)
             else:
-                p = subprocess.Popen([os.path.expanduser(c) for c in shlex.split(self.aw.ser.externalprogram)],env=my_env,stdout=subprocess.PIPE,startupinfo=startupinfo) # pylint: disable=consider-using-with
+                p = subprocess.Popen([os.path.expanduser(c) for c in shlex.split(self.aw.ser.externalprogram)],env=my_env,stdout=subprocess.PIPE,startupinfo=startupinfo)
             output = p.communicate()[0].decode('UTF-8')
             
-            tx = self.aw.qmc.timeclock.elapsedMilli()
+            tx = self.aw.qmc.timeclock.elapsed()/1000.
             if "," in output:
                 parts = output.split(",")
                 if len(parts) > 2:
@@ -750,283 +713,266 @@ class serialport():
                                             if len(parts) > 9:
                                                 self.aw.qmc.program_t10 = float(parts[9].strip())
                 return tx,float(parts[0].strip()),float(parts[1].strip())
-            return tx,0.,float(output)
-        except Exception as e: # pylint: disable=broad-except
-            tx = self.aw.qmc.timeclock.elapsedMilli()
+            else:
+                return tx,0.,float(output)
+        except Exception as e:
+            tx = self.aw.qmc.timeclock.elapsed()/1000.
             _, _, exc_tb = sys.exc_info() 
-            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " callprogram(): {0} ").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
-            if output is not None:
-                self.aw.qmc.adderror((QApplication.translate("Error Message", "callprogram() received:") + " {0} ").format(str(output)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " callprogram(): {0} ").format(str(e)),exc_tb.tb_lineno)
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "callprogram() received:",None) + " {0} ").format(str(output)),exc_tb.tb_lineno)
             return tx,0.,0.
             
     def callprogram_34(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t1 = self.aw.qmc.program_t3
         t2 = self.aw.qmc.program_t4
         return tx,t2,t1
 
     def callprogram_56(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t1 = self.aw.qmc.program_t5
         t2 = self.aw.qmc.program_t6
         return tx,t2,t1
 
     def callprogram_78(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t1 = self.aw.qmc.program_t7
         t2 = self.aw.qmc.program_t8
         return tx,t2,t1
 
     def callprogram_910(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t1 = self.aw.qmc.program_t9
         t2 = self.aw.qmc.program_t10
         return tx,t2,t1
 
     def slider_01(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t1 = self.aw.slider1.value()
         t2 = self.aw.slider2.value()
         return tx,t2,t1
 
     def slider_23(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t1 = self.aw.slider3.value()
         t2 = self.aw.slider4.value()
         return tx,t2,t1
 
     def virtual(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         return tx,1.,1.
 
     def HH506RA(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.HH506RAtemperature()
         return tx,t2,t1
 
     def HH806AU(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.HH806AUtemperature()
         return tx,t2,t1
 
     def AmprobeTMD56(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.HH806AUtemperature()
         return tx,t2,t1 
 
     def MastechMS6514(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.MS6514temperature()
         return tx,t2,t1 
 
     def DT301(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.DT301temperature()
         return tx,t2,t1 
 
     def HH806W(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.HH806Wtemperature()
         return tx,t2,t1
     
     def DUMMY(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         return tx,0,0
-#        x,y = self.aw.qmc.test()
-#        return tx,x,y
         
     def PHIDGET1045(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t,a = self.PHIDGET1045temperature(DeviceID.PHIDID_1045)
         return tx,a,t
 
     def PHIDGET1048(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.PHIDGET1048temperature(DeviceID.PHIDID_1048,0)
         return tx,t1,t2 # time, ET (chan2), BT (chan1)
 
     def PHIDGET1048_34(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.PHIDGET1048temperature(DeviceID.PHIDID_1048,1)
         return tx,t1,t2
 
     def PHIDGET1048_AT(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.PHIDGET1048temperature(DeviceID.PHIDID_1048,2)
         return tx,t1,t2
 
     def PHIDGET1046(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.PHIDGET1046temperature(0)
         return tx,t1,t2
 
     def PHIDGET1046_34(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.PHIDGET1046temperature(1)
         return tx,t1,t2
         
     def PHIDGET1051(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t,a = self.PHIDGET1045temperature(DeviceID.PHIDID_1051)
         return tx,a,t
         
     def PHIDGET1011(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_1011,0,"voltage")
         return tx,v1,v2
                 
     def PHIDGET1018(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_1010_1013_1018_1019,0,"voltage")
         return tx,v1,v2
 
     def PHIDGET1018_34(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_1010_1013_1018_1019,1,"voltage")
         return tx,v1,v2
 
     def PHIDGET1018_56(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_1010_1013_1018_1019,2,"voltage")
         return tx,v1,v2
 
     def PHIDGET1018_78(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_1010_1013_1018_1019,3,"voltage")
         return tx,v1,v2
         
     def PHIDGET1011_D(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_1011,0,"digital")
         return tx,v1,v2
         
     def PHIDGET1018_D(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_1010_1013_1018_1019,0,"digital")
         return tx,v1,v2
 
     def PHIDGET1018_D_34(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_1010_1013_1018_1019,1,"digital")
         return tx,v1,v2
 
     def PHIDGET1018_D_56(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_1010_1013_1018_1019,2,"digital")
         return tx,v1,v2
 
     def PHIDGET1018_D_78(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_1010_1013_1018_1019,3,"digital")
         return tx,v1,v2
         
     def PHIDGET_HUB0000_D(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_HUB0000,0,"digital")
         return tx,v1,v2
 
     def PHIDGET_HUB0000_D_34(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_HUB0000,1,"digital")
         return tx,v1,v2
 
     def PHIDGET_HUB0000_D_56(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_HUB0000,2,"digital")
         return tx,v1,v2   
         
     def PHIDGET_HUB0000_D_0(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_HUB0000,0,API="digital",retry=False,single=True)
         return tx,v1,v2     
 
     def PHIDGET_TMP1101(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.PHIDGET1048temperature(DeviceID.PHIDID_TMP1101,0)
         return tx,t1,t2 # time, ET (chan2), BT (chan1)
         
     def PHIDGET_TMP1101_34(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.PHIDGET1048temperature(DeviceID.PHIDID_TMP1101,1)
         return tx,t1,t2
             
     def PHIDGET_TMP1101_AT(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.PHIDGET1048temperature(DeviceID.PHIDID_TMP1101,2)
         return tx,t1,t2
 
     def PHIDGET_TMP1100(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t,a = self.PHIDGET1045temperature(DeviceID.PHIDID_TMP1100)
         return tx,a,t
 
     def PHIDGET_TMP1200(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t,a = self.PHIDGET1045temperature(DeviceID.PHIDID_TMP1200)
         return tx,a,t
 
     def PHIDGET_TMP1200_2(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t,a = self.PHIDGET1045temperature(DeviceID.PHIDID_TMP1200,alternative_conf=True)
         return tx,a,t
         
     def PHIDGET_HUB0000(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1  = self.PHIDGET1018values(DeviceID.PHIDID_HUB0000,0,"voltage")
         return tx,v1,v2
 
     def PHIDGET_HUB0000_34(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_HUB0000,1,"voltage")
         return tx,v1,v2
 
     def PHIDGET_HUB0000_56(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_HUB0000,2,"voltage")
         return tx,v1,v2
         
     def PHIDGET_HUB0000_0(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1  = self.PHIDGET1018values(DeviceID.PHIDID_HUB0000,0,API="voltage",retry=False,single=True)
         return tx,v1,v2
 
     def PHIDGET_DAQ1400_CURRENT(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_DAQ1400,0,"current")
         return tx,v1,v2
 
     def PHIDGET_DAQ1400_FREQUENCY(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_DAQ1400,0,"frequency")
         return tx,v1,v2
 
     def PHIDGET_DAQ1400_DIGITAL(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_DAQ1400,0,"digital")
         return tx,v1,v2
 
     def PHIDGET_DAQ1400_VOLTAGE(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_DAQ1400,0,"voltage")
-        return tx,v1,v2
-    
-    def PHIDGET_VCP1000(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
-        v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_VCP1000, 0, "voltage", single=True)
-        return tx,v1,v2
-
-    def PHIDGET_VCP1001(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
-        v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_VCP1001, 0, "voltage", single=True)
-        return tx,v1,v2
-
-    def PHIDGET_VCP1002(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
-        v2,v1 = self.PHIDGET1018values(DeviceID.PHIDID_VCP1002, 0, "voltage", single=True)
         return tx,v1,v2
 
     def HOTTOP_BTET(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.HOTTOPtemperatures()
         self.aw.qmc.hottop_TX = tx
         return tx,t1,t2 # time, ET (chan2), BT (chan1)
@@ -1035,55 +981,56 @@ class serialport():
         return self.aw.qmc.hottop_TX,self.aw.qmc.hottop_MAIN_FAN,self.aw.qmc.hottop_HEATER # time, Fan (chan2), Heater (chan1)
         
     def BEHMOR_BTET(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.BEHMORtemperatures(8,9)
         return tx,t1,t2 # time, ET (chan2), BT (chan1)
     
     def BEHMOR_34(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.BEHMORtemperatures(10,11)
         return tx,t1,t2 # time, chan2, chan1
 
     def BEHMOR_56(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.BEHMORtemperatures(1,2)
         return tx,t1,t2 # time, chan2, chan1
 
     def BEHMOR_78(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.BEHMORtemperatures(3,4)
         return tx,t1,t2 # time, chan2, chan1
     
     def VICTOR86B(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t,_= self.HHM28multimeter()  #NOTE: val and symbols are type strings
         if "L" in t:  #L = Out of Range
             return tx, -1, -1
-        return tx,-1,float(t)
+        else:
+            return tx,-1,float(t)
 
     # if force the optimizer is deactivated to ensure fetching fresh readings
     def S7(self,force=False):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.S7read(0,force)
         return tx,t2,t1
     
     def S7_34(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.S7read(1)
         return tx,t2,t1
         
     def S7_56(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.S7read(2)
         return tx,t2,t1
 
     def S7_78(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.S7read(3)
         return tx,t2,t1
 
     def S7_910(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.S7read(4)
         return tx,t2,t1
 
@@ -1091,11 +1038,10 @@ class serialport():
         if self.R1 is None:
             from artisanlib.aillio import AillioR1
             self.R1 = AillioR1()
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         try:
-            #removed batchcounter to address issue #667
-            #if self.aw.qmc.batchcounter != -1:
-            #    self.aw.qmc.batchcounter = self.R1.get_roast_number()
+            if self.aw.qmc.batchcounter != -1:
+                self.aw.qmc.batchcounter = self.R1.get_roast_number()
             self.aw.qmc.R1_BT = self.R1.get_bt()
             self.aw.qmc.R1_DT = self.R1.get_dt()
             self.aw.qmc.R1_DRUM = self.R1.get_drum() * 10
@@ -1110,20 +1056,20 @@ class serialport():
             newstate = self.R1.get_state_string()
             if newstate != self.aw.qmc.R1_STATE_STR:
                 self.aw.qmc.R1_STATE_STR = newstate
-                self.aw.sendmessage(QApplication.translate("Message", "R1 state: " + newstate))
+                self.aw.sendmessage(QApplication.translate("Message", "R1 state: " + newstate, None))
             if self.aw.qmc.mode == "F":
                 self.aw.qmc.R1_DT = fromCtoF(self.aw.qmc.R1_DT)
                 self.aw.qmc.R1_BT = fromCtoF(self.aw.qmc.R1_BT)
                 self.aw.qmc.R1_EXIT_TEMP = fromCtoF(self.aw.qmc.R1_EXIT_TEMP)
                 self.aw.qmc.R1_BT_ROR = RoRfromCtoF(self.aw.qmc.R1_BT_ROR)
-        except Exception as exception: # pylint: disable=broad-except
-            error = QApplication.translate("Error Message", "Aillio R1: " + str(exception))
+        except Exception as exception:
+            error = QApplication.translate("Error Message", "Aillio R1: " + str(exception), None)
             self.aw.qmc.adderror(error)
         return tx, self.aw.qmc.R1_DT, self.aw.qmc.R1_BT
 
     def R1_BTIBTS(self):
         self.R1_DTBT()
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         # DT is being used as IBTS.
         return tx, self.aw.qmc.R1_BT, self.aw.qmc.R1_DT
 
@@ -1145,7 +1091,7 @@ class serialport():
     
     # if force the optimizer is deactivated to ensure fetching fresh readings
     def MODBUS(self,force=False):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.MODBUSread(force)
         return tx,t2,t1
 
@@ -1159,17 +1105,17 @@ class serialport():
         return self.aw.qmc.extraMODBUStx,self.aw.qmc.extraMODBUStemps[7],self.aw.qmc.extraMODBUStemps[6]
 
     def HH802U(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.HH806AUtemperature()
         return tx,t2,t1
 
     def HH309(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.CENTER309temperature()
         return tx,t2,t1
 
     def CENTER309(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.CENTER309temperature()
         return tx,t2,t1
 
@@ -1183,42 +1129,42 @@ class serialport():
         return self.CENTER309_34()
 
     def CENTER306(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.CENTER306temperature()
         return tx,t2,t1
 
     def CENTER305(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.CENTER306temperature()
         return tx,t2,t1
 
     def CENTER304(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.CENTER309temperature()
         return tx,t2,t1
 
     def CENTER303(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.CENTER303temperature()
         return tx,t2,t1
 
     def CENTER302(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.CENTER302temperature()
         return tx,t2,t1
 
     def CENTER301(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.CENTER303temperature()
         return tx,t2,t1
 
     def CENTER300(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.CENTER302temperature()
         return tx,t2,t1
 
     def VOLTCRAFTK204(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.CENTER309temperature()
         return tx,t2,t1
 
@@ -1228,27 +1174,27 @@ class serialport():
         return self.aw.qmc.extra309TX,self.aw.qmc.extra309T4,self.aw.qmc.extra309T3
 
     def VOLTCRAFTK201(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.CENTER302temperature()
         return tx,t2,t1
 
     def VOLTCRAFTK202(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.CENTER306temperature()
         return tx,t2,t1
 
     def VOLTCRAFT300K(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.CENTER302temperature()
         return tx,t2,t1
 
     def VOLTCRAFT302KJ(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.CENTER303temperature()
         return tx,t2,t1
 
     def VOLTCRAFTPL125T2(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.VOLTCRAFTPL125T2temperature()
         return tx,t2,t1
 
@@ -1262,69 +1208,108 @@ class serialport():
         return self.aw.qmc.extraPL125T4TX,self.aw.qmc.extraPL125T4T4,self.aw.qmc.extraPL125T4T3
 
     def EXTECH421509(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.HH506RAtemperature()
         return tx,t2,t1
 
     def NONE(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.NONEtmp()
         return tx,t2,t1
 
     def ARDUINOTC4(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.ARDUINOTC4temperature()
         return tx,t2,t1
 
     def ARDUINOTC4_34(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t1 = self.aw.qmc.extraArduinoT1
         t2 = self.aw.qmc.extraArduinoT2
         return tx,t2,t1
 
     def ARDUINOTC4_56(self): # heater / fan DUTY %
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t1 = self.aw.qmc.extraArduinoT3
         t2 = self.aw.qmc.extraArduinoT4
         return tx,t2,t1
 
     def ARDUINOTC4_78(self): # PID SV / internal temp
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t1 = self.aw.qmc.extraArduinoT5
         t2 = self.aw.qmc.extraArduinoT6
         return tx,t2,t1
-
-    def ARC_BTET(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
-        t2,t1 = self.ARDUINOTC4temperature("3400") # t1 = chan4 (ET/Drum); t2 = chan3 (BT)
-# if the machine would return 4 channel (see comment in ARC_BTET above, one could fetch data with two requests (still a CHAN is needed before every READ!)
-#        t2,t1 = self.ARDUINOTC4temperature("3412") # t1 = chan4 (ET/Drum); t2 = chan3 (BT); t3 = chan1 (MET/Exhaust); t4 = chan2 (IT)  
-        return tx,t1,t2 # tx, ET, BT
-    
-    def ARC_METIT(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
-        self.SP = self.aw.ser.SP # we link to the serial port object of the main device
-        t1,t2 = self.ARDUINOTC4temperature("1200") # t1 = chan1 (MET/Exhaust); t2 = chan2 (IT)       
-# if the machine would return 4 channel (see comment in ARC_BTET above, one could fetch data with two requests (still a CHAN is needed before every READ!)
-#        t1 = self.aw.qmc.extraArduinoT1
-#        t2 = self.aw.qmc.extraArduinoT2
-        return tx,t2,t1 # tx, Extra2 (IT), Extra1 (MET)
     
     def HB_BTET(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
-        t2,t1 = self.ARDUINOTC4temperature("1300") # t2 = chan1 (Inlet); t1 = chan3 (BT)
-        return tx,t2,t1 # tx, ET, BT
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
+        t2,t1 = self.ARDUINOTC4temperature("1300")
+        return tx,t2,t1
     
     def HB_DTIT(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         self.SP = self.aw.ser.SP # we link to the serial port object of the main device
-        t2,t1 = self.ARDUINOTC4temperature("2400")  # t2 = Extra2 = chan2 (Exhaust/MET); t1 = Extra1 = chan4 (ET/Drum)
-        return tx,t2,t1 # tx, Extra2, Extra1
+        t2,t1 = self.ARDUINOTC4temperature("2400")
+        return tx,t2,t1
 
     def HB_AT(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t = self.aw.qmc.extraArduinoT6
         return tx,t,t
+
+    def probat_middleware(self):
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
+        t1 = -1
+        t2 = -1
+        self.aw.qmc.ProbatMiddleware_pressure = -1
+        self.aw.qmc.ProbatMiddleware_burner = -1
+        self.aw.qmc.ProbatMiddleware_drum = -1
+        self.aw.qmc.ProbatMiddleware_fan = -1
+        if self.aw.qmc.probatManager is None:
+            from artisanlib.probat import ProbatMiddleware
+            self.aw.qmc.probatManager = ProbatMiddleware()
+        if self.aw.qmc.probatManager is not None:
+            connected = self.aw.qmc.probatManager.isConnected()
+            if not connected:
+                connected = self.aw.qmc.probatManager.connect()
+                if connected:
+                    name = self.aw.qmc.probatManager.getRoasterName()
+                    if name is None:
+                        name = ""
+                    self.aw.sendmessage(QApplication.translate("Message","Probat Middleware roaster {} connected".format(name),None))
+            if connected:
+                url = self.aw.qmc.probatManager.getRoasterURL()
+                if url is not None:
+                    try:
+                        data = self.aw.qmc.probatManager.getJSON(url)
+                        roastData = data["roastingProcess"]
+                        if "productTemperature" in roastData:
+                            t1 = roastData["productTemperature"]
+                        if "exhaustTemperature" in roastData:
+                            t2 = roastData["exhaustTemperature"]
+                        if "underPressure" in roastData:
+                            self.aw.qmc.ProbatMiddleware_pressure = roastData["underPressure"]
+                        if "burnerCapacity" in roastData:
+                            self.aw.qmc.ProbatMiddleware_burner = roastData["burnerCapacity"]
+                        if "drumSpeed" in roastData:
+                            self.aw.qmc.ProbatMiddleware_drum = roastData["drumSpeed"]
+                        if "exhaustFanSpeed" in roastData:
+                            self.aw.qmc.ProbatMiddleware_fan = roastData["exhaustFanSpeed"]
+                    except:
+                        self.aw.qmc.probatManager.disconnect()
+                        self.aw.sendmessage(QApplication.translate("Message","Probat Middleware disconnected",None))
+        return tx,t2,t1
+
+    def probat_middleware_burner_drum(self):
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
+        t1 = self.aw.qmc.ProbatMiddleware_burner
+        t2 = self.aw.qmc.ProbatMiddleware_drum
+        return tx,t2,t1
+
+    def probat_middleware_fan_pressure(self):
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
+        t1 = self.aw.qmc.ProbatMiddleware_fan
+        t2 = self.aw.qmc.ProbatMiddleware_pressure
+        return tx,t2,t1
     
     def WSextractData(self,channel,data):
         if self.aw.ws.channel_nodes[channel] != "" and self.aw.ws.channel_nodes[channel] in data:
@@ -1337,7 +1322,8 @@ class serialport():
             elif m == 2 and self.aw.qmc.mode == "C":
                 res = fromFtoC(res) 
             return res
-        return -1
+        else:
+            return -1
         
     #returns v1,v2 from a connected WebService device
     # mode=0 to read ch1+2
@@ -1356,7 +1342,7 @@ class serialport():
                     for c in range(self.aw.ws.channels):
                         self.aw.ws.readings[c] = self.WSextractData(c,data)
                     
-            except Exception: # pylint: disable=broad-except
+            except:
                 self.aw.ws.readings = [-1]*self.aw.ws.channels 
         else:
             for i in [0,1]:
@@ -1370,64 +1356,64 @@ class serialport():
                             self.aw.ws.readings[c] = self.WSextractData(c,data)
                         else:
                             self.aw.ws.readings[c] = -1
-                    except Exception: # pylint: disable=broad-except
+                    except:
                         pass
         
         # return requested data            
         return self.aw.ws.readings[mode*2+1],self.aw.ws.readings[mode*2]
     
     def WS(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.WSread(0)
         return tx,t2,t1
     
     def WS_34(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.WSread(1)
         return tx,t2,t1
         
     def WS_56(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.WSread(2)
         return tx,t2,t1
 
     def WS_78(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.WSread(3)
         return tx,t2,t1
 
     def WS_910(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.WSread(4)
         return tx,t2,t1
     
     def YOCTO_thermo(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.YOCTOtemperatures(0)
         return tx,v1,v2
         
     def YOCTO_generic(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.YOCTOtemperatures(4)
         return tx,v1,v2
 
     def YOCTO_pt100(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.YOCTOtemperatures(1)
         return tx,v1,v2
 
     def YOCTO_IR(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         v2,v1 = self.YOCTOtemperatures(2)
         return tx,v2,v1
 
     def TEVA18B(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.TEVA18Btemperature()
         return tx,t2,t1
         
     def EXTECH755(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         t2,t1 = self.EXTECH755pressure()
         return tx,t2,t1
 
@@ -1437,6 +1423,7 @@ class serialport():
         try:
             r = ''
             if not self.SP.isOpen():
+            
                 self.openport()
             if self.SP.isOpen():
                 self.SP.reset_input_buffer()
@@ -1449,42 +1436,46 @@ class serialport():
                     try:
                         self.EXTECH755PrevTemp = float(r[5:])
                         return self.EXTECH755PrevTemp, self.EXTECH755PrevTemp
-                    except Exception: # pylint: disable=broad-except
+                    except:
                         if retry:
                             return self.EXTECH755pressure(retry=retry - 1)
+                        else:
+                            nbytes = len(r)
+                            self.aw.qmc.adderror(QApplication.translate("Error Message",
+                                                               "Extech755pressure(): conversion error, {0} bytes received",
+                                                               None).format(nbytes))
+                            if self.EXTECH755PrevTemp != -1:
+                                s = self.EXTECH755PrevTemp
+                                self.EXTECH755PrevTemp = -1
+                                return s,s
+                            else:
+                                return -1,-1                       
+                else:
+                    if retry:
+                        return self.EXTECH755pressure(retry=retry - 1)
+                    else:
                         nbytes = len(r)
                         self.aw.qmc.adderror(QApplication.translate("Error Message",
-                                                               "Extech755pressure(): conversion error, {0} bytes received"
-                                                               ).format(nbytes))
+                                                               "Extech755pressure(): {0} bytes received but 10 needed",
+                                                               None).format(nbytes))
                         if self.EXTECH755PrevTemp != -1:
                             s = self.EXTECH755PrevTemp
                             self.EXTECH755PrevTemp = -1
                             return s,s
-                        return -1,-1
-                    return -1,-1
-                if retry:
-                    return self.EXTECH755pressure(retry=retry - 1)
-                nbytes = len(r)
-                self.aw.qmc.adderror(QApplication.translate("Error Message",
-                                                               "Extech755pressure(): {0} bytes received but 10 needed"
-                                                               ).format(nbytes))
-                if self.EXTECH755PrevTemp != -1:
-                    s = self.EXTECH755PrevTemp
-                    self.EXTECH755PrevTemp = -1
-                    return s,s
-                return -1,-1
-            return -1, -1
-        except Exception as ex: # pylint: disable=broad-except
+                        else:
+                            return -1,-1
+            else:
+                return -1, -1
+        except Exception as ex:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:"
-                                                    ) + " ser.EXTECH755pressure() {0}").format(str(ex)),
-                            getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",
+                                                    None) + " ser.EXTECH755pressure() {0}").format(str(ex)),
+                            exc_tb.tb_lineno)
             self.closeport()
             return -1, -1
         finally:
             # note: logged chars should be unicode not binary
             if self.aw.seriallogflag:
-                import binascii
                 settings = str(self.comport) + "," + str(self.baudrate) + "," + str(self.bytesize) + "," + str(
                     self.parity) + "," + str(self.stopbits) + "," + str(self.timeout)
                 self.aw.addserial(
@@ -1493,7 +1484,7 @@ class serialport():
 
     #multimeter
     def HHM28(self):
-        tx = self.aw.qmc.timeclock.elapsedMilli()
+        tx = self.aw.qmc.timeclock.elapsed()/1000.
         val,symbols= self.HHM28multimeter()  #NOTE: val and symbols are type strings
         #temporary fix to display the output
         self.aw.sendmessage(val + symbols)
@@ -1512,7 +1503,8 @@ class serialport():
 ##            elif "M" in symbols:
 ##                val *= 1000000.
             ### not finished
-        return tx, 0., float(val)   #send a 0. as second reading because the meter only returns one reading
+        else:
+            return tx, 0., float(val)   #send a 0. as second reading because the meter only returns one reading
 
     # connects to a Yocto Meteo, returns current humidity value
     def YoctoMeteoHUM(self):
@@ -1522,8 +1514,9 @@ class serialport():
             HUMsensor = YHumidity.FirstHumidity()
             if HUMsensor is not None and HUMsensor.isOnline():
                 return HUMsensor.get_currentValue()
-            return None
-        except Exception: # pylint: disable=broad-except
+            else:
+                return None
+        except:
             return None
             
     # connects to a Yocto Meteo, returns current temperature value
@@ -1537,9 +1530,11 @@ class serialport():
                 tempCh = YTemperature.FindTemperature(serial + '.temperature')
                 if tempCh.isOnline():
                     return tempCh.get_currentValue()
+                else:
+                    return None
+            else:
                 return None
-            return None
-        except Exception: # pylint: disable=broad-except
+        except:
             return None
             
     # connects to a Yocto Meteo, returns current pressure value
@@ -1550,204 +1545,121 @@ class serialport():
             PRESSsensor = YPressure.FirstPressure()
             if PRESSsensor is not None and PRESSsensor.isOnline():
                 return PRESSsensor.get_currentValue()
-            return None
-        except Exception: # pylint: disable=broad-except
+            else:
+                return None
+        except:
             return None
 
-    # connects to a Phidgets TMP1000, returns current temperature value and stays connected
-    # NOTE: disconnected devices still physically attached can introduce signals that are not filtered by the HUB and thus
-    # can disturb and even crash the HUB. Thus we keep the device channel attached as long as possible
-    def PhidgetTMP1000temperature(self):
-        _log.debug("PhidgetTMP1000temperature")
+    # connects to a Phidgets HUM1000, returns current temperature value and disconnects
+    def PhidgetHUM1000temperature(self):
         try:
             # Temperature
-            if self.aw.ser.TMP1000temp is None:
-                self.aw.ser.TMP1000temp = PhidgetTemperatureSensor()
-            if not self.aw.ser.TMP1000temp.getAttached():
-                ser, port = self.aw.qmc.phidgetManager.getFirstMatchingPhidget(
-                    'PhidgetTemperatureSensor',
-                    DeviceID.PHIDID_TMP1000,
-                    remote=self.aw.qmc.phidgetRemoteFlag,
-                    remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
-                if ser:
-                    self.aw.ser.TMP1000temp.setDeviceSerialNumber(ser)
-                    self.aw.ser.TMP1000temp.setHubPort(port)   #explicitly set the port to where the HUM is attached
-                    if self.aw.qmc.phidgetRemoteFlag:
-                        self.addPhidgetServer() 
-                    if self.aw.qmc.phidgetRemoteFlag and self.aw.qmc.phidgetRemoteOnlyFlag:
-                        self.aw.ser.TMP1000temp.setIsRemote(True)
-                        self.aw.ser.TMP1000temp.setIsLocal(False)
-                    self.aw.ser.TMP1000temp.openWaitForAttachment(1500)
-                    if self.aw.ser.TMP1000temp.getAttached():
-                        _log.debug("Phidget TMP1000 temperature channel attached")
-                        libtime.sleep(0.3)
-                        # note that we do not register the attach in the aw.qmc.phidgetManager as we only support one of those devices
-                    else:
-                        _log.debug("Phidget TEMP1000 temperature could not be attached")
-            if self.aw.ser.TMP1000temp is not None and self.aw.ser.TMP1000temp.getAttached():
-                res = self.aw.ser.TMP1000temp.getTemperature()
-                _log.debug("Phidget TMP1000 temperature received: %s", res)
-                return res
-            return None
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
-            if self.aw.ser.TMP1000temp is not None:
-                try:
-                    self.aw.ser.TMP1000temp.close()
-                except Exception: # pylint: disable=broad-except
-                    pass
-                self.aw.ser.TMP1000temp = None
+            tempSensor = PhidgetTemperatureSensor()
+            ser,port = self.aw.qmc.phidgetManager.getFirstMatchingPhidget('PhidgetTemperatureSensor',DeviceID.PHIDID_HUM1000,remote=self.aw.qmc.phidgetRemoteFlag,remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
+            if ser is None:
+                ser,port = self.aw.qmc.phidgetManager.getFirstMatchingPhidget('PhidgetTemperatureSensor',DeviceID.PHIDID_HUM1001,remote=self.aw.qmc.phidgetRemoteFlag,remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
+            if ser:
+                tempSensor.setDeviceSerialNumber(ser)
+                tempSensor.setHubPort(port)   #explicitly set the port to where the HUM is attached
+                if self.aw.qmc.phidgetRemoteFlag:
+                    self.addPhidgetServer() 
+                if self.aw.qmc.phidgetRemoteFlag and self.aw.qmc.phidgetRemoteOnlyFlag:
+                    tempSensor.setIsRemote(True)
+                    tempSensor.setIsLocal(False)
+                tempSensor.openWaitForAttachment(1500)
+                if tempSensor.getAttached():
+                    libtime.sleep(0.3)
+                    res = tempSensor.getTemperature()
+                    tempSensor.close()
+                    return res
+                else:
+                    return None
+            else:
+                return None
+        except Exception:
             return None
 
-    # connects to a Phidgets HUM1000 temp channel, returns current temperature value and stays connected
-    # NOTE: disconnected devices still physically attached can introduce signals that are not filtered by the HUB and thus
-    # can disturb and even crash the HUB. Thus we keep the device channel attached as long as possible
-    def PhidgetHUM1000temperature(self):
-        _log.debug("PhidgetHUM1000temperature")
+    # connects to a Phidgets TMP1000, returns current temperature value and disconnects
+    def PhidgetTMP1000temperature(self):
         try:
-            # HUM Temperature
-            if self.aw.ser.PhidgetHUMtemp is None:
-                self.aw.ser.PhidgetHUMtemp = PhidgetTemperatureSensor()
-            if not self.aw.ser.PhidgetHUMtemp.getAttached():
-                ser, port = self.aw.qmc.phidgetManager.getFirstMatchingPhidget(
-                    'PhidgetTemperatureSensor',
-                    DeviceID.PHIDID_HUM1000,
-                    remote=self.aw.qmc.phidgetRemoteFlag,
-                    remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
-                if ser is None:
-                    ser, port = self.aw.qmc.phidgetManager.getFirstMatchingPhidget(
-                        'PhidgetTemperatureSensor',
-                        DeviceID.PHIDID_HUM1001,
-                        remote=self.aw.qmc.phidgetRemoteFlag,
-                        remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
-                if ser:
-                    self.aw.ser.PhidgetHUMtemp.setDeviceSerialNumber(ser)
-                    self.aw.ser.PhidgetHUMtemp.setHubPort(port)   #explicitly set the port to where the HUM is attached
-                    if self.aw.qmc.phidgetRemoteFlag:
-                        self.addPhidgetServer() 
-                    if self.aw.qmc.phidgetRemoteFlag and self.aw.qmc.phidgetRemoteOnlyFlag:
-                        self.aw.ser.PhidgetHUMtemp.setIsRemote(True)
-                        self.aw.ser.PhidgetHUMtemp.setIsLocal(False)
-                    self.aw.ser.PhidgetHUMtemp.openWaitForAttachment(1500)
-                    if self.aw.ser.PhidgetHUMtemp.getAttached():
-                        _log.debug("Phidget HUM100x temperature channel attached")
-                        libtime.sleep(0.3)
-                        # note that we do not register the attach in the aw.qmc.phidgetManager as we only support one of those devices
-                    else:
-                        _log.debug("Phidget HUM100x temperature could not be attached")
-            if self.aw.ser.PhidgetHUMtemp is not None and self.aw.ser.PhidgetHUMtemp.getAttached():
-                res = self.aw.ser.PhidgetHUMtemp.getTemperature()
-                _log.debug("Phidget HUM100x temperature received: %s", res)
-                # we don't close the HUM here, but in closePhidgetAMBIENTs
-                return res
-            return None
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
-            if self.aw.ser.PhidgetHUMhum is not None:
-                try:
-                    self.aw.ser.PhidgetHUMhum.close()
-                except Exception: # pylint: disable=broad-except
-                    pass
-                self.aw.ser.PhidgetHUMhum = None
+            # Temperature
+            tempSensor = PhidgetTemperatureSensor()
+            ser,port = self.aw.qmc.phidgetManager.getFirstMatchingPhidget('PhidgetTemperatureSensor',DeviceID.PHIDID_TMP1000,remote=self.aw.qmc.phidgetRemoteFlag,remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
+            if ser:
+                tempSensor.setDeviceSerialNumber(ser)
+                tempSensor.setHubPort(port)   #explicitly set the port to where the HUM is attached
+                if self.aw.qmc.phidgetRemoteFlag:
+                    self.addPhidgetServer() 
+                if self.aw.qmc.phidgetRemoteFlag and self.aw.qmc.phidgetRemoteOnlyFlag:
+                    tempSensor.setIsRemote(True)
+                    tempSensor.setIsLocal(False)
+                tempSensor.openWaitForAttachment(1500)
+                if tempSensor.getAttached():
+                    libtime.sleep(0.3)
+                    res = tempSensor.getTemperature()
+                    tempSensor.close()
+                    return res
+                else:
+                    return None
+            else:
+                return None
+        except Exception:
             return None
             
-    # connects to a Phidgets HUM1000 hum channel, returns current humidity value and stays connected
-    # NOTE: disconnected devices still physically attached can introduce signals that are not filtered by the HUB and thus
-    # can disturb and even crash the HUB. Thus we keep the device channel attached as long as possible
+    # connects to a Phidgets HUM1000, returns current humidity value and disconnects
     def PhidgetHUM1000humidity(self):
-        _log.debug("PhidgetHUM1000humidity")
         try:
-            # HUM Humidity
-            if self.aw.ser.PhidgetHUMhum is None:
-                self.aw.ser.PhidgetHUMhum = PhidgetHumiditySensor()
-            if not self.aw.ser.PhidgetHUMhum.getAttached():
-                ser, port = self.aw.qmc.phidgetManager.getFirstMatchingPhidget(
-                    'PhidgetTemperatureSensor',
-                    DeviceID.PHIDID_HUM1000,
-                    remote=self.aw.qmc.phidgetRemoteFlag,
-                    remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
-                if ser is None:
-                    ser, port = self.aw.qmc.phidgetManager.getFirstMatchingPhidget(
-                        'PhidgetTemperatureSensor',
-                        DeviceID.PHIDID_HUM1001,
-                        remote=self.aw.qmc.phidgetRemoteFlag,
-                        remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
-                if ser:
-                    self.aw.ser.PhidgetHUMhum.setDeviceSerialNumber(ser)
-                    self.aw.ser.PhidgetHUMhum.setHubPort(port)   #explicitly set the port to where the HUM is attached
-                    if self.aw.qmc.phidgetRemoteFlag:
-                        self.addPhidgetServer() 
-                    if self.aw.qmc.phidgetRemoteFlag and self.aw.qmc.phidgetRemoteOnlyFlag:
-                        self.aw.ser.PhidgetHUMhum.setIsRemote(True)
-                        self.aw.ser.PhidgetHUMhum.setIsLocal(False)
-                    self.aw.ser.PhidgetHUMhum.openWaitForAttachment(1500)
-                    if self.aw.ser.PhidgetHUMhum.getAttached():
-                        _log.debug("Phidget HUM100x humidity channel attached")
-                        libtime.sleep(0.3)
-                        # note that we do not register the attach in the aw.qmc.phidgetManager as we only support one of those devices
-                    else:
-                        _log.debug("Phidget HUM100x humidity could not be attached")
-            if self.aw.ser.PhidgetHUMhum is not None and self.aw.ser.PhidgetHUMhum.getAttached():
-                res = self.aw.ser.PhidgetHUMhum.getHumidity()
-                _log.debug("Phidget HUM100x humidity received: %s", res)
-                # we don't close the HUM here, but in closePhidgetAMBIENTs
-                return res
+            # Humidity
+            humSensor = PhidgetHumiditySensor()
+            ser,port = self.aw.qmc.phidgetManager.getFirstMatchingPhidget('PhidgetHumiditySensor',DeviceID.PHIDID_HUM1000,remote=self.aw.qmc.phidgetRemoteFlag,remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
+            if ser is None:
+                ser,port = self.aw.qmc.phidgetManager.getFirstMatchingPhidget('PhidgetHumiditySensor',DeviceID.PHIDID_HUM1001,remote=self.aw.qmc.phidgetRemoteFlag,remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
+            if ser:
+                humSensor.setDeviceSerialNumber(ser)
+                humSensor.setHubPort(port)   #explicitly set the port to where the HUM is attached
+                if self.aw.qmc.phidgetRemoteFlag:
+                    self.addPhidgetServer() 
+                if self.aw.qmc.phidgetRemoteFlag and self.aw.qmc.phidgetRemoteOnlyFlag:
+                    humSensor.setIsRemote(True)
+                    humSensor.setIsLocal(False)
+                humSensor.openWaitForAttachment(1500)
+                if humSensor.getAttached():
+                    libtime.sleep(0.3)
+                    res = humSensor.getHumidity()
+                    humSensor.close()
+                    return res
+                else:
+                    return None
+            else:
+                return None
+        except Exception:
             return None
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
-            if self.aw.ser.PhidgetHUMhum is not None:
-                try:
-                    self.aw.ser.PhidgetHUMhum.close()
-                except Exception: # pylint: disable=broad-except
-                    pass
-                self.aw.ser.PhidgetHUMhum = None
-            return None
-            
-    # connects to a Phidgets PRE1000, returns current pressure value and stays connected
-    # NOTE: disconnected devices still physically attached can introduce signals that are not filtered by the HUB and thus
-    # can disturb and even crash the HUB. Thus we keep the device channel attached as long as possible
+
+    # connects to a Phidgets PRE1000, returns current pressure value and disconnects
     def PhidgetPRE1000pressure(self):
-        _log.debug("PhidgetPRE1000pressure")
         try:
-            # PRE Pressure
-            if self.aw.ser.PhidgetPREpre is None:
-                self.aw.ser.PhidgetPREpre = PhidgetPressureSensor()
-            if not self.aw.ser.PhidgetPREpre.getAttached():
-                ser, port = self.aw.qmc.phidgetManager.getFirstMatchingPhidget(
-                    'PhidgetPressureSensor',
-                    DeviceID.PHIDID_PRE1000,
-                    remote=self.aw.qmc.phidgetRemoteFlag,
-                    remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
-                if ser:
-                    self.aw.ser.PhidgetPREpre.setDeviceSerialNumber(ser)
-                    self.aw.ser.PhidgetPREpre.setHubPort(port)   #explicitly set the port to where the HUM is attached
-                    if self.aw.qmc.phidgetRemoteFlag:
-                        self.addPhidgetServer() 
-                    if self.aw.qmc.phidgetRemoteFlag and self.aw.qmc.phidgetRemoteOnlyFlag:
-                        self.aw.ser.PhidgetPREpre.setIsRemote(True)
-                        self.aw.ser.PhidgetPREpre.setIsLocal(False)
-                    self.aw.ser.PhidgetPREpre.openWaitForAttachment(1500)
-                    if self.aw.ser.PhidgetPREpre.getAttached():
-                        _log.debug("Phidget PRE1000 pressure channel attached")
-                        libtime.sleep(0.3)
-                        # note that we do not register the attach in the aw.qmc.phidgetManager as we only support one of those devices
-                    else:
-                        _log.debug("Phidget PRE1000 pressure could not be attached")
-            if self.aw.ser.PhidgetPREpre is not None and self.aw.ser.PhidgetPREpre.getAttached():
-                res = self.aw.ser.PhidgetPREpre.getPressure()
-                _log.debug("Phidget PRE1000 pressure received: %s", res)
-                # we don't close the PRE here, but in closePhidgetAMBIENTs
-                return res
+            pressSensor = PhidgetPressureSensor()
+            ser,port = self.aw.qmc.phidgetManager.getFirstMatchingPhidget('PhidgetPressureSensor',DeviceID.PHIDID_PRE1000,remote=self.aw.qmc.phidgetRemoteFlag,remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
+            if ser:
+                pressSensor.setDeviceSerialNumber(ser)
+                pressSensor.setHubPort(port)   #explicitly set the port to where the PRE is attached  
+                if self.aw.qmc.phidgetRemoteFlag:
+                    self.addPhidgetServer() 
+                if self.aw.qmc.phidgetRemoteFlag and self.aw.qmc.phidgetRemoteOnlyFlag:
+                    pressSensor.setIsRemote(True)
+                    pressSensor.setIsLocal(False)
+                pressSensor.openWaitForAttachment(1500)
+                if pressSensor.getAttached():
+                    libtime.sleep(0.3)
+                    res = pressSensor.getPressure()
+                    pressSensor.close()
+                    return res
+                else:
+                    return None
+            else:
+                return None
+        except Exception:
             return None
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
-            if self.aw.ser.PhidgetPREpre is not None:
-                try:
-                    self.aw.ser.PhidgetPREpre.close()
-                except Exception: # pylint: disable=broad-except
-                    pass
-                self.aw.ser.PhidgetPREpre = None
-            return None            
 
 ############################################################################
     def openport(self):
@@ -1761,12 +1673,12 @@ class serialport():
                     settings = str(self.comport) + "," + str(self.baudrate) + "," + str(self.bytesize)+ "," + str(self.parity) + "," + str(self.stopbits) + "," + str(self.timeout)
                     self.aw.addserial("serial port openend: " + settings) 
                 libtime.sleep(.2) # avoid possible hickups on startup
-        except Exception: # pylint: disable=broad-except
+        except Exception:
 #            import traceback
 #            traceback.print_exc(file=sys.stdout)
             self.SP.close()
             libtime.sleep(0.7) # on OS X opening a serial port too fast after closing the port get's disabled
-            error = QApplication.translate("Error Message","Serial Exception:") + " " + QApplication.translate("Error Message","Unable to open serial port")
+            error = QApplication.translate("Error Message","Serial Exception:",None) + QApplication.translate("Error Message","Unable to open serial port",None)
             self.aw.qmc.adderror(error)
 
     #loads configuration to ports
@@ -1783,17 +1695,16 @@ class serialport():
             if self.SP and self.SP.isOpen():
                 self.SP.close()
                 libtime.sleep(0.1) # on OS X opening a serial port too fast after closing the port get's disabled
-        except Exception: # pylint: disable=broad-except
+        except Exception:
             pass
 
     def closeEvent(self,_):
         try:
             self.closeport() 
-        except Exception: # pylint: disable=broad-except
+        except Exception:
             pass
 
-    @staticmethod
-    def binary(n, digits=8):
+    def binary(self, n, digits=8):
         return "{0:0>{1}}".format(bin(n)[2:], digits)
 
     #similar to Omega HH806
@@ -1851,11 +1762,17 @@ class serialport():
 
                         #return original T1 T2
                         if(r[index+11] == 9 or r[index+11] == 65): # 9="\x09" 65="\x41"
-                            s1, s2 = s2, s1
+                            temp = s2
+                            s2 = s1
+                            s1 = temp
                         elif(r[index+11] == 10): # 10="\x0a"
-                            s1, s2 = s2, s2-s1
+                            temp = s2
+                            s2 = s2-s1
+                            s1 = temp
                         elif(r[index+11] == 138): # 138="\x8a"
-                            s1 = s2, s1 + s2
+                            temp = s2
+                            s2 = s2+s1
+                            s1 = temp
                         elif(r[index+11] == 66 or r[index+11] == 194):  # 66="\x42" and 194="\xc2"
                             s1 = s2
                             s2 = -1
@@ -1874,31 +1791,33 @@ class serialport():
                         self.closeport()
                         libtime.sleep(.05)
                     a,b = self.MS6514temperature(retry=retry-1)
-                    return a,b
-                # error but return previous temperature
-                if(self.MS6514PrevTemp1 != -1 or self.MS6514PrevTemp2 != -1):
-                    s1 = self.MS6514PrevTemp1
-                    s2 = self.MS6514PrevTemp2
-                    self.MS6514PrevTemp1 = -1
-                    self.MS6514PrevTemp2 = -1
-                    return s1,s2
+                    return a,b                    
+                else:
+                    # error but return previous temperature
+                    if(self.MS6514PrevTemp1 != -1 or self.MS6514PrevTemp2 != -1):
+                        s1 = self.MS6514PrevTemp1
+                        s2 = self.MS6514PrevTemp2
+                        self.MS6514PrevTemp1 = -1
+                        self.MS6514PrevTemp2 = -1
+                        return s1,s2
                         
-                # error
-                nbytes = len(r)
-                self.aw.qmc.adderror(QApplication.translate("Error Message","MS6514temperature(): {0} bytes received but 18 needed").format(nbytes))
-                return -1,-1                                    #return something out of scope to avoid function error (expects two values)
-            return -1,-1
-        except Exception as ex: # pylint: disable=broad-except
+                    # error
+                    nbytes = len(r)
+                    self.aw.qmc.adderror(QApplication.translate("Error Message","MS6514temperature(): {0} bytes received but 18 needed",None).format(nbytes))
+                    return -1,-1                                    #return something out of scope to avoid function error (expects two values)
+            else:
+                return -1,-1
+        except Exception as ex:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " ser.MS6514temperature() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " ser.MS6514temperature() {0}").format(str(ex)),exc_tb.tb_lineno)
             self.closeport()
             return -1,-1
         finally:
             #note: logged chars should be unicode not binary
             if self.aw.seriallogflag:
-                import binascii
                 settings = str(self.comport) + "," + str(self.baudrate) + "," + str(self.bytesize)+ "," + str(self.parity) + "," + str(self.stopbits) + "," + str(self.timeout)
                 self.aw.addserial("MS6514: " + settings + " || Rx = " + cmd2str(binascii.hexlify(r))) 
+
 
     def DT301temperature(self, retry=2):
         try:
@@ -1922,27 +1841,28 @@ class serialport():
                     self.SP.reset_output_buffer()
                     libtime.sleep(.05)
                     return self.DT301temperature(retry=retry-1)
-                self.closeport()
-                # error but return previous temperature
-                if self.DT301PrevTemp != -1:
-                    s = self.DT301PrevTemp
-                    self.DT301PrevTemp = -1
-                    return s,0
+                else:
+                    self.closeport()
+                    # error but return previous temperature
+                    if self.DT301PrevTemp != -1:
+                        s = self.DT301PrevTemp
+                        self.DT301PrevTemp = -1
+                        return s,0
                         
-                # error
-                nbytes = len(data)
-                self.aw.qmc.adderror(QApplication.translate("Error Message","DT301temperature(): {0} bytes received but 11 needed").format(nbytes))
-                return -1,-1                                    #return something out of scope to avoid function error (expects two values)
-            return -1,-1
-        except Exception as ex: # pylint: disable=broad-except
+                    # error
+                    nbytes = len(data)
+                    self.aw.qmc.adderror(QApplication.translate("Error Message","DT301temperature(): {0} bytes received but 11 needed",None).format(nbytes))
+                    return -1,-1                                    #return something out of scope to avoid function error (expects two values)
+            else:
+                return -1,-1
+        except Exception as ex:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " ser.DT301temperature() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " ser.DT301temperature() {0}").format(str(ex)),exc_tb.tb_lineno)
             self.closeport()
             return -1,-1
         finally:
             #note: logged chars should be unicode not binary
             if self.aw.seriallogflag:
-                import binascii
                 settings = str(self.comport) + "," + str(self.baudrate) + "," + str(self.bytesize)+ "," + str(self.parity) + "," + str(self.stopbits) + "," + str(self.timeout)
                 self.aw.addserial("DT301: " + settings + " || Rx = " + cmd2str(binascii.hexlify(data))) 
 
@@ -1985,12 +1905,12 @@ class serialport():
                         if self.aw.seriallogflag:
                             settings = str(self.comport) + "," + str(self.baudrate) + "," + str(self.bytesize)+ "," + str(self.parity) + "," + str(self.stopbits) + "," + str(self.timeout)
                             self.aw.addserial("Behmor: " + settings + " || Tx = " + str(command) + " || Rx = " + str(res) + " || Ts= %.2f"%t)
-                    except Exception: # pylint: disable=broad-except
+                    except:
                         pass
             return temps[0],temps[1]
-        except Exception as e: # pylint: disable=broad-except
+        except Exception as e:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " ser.BEHMORtemperatures(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " ser.BEHMORtemperatures(): {0}").format(str(e)),exc_tb.tb_lineno)
             self.aw.ser.closeport()
             return -1.,-1.
         finally:
@@ -2010,11 +1930,11 @@ class serialport():
                 self.aw.qmc.hottop_ET = fromCtoF(self.aw.qmc.hottop_ET)
                 self.aw.qmc.hottop_BT = fromCtoF(self.aw.qmc.hottop_BT)
             return self.aw.qmc.hottop_BT,self.aw.qmc.hottop_ET
-        except Exception as ex: # pylint: disable=broad-except
+        except Exception as ex:
 #            import traceback
 #            traceback.print_exc(file=sys.stdout)
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " ser.HOTTOPtemperatures() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " ser.HOTTOPtemperatures() {0}").format(str(ex)),exc_tb.tb_lineno)
             return -1,-1
 
     #t2 and t1 from Omega HH806, HH802 or Amprobe TMD56 meter 
@@ -2036,31 +1956,33 @@ class serialport():
                     s2 = hex2int(r[10],r[11])/10.
                     #we convert the strings to integers. Divide by 10.0 (decimal position)
                     return s1,s2
-                # first try to resync data (shift to right assuming some extra bytes were appended):
-                for i in range(4):
-                    if len(r) > 12+i and hex2int(r[1+i])==62 and hex2int(r[2+i])==15:
-                        s1 = hex2int(r[6+i],r[7+i])/10.
-                        s2 = hex2int(r[11+i],r[12+i])/10.
-                        return s1,s2
-                if retry:
-                    if retry < 2:
-                        self.closeport()
-                        libtime.sleep(.05)
-                    a,b = self.HH806AUtemperature(retry=retry-1)
-                    return a,b
-                nbytes = len(r)
-                self.aw.qmc.adderror(QApplication.translate("Error Message","HH806AUtemperature(): {0} bytes received").format(nbytes))
-                return -1,-1                                    #return something out of scope to avoid function error (expects two values)
-            return -1,-1
-        except Exception as ex: # pylint: disable=broad-except
+                else:
+                    # first try to resync data (shift to right assuming some extra bytes were appended):
+                    for i in range(4):
+                        if len(r) > 12+i and hex2int(r[1+i])==62 and hex2int(r[2+i])==15:
+                            s1 = hex2int(r[6+i],r[7+i])/10.
+                            s2 = hex2int(r[11+i],r[12+i])/10.
+                            return s1,s2
+                    if retry:
+                        if retry < 2:
+                            self.closeport()
+                            libtime.sleep(.05)
+                        a,b = self.HH806AUtemperature(retry=retry-1)
+                        return a,b
+                    else:
+                        nbytes = len(r)
+                        self.aw.qmc.adderror(QApplication.translate("Error Message","HH806AUtemperature(): {0} bytes received",None).format(nbytes))
+                        return -1,-1                                    #return something out of scope to avoid function error (expects two values)
+            else:
+                return -1,-1
+        except Exception as ex:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " ser.HH806AUtemperature() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " ser.HH806AUtemperature() {0}").format(str(ex)),exc_tb.tb_lineno)
             self.closeport()
             return -1,-1
         finally:
             #note: logged chars should be unicode not binary
             if self.aw.seriallogflag:
-                import binascii
                 settings = str(self.comport) + "," + str(self.baudrate) + "," + str(self.bytesize)+ "," + str(self.parity) + "," + str(self.stopbits) + "," + str(self.timeout)
                 self.aw.addserial("H806: " + settings + " || Tx = " + cmd2str(binascii.hexlify(command)) + " || Rx = " + cmd2str(binascii.hexlify(r)))
 
@@ -2078,9 +2000,10 @@ class serialport():
                 self.SP.write(str2cmd("\x21\x05\x00\x58\x7E"))
                 libtime.sleep(2.)
                 self.HH806Winitflag = 1
-        except Exception as ex: # pylint: disable=broad-except
+        except Exception as ex:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " ser.HH806Winit() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " ser.HH806Winit() {0}").format(str(ex)),exc_tb.tb_lineno)
+            return -1,-1
         finally:
             #note: logged chars should be unicode not binary
             if self.aw.seriallogflag:
@@ -2093,7 +2016,7 @@ class serialport():
         if self.HH806Winitflag == 0:
             self.HH806Winit()
             if self.HH806Winitflag == 0:
-                self.aw.qmc.adderror(QApplication.translate("Error Message","HH806Wtemperature(): Unable to initiate device"))
+                self.aw.qmc.adderror(QApplication.translate("Error Message","HH806Wtemperature(): Unable to initiate device",None))
                 return -1,-1
         try:
             if not self.SP.isOpen():
@@ -2111,16 +2034,15 @@ class serialport():
                             r2 = hex2int(r[19],r[20])/10.
                             #GOOD
                             return r1,r2
-            #BAD
-            return -1.,-1.
-        except Exception as ex: # pylint: disable=broad-except
+                #BAD
+                return -1.,-1.
+        except Exception as ex:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " ser.HH806Wtemperature() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " ser.HH806Wtemperature() {0}").format(str(ex)),exc_tb.tb_lineno)
             return -1,-1
         finally:
             #note: logged chars should be unicode not binary
             if self.aw.seriallogflag:
-                import binascii
                 settings = str(self.comport) + "," + str(self.baudrate) + "," + str(self.bytesize)+ "," + str(self.parity) + "," + str(self.stopbits) + "," + str(self.timeout)
                 self.aw.addserial("H806Wtemperature: " + settings + " || Rx = " + binascii.hexlify(r))
 
@@ -2182,45 +2104,23 @@ class serialport():
         res = [-1]*self.aw.modbus.channels
         
         for i in range(self.aw.modbus.channels):
-            if self.aw.modbus.inputSlaves[i] and not force: # in force mode (second request in oversampling mode) read only first two channels (ET/BT)
-                if not self.aw.modbus.optimizer or force:
+            if self.aw.modbus.inputSlaves[i] and not force or i in [0,1]: # in force mode (second request in oversampling mode) read only first two channels (ET/BT)
+                if not self.aw.modbus.optimizer:
                     self.aw.modbus.sleepBetween() # we start with a sleep, as it could be that just a send command happend before the semaphore was catched
                 if self.aw.modbus.inputFloats[i]:
-                    res[i] = self.aw.modbus.readFloat(
-                                self.aw.modbus.inputSlaves[i],
-                                self.aw.modbus.inputRegisters[i],
-                                self.aw.modbus.inputCodes[i],
-                                force)
+                    res[i] = self.aw.modbus.readFloat(self.aw.modbus.inputSlaves[i],self.aw.modbus.inputRegisters[i],self.aw.modbus.inputCodes[i],force)
                 elif self.aw.modbus.inputFloatsAsInt[i]:
-                    res[i] = self.aw.modbus.readInt32(
-                                self.aw.modbus.inputSlaves[i],
-                                self.aw.modbus.inputRegisters[i],
-                                self.aw.modbus.inputCodes[i],
-                                force,
-                                signed=self.aw.modbus.inputSigned[i])
+                    res[i] = self.aw.modbus.readInt32(self.aw.modbus.inputSlaves[i],self.aw.modbus.inputRegisters[i],self.aw.modbus.inputCodes[i],force)
                 elif self.aw.modbus.inputBCDs[i]:
-                    res[i] = self.aw.modbus.readBCD(
-                                self.aw.modbus.inputSlaves[i],
-                                self.aw.modbus.inputRegisters[i],
-                                self.aw.modbus.inputCodes[i],
-                                force)
+                    res[i] = self.aw.modbus.readBCD(self.aw.modbus.inputSlaves[i],self.aw.modbus.inputRegisters[i],self.aw.modbus.inputCodes[i],force)
                 elif self.aw.modbus.inputBCDsAsInt[i]:
-                    res[i] = self.aw.modbus.readBCDint(
-                                self.aw.modbus.inputSlaves[i],
-                                self.aw.modbus.inputRegisters[i],
-                                self.aw.modbus.inputCodes[i],
-                                force)
+                    res[i] = self.aw.modbus.readBCDint(self.aw.modbus.inputSlaves[i],self.aw.modbus.inputRegisters[i],self.aw.modbus.inputCodes[i],force)
                 else:
-                    res[i] = self.aw.modbus.readSingleRegister(
-                                self.aw.modbus.inputSlaves[i],
-                                self.aw.modbus.inputRegisters[i],
-                                self.aw.modbus.inputCodes[i],
-                                force,
-                                signed=self.aw.modbus.inputSigned[i])
+                    res[i] = self.aw.modbus.readSingleRegister(self.aw.modbus.inputSlaves[i],self.aw.modbus.inputRegisters[i],self.aw.modbus.inputCodes[i],force)
                 res[i] = self.processChannelData(res[i],self.aw.modbus.inputDivs[i],self.aw.modbus.inputModes[i])
         
         self.aw.qmc.extraMODBUStemps = res[:]
-        self.aw.qmc.extraMODBUStx = self.aw.qmc.timeclock.elapsedMilli()
+        self.aw.qmc.extraMODBUStx = self.aw.qmc.timeclock.elapsed()/1000.
         return res[1], res[0]
 
     def NONEtmp(self):
@@ -2233,18 +2133,15 @@ class serialport():
         # # sudo -H python3 -m pip install pympler 
         #from pympler import asizeof
         #print(asizeof.asizeof(dialogx)) # 2440 using slots; 2568 without using slots
-        if dialogx.exec():
+        if dialogx.exec_():
             try:
-                ETraw = dialogx.etEdit.text().split(".")
-                ET = (int(str(ETraw[0])) * 10)/10.
-            except Exception: # pylint: disable=broad-except
-                ET = -1
+                ET = (int(str(dialogx.etEdit.text())) * 10)/10.
+            except Exception:
+                ET = 0
             try:
-                BTraw = dialogx.btEdit.text().split(".")
-                BT = (int(str(BTraw[0])) * 10)/10.
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
-                BT = -1
+                BT = (int(str(dialogx.btEdit.text())) * 10)/10.
+            except Exception:
+                BT = 0
             try:
                 dialogx.okButton.disconnect()
                 dialogx.cancelButton.disconnect()
@@ -2252,25 +2149,26 @@ class serialport():
                 try: # sip not supported on older PyQt versions (RPi!)
                     sip.delete(dialogx)
                     #print(sip.isdeleted(dialogx))
-                except Exception: # pylint: disable=broad-except
+                except:
                     pass
                 del dialogx
-            except Exception: # pylint: disable=broad-except
+            except:
                 pass
             return ET, BT
-        try:
-            dialogx.okButton.disconnect()
-            dialogx.cancelButton.disconnect()
-            QApplication.processEvents() # we ensure events concerning this dialog are processed before deletion
-            try: # sip not supported on older PyQt versions (RPi!)
-                sip.delete(dialogx)
-                #print(sip.isdeleted(dialogx))
-            except Exception: # pylint: disable=broad-except
+        else:
+            try:
+                dialogx.okButton.disconnect()
+                dialogx.cancelButton.disconnect()
+                QApplication.processEvents() # we ensure events concerning this dialog are processed before deletion
+                try: # sip not supported on older PyQt versions (RPi!)
+                    sip.delete(dialogx)
+                    #print(sip.isdeleted(dialogx))
+                except:
+                    pass
+                del dialogx
+            except:
                 pass
-            del dialogx
-        except Exception: # pylint: disable=broad-except
-            pass
-        return -1, -1
+            return -1, -1
 
     #reads once the id of the HH506RA meter and stores it in the serial variable self.HH506RAid.
     def HH506RAGetID(self):
@@ -2294,11 +2192,12 @@ class serialport():
                     self.HH506RAid = ID[0:3]               # Assign new id to self.HH506RAid
                 else:
                     nbytes = len(ID)
-                    self.aw.qmc.adderror(QApplication.translate("Error Message","HH506RAGetID: {0} bytes received but 5 needed").format(nbytes))
-        except Exception as ex: # pylint: disable=broad-except
+                    self.aw.qmc.adderror(QApplication.translate("Error Message","HH506RAGetID: {0} bytes received but 5 needed",None).format(nbytes))
+        except Exception as ex:
             self.closeport()
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " ser.HH506RAGetID() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " ser.HH506RAGetID() {0}").format(str(ex)),exc_tb.tb_lineno)
+            return -1,-1
         finally:
             #note: logged chars should be unicode not binary
             if self.aw.seriallogflag:
@@ -2312,7 +2211,7 @@ class serialport():
         if self.HH506RAid == "X":
             self.HH506RAGetID()                       # obtain new id one time; self.HH506RAid should not be "X" any more
             if self.HH506RAid == "X":                 # if self.HH506RAGetID() went wrong and self.HH506RAid is still "X"
-                self.aw.qmc.adderror(QApplication.translate("Error Message","HH506RAtemperature(): Unable to get id from HH506RA device "))
+                self.aw.qmc.adderror(QApplication.translate("Error Message","HH506RAtemperature(): Unable to get id from HH506RA device ",None))
                 return -1,-1
         try:
             command = b"#" + self.HH506RAid + b"N" # + "\r\n" this seems not to be needed
@@ -2334,26 +2233,27 @@ class serialport():
                     #we convert the hex strings to integers. Divide by 10.0 (decimal position)
                     r = r.replace(str2cmd(' '),str2cmd('0'))
                     return int(r[1:5],16)/10., int(r[7:11],16)/10.
-                if retry:
-                    return self.HH506RAtemperature(retry=retry-1)
-                nbytes = len(r)
-                self.aw.qmc.adderror(QApplication.translate("Error Message","HH506RAtemperature(): {0} bytes received but 14 needed").format(nbytes))               
+                else:
+                    if retry:
+                        return self.HH506RAtemperature(retry=retry-1)
+                    else:
+                        nbytes = len(r)
+                        self.aw.qmc.adderror(QApplication.translate("Error Message","HH506RAtemperature(): {0} bytes received but 14 needed",None).format(nbytes))               
+                        return -1,-1
+            else:
                 return -1,-1
-            return -1,-1
-        except Exception as ex: # pylint: disable=broad-except
+        except Exception as ex:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " ser.HH506RAtemperature() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " ser.HH506RAtemperature() {0}").format(str(ex)),exc_tb.tb_lineno)
             self.closeport()
             return -1,-1
         finally:
             #note: logged chars should be unicode not binary
             if self.aw.seriallogflag:
-                import binascii
                 settings = str(self.comport) + "," + str(self.baudrate) + "," + str(self.bytesize)+ "," + str(self.parity) + "," + str(self.stopbits) + "," + str(self.timeout)
                 self.aw.addserial("H506: " + settings + " || Tx = " + cmd2str(binascii.hexlify(command)) + " || Rx = " + cmd2str(binascii.hexlify(r)))
 
     def CENTER302temperature(self,retry=2):
-        import binascii
         try:
             command = str2cmd("\x41")
             r = ""
@@ -2369,7 +2269,7 @@ class serialport():
                 if len(r) != 7:
                     # we did not receive all data yet, let's wait a little longer and try to fetch the missing part
                     libtime.sleep(0.05)
-                    r = r + self.SP.read(7 - len(r))
+                    r = r + self.SP.read(7 - len(r))                
                 if len(r) == 7:
                     #DECIMAL POINT
                     #if bit 2 of byte 3 = 1 then T1 = ####      (don't divide by 10)
@@ -2387,17 +2287,20 @@ class serialport():
                     if bit2 == "0":
                         T1 /= 10.
                     return T1,0
-                if retry:
-                    return self.CENTER302temperature(retry=retry-1)
-                nbytes = len(r)
-                error = QApplication.translate("Error Message","CENTER302temperature(): {0} bytes received but 7 needed").format(nbytes)
-                timez = str(QDateTime.currentDateTime().toString("hh:mm:ss.zzz"))    #zzz = miliseconds
-                self.aw.qmc.adderror(timez + " " + error)
+                else:
+                    if retry:
+                        return self.CENTER302temperature(retry=retry-1)
+                    else:
+                        nbytes = len(r)
+                        error = QApplication.translate("Error Message","CENTER302temperature(): {0} bytes received but 7 needed",None).format(nbytes)
+                        timez = str(QDateTime.currentDateTime().toString("hh:mm:ss.zzz"))    #zzz = miliseconds
+                        self.aw.qmc.adderror(timez + " " + error)
+                        return -1,-1 
+            else:
                 return -1,-1 
-            return -1,-1 
-        except Exception as ex: # pylint: disable=broad-except
+        except Exception as ex:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " CENTER302temperature() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " CENTER302temperature() {0}").format(str(ex)),exc_tb.tb_lineno)
             self.closeport()
             return -1,-1
         finally:
@@ -2407,7 +2310,6 @@ class serialport():
                 self.aw.addserial("CENTER302: " + settings + " || Tx = " + cmd2str(binascii.hexlify(command)) + " || Rx = " + cmd2str((binascii.hexlify(r))))
 
     def CENTER303temperature(self,retry=2):
-        import binascii
         try:
             command = str2cmd("\x41")
             r = ""
@@ -2452,17 +2354,20 @@ class serialport():
                     if bit5 == "0":
                         T2 /= 10.
                     return T1,T2
-                if retry:
-                    return self.CENTER303temperature(retry=retry-1)
-                nbytes = len(r)
-                error = QApplication.translate("Error Message","CENTER303temperature(): {0} bytes received but 8 needed").format(nbytes)
-                timez = str(QDateTime.currentDateTime().toString("hh:mm:ss.zzz"))    #zzz = miliseconds
-                self.aw.qmc.adderror(timez + " " + error)
-                return -1,-1
-            return -1,-1 
-        except Exception as ex: # pylint: disable=broad-except
+                else:
+                    if retry:
+                        return self.CENTER303temperature(retry=retry-1)
+                    else:
+                        nbytes = len(r)
+                        error = QApplication.translate("Error Message","CENTER303temperature(): {0} bytes received but 8 needed",None).format(nbytes)
+                        timez = str(QDateTime.currentDateTime().toString("hh:mm:ss.zzz"))    #zzz = miliseconds
+                        self.aw.qmc.adderror(timez + " " + error)
+                        return -1,-1
+            else:
+                return -1,-1 
+        except Exception as ex:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " CENTER303temperature() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))            
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " CENTER303temperature() {0}").format(str(ex)),exc_tb.tb_lineno)            
             self.closeport()
             return -1,-1
         finally:
@@ -2470,6 +2375,7 @@ class serialport():
             if self.aw.seriallogflag:
                 settings = str(self.comport) + "," + str(self.baudrate) + "," + str(self.bytesize)+ "," + str(self.parity) + "," + str(self.stopbits) + "," + str(self.timeout)
                 self.aw.addserial("CENTER303: " + settings + " || Tx = " + cmd2str(binascii.hexlify(command)) + " || Rx = " + cmd2str((binascii.hexlify(r))))
+
 
     def VOLTCRAFTPL125T2temperature(self,retry=2):
         try:
@@ -2487,32 +2393,34 @@ class serialport():
                 if len(r) != 26:
                     # we did not receive all data yet, let's wait a little longer and try to fetch the missing part
                     libtime.sleep(0.05)
-                    r = r + self.SP.read(26 - len(r))
+                    r = r + self.SP.read(26 - len(r))                
                 if len(r) == 26 and hex2int(r[0],r[1]) == 43605: # filter out bad/strange data
                     #extract T1
                     T1 = hex2int(r[19],r[18])/10. # select byte 19 and 18
                     #extract T2
                     T2 = hex2int(r[21],r[20])/10.# select byte 21 and 20 
                     return T1,T2
-                if retry:
-                    libtime.sleep(.05)
-                    return self.VOLTCRAFTPL125T2temperature(retry=retry-1)
-                nbytes = len(r)
-                error = QApplication.translate("Error Message","VOLTCRAFTPL125T2temperature(): {0} bytes received but 26 needed").format(nbytes)
-                timez = str(QDateTime.currentDateTime().toString("hh:mm:ss.zzz"))    #zzz = miliseconds
-                _,_, exc_tb = sys.exc_info()
-                self.aw.qmc.adderror(timez + " " + error)
+                else:
+                    if retry:
+                        libtime.sleep(.05)
+                        return self.VOLTCRAFTPL125T2temperature(retry=retry-1)
+                    else:
+                        nbytes = len(r)
+                        error = QApplication.translate("Error Message","VOLTCRAFTPL125T2temperature(): {0} bytes received but 26 needed",None).format(nbytes)
+                        timez = str(QDateTime.currentDateTime().toString("hh:mm:ss.zzz"))    #zzz = miliseconds
+                        _,_, exc_tb = sys.exc_info()
+                        self.aw.qmc.adderror(timez + " " + error)
+                        return -1,-1
+            else:
                 return -1,-1
-            return -1,-1
-        except Exception as ex: # pylint: disable=broad-except
+        except Exception as ex:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " VOLTCRAFTPL125T2temperature() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " VOLTCRAFTPL125T2temperature() {0}").format(str(ex)),exc_tb.tb_lineno)
             self.closeport()
             return -1,-1
         finally:
             #note: logged chars should be unicode not binary
             if self.aw.seriallogflag:
-                import binascii
                 settings = str(self.comport) + "," + str(self.baudrate) + "," + str(self.bytesize)+ "," + str(self.parity) + "," + str(self.stopbits) + "," + str(self.timeout)
                 self.aw.addserial("VOLTCRAFTPL125T2: " + settings + " || Tx = " + cmd2str(binascii.hexlify(command)) + " || Rx = " + cmd2str((binascii.hexlify(r))))
 
@@ -2534,7 +2442,7 @@ class serialport():
                     libtime.sleep(0.05)
                     r = r + self.SP.read(26 - len(r))                
                 if len(r) == 26 and hex2int(r[0],r[1]) == 43605: # filter out bad/strange data
-                    self.aw.qmc.extraPL125T4TX = self.aw.qmc.timeclock.elapsedMilli()
+                    self.aw.qmc.extraPL125T4TX = self.aw.qmc.timeclock.elapsed()/1000.
                     #extract T1
                     T1 = hex2int(r[23],r[22])/10.# select byte 23 and 22
                     #extract T2
@@ -2542,31 +2450,32 @@ class serialport():
                     self.aw.qmc.extraPL125T4T4 = hex2int(r[21],r[20])/10.# select byte 21 and 20
                     self.aw.qmc.extraPL125T4T3 = hex2int(r[19],r[18])/10. # select byte 19 and 18
                     return T1,T2
-                if retry:
-                    libtime.sleep(.05)
-                    return self.VOLTCRAFTPL125T4temperature(retry=retry-1)
-                nbytes = len(r)
-                error = QApplication.translate("Error Message","VOLTCRAFTPL125T4temperature(): {0} bytes received but 26 needed").format(nbytes)
-                timez = str(QDateTime.currentDateTime().toString("hh:mm:ss.zzz"))    #zzz = miliseconds
-                _,_, exc_tb = sys.exc_info()
-                self.aw.qmc.adderror(timez + " " + error)
+                else:
+                    if retry:
+                        libtime.sleep(.05)
+                        return self.VOLTCRAFTPL125T4temperature(retry=retry-1)
+                    else:
+                        nbytes = len(r)
+                        error = QApplication.translate("Error Message","VOLTCRAFTPL125T4temperature(): {0} bytes received but 26 needed",None).format(nbytes)
+                        timez = str(QDateTime.currentDateTime().toString("hh:mm:ss.zzz"))    #zzz = miliseconds
+                        _,_, exc_tb = sys.exc_info()
+                        self.aw.qmc.adderror(timez + " " + error)
+                        return -1,-1
+            else:
                 return -1,-1
-            return -1,-1
-        except Exception as ex: # pylint: disable=broad-except
+        except Exception as ex:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " VOLTCRAFTPL125T4temperature() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " VOLTCRAFTPL125T4temperature() {0}").format(str(ex)),exc_tb.tb_lineno)
             self.closeport()
             return -1,-1
         finally:
             #note: logged chars should be unicode not binary
             if self.aw.seriallogflag:
-                import binascii
                 settings = str(self.comport) + "," + str(self.baudrate) + "," + str(self.bytesize)+ "," + str(self.parity) + "," + str(self.stopbits) + "," + str(self.timeout)
                 self.aw.addserial("VOLTCRAFTPL125T4: " + settings + " || Tx = " + cmd2str(binascii.hexlify(command)) + " || Rx = " + cmd2str((binascii.hexlify(r))))
 
 
     def CENTER306temperature(self,retry=2):
-        import binascii
         try:
             command = str2cmd("\x41")
             r = ""
@@ -2582,7 +2491,7 @@ class serialport():
                 if len(r) != 10:
                     # we did not receive all data yet, let's wait a little longer and try to fetch the missing part
                     libtime.sleep(0.05)
-                    r = r + self.SP.read(10 - len(r))
+                    r = r + self.SP.read(10 - len(r))                
                 if len(r) == 10:
                     #DECIMAL POINT
                     #if bit 2 of byte 3 = 1 then T1 = ####      (don't divide by 10)
@@ -2611,18 +2520,21 @@ class serialport():
                     if bit5 == "0":
                         T2 /= 10.
                     return T1,T2
-                if retry:
-                    return self.CENTER306temperature(retry=retry-1)
-                nbytes = len(r)
-                error = QApplication.translate("Error Message","CENTER306temperature(): {0} bytes received but 10 needed").format(nbytes)
-                timez = str(QDateTime.currentDateTime().toString("hh:mm:ss.zzz"))    #zzz = miliseconds
-                _,_, exc_tb = sys.exc_info()
-                self.aw.qmc.adderror(timez + " " + error,getattr(exc_tb, 'tb_lineno', '?'))
+                else:
+                    if retry:
+                        return self.CENTER306temperature(retry=retry-1)
+                    else:
+                        nbytes = len(r)
+                        error = QApplication.translate("Error Message","CENTER306temperature(): {0} bytes received but 10 needed",None).format(nbytes)
+                        timez = str(QDateTime.currentDateTime().toString("hh:mm:ss.zzz"))    #zzz = miliseconds
+                        _,_, exc_tb = sys.exc_info()
+                        self.aw.qmc.adderror(timez + " " + error,exc_tb.tb_lineno)
+                        return -1,-1
+            else:
                 return -1,-1
-            return -1,-1
-        except Exception as ex: # pylint: disable=broad-except
+        except Exception as ex:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " CENTER306temperature() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " CENTER306temperature() {0}").format(str(ex)),exc_tb.tb_lineno)
             self.closeport()
             return -1,-1
         finally:
@@ -2678,40 +2590,42 @@ class serialport():
                     T1 = T2 = T3 = T3 = -1
                     try:
                         T1 = hex2int(r[7],r[8])/10.
-                    except Exception: # pylint: disable=broad-except
+                    except Exception:
                         pass
                     try:
                         T2 = hex2int(r[9],r[10])/10.
-                    except Exception: # pylint: disable=broad-except
+                    except Exception:
                         pass
                     try:
                         T3 = hex2int(r[11],r[12])/10.
-                    except Exception: # pylint: disable=broad-except
+                    except Exception:
                         pass
                     try:
                         T4 = hex2int(r[13],r[14])/10.
-                    except Exception: # pylint: disable=broad-except
+                    except Exception:
                         pass
                     #save these variables if using T3 and T4
                     self.aw.qmc.extra309T3 = T3
                     self.aw.qmc.extra309T4 = T4
-                    self.aw.qmc.extra309TX = self.aw.qmc.timeclock.elapsedMilli()
+                    self.aw.qmc.extra309TX = self.aw.qmc.timeclock.elapsed()/1000.
                     return T1,T2
-                if retry:
-                    return self.CENTER309temperature(retry=retry-1)
-                nbytes = len(r)
-                self.aw.qmc.adderror(QApplication.translate("Error Message","CENTER309temperature(): {0} bytes received but 45 needed").format(nbytes))            
-                return -1,-1 
-            return -1,-1
-        except Exception as ex: # pylint: disable=broad-except
+                else:
+                    if retry:
+                        return self.CENTER309temperature(retry=retry-1)
+                    else:
+                        nbytes = len(r)
+                        self.aw.qmc.adderror(QApplication.translate("Error Message","CENTER309temperature(): {0} bytes received but 45 needed",None).format(nbytes))            
+                        return -1,-1 
+            else:
+                return -1,-1
+        except Exception as ex:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " CENTER309temperature() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " CENTER309temperature() {0}").format(str(ex)),exc_tb.tb_lineno)
             self.closeport()
             return -1,-1
         finally:
             #note: logged chars should be unicode not binary
             if self.aw.seriallogflag:
-                import binascii
                 settings = str(self.comport) + "," + str(self.baudrate) + "," + str(self.bytesize)+ "," + str(self.parity) + "," + str(self.stopbits) + "," + str(self.timeout)
                 self.aw.addserial("CENTER309: " + settings + " || Tx = " + cmd2str(binascii.hexlify(command)) + " || Rx = " + cmd2str((binascii.hexlify(r))))
 
@@ -2735,16 +2649,13 @@ class serialport():
         try:
             #### lock shared resources #####
             self.Phidget1045semaphore.acquire(1)
-            self.Phidget1045values.append((t, self.aw.qmc.timeclock.elapsedMilli()))
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+            self.Phidget1045values.append((t,libtime.time()))
         finally:
             if self.Phidget1045semaphore.available() < 1:
                 self.Phidget1045semaphore.release(1)
           
     # applies given emissivity to the IR temperature value assuming the given ambient temperature
-    @staticmethod
-    def IRtemp(emissivity, temp,ambient):
+    def IRtemp(self,emissivity,temp,ambient):
         return (temp - ambient) * emissivity + ambient
 
     def configure1045(self):
@@ -2757,20 +2668,20 @@ class serialport():
                     self.PhidgetIRSensor.setTemperatureChangeTrigger(self.aw.qmc.phidget1045_changeTrigger)
                 else:
                     self.PhidgetIRSensor.setTemperatureChangeTrigger(0)
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+            except:
+                pass
             try:
                 if self.aw.qmc.phidget1045_async:
                     self.PhidgetIRSensor.setOnTemperatureChangeHandler(self.phidget1045TemperatureChanged)
                 else:
                     self.PhidgetIRSensor.setOnTemperatureChangeHandler(lambda *_:None)
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+            except:
+                pass
             # set rate
             try:
                 self.PhidgetIRSensor.setDataInterval(self.aw.qmc.phidget1045_dataRate)
-            except Exception as e: # pylint: disable=broad-except
-                _log.ecxeption(e)
+            except Exception:
+                pass
             
     def configureOneTC(self):
         self.Phidget1045values = []
@@ -2787,8 +2698,8 @@ class serialport():
         # set rate
         try:
             self.PhidgetIRSensor.setDataInterval(self.aw.qmc.phidget1048_dataRate)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except Exception:
+            pass
             
     def configureOneRTD(self):
         self.Phidget1045values = []
@@ -2804,8 +2715,8 @@ class serialport():
         # set rate
         try:
             self.PhidgetIRSensor.setDataInterval(self.aw.qmc.phidget1200_dataRate)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except Exception:
+            pass
     
     def configureOneRTD_2(self):
         self.Phidget1045values = []
@@ -2821,49 +2732,47 @@ class serialport():
         # set rate
         try:
             self.PhidgetIRSensor.setDataInterval(self.aw.qmc.phidget1200_2_dataRate)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except Exception:
+            pass
 
     def phidget1045attached(self,serial,port,deviceType,alternative_conf=False):
-        _log.debug("phidget1045attached(%s,%s,%s,%s)",serial,port,deviceType,alternative_conf)
         try:
             self.aw.qmc.phidgetManager.reserveSerialPort(serial,port,0,"PhidgetTemperatureSensor",deviceType,remote=self.aw.qmc.phidgetRemoteFlag,remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
             if deviceType != DeviceID.PHIDID_TMP1200:
                 self.aw.qmc.phidgetManager.reserveSerialPort(serial,port,1,"PhidgetTemperatureSensor",deviceType,remote=self.aw.qmc.phidgetRemoteFlag,remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
             if deviceType == DeviceID.PHIDID_1045:
                 self.configure1045()
-                self.aw.sendmessage(QApplication.translate("Message","Phidget Temperature Sensor IR attached"))
+                self.aw.sendmessage(QApplication.translate("Message","Phidget Temperature Sensor IR attached",None))
             elif deviceType == DeviceID.PHIDID_1051:
                 self.configureOneTC()
-                self.aw.sendmessage(QApplication.translate("Message","Phidget Temperature Sensor 1-input attached"))
+                self.aw.sendmessage(QApplication.translate("Message","Phidget Temperature Sensor 1-input attached",None))
             elif deviceType == DeviceID.PHIDID_TMP1100:
                 self.configureOneTC()
-                self.aw.sendmessage(QApplication.translate("Message","Phidget Isolated Thermocouple 1-input attached"))
+                self.aw.sendmessage(QApplication.translate("Message","Phidget Isolated Thermocouple 1-input attached",None))
             elif deviceType == DeviceID.PHIDID_TMP1200:
                 if alternative_conf:
                     self.configureOneRTD_2()
                 else:
                     self.configureOneRTD()
-                self.aw.sendmessage(QApplication.translate("Message","Phidget VINT RTD 1-input attached"))
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+                self.aw.sendmessage(QApplication.translate("Message","Phidget VINT RTD 1-input attached",None))
+        except:
+            pass
 
     def phidget1045detached(self,serial,port,deviceType):
-        _log.debug("phidget1045detached(%s,%s,%s)",serial,port,deviceType)
         try:
             self.aw.qmc.phidgetManager.releaseSerialPort(serial,port,0,"PhidgetTemperatureSensor",deviceType,remote=self.aw.qmc.phidgetRemoteFlag,remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
             if deviceType != DeviceID.PHIDID_TMP1200:
                 self.aw.qmc.phidgetManager.releaseSerialPort(serial,port,1,"PhidgetTemperatureSensor",deviceType,remote=self.aw.qmc.phidgetRemoteFlag,remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
             if deviceType == DeviceID.PHIDID_1045:
-                self.aw.sendmessage(QApplication.translate("Message","Phidget Temperature Sensor IR detached"))
+                self.aw.sendmessage(QApplication.translate("Message","Phidget Temperature Sensor IR detached",None))
             elif deviceType == DeviceID.PHIDID_1051:
-                self.aw.sendmessage(QApplication.translate("Message","Phidget Temperature Sensor 1-input detached"))
+                self.aw.sendmessage(QApplication.translate("Message","Phidget Temperature Sensor 1-input detached",None))
             elif deviceType == DeviceID.PHIDID_TMP1100:
-                self.aw.sendmessage(QApplication.translate("Message","Phidget Isolated Thermocouple 1-input detached"))
+                self.aw.sendmessage(QApplication.translate("Message","Phidget Isolated Thermocouple 1-input detached",None))
             elif deviceType == DeviceID.PHIDID_TMP1200:
-                self.aw.sendmessage(QApplication.translate("Message","Phidget VINT RTD 1-input detached"))
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+                self.aw.sendmessage(QApplication.translate("Message","Phidget VINT RTD 1-input detached",None))
+        except:
+            pass
 
     # this one is reused for the 1045 (IR), the 1051 (1xTC), TMP1100 (1xTC), and TMP1200 (1xRTD)
     # if alternative_conf is set, the second configuration for the TMP1200 module is used
@@ -2894,7 +2803,7 @@ class serialport():
                                 self.PhidgetIRSensor.setIsRemote(True)
                                 self.PhidgetIRSensor.setIsLocal(False)
                             self.PhidgetIRSensor.open() #.openWaitForAttachment(timeout) # wait attach for the TMP1200 takes about 1sec on USB
-                        except Exception: # pylint: disable=broad-except
+                        except:
                             pass
                         if deviceType != DeviceID.PHIDID_TMP1200:
                             self.PhidgetIRSensorIC.setDeviceSerialNumber(ser)
@@ -2904,22 +2813,22 @@ class serialport():
                                 self.PhidgetIRSensorIC.setIsLocal(False)
                             try:
                                 self.PhidgetIRSensorIC.open() #.openWaitForAttachment(timeout)
-                            except Exception: # pylint: disable=broad-except
+                            except:
                                 pass
                         # we need to give this device a bit time to attach, otherwise it will be considered for another Artisan channel of the same type
                         if self.aw.qmc.phidgetRemoteOnlyFlag:
                             libtime.sleep(.8)
                         else:
                             libtime.sleep(.5)
-                    except Exception as ex: # pylint: disable=broad-except
+                    except Exception as ex:
                         _, _, exc_tb = sys.exc_info()
-                        self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " PHIDGET1045temperature() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                        self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " PHIDGET1045temperature() {0}").format(str(ex)),exc_tb.tb_lineno)
                         try:
                             if self.PhidgetIRSensor and self.PhidgetIRSensor.getAttached():
                                 self.PhidgetIRSensor.close()
                             if self.PhidgetIRSensorIC and self.PhidgetIRSensorIC.getAttached():
                                 self.PhidgetIRSensorIC.close()
-                        except Exception: # pylint: disable=broad-except
+                        except Exception:
                             pass
                         self.PhidgetIRSensor = None
                         self.Phidget1045values = []
@@ -2929,7 +2838,6 @@ class serialport():
             if self.PhidgetIRSensor and self.PhidgetIRSensor.getAttached():
                 res = -1
                 ambient = -1
-                probe = -1
                 try:
                     if (deviceType == DeviceID.PHIDID_1045 and self.aw.qmc.phidget1045_async) or \
                         (deviceType in [DeviceID.PHIDID_1051,DeviceID.PHIDID_TMP1100] and self.aw.qmc.phidget1048_async[0]) or \
@@ -2938,38 +2846,20 @@ class serialport():
                         try:
                             #### lock shared resources #####
                             self.Phidget1045semaphore.acquire(1)
-                            now = self.aw.qmc.timeclock.elapsedMilli()
+                            now = libtime.time()
                             start_of_interval = now-self.aw.qmc.delay/1000
                             # 1. just consider async readings taken within the previous sampling interval
                             # and associate them with the (arrivial) time since the begin of that interval
-                            valid_readings = [(r,t) for (r,t) in self.Phidget1045values if t > start_of_interval]
+                            valid_readings = [(r,t - start_of_interval) for (r,t) in self.Phidget1045values if t > start_of_interval]
                             if len(valid_readings) > 0:
-                                                                
                                 # 2. calculate the value
-                                
-#                                # we take the median of all valid_readings weighted by the time of arrival, preferrring newer readings
-                                readings = numpy.array([r for (r,_) in valid_readings])
-                                times = numpy.array([t for (_,t) in valid_readings])
-
-                                # average by calculating the weighted median
-                                import wquantiles
-                                async_res = wquantiles.median(readings, times)
-
-#                                # alternative to the use of the median is to use a polyfit
-#                                with warnings.catch_warnings():
-#                                    warnings.simplefilter('ignore')
-#                                    # using stable polyfit from numpy polyfit module
-#                                    if len(readings)>1:
-#                                        LS_fit = numpy.polynomial.polynomial.polyfit(times, readings, 1)
-#                                        tx = (valid_readings[-2][1] + valid_readings[-1][1])/2.0
-#                                        async_res = LS_fit[1]*tx+LS_fit[0]
-#                                    else:
-#                                        async_res = readings[-1]
-                                
+                                # we take the median of all valid_readings weighted by the time of arrival, preferrring newer readings
+                                readings = [r for (r,t) in valid_readings]
+                                weights = [t for (r,t) in valid_readings]
+                                async_res = wquantiles.median(numpy.array(readings),numpy.array(weights))
                                 # 3. consume old readings
                                 self.Phidget1045values = []
-                        except Exception as e: # pylint: disable=broad-except
-                            _log.exception(e)
+                        except:
                             self.Phidget1045values = []
                         finally:
                             if self.Phidget1045semaphore.available() < 1:
@@ -2988,54 +2878,53 @@ class serialport():
                     if self.aw.qmc.mode == "F":
                         probe = fromCtoF(probe)
                     res = probe
-                except PhidgetException:
-                    pass  # the value might be still unknown. This can happen right after attach.
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
-                if res != -1:
-                    try:
-                        if self.PhidgetIRSensorIC is not None and self.PhidgetIRSensorIC.getAttached():
-                            ambient = self.PhidgetIRSensorIC.getTemperature()
-                            # we heavily average this ambient temperature IC readings not to introduce additional noise via emissivity calc to the IR reading
-                            if self.Phidget1045tempIRavg is None:
-                                self.Phidget1045tempIRavg = ambient
-                            else:
-                                self.Phidget1045tempIRavg = (20*self.Phidget1045tempIRavg + ambient) / 21.0
-                                ambient = self.Phidget1045tempIRavg
-                            if self.aw.qmc.mode == "F":
-                                ambient = fromCtoF(ambient)
-                    except PhidgetException as e:
-                        pass # the value might be still unknown. This can happen right after attach.
-                    except Exception as e: # pylint: disable=broad-except
-                        _log.exception(e)
-                    if deviceType == DeviceID.PHIDID_TMP1200:
-                        ambient = res
-                    if ambient == -1:
-                        return -1,-1
+                except Exception:
+                    pass
+                try:
+                    if self.PhidgetIRSensorIC is not None and self.PhidgetIRSensorIC.getAttached():
+                        ambient = self.PhidgetIRSensorIC.getTemperature()
+                        # we heavily average this ambient temperature IC readings not to introduce additional noise via emissivity calc to the IR reading
+                        if self.Phidget1045tempIRavg is None:
+                            self.Phidget1045tempIRavg = ambient
+                        else:
+                            self.Phidget1045tempIRavg = (20*self.Phidget1045tempIRavg + ambient) / 21.0
+                            ambient = self.Phidget1045tempIRavg
+                        if self.aw.qmc.mode == "F":
+                            ambient = fromCtoF(ambient)
+                except Exception:
+                    pass
+                if deviceType == DeviceID.PHIDID_TMP1200:
+                    ambient = res
+                if ambient == -1:
+                    return -1,-1
+                else:
                     if deviceType == DeviceID.PHIDID_1045:
-                        return self.IRtemp(self.aw.qmc.phidget1045_emissivity,res,ambient), ambient
-                    return res, ambient
-            if retry:
+                        return self.IRtemp(self.aw.qmc.phidget1045_emissivity,res,ambient),ambient
+                    else:
+                        return res,ambient
+            elif retry:
                 libtime.sleep(0.1)
                 return self.PHIDGET1045temperature(deviceType,retry=False,alternative_conf=alternative_conf)
-            return -1,-1
-        except Exception as ex: # pylint: disable=broad-except
-            _log.exception(ex)
+            else:
+                return -1,-1
+        except Exception as ex:
+#            import traceback
+#            traceback.print_exc(file=sys.stdout)
             try:
                 if self.PhidgetIRSensor and self.PhidgetIRSensor.getAttached():
                     self.PhidgetIRSensor.close()
                 if self.PhidgetIRSensorIC and self.PhidgetIRSensorIC.getAttached():
                     self.PhidgetIRSensorIC.close()
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+            except Exception:
+                pass
             self.PhidgetIRSensor = None
             self.Phidget1045values = []
             self.Phidget1045lastvalue = -1
             self.PhidgetIRSensorIC = None
             self.Phidget1045tempIRavg = None
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " PHIDGET1045temperature() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
-            return -1, -1
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " PHIDGET1045temperature() {0}").format(str(ex)),exc_tb.tb_lineno)
+            return -1,-1
 
 #----
 
@@ -3044,8 +2933,6 @@ class serialport():
             #### lock shared resources #####
             self.Phidget1048semaphores[channel].acquire(1)
             self.Phidget1048values[channel].append((t,libtime.time()))
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
         finally:
             if self.Phidget1048semaphores[channel].available() < 1:
                 self.Phidget1048semaphores[channel].release(1)
@@ -3067,11 +2954,10 @@ class serialport():
                     # we take the median of all valid_readings weighted by the time of arrival, preferrring newer readings
                     readings = [r for (r,t) in valid_readings]
                     weights = [t for (r,t) in valid_readings]
-                    import wquantiles
                     res = wquantiles.median(numpy.array(readings),numpy.array(weights))
 #                    res = numpy.median(numpy.array(readings))
                     # 3. consume old readings
-                    self.Phidget1048values[channel] = []
+                    self.Phidget1048values[channel] = []                
                 
 #                if len(self.Phidget1048values[channel]) > 0:
 ##                    res = numpy.average(self.Phidget1048values[channel])
@@ -3090,8 +2976,7 @@ class serialport():
 ##                    res = numpy.average(outliers_removed)
 #
 #                    self.Phidget1048values[channel] = self.Phidget1048values[channel][-round((self.aw.qmc.delay/self.aw.qmc.phidget1048_dataRate)):]
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+            except:
                 self.Phidget1048values[channel] = []
             finally:
                 if self.Phidget1048semaphores[channel].available() < 1:
@@ -3101,10 +2986,13 @@ class serialport():
                     res = self.PhidgetTemperatureSensor[idx].getTemperature()
                     self.Phidget1048lastvalues[channel] = res
                     return res
-                return self.Phidget1048lastvalues[channel] # return the previous result
-            self.Phidget1048lastvalues[channel] = res
-            return res
-        return self.PhidgetTemperatureSensor[idx].getTemperature()
+                else:
+                    return self.Phidget1048lastvalues[channel] # return the previous result
+            else:
+                self.Phidget1048lastvalues[channel] = res
+                return res
+        else:
+            return self.PhidgetTemperatureSensor[idx].getTemperature()
     
     # each channel is configured separately
     def configure1048(self,idx):
@@ -3117,8 +3005,8 @@ class serialport():
                 # set rate
                 try:
                     self.PhidgetTemperatureSensor[idx].setDataInterval(self.aw.qmc.phidget1048_dataRate)
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                except Exception:
+                    pass
                 # set change trigger
                 try:
                     if self.aw.qmc.phidget1048_async[channel]:
@@ -3127,33 +3015,31 @@ class serialport():
                     else:
                         self.PhidgetTemperatureSensor[idx].setTemperatureChangeTrigger(0)
                         self.PhidgetTemperatureSensor[idx].setOnTemperatureChangeHandler(lambda *_:None)
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                except:
+                    pass
                 self.Phidget1048values[channel] = []
                 self.Phidget1048lastvalues[channel] = -1
 
     def phidget1048attached(self,serial,port,deviceType,idx):
-        _log.debug("phidget1048attached(%s,%s,%s,%s)",serial,port,deviceType,idx)
         try:
             self.configure1048(idx)
             if self.PhidgetTemperatureSensor is not None and len(self.PhidgetTemperatureSensor) > idx:
                 channel = self.PhidgetTemperatureSensor[idx].getChannel()
                 self.aw.qmc.phidgetManager.reserveSerialPort(serial,port,channel,"PhidgetTemperatureSensor",deviceType,remote=self.aw.qmc.phidgetRemoteFlag,remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
                 if channel == 0:
-                    self.aw.sendmessage(QApplication.translate("Message","Phidget Temperature Sensor 4-input attached"))
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+                    self.aw.sendmessage(QApplication.translate("Message","Phidget Temperature Sensor 4-input attached",None))
+        except:
+            pass
         
     def phidget1048detached(self,serial,port,deviceType,idx):
-        _log.debug("phidget1048detached(%s,%s,%s,%s)",serial,port,deviceType,idx)
         try:
             if self.PhidgetTemperatureSensor is not None and len(self.PhidgetTemperatureSensor) > idx:
                 channel = self.PhidgetTemperatureSensor[idx].getChannel()
                 self.aw.qmc.phidgetManager.releaseSerialPort(serial,port,channel,"PhidgetTemperatureSensor",deviceType,remote=self.aw.qmc.phidgetRemoteFlag,remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
                 if channel == 0:
-                    self.aw.sendmessage(QApplication.translate("Message","Phidget Temperature Sensor 4-input detached"))
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+                    self.aw.sendmessage(QApplication.translate("Message","Phidget Temperature Sensor 4-input detached",None))
+        except:
+            pass
 
     # mode = 0 for probe 1 and 2; mode = 1 for probe 3 and 4; mode 2 for Ambient Temperature
     # works for the 4xTC USB_Phidget 1048 and the 4xTC VINT Phidget TMP1101
@@ -3195,7 +3081,7 @@ class serialport():
                             self.PhidgetTemperatureSensor[0].setIsLocal(False)
                         try:
                             self.PhidgetTemperatureSensor[0].open() #.openWaitForAttachment(timeout)
-                        except Exception: # pylint: disable=broad-except
+                        except:
                             pass
                         if mode != 2:
                             self.PhidgetTemperatureSensor[1].setDeviceSerialNumber(ser)
@@ -3205,24 +3091,23 @@ class serialport():
                                 self.PhidgetTemperatureSensor[1].setIsLocal(False)
                             try:
                                 self.PhidgetTemperatureSensor[1].open() # .openWaitForAttachment(timeout)
-                            except Exception: # pylint: disable=broad-except
+                            except:
                                 pass
                         # we need to give this device a bit time to attach, otherwise it will be considered for another Artisan channel of the same type
                         if self.aw.qmc.phidgetRemoteOnlyFlag:
                             libtime.sleep(.8)
                         else:
                             libtime.sleep(.5)
-                    except Exception as e: # pylint: disable=broad-except
-                        _log.exception(e)
+                    except Exception as ex:
                         #_, _, exc_tb = sys.exc_info()
-                        #self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " PHIDGET1048temperature() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                        #self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " PHIDGET1048temperature() {0}").format(str(ex)),exc_tb.tb_lineno)
                         try:
                             if self.PhidgetTemperatureSensor and self.PhidgetTemperatureSensor[0].getAttached():
                                 self.PhidgetTemperatureSensor[0].close()
                             if mode != 2 and self.PhidgetTemperatureSensor and len(self.PhidgetTemperatureSensor)> 1 and self.PhidgetTemperatureSensor[1].getAttached():
                                 self.PhidgetTemperatureSensor[1].close()
-                        except Exception as e: # pylint: disable=broad-except
-                            _log.exception(e)
+                        except Exception:
+                            pass
                         self.Phidget1048values = [[],[],[],[]]
                         self.Phidget1048lastvalues = [-1]*4
                         self.PhidgetTemperatureSensor = None
@@ -3234,37 +3119,31 @@ class serialport():
                         probe1 = self.phidget1048getSensorReading(mode*2,0)
                         if self.aw.qmc.mode == "F":
                             probe1 = fromCtoF(probe1)
-                    except PhidgetException as e:
-                        pass  # the value might be still unknown. This can happen right after attach.
-                    except Exception as e: # pylint: disable=broad-except
-                        _log.exception(e)
+                    except Exception:
+                        pass
                     try:
                         probe2 = self.phidget1048getSensorReading(mode*2 + 1,1)
                         if self.aw.qmc.mode == "F":
                             probe2 = fromCtoF(probe2)
-                    except PhidgetException as e:
-                        pass  # the value might be still unknown. This can happen right after attach.
-                    except Exception as e: # pylint: disable=broad-except
-                        _log.exception(e)
+                    except Exception:
+                        pass
                     return probe1, probe2
-                if mode == 2:
+                elif mode == 2:
                     try:
                         at = self.PhidgetTemperatureSensor[0].getTemperature()
                         if self.aw.qmc.mode == "F":
                             at = fromCtoF(at)
                         return at,-1
-                    except PhidgetException as e:
-                        pass  # the value might be still unknown. This can happen right after attach.
-                    except Exception as e: # pylint: disable=broad-except
-                        _log.exception(e)
+                    except Exception:
                         return -1,-1
-                return -1,-1
-            if retry:
+                else:
+                    return -1,-1
+            elif retry:
                 libtime.sleep(0.1)
                 return self.PHIDGET1048temperature(deviceType,mode,False)
-            return -1,-1
-        except Exception as ex: # pylint: disable=broad-except
-            _log.exception(ex)
+            else:
+                return -1,-1
+        except Exception as ex:
 #            import traceback
 #            traceback.print_exc(file=sys.stdout)
             try:
@@ -3272,13 +3151,13 @@ class serialport():
                     self.PhidgetTemperatureSensor[0].close()
                 if mode != 2 and self.PhidgetTemperatureSensor and len(self.PhidgetTemperatureSensor)>1 and self.PhidgetTemperatureSensor[1].getAttached():
                     self.PhidgetTemperatureSensor[1].close()
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+            except Exception:
+                pass
             self.Phidget1048values = [[],[],[],[]]
             self.Phidget1048lastvalues = [-1]*4
             self.PhidgetTemperatureSensor = None
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " PHIDGET1048temperature() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " PHIDGET1048temperature() {0}").format(str(ex)),exc_tb.tb_lineno)
             return -1,-1
 
 #--- code for the Phidgets 1046
@@ -3287,31 +3166,28 @@ class serialport():
     # via a Wheatstone Bridge build from 1K ohm resistors
     # http://en.wikipedia.org/wiki/Wheatstone_bridge
     # Note: the 1046 returns the bridge value in mV/V
-    @staticmethod
-    def R_RTD_WS(bv):
+    def R_RTD_WS(self,bv):
         return (1000 * (1000 - 2 * bv))/(1000 + 2 * bv)
     
     # takes a bridge value in mV/V and returns the resistance of the corresponding RTD, assuming the RTD is connected
     # via a Voltage Divider build from 1K ohm resistors
     # http://en.wikipedia.org/wiki/Voltage_divider
     # Note: the 1046 returns the bridge value in mV/V
-    @staticmethod
-    def R_RTD_DIV(bv):
+    def R_RTD_DIV(self,bv):
         return (2000 * bv) / (1000 - bv)
         
     # this formula results from a direct mathematical linearization of the Callendar-Van Dusen equation
     # see Analog Devices Application Note AN-709 http://www.analog.com/static/imported-files/application_notes/AN709_0.pdf
     # Wikipedia http://en.wikipedia.org/wiki/Resistance_thermometer
     #  or http://www.abmh.de
-    @staticmethod
-    def rRTD2PT100temp(R_RTD):
+    def rRTD2PT100temp(self,R_RTD):
         Z1 = -3.9083e-03
         Z2 = 1.76e-05
         Z3 = -2.31e-08
         Z4 = -1.155e-06
         try:
             return (Z1 + math.sqrt(abs(Z2 + (Z3 * R_RTD))))/Z4
-        except Exception: # pylint: disable=broad-except
+        except Exception:
             return -1
 
     # convert the BridgeValue given by the PhidgetBridge to a temperature value assuming a PT100 probe
@@ -3330,8 +3206,6 @@ class serialport():
             if self.aw.qmc.mode == "F" and self.aw.qmc.phidget1046_formula[channel] != 2:
                 temp = fromCtoF(temp)
             self.Phidget1046values[channel].append((temp,libtime.time()))
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
         finally:
             if self.Phidget1046semaphores[channel].available() < 1:
                 self.Phidget1046semaphores[channel].release(1)
@@ -3345,10 +3219,9 @@ class serialport():
                 v = self.rRTD2PT100temp(self.R_RTD_DIV(abs(bv)))  # we add the abs() here to support inverted wirings
             elif self.aw.qmc.phidget1046_formula[i] == 2:
                 v = bv # no abs() for raw values
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except Exception as e:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " bridgeValue2Temperature(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))            
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " bridgeValue2Temperature(): {0}").format(str(e)),exc_tb.tb_lineno)            
         return v
 
     def phidget1046getTemperature(self,i,idx):
@@ -3363,8 +3236,7 @@ class serialport():
             v = self.bridgeValue2Temperature(i,bv)
             if self.aw.qmc.mode == "F" and self.aw.qmc.phidget1046_formula[i] != 2:
                 v = fromCtoF(v)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
             v = -1
         return v
                         
@@ -3382,9 +3254,8 @@ class serialport():
                 if len(valid_readings) > 0:
                     # 2. calculate the value
                     # we take the median of all valid_readings weighted by the time of arrival, preferrring newer readings
-                    readings = [r for (r, _) in valid_readings]
-                    weights = [t for (_, t) in valid_readings]
-                    import wquantiles
+                    readings = [r for (r,t) in valid_readings]
+                    weights = [t for (r,t) in valid_readings]
                     res = wquantiles.median(numpy.array(readings),numpy.array(weights))
                     # 3. consume old readings
                     self.Phidget1046values[channel] = []
@@ -3393,8 +3264,7 @@ class serialport():
 ##                    res = numpy.average(self.Phidget1046values[channel])
 #                    res = numpy.median(self.Phidget1046values[channel])
 #                    self.Phidget1046values[channel] = self.Phidget1046values[channel][-round((self.aw.qmc.delay/self.aw.qmc.phidget1046_dataRate)):] 
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+            except:
                 self.Phidget1046values[channel] = []
             finally:
                 if self.Phidget1046semaphores[channel].available() < 1:
@@ -3404,10 +3274,13 @@ class serialport():
                     res = self.phidget1046getTemperature(channel,idx)
                     self.Phidget1046lastvalues[channel] = res
                     return res
-                return self.Phidget1046lastvalues[channel]
-            self.Phidget1046lastvalues[channel] = res
-            return res
-        return self.phidget1046getTemperature(channel,idx)
+                else:
+                    return self.Phidget1046lastvalues[channel]
+            else:
+                self.Phidget1046lastvalues[channel] = res
+                return res
+        else:
+            return self.phidget1046getTemperature(channel,idx)
 
     def configure1046(self,idx):
         if self.PhidgetBridgeSensor and len(self.PhidgetBridgeSensor) > idx:
@@ -3416,23 +3289,23 @@ class serialport():
                 # set gain
                 try:
                     self.PhidgetBridgeSensor[idx].setBridgeGain(PHIDGET_GAIN_VALUE(self.aw.qmc.phidget1046_gain[channel]))
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                except Exception:
+                    pass
                 # set rate
                 try:
                     self.PhidgetBridgeSensor[idx].setDataInterval(self.aw.qmc.phidget1046_dataRate)
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                except Exception:
+                    pass
                 # set voltage ratio change trigger to 0 (fire every DataInterval)
                 try:
                     self.PhidgetBridgeSensor[idx].setVoltageChangeTrigger(0)
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                except Exception:
+                    pass
                 # enable channel
                 try:
                     self.PhidgetBridgeSensor[idx].setBridgeEnabled(channel, True)
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                except Exception:
+                    pass
                 if self.aw.qmc.phidget1046_async[channel]:
                     self.PhidgetBridgeSensor[idx].setOnVoltageRatioChangeHandler(lambda _,v:self.phidget1046TemperatureChanged(v,channel))
                 else:
@@ -3442,27 +3315,25 @@ class serialport():
                 self.Phidget1046lastvalues[channel] = -1
 
     def phidget1046attached(self,serial,port,deviceType,idx):
-        _log.debug("phidget1046attached(%s,%s,%s,%s)",serial,port,deviceType,idx)
         try:
             self.configure1046(idx)
             if self.PhidgetBridgeSensor is not None:
                 channel = self.PhidgetBridgeSensor[idx].getChannel()
                 self.aw.qmc.phidgetManager.reserveSerialPort(serial,port,channel,"PhidgetVoltageRatioInput",deviceType,remote=self.aw.qmc.phidgetRemoteFlag,remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
                 if channel == 0:
-                    self.aw.sendmessage(QApplication.translate("Message","Phidget Bridge 4-input attached"))
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+                    self.aw.sendmessage(QApplication.translate("Message","Phidget Bridge 4-input attached",None))
+        except:
+            pass
         
     def phidget1046detached(self,serial,port,deviceType,idx):
-        _log.debug("phidget1046detached(%s,%s,%s,%s)",serial,port,deviceType,idx)
         try:
             if self.PhidgetBridgeSensor is not None:
                 channel = self.PhidgetBridgeSensor[idx].getChannel()
                 self.aw.qmc.phidgetManager.releaseSerialPort(serial,port,channel,"PhidgetVoltageRatioInput",deviceType,remote=self.aw.qmc.phidgetRemoteFlag,remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
                 if channel == 0:
-                    self.aw.sendmessage(QApplication.translate("Message","Phidget Bridge 4-input detached"))
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+                    self.aw.sendmessage(QApplication.translate("Message","Phidget Bridge 4-input detached",None))
+        except:
+            pass
 
     # mode = 0 for probe 1 and 2; mode = 1 for probe 3 and 4
     def PHIDGET1046temperature(self,mode=0,retry=True):
@@ -3497,23 +3368,22 @@ class serialport():
                             libtime.sleep(.1)
                             try:
                                 self.PhidgetBridgeSensor[i].open() #.openWaitForAttachment(timeout)
-                            except Exception: # pylint: disable=broad-except
+                            except:
                                 pass
                         # we need to give this device a bit time to attach, otherwise it will be considered for another Artisan channel of the same type
                         if self.aw.qmc.phidgetRemoteOnlyFlag:
                             libtime.sleep(.8)
                         else:
                             libtime.sleep(.5)
-                    except Exception as e: # pylint: disable=broad-except
-                        _log.exception(e)
+                    except Exception as ex:
                         #_, _, exc_tb = sys.exc_info()
-                        #self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " PHIDGET1046temperature() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                        #self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " PHIDGET1046temperature() {0}").format(str(ex)),exc_tb.tb_lineno)
                         try:
                             if self.PhidgetBridgeSensor and self.PhidgetBridgeSensor[0].getAttached():
                                 self.PhidgetBridgeSensor[0].close()
                             if self.PhidgetBridgeSensor and len(self.PhidgetBridgeSensor)>1 and self.PhidgetBridgeSensor[1].getAttached():
                                 self.PhidgetBridgeSensor[1].close()
-                        except Exception: # pylint: disable=broad-except
+                        except Exception:
                             pass
                         self.Phidget1046values = [[],[],[],[]]
                         self.Phidget1046lastvalues = [-1]*4
@@ -3523,24 +3393,21 @@ class serialport():
                     probe1 = probe2 = -1
                     try:
                         probe1 = self.phidget1046getSensorReading(mode*2,0)
-                    except PhidgetException:
-                        pass  # the value might be still unknown. This can happen right after attach.
-                    except Exception as e: # pylint: disable=broad-except
-                        _log.exception(e)
+                    except Exception:
+                        pass
                     try:
                         probe2 = self.phidget1046getSensorReading(mode*2+1,1)
-                    except PhidgetException as e:
-                        pass  # the value might be still unknown. This can happen right after attach.
-                    except Exception as e: # pylint: disable=broad-except
-                        _log.exception(e)
+                    except Exception:
+                        pass
                     return probe1, probe2
-                return -1,-1
-            if retry:
+                else:
+                    return -1,-1
+            elif retry:
                 libtime.sleep(0.1)
                 return self.PHIDGET1046temperature(mode,False)
-            return -1,-1
-        except Exception as ex: # pylint: disable=broad-except
-            _log.exception(ex)
+            else:
+                return -1,-1
+        except Exception as ex:
 #            import traceback
 #            traceback.print_exc(file=sys.stdout)
             try:
@@ -3548,44 +3415,43 @@ class serialport():
                     self.PhidgetBridgeSensor[0].close()
                 if self.PhidgetBridgeSensor and len(self.PhidgetBridgeSensor)>1 and self.PhidgetBridgeSensor[1].getAttached():
                     self.PhidgetBridgeSensor[1].close()
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+            except Exception:
+                pass
             self.Phidget1046values = [[],[],[],[]]
             self.Phidget1046lastvalues = [-1]*4
             self.PhidgetBridgeSensor = None
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " PHIDGET1046temperature() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " PHIDGET1046temperature() {0}").format(str(ex)),exc_tb.tb_lineno)
             return -1,-1
 
     # takes a string of the form "<serial>[:<hubport>]" or None and returns serial and hubport numbers
-    @staticmethod
-    def serialString2serialPort(serial):
+    def serialString2serialPort(self,serial):
         if serial is None:
             return None, None
-        serial_split = serial.split(":")
-        s = None
-        p = None
-        try:
-            s = int(serial_split[0])
-        except Exception: # pylint: disable=broad-except
-            pass
-        try:
-            p = int(serial_split[1])
-        except Exception: # pylint: disable=broad-except
-            pass
-        return s,p
+        else:
+            serial_split = serial.split(":")
+            s = None
+            p = None
+            try:
+                s = int(serial_split[0])
+            except:
+                pass
+            try:
+                p = int(serial_split[1])
+            except:
+                pass
+            return s,p
             
     # takes serial and hubport as integers and returns the composed serial string
-    @staticmethod
-    def serialPort2serialString(serial, port):
+    def serialPort2serialString(self,serial,port):
         if serial is None and port is None:
             return None
-        if port is None:
+        elif port is None:
             return str(serial)
-        return str(serial) + ":" + str(port)
+        else:
+            return str(serial) + ":" + str(port)
     
     def phidgetOUTattached(self,ch):
-        _log.debug("phidgetOUTattached(%s)",ch)
         self.aw.qmc.phidgetManager.reserveSerialPort(
             ch.getDeviceSerialNumber(), # serial
             ch.getHubPort(), # port
@@ -3596,7 +3462,6 @@ class serialport():
             remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
     
     def phidgetOUTdetached(self,ch):
-        _log.debug("phidgetOUTdetached(%s)",ch)
         self.aw.qmc.phidgetManager.releaseSerialPort(
             ch.getDeviceSerialNumber(), # serial
             ch.getHubPort(), # port
@@ -3615,7 +3480,6 @@ class serialport():
 
     # serial: optional Phidget HUB serial number with optional port number as string of the form "<serial>[:<port>]"
     def phidgetBinaryOUTattach(self,channel,serial=None):
-        _log.debug("phidgetBinaryOUTattach(%s,%s)",channel,serial)
         if not serial in self.aw.ser.PhidgetBinaryOut:
             if self.aw.qmc.phidgetManager is None:
                 self.aw.qmc.startPhidgetManager()
@@ -3670,7 +3534,7 @@ class serialport():
                     # we make this also accessible via its serial number + port
                     s = self.serialPort2serialString(ch.getDeviceSerialNumber(),ch.getHubPort()) # NOTE: ch.getHubPort() returns -1 if not yet attached
                     self.aw.ser.PhidgetBinaryOut[s] = self.aw.ser.PhidgetBinaryOut[None]
-        except Exception: # pylint: disable=broad-except
+        except:
             pass
 
     def phidgetBinaryOUTpulse(self,channel,millis,serial=None):
@@ -3688,7 +3552,6 @@ class serialport():
 
     # value: True or False
     def phidgetBinaryOUTset(self,channel,value,serial=None):
-        _log.debug("phidgetBinaryOUTset(%s,%s,%s)",channel,value,serial)
         res = False
         self.phidgetBinaryOUTattach(channel,serial)
         if serial in self.aw.ser.PhidgetBinaryOut:
@@ -3698,14 +3561,12 @@ class serialport():
                 if len(out) > channel and out[channel] and out[channel].getAttached():
                     out[channel].setState(value)
                     res = True
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+            except:
                 res = False
         return res
 
     # returns: True or False (default)
     def phidgetBinaryOUTget(self,channel,serial=None):
-        _log.debug("phidgetBinaryOUTget(%s,%s)",channel,serial)
         self.phidgetBinaryOUTattach(channel,serial)
         res = False
         if serial in self.aw.ser.PhidgetBinaryOut:
@@ -3714,17 +3575,14 @@ class serialport():
             try:
                 if len(out) > channel and out[channel] and out[channel].getAttached():
                     res = out[channel].getState()
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
-        _log.debug(" => phidgetBinaryOUTget: %s",res)
+            except:
+                pass
         return res
     
     def phidgetBinaryOUTtoggle(self,channel,serial=None):
-        _log.debug("phidgetBinaryOUTtoggle(%s,%s)",channel,serial)
         self.phidgetBinaryOUTset(channel,not self.phidgetBinaryOUTget(channel,serial),serial)
         
     def phidgetBinaryOUTclose(self):
-        _log.debug("phidgetBinaryOUTclose()")
         for o in self.aw.ser.PhidgetBinaryOut:
             out = self.aw.ser.PhidgetBinaryOut[o]
             if out is not None:
@@ -3733,8 +3591,8 @@ class serialport():
                         if out[i].getAttached():
                             self.phidgetOUTdetached(out[i])
                         out[i].close()
-                    except Exception as e: # pylint: disable=broad-except
-                        _log.exception(e)
+                    except Exception:
+                        pass
         self.aw.ser.PhidgetBinaryOut = {}
     
     
@@ -3747,7 +3605,6 @@ class serialport():
 
     # serial: optional Phidget HUB serial number with optional port number as string of the form "<serial>[:<port>]"
     def phidgetOUTattach(self,channel,serial=None):
-        _log.debug("phidgetOUTattach(%s,%s)",channel,serial)
         if not serial in self.aw.ser.PhidgetDigitalOut:
             if self.aw.qmc.phidgetManager is None:
                 self.aw.qmc.startPhidgetManager()
@@ -3804,11 +3661,10 @@ class serialport():
                     # we make this also accessible via its serial number + port
                     s = self.serialPort2serialString(ch.getDeviceSerialNumber(),ch.getHubPort())
                     self.aw.ser.PhidgetDigitalOut[s] = self.aw.ser.PhidgetDigitalOut[None]
-        except Exception: # pylint: disable=broad-except
+        except:
             pass
 
     def phidgetOUTtogglePWM(self,channel,serial=None):
-        _log.debug("phidgetOUTtogglePWM(%s,%s)",channel,serial)
         self.phidgetOUTattach(channel,serial) # this is to ensure that the lastToggle/lastPWM structures are allocated
         if serial in self.aw.ser.PhidgetDigitalOut:
             lastPWM = self.aw.ser.PhidgetDigitalOutLastPWM[serial][channel]
@@ -3828,17 +3684,10 @@ class serialport():
                     # also establish for the entry with serial number
                     s = self.aw.ser.PhidgetDigitalOut[serial][channel].getDeviceSerialNumber()
                     ser = self.serialPort2serialString(s,self.aw.ser.PhidgetDigitalOut[serial][channel].getHubPort())
-                    try:
-                        self.aw.ser.PhidgetDigitalOutLastToggle[ser][channel] = lastPWM # remember lastPWM to be able to switch on again
-                    except Exception:  # pylint: disable=broad-except
-                        pass
-                    try:
-                        self.aw.ser.PhidgetDigitalOutLastToggle[str(s)][channel] = lastPWM # remember lastPWM to be able to switch on again
-                    except Exception:  # pylint: disable=broad-except
-                        pass
+                    self.aw.ser.PhidgetDigitalOutLastToggle[ser][channel] = lastPWM # remember lastPWM to be able to switch on again
+                    self.aw.ser.PhidgetDigitalOutLastToggle[str(s)][channel] = lastPWM # remember lastPWM to be able to switch on again
     
     def phidgetOUTpulsePWM(self,channel,millis,serial=None):
-        _log.debug("phidgetOUTpulsePWM(%s,%s,%s)",channel,millis,serial)
         self.phidgetOUTsetPWM(channel,100,serial)
 #        QTimer.singleShot(int(round(millis)),lambda : self.phidgetOUTsetPWM(channel,0))
 #        # QTimer (which does not work being called from a QThread) call replaced by the next 2 lines (event actions are now started in an extra thread)
@@ -3852,7 +3701,6 @@ class serialport():
 
     # value: 0-100
     def phidgetOUTsetPWM(self,channel,value,serial=None):
-        _log.debug("phidgetOUTsetPWM(%s,%s,%s)",channel,value,serial)
         self.phidgetOUTattach(channel,serial)
         if serial in self.aw.ser.PhidgetDigitalOut:
             out = self.aw.ser.PhidgetDigitalOut[serial]
@@ -3866,22 +3714,15 @@ class serialport():
                         # also establish for the entry with serial number
                         s = out[channel].getDeviceSerialNumber()
                         sr = self.serialPort2serialString(s,out[channel].getHubPort())
-                        try:
-                            self.aw.ser.PhidgetDigitalOutLastPWM[sr][channel] = value
-                            self.aw.ser.PhidgetDigitalOutLastToggle[sr][channel] = None # clears the lastToggle value
-                        except Exception: # pylint: disable=broad-except
-                            pass
-                        try:
-                            self.aw.ser.PhidgetDigitalOutLastPWM[str(s)][channel] = value
-                            self.aw.ser.PhidgetDigitalOutLastToggle[str(s)][channel] = None # clears the lastToggle value
-                        except Exception: # pylint: disable=broad-except
-                            pass
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+                        self.aw.ser.PhidgetDigitalOutLastPWM[sr][channel] = value
+                        self.aw.ser.PhidgetDigitalOutLastToggle[sr][channel] = None # clears the lastToggle value
+                        self.aw.ser.PhidgetDigitalOutLastPWM[str(s)][channel] = value
+                        self.aw.ser.PhidgetDigitalOutLastToggle[str(s)][channel] = None # clears the lastToggle value
+            except Exception:
+                pass
 
     # value: real
     def phidgetOUTsetPWMfrequency(self,channel,value,serial=None):
-        _log.debug("phidgetOUTsetPWMfrequency(%s,%s,%s)",channel,value,serial)
         self.phidgetOUTattach(channel,serial)
         if serial in self.aw.ser.PhidgetDigitalOut:
             out = self.aw.ser.PhidgetDigitalOut[serial]
@@ -3890,11 +3731,10 @@ class serialport():
                 v = max(100,min(20000,value))
                 if len(out) > channel and out[channel].getAttached():
                     out[channel].setFrequency(v)
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+            except:
+                pass
 
     def phidgetOUTclose(self):
-        _log.debug("phidgetOUTclose()")
         for m in self.aw.ser.PhidgetDigitalOut:
             out = self.aw.ser.PhidgetDigitalOut[m]
             if out is not None:
@@ -3903,8 +3743,8 @@ class serialport():
                         if out[i].getAttached():
                             self.phidgetOUTdetached(out[i])
                         out[i].close()
-                    except Exception as e: # pylint: disable=broad-except
-                        _log.exception(e)
+                    except Exception:
+                        pass
         self.aw.ser.PhidgetDigitalOut = {}
         self.aw.ser.PhidgetDigitalOutLastPWM = {}
         self.aw.ser.PhidgetDigitalOutLastToggle = {}
@@ -3915,7 +3755,6 @@ class serialport():
 
     # serial: optional Phidget HUB serial number with optional port number as string of the form "<serial>[:<port>]"
     def phidgetOUTattachHub(self,channel,serial=None):
-        _log.debug("phidgetOUTattachHub(%s,%s)",channel,serial)
         if not serial in self.aw.ser.PhidgetDigitalOutHub:
             if self.aw.qmc.phidgetManager is None:
                 self.aw.qmc.startPhidgetManager()
@@ -3950,11 +3789,10 @@ class serialport():
                     ch.openWaitForAttachment(3000)
                 else:
                     ch.openWaitForAttachment(1000)
-        except Exception: # pylint: disable=broad-except
+        except:
             pass
     
     def phidgetOUTtogglePWMhub(self,channel,serial=None):
-        _log.debug("phidgetOUTtogglePWMhub(%s,%s)",channel,serial)
         self.phidgetOUTattachHub(channel,serial) # this is to ensure that the lastToggle/lastPWM structures are allocated
         if serial in self.aw.ser.PhidgetDigitalOutHub:
             lastToggle = self.aw.ser.PhidgetDigitalOutLastToggleHub[serial][channel]
@@ -3977,7 +3815,6 @@ class serialport():
     
 
     def phidgetOUTpulsePWMhub(self,channel,millis,serial=None):
-        _log.debug("phidgetOUTpulsePWMhub(%s,%s,%s)",channel,millis,serial)
         self.phidgetOUTsetPWMhub(channel,100,serial)
 #        QTimer.singleShot(int(round(millis)),lambda : self.phidgetOUTsetPWMhub(channel,0))
         # QTimer (which does not work being called from a QThread) call replaced by the next 2 lines (event actions are now started in an extra thread)
@@ -3993,7 +3830,6 @@ class serialport():
     # value: 0-100
     # serial: optional Phidget HUB serial number with optional port number as string of the form "<serial>[:<port>]"
     def phidgetOUTsetPWMhub(self,channel,value,serial=None):
-        _log.debug("phidgetOUTsetPWMhub(%s,%s,%s)",channel,value,serial)
         self.phidgetOUTattachHub(channel,serial)
         if serial in self.aw.ser.PhidgetDigitalOutHub:
             outHub = self.aw.ser.PhidgetDigitalOutHub[serial]
@@ -4008,11 +3844,10 @@ class serialport():
                         sr = outHub[channel].getDeviceSerialNumber()
                         self.aw.ser.PhidgetDigitalOutLastPWMhub[str(sr)][channel] = value
                         self.aw.ser.PhidgetDigitalOutLastToggleHub[str(sr)][channel] = None # clears the lastToggle value
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+            except:
+                pass
     
     def phidgetOUTcloseHub(self):
-        _log.debug("phidgetOUTcloseHub")
         for h in self.aw.ser.PhidgetDigitalOutHub:
             outHub = self.aw.ser.PhidgetDigitalOutHub[h]
             if outHub is not None:
@@ -4021,7 +3856,7 @@ class serialport():
                         if outHub[i].getAttached():
                             self.phidgetOUTdetached(outHub[i])
                         outHub[i].close()
-                    except Exception: # pylint: disable=broad-except
+                    except:
                         pass
         self.aw.ser.PhidgetDigitalOutHub = {}
         self.aw.ser.PhidgetDigitalOutLastPWMhub = {}
@@ -4038,7 +3873,6 @@ class serialport():
 
     # serial: optional Phidget HUB serial number with optional port number as string of the form "<serial>[:<port>]"
     def phidgetVOUTattach(self,channel,serial):
-        _log.debug("phidgetVOUTattach(%s,%s)",channel,serial)
         if not serial in self.aw.ser.PhidgetAnalogOut:
             if self.aw.qmc.phidgetManager is None:
                 self.aw.qmc.startPhidgetManager()
@@ -4091,17 +3925,12 @@ class serialport():
                     # we make this also accessible via its serial number + port
                     s = self.serialPort2serialString(ch.getDeviceSerialNumber(),ch.getHubPort())
                     self.aw.ser.PhidgetAnalogOut[s] = self.aw.ser.PhidgetAnalogOut[None]
-            try:
-                self.aw.ser.PhidgetAnalogOut[s][channel].setEnabled(True) # the output on this device is always enabled
-            except Exception: # pylint: disable=broad-except
-                pass # the OUT1001/OUT1002 do not offer this API and are always enabled
-        except Exception: # pylint: disable=broad-except
+        except:
             pass
 
     # value: float
     # returns True or False indicating set status
     def phidgetVOUTsetVOUT(self,channel,value,serial=None):
-        _log.debug("phidgetVOUTsetVOUT(%s,%s,%s)",channel,value,serial)
         res = False
         self.phidgetVOUTattach(channel,serial)
         if serial in self.aw.ser.PhidgetAnalogOut:
@@ -4109,17 +3938,20 @@ class serialport():
             # set voltage output
             try:
                 if len(out) > channel and out[channel].getAttached():
-                    out[channel].setVoltage(value)
+                    if value == 0:
+                        out[channel].setVoltage(0)
+                        out[channel].setEnabled(False)
+                    else:
+                        out[channel].setVoltage(value)
+                        out[channel].setEnabled(True)
                     res = True
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+            except Exception:
                 res = False
         return res
         
     # value: int (either 5 or 10)
     # returns True or False indicating set status
     def phidgetVOUTsetRange(self,channel,value,serial=None):
-        _log.debug("phidgetVOUTsetRange(%s,%s,%s)",channel,value,serial)
         res = False
         self.phidgetVOUTattach(channel,serial)
         if serial in self.aw.ser.PhidgetAnalogOut:
@@ -4132,26 +3964,21 @@ class serialport():
                     else:
                         out[channel].setVoltageOutputRange(VoltageOutputRange.VOLTAGE_OUTPUT_RANGE_10V)
                     res = True
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+            except:
                 res = False
         return res
 
     def phidgetVOUTclose(self):
-        _log.debug("phidgetVOUTclose")
         for c in self.aw.ser.PhidgetAnalogOut:
             out = self.aw.ser.PhidgetAnalogOut[c]
             for i in range(len(out)):
                 try:
                     if out[i].getAttached():
-                        try:
-                            out[i].setEnabled(False) # the output on this device is always enabled
-                        except Exception: # pylint: disable=broad-except
-                            pass # the OUT1001/OUT1002 do not offer this API and are always enabled
+                        out[i].setEnabled(False)
                         self.phidgetOUTdetached(out[i])
                     out[i].close()
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                except Exception:
+                    pass
         self.aw.ser.PhidgetAnalogOut = {}
 
 
@@ -4165,7 +3992,6 @@ class serialport():
 
     # serial: optional Phidget HUB serial number with optional port number as string of the form "<serial>[:<port>]"
     def phidgetDCMotorAttach(self,channel,serial):
-        _log.debug("phidgetDCMotorAttach(%s,%s)",channel,serial)
         if not serial in self.aw.ser.PhidgetDCMotor:
             if self.aw.qmc.phidgetManager is None:
                 self.aw.qmc.startPhidgetManager()
@@ -4214,12 +4040,11 @@ class serialport():
                     # we make this also accessible via its serial number + port
                     s = self.serialPort2serialString(ch.getDeviceSerialNumber(),ch.getHubPort())
                     self.aw.ser.PhidgetDCMotor[s] = self.aw.ser.PhidgetDCMotor[None]
-        except Exception: # pylint: disable=broad-except
+        except:
             pass
 
     # value: float
     def phidgetDCMotorSetAcceleration(self,channel,value,serial=None):
-        _log.debug("phidgetDCMotorSetAcceleration(%s,%s,%s)",channel,value,serial)
         self.phidgetDCMotorAttach(channel,serial)
         if serial in self.aw.ser.PhidgetDCMotor:
             dcm = self.aw.ser.PhidgetDCMotor[serial]
@@ -4227,12 +4052,11 @@ class serialport():
             try:
                 if len(dcm) > channel and dcm[channel].getAttached():
                     dcm[channel].setAcceleration(value)
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+            except Exception:
+                pass
 
     # value: float
     def phidgetDCMotorSetVelocity(self,channel,value,serial=None):
-        _log.debug("phidgetDCMotorSetVelocity(%s,%s,%s)",channel,value,serial)
         self.phidgetDCMotorAttach(channel,serial)
         if serial in self.aw.ser.PhidgetDCMotor:
             dcm = self.aw.ser.PhidgetDCMotor[serial]
@@ -4241,12 +4065,11 @@ class serialport():
             try:
                 if len(dcm) > channel and dcm[channel].getAttached():
                     dcm[channel].setTargetVelocity(value)
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+            except:
+                pass
                 
     # value: float
     def phidgetDCMotorSetCurrentLimit(self,channel,value,serial=None):
-        _log.debug("phidgetDCMotorSetCurrentLimit(%s,%s,%s)",channel,value,serial)
         self.phidgetDCMotorAttach(channel,serial)
         if serial in self.aw.ser.PhidgetDCMotor:
             dcm = self.aw.ser.PhidgetDCMotor[serial]
@@ -4254,11 +4077,10 @@ class serialport():
             try:
                 if len(dcm) > channel and dcm[channel].getAttached():
                     dcm[channel].setCurrentLimit(value)
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+            except Exception:
+                pass
     
     def phidgetDCMotorClose(self):
-        _log.debug("phidgetDCMotorClose")
         for c in self.aw.ser.PhidgetDCMotor:
             dcm = self.aw.ser.PhidgetDCMotor[c]
             for i in range(len(dcm)):
@@ -4266,8 +4088,8 @@ class serialport():
                     if dcm[i].getAttached():
                         self.phidgetOUTdetached(dcm[i])
                     dcm[i].close()
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                except Exception:
+                    pass
         self.aw.ser.PhidgetDCMotor = {}
 
 
@@ -4282,7 +4104,6 @@ class serialport():
     # it is assumed that the modules two channels do not have custom function names different from
     # voltageOutput1 and voltageOutput2
     def yoctoVOUTattach(self,c,module_id):
-        _log.debug("yoctoVOUTattach(%s,%s)",c,module_id)
         # check if VoltageOutput object for channel c and module_id is already attached
         voltageOutputs = self.aw.ser.YOCTOvoltageOutputs
         m = next((x for x in voltageOutputs if 
@@ -4306,22 +4127,22 @@ class serialport():
         if YOCTOvoltageOutput.isOnline():
             self.aw.ser.YOCTOvoltageOutputs.append(YOCTOvoltageOutput)
             return YOCTOvoltageOutput
-        return None
+        else:
+            return None
     
     def yoctoVOUTsetVOUT(self,c,v,module_id=None):
-        _log.debug("yoctoVOUTsetVOUT(%s,%s,%s)",c,v,module_id)
         try:
             m = self.yoctoVOUTattach(c,module_id)
             if m is not None and m.isOnline():
                 m.set_currentVoltage(v) # with v a voltage in V [0.0-10.0]
-        except Exception: # pylint: disable=broad-except
+        except:
             pass
     
     def yoctoVOUTclose(self):
         self.aw.ser.YOCTOvoltageOutputs = []
         try:
             YAPI.FreeAPI() 
-        except Exception: # pylint: disable=broad-except
+        except:
             pass
 
 
@@ -4334,7 +4155,6 @@ class serialport():
     # it is assumed that the modules two channels do not have custom function names different from
     # voltageOutput1 and voltageOutput2
     def yoctoCOUTattach(self,module_id):
-        _log.debug("yoctoCOUTattach(%s)",module_id)
         # check if YOCTOcurrentOutput object for module_id is already attached
         currentOutputs = self.aw.ser.YOCTOcurrentOutputs
         m = next((x for x in currentOutputs if 
@@ -4358,24 +4178,23 @@ class serialport():
         if YOCTOcurrentOutput.isOnline():
             self.aw.ser.YOCTOcurrentOutputs.append(YOCTOcurrentOutput)
             return YOCTOcurrentOutput
-        return None
+        else:
+            return None
 
     def yoctoCOUTsetCOUT(self,c,module_id=None):
-        _log.debug("yoctoCOUTsetCOUT(%s,%s)",c,module_id)
         try:
             m = self.yoctoCOUTattach(module_id)
             if m is not None and m.isOnline():
                 m.set_current(c) # with c a current in mA [3.0-21.0]
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
 
     def yoctoCOUTclose(self):
-        _log.debug("yoctoCOUTclose")
         self.aw.ser.YOCTOcurrentOutputs = []
         try:
             YAPI.FreeAPI() 
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
 
 
 #--- Yoctopuce PWM Output
@@ -4398,7 +4217,6 @@ class serialport():
     # it is assumed that the modules two channels do not have custom function names different from
     # pwmOutput1 and pwmOutput2
     def yoctoPWMattach(self,c,module_id):
-        _log.debug("yoctoPWMattach(%s,%s)",c,module_id)
         # check if YPwmOutput object for channel c and module_id is already attached
         pwmOutputs = self.aw.ser.YOCTOpwmOutputs
         m = next((x for x in pwmOutputs if 
@@ -4422,10 +4240,10 @@ class serialport():
         if YOCTOpwmOutput.isOnline():
             self.aw.ser.YOCTOpwmOutputs.append(YOCTOpwmOutput)
             return YOCTOpwmOutput
-        return None
+        else:
+            return None
     
     def yoctoPWMenabled(self,c,b,module_id=None):
-        _log.debug("yoctoPWMenabled(%s,%s,%s)",c,b,module_id)
         try:
             m = self.yoctoPWMattach(c,module_id)
             if m is not None and m.isOnline():
@@ -4434,43 +4252,39 @@ class serialport():
                     m.set_enabled(YPwmOutput.ENABLED_TRUE)
                 else:
                     m.set_enabled(YPwmOutput.ENABLED_FALSE)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
     
     def yoctoPWMsetFrequency(self,c,f,module_id=None):
-        _log.debug("yoctoPWMsetFrequency(%s,%s,%s)",c,f,module_id)
         try:
             m = self.yoctoPWMattach(c,module_id)
             if m is not None and m.isOnline():
                 m.set_frequency(f) # with f the frequency in Hz as an integer [0-1000000]
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
     
     def yoctoPWMsetDuty(self,c,d,module_id=None):
-        _log.debug("yoctoPWMsetDuty(%s,%s,%s)",c,d,module_id)
         try:
             m = self.yoctoPWMattach(c,module_id)
             if m is not None and m.isOnline():
                 m.set_dutyCycle(d) # d the duty cycle in % as a float [0.0-100.0]
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
     
     def yoctoPWMmove(self,c,d,t,module_id=None):
-        _log.debug("yoctoPWMmove(%s,%s,%s,%s)",c,d,t,module_id)
         try:
             m = self.yoctoPWMattach(c,module_id)
             if m is not None and m.isOnline():
                 m.dutyCycleMove(d,t) # d the duty cycle in % as a float [0.0-100.0] and t the time as an integer in milliseconds
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
     
     def yoctoPWMclose(self):
-        _log.debug("yoctoPWMclose")
         self.aw.ser.YOCTOpwmOutputs = []
         try:
             YAPI.FreeAPI() 
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
 
 
 #--- Yoctopuce Relay Output
@@ -4492,7 +4306,6 @@ class serialport():
     # it is assumed that the modules two channels do not have custom function names different from
     # relay1, relay2,...
     def yoctoRELattach(self,c,module_id):
-        _log.debug("yoctoRELattach(%s,%s)",c,module_id)
         # check if Relay object for channel c and module_id is already attached
         relays = self.aw.ser.YOCTOrelays
         m = next((x for x in relays if 
@@ -4518,55 +4331,51 @@ class serialport():
         if YOCTOrelay.isOnline():
             self.aw.ser.YOCTOrelays.append(YOCTOrelay)
             return YOCTOrelay
-        return None
+        else:
+            return None
 
     def yoctoRELon(self,c,module_id=None):
-        _log.debug("yoctoRELon(%s,%s)",c,module_id)
         try:
             m = self.yoctoRELattach(c,module_id)
             if m is not None and m.isOnline():
                 from yoctopuce.yocto_relay import YRelay
                 m.set_state(YRelay.STATE_B)
                 #m.set_output(YRelay.OUTPUT_ON)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
     
     def yoctoRELoff(self,c,module_id=None):
-        _log.debug("yoctoRELoff(%s,%s)",c,module_id)
         try:
             m = self.yoctoRELattach(c,module_id)
             if m is not None and m.isOnline():
                 from yoctopuce.yocto_relay import YRelay
                 m.set_state(YRelay.STATE_A)
                 #m.set_output(YRelay.OUTPUT_OFF)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
     
     def yoctoRELflip(self,c,module_id=None):
-        _log.debug("yoctoRELflip(%s,%s)",c,module_id)
         try:
             m = self.yoctoRELattach(c,module_id)
             if m is not None and m.isOnline():
                 m.toggle()
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
     
     def yoctoRELpulse(self,c,delay,duration,module_id=None):
-        _log.debug("yoctoRELpulse(%s,%s,%s,%s)",c,delay,duration,module_id)
         try:
             m = self.yoctoRELattach(c,module_id)
             if m is not None and m.isOnline():
                 m.delayedPulse(delay,duration)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
 
     def yoctoRELclose(self):
-        _log.debug("yoctoRELclose")
         self.aw.ser.YOCTOrelays = []
         try:
             YAPI.FreeAPI() 
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
 
 
 #--- Yoctopuce Servo Output
@@ -4583,7 +4392,6 @@ class serialport():
     # it is assumed that the modules two channels do not have custom function names different from
     # relay1, relay2,...
     def yoctoSERVOattach(self,c,module_id):
-        _log.debug("yoctoSERVOattach(%s,%s)",c,module_id)
         # check if Servo object for channel c and module_id is already attached
         servos = self.aw.ser.YOCTOservos
         m = next((x for x in servos if 
@@ -4609,60 +4417,55 @@ class serialport():
         if YOCTOservo.isOnline():
             self.aw.ser.YOCTOservos.append(YOCTOservo)
             return YOCTOservo
-        return None
+        else:
+            return None
 
     def yoctoSERVOenabled(self,c,b,module_id=None):
-        _log.debug("yoctoSERVOenabled(%s,%s,%s)",c,b,module_id)
         try:
             m = self.yoctoSERVOattach(c,module_id)
             if m is not None and m.isOnline():
                 m.enabled(b)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
 
     def yoctoSERVOposition(self,c,p,module_id=None):
-        _log.debug("yoctoSERVOposition(%s,%s,%s)",c,p,module_id)
         try:
             m = self.yoctoSERVOattach(c,module_id)
             if m is not None and m.isOnline():
                 m.set_position(p)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
 
     def yoctoSERVOmove(self,c,p,t,module_id=None):
-        _log.debug("yoctoSERVOmove(%s,%s,%s,%s)",c,p,t,module_id)
         try:
             m = self.yoctoSERVOattach(c,module_id)
             if m is not None and m.isOnline():
                 m.move(p,t)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
 
     def yoctoSERVOneutral(self,c,n,module_id=None):
-        _log.debug("yoctoSERVOmove(%s,%s,%s)",c,n,module_id)
         try:
             m = self.yoctoSERVOattach(c,module_id)
             if m is not None and m.isOnline():
                 m.neutral(n)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
 
     def yoctoSERVOrange(self,c,r,module_id=None):
-        _log.debug("yoctoSERVOrange(%s,%s,%s)",c,r,module_id)
         try:
             m = self.yoctoSERVOattach(c,module_id)
             if m is not None and m.isOnline():
                 m.range(r)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
 
     def yoctoSERVOclose(self):
-        _log.debug("yoctoSERVOclose")
         self.aw.ser.YOCTOservos = []
         try:
             YAPI.FreeAPI() 
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
 
 
 #--- Phidget RC (only one supported for now)
@@ -4679,7 +4482,6 @@ class serialport():
 
     # serial: optional Phidget HUB serial number with optional port number as string of the form "<serial>[:<port>]"
     def phidgetRCattach(self,channel,serial=None):
-        _log.debug("phidgetRCattach(%s,%s)",channel,serial)
         if not serial in self.aw.ser.PhidgetRCServo:
             if self.aw.qmc.phidgetManager is None:
                 self.aw.qmc.startPhidgetManager()
@@ -4727,12 +4529,11 @@ class serialport():
                     # we make this also accessible via its serial number + port
                     s = self.serialPort2serialString(ch.getDeviceSerialNumber(),ch.getHubPort())
                     self.aw.ser.PhidgetRCServo[s] = self.aw.ser.PhidgetRCServo[None]
-        except Exception: # pylint: disable=broad-except
+        except:
             pass
 
     # sets min/max pulse width
     def phidgetRCpulse(self,channel,min_pulse,max_pulse,serial=None):
-        _log.debug("phidgetRCpulse(%s,%s,%s,%s)",channel,min_pulse,max_pulse,serial)
         self.phidgetRCattach(channel,serial)
         if serial in self.aw.ser.PhidgetRCServo and len(self.aw.ser.PhidgetRCServo[serial])>channel:
             self.aw.ser.PhidgetRCServo[serial][channel].setMinPulseWidth(min_pulse)
@@ -4740,7 +4541,6 @@ class serialport():
 
     # sets min/max position
     def phidgetRCpos(self,channel,min_pos,max_pos,serial=None):
-        _log.debug("phidgetRCpos(%s,%s,%s,%s)",channel,min_pos,max_pos,serial)
         self.phidgetRCattach(channel,serial)
         if serial in self.aw.ser.PhidgetRCServo and len(self.aw.ser.PhidgetRCServo[serial])>channel:
             self.aw.ser.PhidgetRCServo[serial][channel].setMinPosition(min_pos)
@@ -4748,28 +4548,24 @@ class serialport():
 
     # engage channel
     def phidgetRCengaged(self,channel,state,serial=None):
-        _log.debug("phidgetRCengaged(%s,%s,%s)",channel,state,serial)
         self.phidgetRCattach(channel,serial)
         if serial in self.aw.ser.PhidgetRCServo and len(self.aw.ser.PhidgetRCServo[serial])>channel:
             self.aw.ser.PhidgetRCServo[serial][channel].setEngaged(state)
 
     # sets position
     def phidgetRCset(self,channel,position,serial=None):
-        _log.debug("phidgetRCset(%s,%s,%s)",channel,position,serial)
         self.phidgetRCattach(channel,serial)
         if serial in self.aw.ser.PhidgetRCServo and len(self.aw.ser.PhidgetRCServo[serial])>channel:
             self.aw.ser.PhidgetRCServo[serial][channel].setTargetPosition(position)
 
     # set speed rampling state per channel
     def phidgetRCspeedRamping(self,channel,state,serial=None):
-        _log.debug("phidgetRCspeedRamping(%s,%s,%s)",channel,state,serial)
         self.phidgetRCattach(channel,serial)
         if serial in self.aw.ser.PhidgetRCServo and len(self.aw.ser.PhidgetRCServo[serial])>channel:
             self.aw.ser.PhidgetRCServo[serial][channel].setSpeedRampingState(state)
 
     # set voltage per channel
     def phidgetRCvoltage(self,channel,volt,serial=None):
-        _log.debug("phidgetRCvoltage(%s,%s,%s)",channel,volt,serial)
         self.phidgetRCattach(channel,serial)
         if serial in self.aw.ser.PhidgetRCServo and len(self.aw.ser.PhidgetRCServo[serial])>channel:
             from Phidget22.RCServoVoltage import RCServoVoltage
@@ -4786,20 +4582,17 @@ class serialport():
             
     # sets acceleration
     def phidgetRCaccel(self,channel,accel,serial=None):
-        _log.debug("phidgetRCaccel(%s,%s,%s)",channel,accel,serial)
         self.phidgetRCattach(channel,serial)
         if serial in self.aw.ser.PhidgetRCServo and len(self.aw.ser.PhidgetRCServo[serial])>channel:
             self.aw.ser.PhidgetRCServo[serial][channel].setAcceleration(accel)
             
     # sets velocity
     def phidgetRCveloc(self,channel,veloc,serial=None):
-        _log.debug("phidgetRCveloc(%s,%s,%s)",channel,veloc,serial)
         self.phidgetRCattach(channel,serial)
         if serial in self.aw.ser.PhidgetRCServo and len(self.aw.ser.PhidgetRCServo[serial])>channel:
             self.aw.ser.PhidgetRCServo[serial][channel].setVelocityLimit(veloc)
 
     def phidgetRCclose(self):
-        _log.debug("phidgetRCclose")
         for c in self.aw.ser.PhidgetRCServo:
             rc = self.aw.ser.PhidgetRCServo[c]
             for i in range(len(rc)):
@@ -4808,7 +4601,7 @@ class serialport():
                         rc[i].setEngaged(False)
                         self.phidgetOUTdetached(rc[i])
                     rc[i].close()
-                except Exception: # pylint: disable=broad-except
+                except Exception:
                     pass
             self.aw.ser.PhidgetRCServo = {}
         
@@ -4822,8 +4615,6 @@ class serialport():
                 #### lock shared resources #####
                 self.PhidgetIOsemaphores[channel].acquire(1)
                 self.PhidgetIOvalues[channel].append((v,libtime.time()))
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
             finally:
                 if self.PhidgetIOsemaphores[channel].available() < 1:
                     self.PhidgetIOsemaphores[channel].release(1)
@@ -4845,16 +4636,14 @@ class serialport():
                         # we take the median of all valid_readings weighted by the time of arrival, preferrring newer readings
                         readings = [r for (r,t) in valid_readings]
                         weights = [t for (r,t) in valid_readings]
-                        import wquantiles
                         res = wquantiles.median(numpy.array(readings),numpy.array(weights))
                         # 3. consume old readings
-                        self.PhidgetIOvalues[i] = []
+                        self.PhidgetIOvalues[i] = []                    
 #                    if len(self.PhidgetIOvalues[i]) > 0:
 ##                        res = numpy.average(self.PhidgetIOvalues[i])
 #                        res = numpy.median(self.PhidgetIOvalues[i])
 #                        self.PhidgetIOvalues[i] = self.PhidgetIOvalues[i][-round((self.aw.qmc.delay/self.aw.qmc.phidget1018_dataRates[i])):] 
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                except Exception:
                     self.PhidgetIOvalues[i] = []
                 finally:
                     if self.PhidgetIOsemaphores[i].available() < 1:
@@ -4872,22 +4661,26 @@ class serialport():
                                 res = self.PhidgetIO[idx].getVoltage() * self.aw.qmc.phidget1018valueFactor
                         self.PhidgetIOlastvalues[i] = res
                         return res
-                    return self.PhidgetIOlastvalues[i] # return the previous result
-                self.PhidgetIOlastvalues[i] = res
-                return res
-            if API == "digital":
-                v = int(self.PhidgetIO[idx].getState())
-            elif API == "current":
-                v = self.PhidgetIO[idx].getCurrent() * self.aw.qmc.phidget1018valueFactor
-            elif API == "frequency":
-                v = self.PhidgetIO[idx].getFrequency()
-            else:
-                if self.aw.qmc.phidget1018_ratio[i] and deviceType != DeviceID.PHIDID_DAQ1400:
-                    v = self.PhidgetIO[idx].getVoltageRatio()
+                    else:
+                        return self.PhidgetIOlastvalues[i] # return the previous result
                 else:
-                    v = self.PhidgetIO[idx].getVoltage() * self.aw.qmc.phidget1018valueFactor
-            return v
-        return -1
+                    self.PhidgetIOlastvalues[i] = res
+                    return res
+            else:
+                if API == "digital":
+                    v = self.PhidgetIOvalues[i] = int(self.PhidgetIO[idx].getState())
+                elif API == "current":
+                    v = self.PhidgetIO[idx].getCurrent() * self.aw.qmc.phidget1018valueFactor
+                elif API == "frequency":
+                    v = self.PhidgetIO[idx].getFrequency()
+                else:
+                    if self.aw.qmc.phidget1018_ratio[i] and deviceType != DeviceID.PHIDID_DAQ1400:
+                        v = self.PhidgetIO[idx].getVoltageRatio()
+                    else:
+                        v = self.PhidgetIO[idx].getVoltage() * self.aw.qmc.phidget1018valueFactor
+                return v
+        else:
+            return -1
 
     def configure1018(self,deviceType,idx,API="voltage"):
         # set data rates of all active inputs to 4ms
@@ -4900,17 +4693,9 @@ class serialport():
                 channel = self.PhidgetIO[idx].getChannel()
             # set rate
             try:
-                if API != "digital":
-                    self.PhidgetIO[idx].setDataInterval(self.aw.qmc.phidget1018_dataRates[channel])
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
-            # set VCP100x voltage range
-            if deviceType in [DeviceID.PHIDID_VCP1000, DeviceID.PHIDID_VCP1001, DeviceID.PHIDID_VCP1002]:
-                try:
-                    voltageRangeIdx = self.aw.qmc.phidgetVCP100x_voltageRanges[channel]
-                    self.PhidgetIO[idx].setVoltageRange(self.aw.qmc.phidgetVCP100x_voltageRangeValues[voltageRangeIdx])
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                self.PhidgetIO[idx].setDataInterval(self.aw.qmc.phidget1018_dataRates[channel])
+            except Exception:
+                pass
             # set the PowerSupply for the DAQ1400
             if deviceType == DeviceID.PHIDID_DAQ1400:
                 try:
@@ -4923,8 +4708,8 @@ class serialport():
                     else: # power_idx == 2:
                         power = PowerSupply.POWER_SUPPLY_24V
                     self.PhidgetIO[idx].setPowerSupply(power)
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                except:
+                    pass
             if API == "voltage":
                 if self.aw.qmc.phidget1018_async[channel]:
                     try:
@@ -4934,8 +4719,8 @@ class serialport():
                         else:
                             ct = max(min(float(self.aw.qmc.phidget1018_changeTriggers[channel]/100.0),self.PhidgetIO[idx].getMaxVoltageChangeTrigger()),self.PhidgetIO[idx].getMinVoltageChangeTrigger())
                             self.PhidgetIO[idx].setVoltageChangeTrigger(ct)
-                    except Exception as e: # pylint: disable=broad-except
-                        _log.exception(e)
+                    except:
+                        pass
                     if self.aw.qmc.phidget1018_ratio[channel] and deviceType != DeviceID.PHIDID_DAQ1400:                    
                         self.PhidgetIO[idx].setOnVoltageRatioChangeHandler(lambda _,t: self.phidget1018SensorChanged(t,channel,idx,API))
                     else:
@@ -4981,11 +4766,10 @@ class serialport():
             elif mode_idx == 1:
                 mode = InputMode.INPUT_MODE_PNP
             self.PhidgetIO[idx].setInputMode(mode)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
 
     def phidget1018attached(self,serial,port,className,deviceType,idx,API="voltage"):
-        _log.debug("phidget1018attached(%s,%s,%s,%s,%s,%s)",serial,port,className,deviceType,idx,API)
         try:
             self.configure1018(deviceType,idx,API)
             if self.PhidgetIO is not None:
@@ -4993,60 +4777,42 @@ class serialport():
                 self.aw.qmc.phidgetManager.reserveSerialPort(serial,port,channel,className,deviceType,remote=self.aw.qmc.phidgetRemoteFlag,remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
                 if channel == 0:
                     if deviceType == DeviceID.PHIDID_1011:
-                        self.aw.sendmessage(QApplication.translate("Message","Phidget IO 2/2/2 attached"))
+                        self.aw.sendmessage(QApplication.translate("Message","Phidget IO 2/2/2 attached",None))
                     elif deviceType == DeviceID.PHIDID_HUB0000:
-                        self.aw.sendmessage(QApplication.translate("Message","Phidget IO 6/6/6 attached"))
+                        self.aw.sendmessage(QApplication.translate("Message","Phidget IO 6/6/6 attached",None))
                     elif deviceType == DeviceID.PHIDID_1010_1013_1018_1019:
-                        self.aw.sendmessage(QApplication.translate("Message","Phidget IO 8/8/8 attached"))
+                        self.aw.sendmessage(QApplication.translate("Message","Phidget IO 8/8/8 attached",None))
                     elif deviceType == DeviceID.PHIDID_DAQ1400:
-                        self.aw.sendmessage(QApplication.translate("Message","Phidget DAQ1400 attached"))
-                    elif deviceType == DeviceID.PHIDID_VCP1000:
-                        self.aw.sendmessage(QApplication.translate("Message","Phidget VCP1000 attached"))
-                    elif deviceType == DeviceID.PHIDID_VCP1001:
-                        self.aw.sendmessage(QApplication.translate("Message","Phidget VCP1001 attached"))
-                    elif deviceType == DeviceID.PHIDID_VCP1002:
-                        self.aw.sendmessage(QApplication.translate("Message","Phidget VCP1002 attached"))
+                        self.aw.sendmessage(QApplication.translate("Message","Phidget DAQ1400 attached",None))
                     else:
-                        self.aw.sendmessage(QApplication.translate("Message","Phidget IO attached"))
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+                        self.aw.sendmessage(QApplication.translate("Message","Phidget IO attached",None))
+        except:
+            pass
 
     def phidget1018detached(self,serial,port,className,deviceType,idx):
-        _log.debug("phidget1018detached(%s,%s,%s,%s,%s)",serial,port,className,deviceType,idx)
         try:
             if self.PhidgetIO is not None:
                 channel = self.PhidgetIO[idx].getChannel()
                 self.aw.qmc.phidgetManager.releaseSerialPort(serial,port,channel,className,deviceType,remote=self.aw.qmc.phidgetRemoteFlag,remoteOnly=self.aw.qmc.phidgetRemoteOnlyFlag)
                 if channel == 0:
                     if deviceType == DeviceID.PHIDID_1011:
-                        self.aw.sendmessage(QApplication.translate("Message","Phidget IO 2/2/2 detached"))
+                        self.aw.sendmessage(QApplication.translate("Message","Phidget IO 2/2/2 detached",None))
                     elif deviceType == DeviceID.PHIDID_HUB0000:
-                        self.aw.sendmessage(QApplication.translate("Message","Phidget IO 6/6/6 detached"))
+                        self.aw.sendmessage(QApplication.translate("Message","Phidget IO 6/6/6 detached",None))
                     elif deviceType == DeviceID.PHIDID_1010_1013_1018_1019:
-                        self.aw.sendmessage(QApplication.translate("Message","Phidget IO 8/8/8 detached"))
+                        self.aw.sendmessage(QApplication.translate("Message","Phidget IO 8/8/8 detached",None))
                     elif deviceType == DeviceID.PHIDID_DAQ1400:
-                        self.aw.sendmessage(QApplication.translate("Message","Phidget DAQ1400 detached"))
-                    elif deviceType == DeviceID.PHIDID_VCP1000:
-                        self.aw.sendmessage(QApplication.translate("Message","Phidget VCP1000 detached"))
-                    elif deviceType == DeviceID.PHIDID_VCP1001:
-                        self.aw.sendmessage(QApplication.translate("Message","Phidget VCP1001 detached"))
-                    elif deviceType == DeviceID.PHIDID_VCP1002:
-                        self.aw.sendmessage(QApplication.translate("Message","Phidget VCP1002 detached"))
+                        self.aw.sendmessage(QApplication.translate("Message","Phidget DAQ1400 detached",None))
                     else:
-                        self.aw.sendmessage(QApplication.translate("Message","Phidget IO detached"))
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+                        self.aw.sendmessage(QApplication.translate("Message","Phidget IO detached",None))
+        except:
+            pass
 
     # mode = 0 for probe 1 and 2; mode = 1 for probe 3 and 4; mode 2 for probe 5 and 6; mode 3 for probe 7 and 8
     # access of the VoltageInput, DigitalInput or VoltageRatioInput for the following IO Phidgets
     #  - Phidget IO 8/8/8 (1010,1013,1018,1019,SBC): DeviceID.PHIDID_1010_1013_1018_1019
     #  - Phidget IO 6/6/6 (HUB0000): DeviceID.PHIDID_HUB0000
     #  - Phidget IO 2/2/2 (1011): DeviceID.PHIDID_1011
-    #  - Phidget Phidget DAQ1400 Current/Frequency/Digital/VOLTAGE  (DAQ1400): PHIDID_DAQ1400
-    #  - Phidget VCP1000: PHIDID_VCP1000 (20-bit ±40V Voltage Input Phidget; ±312mV, ±40V)
-    #  - Phidget VCP1001: PHIDID_VCP1001 (±40V Voltage Input Phidget; ±5V, ±15V or ±40V)
-    #  - Phidget VCP1002: PHIDID_VCP1002 (±1V Voltage Input Phidget; ±10mV -- ±1V)
-
     # the API parameter is one of "voltage", "digital", "current", "frequency"
     # if single is set, only the first channel of the two is allocated
     def PHIDGET1018values(self,deviceType=DeviceID.PHIDID_1010_1013_1018_1019,mode=0, API="voltage", retry=True, single=False):
@@ -5119,29 +4885,28 @@ class serialport():
                         self.PhidgetIO[0].setDeviceSerialNumber(ser)
                         try:
                             self.PhidgetIO[0].open() #.openWaitForAttachment(timeout)
-                        except Exception: # pylint: disable=broad-except
+                        except:
                             pass
                         self.PhidgetIO[1].setDeviceSerialNumber(ser)
                         if deviceType != DeviceID.PHIDID_DAQ1400 and not single:
                             try:
                                 self.PhidgetIO[1].open() #.openWaitForAttachment(timeout)
-                            except Exception: # pylint: disable=broad-except
+                            except:
                                 pass
                         # we need to give this device a bit time to attach, otherwise it will be considered for another Artisan channel of the same type
                         if self.aw.qmc.phidgetRemoteOnlyFlag:
                             libtime.sleep(.8)
                         else:
                             libtime.sleep(.5)
-                    except Exception as e: # pylint: disable=broad-except
-                        _log.exception(e)
+                    except Exception as ex:
                         #_, _, exc_tb = sys.exc_info()
-                        #self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " PHIDGET1018values() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                        #self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " PHIDGET1018values() {0}").format(str(ex)),exc_tb.tb_lineno)
                         try:
                             if self.PhidgetIO and self.PhidgetIO[0].getAttached():
                                 self.PhidgetIO[0].close()
                             if self.PhidgetIO and len(self.PhidgetIO)> 1 and self.PhidgetIO[1].getAttached():
                                 self.PhidgetIO[1].close()
-                        except Exception: # pylint: disable=broad-except
+                        except Exception:
                             pass
                         self.PhidgetIO = None
                         self.PhidgetIOvalues = [[],[],[],[],[],[],[],[]]
@@ -5150,33 +4915,27 @@ class serialport():
                 probe = -1
                 try:
                     probe = self.phidget1018getSensorReading(0,0,deviceType,API)
-                except PhidgetException:
-                    pass  # the value might be still unknown. This can happen right after attach.
-                except Exception: # pylint: disable=broad-except
+                except:
                     pass
                 return probe, -1
-            if deviceType != DeviceID.PHIDID_DAQ1400 and self.PhidgetIO is not None and self.PhidgetIO and len(self.PhidgetIO)>1 and self.PhidgetIO[0].getAttached() and (single or self.PhidgetIO[1].getAttached()):
+            elif deviceType != DeviceID.PHIDID_DAQ1400 and self.PhidgetIO is not None and self.PhidgetIO and len(self.PhidgetIO)>1 and self.PhidgetIO[0].getAttached() and (single or self.PhidgetIO[1].getAttached()):
                 probe1 = probe2 = -1
                 try:
                     probe1 = self.phidget1018getSensorReading(mode*2,0,deviceType,API)
-                except PhidgetException:
-                    pass  # the value might be still unknown. This can happen right after attach.
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                except:
+                    pass
                 if not single:
                     try:
                         probe2 = self.phidget1018getSensorReading(mode*2 + 1,1,deviceType,API)
-                    except PhidgetException:
-                        pass  # the value might be still unknown. This can happen right after attach.
-                    except Exception as e: # pylint: disable=broad-except
-                        _log.exception(e)
+                    except Exception:
+                        pass
                 return probe1, probe2
-            if retry:
+            elif retry:
                 libtime.sleep(0.1)
-                return self.PHIDGET1018values(deviceType,mode,API,False)
-            return -1,-1
-        except Exception as ex: # pylint: disable=broad-except
-            _log.exception(ex)
+                self.PHIDGET1018values(deviceType,mode,API,False)
+            else:
+                return -1,-1
+        except Exception as ex:
 #            import traceback
 #            traceback.print_exc(file=sys.stdout)
             try:
@@ -5184,13 +4943,13 @@ class serialport():
                     self.PhidgetIO[0].close()
                 if not single and self.PhidgetIO and len(self.PhidgetIO)> 1 and self.PhidgetIO[1].getAttached():
                     self.PhidgetIO[1].close()
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+            except Exception:
+                pass
             self.PhidgetIO = None
             self.PhidgetIOlastvalues = [[],[],[],[],[],[],[],[]] 
             self.PhidgetIOlastvalues = [-1]*8
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " PHIDGET1018values() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " PHIDGET1018values() {0}").format(str(ex)),exc_tb.tb_lineno)
             return -1,-1
 
 #---
@@ -5218,40 +4977,43 @@ class serialport():
                  (mode == 4 and productName.startswith("Yocto-milliVolt-Rx")) or \
                  (mode == 4 and productName.startswith("Yocto-Serial"))):
                 return YOCTOsensor
-            if mode == 4:
-                return self.getNextYOCTOsensorOfType(mode,connected_yoctos,YGenericSensor.nextGenericSensor(YOCTOsensor))
-            return self.getNextYOCTOsensorOfType(mode,connected_yoctos,YTemperature.nextTemperature(YOCTOsensor))
-        return None
+            else:
+                if mode == 4:
+                    return self.getNextYOCTOsensorOfType(mode,connected_yoctos,YGenericSensor.nextGenericSensor(YOCTOsensor))
+                else:
+                    return self.getNextYOCTOsensorOfType(mode,connected_yoctos,YTemperature.nextTemperature(YOCTOsensor))
+        else:
+            return None
             
     def YOCTOimportLIB(self):
         errmsg=YRefParam()
         if not self.YOCTOlibImported:
             # import Yoctopuce Python library (installed form PyPI)
             #self.aw.sendmessage(str(errmsg))
-            YAPI.DisableExceptions()
+            YAPI.DisableExceptions
             ## WINDOWS/Linux DLL HACK BEGIN
             arch = platform.architecture()[0]
             machine = platform.machine()
             libpath = os.path.dirname(sys.executable)
             if self.platf == 'Windows' and appFrozen():
                 if arch == '32bit':
-                    YAPI._yApiCLibFile = libpath + "\\lib\\yapi.dll" # pylint: disable=protected-access
+                    YAPI._yApiCLibFile = libpath + "\\lib\\yapi.dll"
                 else:
-                    YAPI._yApiCLibFile = libpath + "\\lib\\yapi64.dll" # pylint: disable=protected-access
-                YAPI._yApiCLibFileFallback = libpath + "\\lib\\yapi.dll" # pylint: disable=protected-access
+                    YAPI._yApiCLibFile = libpath + "\\lib\\yapi64.dll"
+                YAPI._yApiCLibFileFallback = libpath + "\\lib\\yapi.dll"
             elif self.platf == "Linux" and appFrozen():
                 if machine.find("arm") >= 0: # Raspberry
-                    YAPI._yApiCLibFile = libpath + "/libyapi-armhf.so" # pylint: disable=protected-access
-                    YAPI._yApiCLibFileFallback = libpath + "/libyapi-armel.so" # pylint: disable=protected-access
+                    YAPI._yApiCLibFile = libpath + "/libyapi-armhf.so"
+                    YAPI._yApiCLibFileFallback = libpath + "/libyapi-armel.so"
                 elif machine.find("mips") >= 0:
-                    YAPI._yApiCLibFile = libpath + "/libyapi-mips.so" # pylint: disable=protected-access
-                    YAPI._yApiCLibFileFallback = "" # pylint: disable=protected-access
+                    YAPI._yApiCLibFile = libpath + "/libyapi-mips.so"
+                    YAPI._yApiCLibFileFallback = ""
                 elif machine == 'x86_32' or (machine[0] == 'i' and machine[-2:] == '86'):
-                    YAPI._yApiCLibFile = libpath + "/libyapi-i386.so" # pylint: disable=protected-access
-                    YAPI._yApiCLibFileFallback = libpath + "/libyapi-amd64.so"  # just in case # pylint: disable=protected-access
+                    YAPI._yApiCLibFile = libpath + "/libyapi-i386.so"
+                    YAPI._yApiCLibFileFallback = libpath + "/libyapi-amd64.so"  # just in case
                 elif machine == 'x86_64':
-                    YAPI._yApiCLibFile = libpath + "/libyapi-amd64.so" # pylint: disable=protected-access
-                    YAPI._yApiCLibFileFallback = libpath + "/libyapi-i386.so"  # just in case # pylint: disable=protected-access
+                    YAPI._yApiCLibFile = libpath + "/libyapi-amd64.so"
+                    YAPI._yApiCLibFileFallback = libpath + "/libyapi-i386.so"  # just in case
             ## WINDOWS/Linux DLL HACK END
         try:
             if self.aw.qmc.yoctoRemoteFlag:
@@ -5259,8 +5021,7 @@ class serialport():
             else:
                 YAPI.RegisterHub("usb", errmsg)
             self.YOCTOlibImported = True
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except Exception as e:
             self.aw.sendmessage(str(e))
 
     def yoctoTimedCallback(self,_, measure,channel):
@@ -5268,8 +5029,6 @@ class serialport():
             #### lock shared resources #####
             self.YOCTOsemaphores[channel].acquire(1)
             self.YOCTOvalues[channel].append((measure.get_averageValue(),libtime.time()))
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
         finally:
             if self.YOCTOsemaphores[channel].available() < 1:
                 self.YOCTOsemaphores[channel].release(1)
@@ -5285,7 +5044,7 @@ class serialport():
                         from yoctopuce.yocto_genericsensor import YGenericSensor
                     else:
                         from yoctopuce.yocto_temperature import YTemperature
-                    YAPI.DisableExceptions()
+                    YAPI.DisableExceptions
                     # already connected YOCTOsensors?
                     if not self.aw.ser.YOCTOsensor:
                         connected_yoctos = []
@@ -5307,14 +5066,14 @@ class serialport():
                         self.YOCTOchan1 = YTemperature.FindTemperature(serial + '.temperature1')
                         self.YOCTOchan2 = YTemperature.FindTemperature(serial + '.temperature2')
                         if mode == 0:
-                            self.aw.sendmessage(QApplication.translate("Message","Yocto Thermocouple attached"))
+                            self.aw.sendmessage(QApplication.translate("Message","Yocto Thermocouple attached",None))
                         elif mode == 2:
-                            self.aw.sendmessage(QApplication.translate("Message","Yocto IR attached"))
+                            self.aw.sendmessage(QApplication.translate("Message","Yocto IR attached",None))
                         # increase the resolution
                         try:
                             self.YOCTOchan1.set_resolution(yocto_res)
                             self.YOCTOchan2.set_resolution(yocto_res)
-                        except Exception: # pylint: disable=broad-except
+                        except:
                             pass
                         # get units
                         try:
@@ -5328,8 +5087,8 @@ class serialport():
                                 self.aw.qmc.YOCTOchan2Unit = "F"
                             else:
                                 self.aw.qmc.YOCTOchan2Unit = "C"
-                        except Exception as e: # pylint: disable=broad-except
-                            _log.exception(e)
+                        except:
+                            pass
                         if self.aw.qmc.YOCTO_dataRate > 1000:
                             reportFrequency = "60/m" # in this mode the average of a measurements over the last second is returned
                         else:
@@ -5352,22 +5111,22 @@ class serialport():
                                 self.YOCTOthread = YoctoThread()
                             self.YOCTOthread.start()
                     elif mode == 1 and self.YOCTOsensor is not None and self.YOCTOsensor.isOnline():
-                        self.aw.sendmessage(QApplication.translate("Message","Yocto PT100 attached"))
+                        self.aw.sendmessage(QApplication.translate("Message","Yocto PT100 attached",None))  
                         # increase the resolution
                         try:
                             self.YOCTOsensor.set_resolution(yocto_res)
                             self.YOCTOsensor.set_resolution(yocto_res)
-                        except Exception as e: # pylint: disable=broad-except
-                            _log.exception(e)
+                        except:
+                            pass  
                         # get units
                         try:
-                            unit = self.YOCTOsensor.get_unit()
+                            unit = self.YOCTOchan.get_unit()
                             if unit is not None and len(unit) > 0 and unit[-1] != "C":
                                 self.aw.qmc.YOCTOchanUnit = "F"
                             else:
                                 self.aw.qmc.YOCTOchanUnit = "C"
-                        except Exception as e: # pylint: disable=broad-except
-                            _log.exception(e)
+                        except:
+                            pass
                         if self.aw.qmc.YOCTO_async[0]:
                             if self.aw.qmc.YOCTO_dataRate > 1000:
                                 reportFrequency = "60/m" # in this mode the average of a measurements over the last second is returned
@@ -5384,9 +5143,8 @@ class serialport():
                         serial=self.YOCTOsensor.get_module().get_serialNumber()
                         self.YOCTOchan1 = YGenericSensor.FindGenericSensor(serial + '.genericSensor1')
                         self.YOCTOchan2 = YGenericSensor.FindGenericSensor(serial + '.genericSensor2')
-                        self.aw.sendmessage(QApplication.translate("Message","Yocto 4-20mA-Rx attached"))
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                        self.aw.sendmessage(QApplication.translate("Message","Yocto 4-20mA-Rx attached",None))
+                except:
                     if self.YOCTOthread is not None:
                         self.YOCTOthread.join()
                         self.YOCTOthread = None
@@ -5408,7 +5166,6 @@ class serialport():
                                 # we take the median of all valid_readings weighted by the time of arrival, preferrring newer readings
                                 readings = [r for (r,t) in valid_readings]
                                 weights = [t for (r,t) in valid_readings]
-                                import wquantiles
                                 probe1 = wquantiles.median(numpy.array(readings),numpy.array(weights))
                                 # 3. consume old readings
                                 self.YOCTOvalues[0] = []
@@ -5416,8 +5173,7 @@ class serialport():
 ##                                probe1 = numpy.average(self.YOCTOvalues[0])
 #                                probe1 = numpy.median(self.YOCTOvalues[0])
 #                                self.YOCTOvalues[0] = self.YOCTOvalues[0][-max(1,round((self.aw.qmc.delay/self.aw.qmc.YOCTO_dataRate))):]
-                        except Exception as e: # pylint: disable=broad-except
-                            _log.exception(e)
+                        except:
                             self.YOCTOvalues[0] = []
                         finally:
                             if self.YOCTOsemaphores[0].available() < 1:
@@ -5441,8 +5197,8 @@ class serialport():
                             probe1 = fromCtoF(probe1)
                         elif self.aw.qmc.YOCTOchan1Unit == "F" and self.aw.qmc.mode == "C":
                             probe1 = fromFtoC(probe1)
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                except:
+                    pass
                 try:
                     if self.aw.qmc.YOCTO_async[0]: # flag for channel 1 is ignored and only that of channel 0 is respected for both channels
                         try:
@@ -5458,7 +5214,6 @@ class serialport():
                                 # we take the median of all valid_readings weighted by the time of arrival, preferrring newer readings
                                 readings = [r for (r,t) in valid_readings]
                                 weights = [t for (r,t) in valid_readings]
-                                import wquantiles # @Reimport
                                 probe2 = wquantiles.median(numpy.array(readings),numpy.array(weights))
                                 # 3. consume old readings
                                 self.YOCTOvalues[1] = []
@@ -5466,8 +5221,7 @@ class serialport():
 ##                                probe2 = numpy.average(self.YOCTOvalues[1])
 #                                probe2 = numpy.median(self.YOCTOvalues[1])
 #                                self.YOCTOvalues[1] = self.YOCTOvalues[1][-round((self.aw.qmc.delay/self.aw.qmc.YOCTO_dataRate)):]
-                        except Exception as e: # pylint: disable=broad-except
-                            _log.exception(e)
+                        except:
                             self.YOCTOvalues[1] = []
                         finally:
                             if self.YOCTOsemaphores[1].available() < 1:
@@ -5484,8 +5238,8 @@ class serialport():
                             probe2 = fromCtoF(probe2)
                         elif self.aw.qmc.YOCTOchan2Unit == "F" and self.aw.qmc.mode == "C":
                             probe2 = fromFtoC(probe2)
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                except Exception:
+                    pass
             elif mode == 1:
                 try:
                     if self.aw.qmc.YOCTO_async[0]:
@@ -5496,8 +5250,7 @@ class serialport():
 #                                probe1 = numpy.average(self.YOCTOvalues[0])
                                 probe1 = numpy.median(self.YOCTOvalues[0])
                                 self.YOCTOvalues[0] = self.YOCTOvalues[0][-round((self.aw.qmc.delay/self.aw.qmc.YOCTO_dataRate)):]
-                        except Exception as e: # pylint: disable=broad-except
-                            _log.exception(e)
+                        except:
                             self.YOCTOvalues[0] = []
                         finally:
                             if self.YOCTOsemaphores[0].available() < 1:
@@ -5514,25 +5267,24 @@ class serialport():
                             probe1 = fromCtoF(probe1)
                         elif self.aw.qmc.YOCTOchanUnit == "F" and self.aw.qmc.mode == "C":
                             probe1 = fromFtoC(probe1)
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                except Exception:
+                    pass
             elif mode == 4:
                 try:
                     if self.YOCTOchan1 and self.YOCTOchan1.isOnline():
                         probe1 = self.YOCTOchan1.get_currentValue()
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                except:
+                    pass
                 try:
                     if self.YOCTOchan2 and self.YOCTOchan2.isOnline():
                         probe2 = self.YOCTOchan2.get_currentValue()
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                except:
+                    pass
             # apply the emissivity to the IR value
             if mode == 2 and probe1 != -1 and probe2 != -1:
                 probe2 = self.IRtemp(self.aw.qmc.YOCTO_emissivity,probe2,probe1)
             return probe1, probe2
-        except Exception as ex: # pylint: disable=broad-except
-            _log.exception(ex)
+        except Exception as ex:
 #            import traceback
 #            traceback.print_exc(file=sys.stdout)
             try:
@@ -5542,14 +5294,14 @@ class serialport():
                 self.YOCTOsensor = None
                 self.YOCTOchan1 = None
                 self.YOCTOchan2 = None
-                self.YOCTOtempIRavg = None
+                self.YOCOTtempIRavg = None
                 self.YOCTOvalues = [[],[]]
                 self.YOCTOlastvalues = [-1]*2
                 YAPI.FreeAPI()
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+            except Exception:
+                pass
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " YOCTOtemperatures() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " YOCTOtemperatures() {0}").format(str(ex)),exc_tb.tb_lineno)
             return -1,-1
 
     # if chan is given, it is expected to be a string <s> send along the "CHAN;<s>" command on each call 
@@ -5588,7 +5340,7 @@ class serialport():
                                     vals.pop(vals.index(self.arduinoETChannel))
                                 if self.arduinoBTChannel and self.arduinoBTChannel != "None" and self.arduinoBTChannel in vals:
                                     vals.pop(vals.index(self.arduinoBTChannel))
-                            except Exception: # pylint: disable=broad-except
+                            except:
                                 pass
                             command = "CHAN;" + et_channel + bt_channel + vals[0] + vals[1]
                         else:
@@ -5596,7 +5348,6 @@ class serialport():
                             command = "CHAN;" + et_channel + bt_channel + "00"
                     else:
                         command = "CHAN;{}".format(chan)
-                        self.ArduinoIsInitialized = 1
                     #libtime.sleep(0.3)
                     self.SP.write(str2cmd(command + "\n"))       #send command
                     self.SP.flush()
@@ -5604,12 +5355,7 @@ class serialport():
                     result = self.SP.readline().decode('utf-8')[:-2]  #read
                     if (not len(result) == 0 and not result.startswith("#")):
                         raise Exception(QApplication.translate("Error Message","Arduino could not set channels",None))
-                        
-                    if self.aw.seriallogflag:
-                        settings = str(self.comport) + "," + str(self.baudrate) + "," + str(self.bytesize)+ "," + str(self.parity) + "," + str(self.stopbits) + "," + str(self.timeout)
-                        self.aw.addserial("ArduinoTC4: " + settings + " || Tx = " + str(command) + " || Rx = " + str(result))
-                    
-                    if result.startswith("#") and chan is None:
+                    elif result.startswith("#") and chan is None:
                         #OK. NOW SET UNITS
                         self.SP.reset_input_buffer()
                         self.SP.reset_output_buffer()
@@ -5620,17 +5366,19 @@ class serialport():
                         result = self.SP.readline().decode('utf-8')[:-2]
                         if (not len(result) == 0 and not result.startswith("#")):
                             raise Exception(QApplication.translate("Error Message","Arduino could not set temperature unit",None))
-                        #OK. NOW SET FILTER
-                        self.SP.reset_input_buffer()
-                        self.SP.reset_output_buffer()
-                        filt =  ",".join(map(str,self.aw.ser.ArduinoFILT))
-                        command = "FILT;" + filt + "\n"   #Set filters
-                        self.SP.write(str2cmd(command))
-                        result = self.SP.readline().decode('utf-8')[:-2]
-                        if (not len(result) == 0 and not result.startswith("#")):
-                            raise Exception(QApplication.translate("Error Message","Arduino could not set filters",None))
-                        ### EVERYTHING OK  ###
-                        self.ArduinoIsInitialized = 1
+                        else:
+                            #OK. NOW SET FILTER
+                            self.SP.reset_input_buffer()
+                            self.SP.reset_output_buffer()
+                            filt =  ",".join(map(str,self.aw.ser.ArduinoFILT))
+                            command = "FILT;" + filt + "\n"   #Set filters
+                            self.SP.write(str2cmd(command))
+                            result = self.SP.readline().decode('utf-8')[:-2]
+                            if (not len(result) == 0 and not result.startswith("#")):
+                                raise Exception(QApplication.translate("Error Message","Arduino could not set filters",None))
+                            else:
+                                ### EVERYTHING OK  ###
+                                self.ArduinoIsInitialized = 1
                         self.aw.sendmessage(QApplication.translate("Message","TC4 initialized",None))
                 #READ TEMPERATURE
                 command = "READ\n"  #Read command.
@@ -5641,10 +5389,6 @@ class serialport():
                 libtime.sleep(.1)
                 rl = self.SP.readline().decode('utf-8', 'ignore')[:-2]
                 res = rl.rsplit(',')
-
-#                _log.debug("command: %s",command)
-#                _log.debug("res: %s",res)
-
                 #response: list ["t0","t1","t2"]  with t0 = internal temp; t1 = ET; t2 = BT on "CHAN;1200" 
                 #response: list ["t0","t1","t2","t3","t4"]  with t0 = internal temp; t1 = ET; t2 = BT, t3 = chan3, t4 = chan4 on "CHAN;1234" if ArduinoTC4_34 is configured
                 # after PID_ON: + [,"Heater", "Fan", "SV"]
@@ -5653,58 +5397,50 @@ class serialport():
                 else:
                     try:
                         t1 = float(res[1])
-                    except Exception: # pylint: disable=broad-except
+                    except Exception:
                         t1 = -1
                 if self.arduinoBTChannel == "None":
                     t2 = -1
                 else:
                     try:
                         t2 = float(res[2])
-                    except Exception: # pylint: disable=broad-except
+                    except Exception:
                         t2 = -1
                 #if extra device +ArduinoTC4_34
-                if chan is None and 28 in self.aw.qmc.extradevices:
+                if 28 in self.aw.qmc.extradevices and chan is None:
                     #set the other values to extra temp variables
                     try:
                         self.aw.qmc.extraArduinoT1 = float(res[3])
                         self.aw.qmc.extraArduinoT2 = float(res[4])
-                    except Exception: # pylint: disable=broad-except
+                    except Exception:
                         self.aw.qmc.extraArduinoT1 = 0
                         self.aw.qmc.extraArduinoT2 = 0
                     if 32 in self.aw.qmc.extradevices: # +ArduinoTC4_56
                         try:
                             self.aw.qmc.extraArduinoT3 = float(res[5])
                             self.aw.qmc.extraArduinoT4 = float(res[6])
-                        except Exception: # pylint: disable=broad-except
+                        except Exception:
                             self.aw.qmc.extraArduinoT3 = 0
                             self.aw.qmc.extraArduinoT4 = 0
                     if 44 in self.aw.qmc.extradevices: # +ArduinoTC4_78
                         # report SV as extraArduinoT5
                         try:
                             self.aw.qmc.extraArduinoT5 = float(res[7])
-                        except Exception: # pylint: disable=broad-except
+                        except Exception:
                             self.aw.qmc.extraArduinoT5 = 0
                         # report Ambient Temperature as extraArduinoT6
                         try:
                             self.aw.qmc.extraArduinoT6 = float(res[0])
-                        except Exception: # pylint: disable=broad-except
+                        except Exception:
                             self.aw.qmc.extraArduinoT6 = 0
                 else:
-                    if chan is None or len(res)<5:
-                        self.aw.qmc.extraArduinoT1 = -1.
-                        self.aw.qmc.extraArduinoT2 = -1.
-                    else:
-                        try:
-                            self.aw.qmc.extraArduinoT1 = float(res[3])
-                            self.aw.qmc.extraArduinoT2 = float(res[4])
-                        except Exception: # pylint: disable=broad-except
-                            self.aw.qmc.extraArduinoT1 = 0
-                            self.aw.qmc.extraArduinoT2 = 0
+                    self.aw.qmc.extraArduinoT1 = -1.
+                    self.aw.qmc.extraArduinoT2 = -1.
                     if 32 in self.aw.qmc.extradevices: # +ArduinoTC4_56
                         try:
                             self.aw.qmc.extraArduinoT3 = float(res[3])
                             self.aw.qmc.extraArduinoT4 = float(res[4])
-                        except Exception: # pylint: disable=broad-except
+                        except Exception:
                             self.aw.qmc.extraArduinoT3 = 0
                             self.aw.qmc.extraArduinoT4 = 0
                     else:
@@ -5714,12 +5450,12 @@ class serialport():
                         # report SV as extraArduinoT5
                         try:
                             self.aw.qmc.extraArduinoT5 = float(res[5])
-                        except Exception: # pylint: disable=broad-except
+                        except Exception:
                             self.aw.qmc.extraArduinoT5 = 0
                         # report Ambient Temperature as extraArduinoT6
                         try:
                             self.aw.qmc.extraArduinoT6 = float(res[0])
-                        except Exception: # pylint: disable=broad-except
+                        except Exception:
                             self.aw.qmc.extraArduinoT6 = 0
                 # overwrite temps by AT internal Ambient Temperature
                 if self.aw.ser.arduinoATChannel != "None":
@@ -5735,24 +5471,12 @@ class serialport():
                         self.aw.qmc.extraArduinoT3 = float(res[0])
                     elif (28 in self.aw.qmc.extradevices and 32 in self.aw.qmc.extradevices) and self.aw.ser.arduinoATChannel == "T6":
                         self.aw.qmc.extraArduinoT4 = float(res[0])
-                if chan is not None:
-                    if ((len(res)==4 and res[3] == "F") or (len(res)==6 and res[5] == "F")) and self.aw.qmc.mode != "F":
-                        # data is given in F, we convert it back to C
-                        t1 = fromFtoC(t1)
-                        t2 = fromFtoC(t2)
-                        self.aw.qmc.extraArduinoT1 = fromFtoC(self.aw.qmc.extraArduinoT1)
-                        self.aw.qmc.extraArduinoT2 = fromFtoC(self.aw.qmc.extraArduinoT2)
-                        self.aw.qmc.extraArduinoT6 = fromFtoC(self.aw.qmc.extraArduinoT6)
-                    elif ((len(res)==4 and res[3] != "F") or (len(res)==6 and res[5] != "F")) and self.aw.qmc.mode == "F":
-                        # data is given in C, we convert it back to F
-                        t1 = fromCtoF(t1)
-                        t2 = fromCtoF(t2)
-                        self.aw.qmc.extraArduinoT1 = fromCtoF(self.aw.qmc.extraArduinoT1)
-                        self.aw.qmc.extraArduinoT2 = fromCtoF(self.aw.qmc.extraArduinoT2)
-                        self.aw.qmc.extraArduinoT6 = fromCtoF(self.aw.qmc.extraArduinoT6)
-            return t1, t2
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+                if chan is not None and len(res) == 4 and res[3] == "F":
+                    # data is given in F, we convert it back to C
+                    t1 = fromFtoC(t1)
+                    t2 = fromFtoC(t2)
+                return t1, t2
+        except Exception as e:
             # self.closeport() # closing the port on error is to serve as the Arduino needs time to restart and has to be reinitialized!
             _, _, exc_tb = sys.exc_info()
             self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " ser.ARDUINOTC4temperature(): {0}").format(str(e)),exc_tb.tb_lineno)
@@ -5765,32 +5489,31 @@ class serialport():
                 self.aw.addserial("ArduinoTC4: " + settings + " || Tx = " + str(command) + " || Rx = " + str(res) + "|| Ts= %.2f, %.2f, %.2f, %.2f, %.2f, %.2f"%(t1,t2,self.aw.qmc.extraArduinoT1,self.aw.qmc.extraArduinoT2,self.aw.qmc.extraArduinoT3,self.aw.qmc.extraArduinoT4))
 
 
-    @staticmethod
-    def TEVA18Bconvert(seg):
+    def TEVA18Bconvert(self, seg):
         if seg == 0x7D:
             return 0
-        if seg == 0x05:
+        elif seg == 0x05:
             return 1
-        if seg == 0x5B:
+        elif seg == 0x5B:
             return 2
-        if seg == 0x1F:
+        elif seg == 0x1F:
             return 3
-        if seg == 0x27:
+        elif seg == 0x27:
             return 4
-        if seg == 0x3E:
+        elif seg == 0x3E:
             return 5
-        if seg == 0x7E:
+        elif seg == 0x7E:
             return 6
-        if seg == 0x15:
+        elif seg == 0x15:
             return 7
-        if seg == 0x7F:
+        elif seg == 0x7F:
             return 8
-        if seg == 0x3F:
+        elif seg == 0x3F:
             return 9
-        return -1
+        else:
+            return -1
 
     def TEVA18Btemperature(self):
-        import binascii
         try:
             r = ""
             run = 1
@@ -5923,18 +5646,19 @@ class serialport():
             #Since the meter reads only one temperature, send 0 as ET and fReturn as BT
             if fReturn:
                 return 0.,fReturn    #  **** RETURN T HERE  ******
-            raise ValueError
+            else:
+                raise ValueError
         except ValueError:
             #self.closeport()
-            error = QApplication.translate("Error Message","Value Error:") + " ser.TEVA18Btemperature()"
+            error = QApplication.translate("Error Message","Value Error:",None) + " ser.TEVA18Btemperature()"
             timez = str(QDateTime.currentDateTime().toString("hh:mm:ss.zzz"))    #zzz = miliseconds
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror(timez + " " + error,getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror(timez + " " + error,exc_tb.tb_lineno)
             return -1,-1 
-        except Exception as ex:  # pylint: disable=broad-except
+        except Exception as ex:
             #self.closeport()
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " ser.TEVA18Btemperature() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " ser.TEVA18Btemperature() {0}").format(str(ex)),exc_tb.tb_lineno)
             return -1,-1
         finally:
             #note: logged chars should not be binary
@@ -6023,26 +5747,30 @@ class serialport():
                         if (int(data[nbytes[p]],16) & masks[i]):
                             symbols += " " + tablesymbols[p][i]
                 return (sign + number), symbols
-            raise ValueError(str("Needed 14 bytes but only received %i"%(len(frame))))
+            else:
+                raise ValueError(str("Needed 14 bytes but only received %i"%(len(frame))))
         except ValueError:
             #self.closeport()
-            error  = QApplication.translate("Error Message","Value Error:") + " ser.HHM28multimeter()"
+            error  = QApplication.translate("Error Message","Value Error:",None) + " ser.HHM28multimeter()"
             timez = str(QDateTime.currentDateTime().toString("hh:mm:ss.zzz"))    #zzz = miliseconds
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror(timez + " " + error,getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror(timez + " " + error,exc_tb.tb_lineno)
             #find device index
             if self.aw.qmc.device == 23:
                 if len(self.aw.qmc.temp1):
                     return str(self.aw.qmc.temp1[-1]),str(self.aw.qmc.temp2[-1])
-                return "0","0"
-            index = self.aw.qmc.extradevices.index(23)
-            if len(self.aw.qmc.extratemp1[i]):
-                return str(self.aw.qmc.extratemp1[index][-1]),str(self.aw.qmc.temp2[index][-1])
-            return "0","0"
-        except Exception as ex:  # pylint: disable=broad-except
+                else:
+                    return "0","0"
+            else:
+                index = self.aw.qmc.extradevices.index(23)
+                if len(self.aw.qmc.extratemp1[i]):
+                    return str(self.aw.qmc.extratemp1[index][-1]),str(self.aw.qmc.temp2[index][-1])
+                else:
+                    return "0","0"
+        except Exception as ex:
             #self.closeport()
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " ser.HHM28multimeter() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " ser.HHM28multimeter() {0}").format(str(ex)),exc_tb.tb_lineno)
             return "0"""
         finally:
             #note: logged chars should not be binary
@@ -6054,7 +5782,7 @@ class serialport():
     def sendTXcommand(self,command):
         try:
             #### lock shared resources #####
-            self.aw.qmc.samplingSemaphore.acquire(1)
+            self.aw.qmc.samplingsemaphore.acquire(1)
             if not self.SP.isOpen():
                 self.openport()
                 libtime.sleep(1)
@@ -6068,13 +5796,13 @@ class serialport():
                     command += "\n"
                 self.SP.write(str2cmd(command))
                 #self.SP.flush()
-        except Exception as ex:  # pylint: disable=broad-except
+        except Exception as ex:
             #self.closeport() # do not close the serial port as reopening might take too long
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " ser.sendTXcommand() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " ser.sendTXcommand() {0}").format(str(ex)),exc_tb.tb_lineno)
         finally:
-            if self.aw.qmc.samplingSemaphore.available() < 1:
-                self.aw.qmc.samplingSemaphore.release(1)
+            if self.aw.qmc.samplingsemaphore.available() < 1:
+                self.aw.qmc.samplingsemaphore.release(1)
             #note: logged chars should not be binary
             if self.aw.seriallogflag:
                 settings = str(self.comport) + "," + str(self.baudrate) + "," + str(self.bytesize)+ "," + str(self.parity) + "," + str(self.stopbits) + "," + str(self.timeout)
@@ -6086,10 +5814,7 @@ class serialport():
 #############  Extra Serial Ports #######################################
 #########################################################################
 
-class extraserialport():
-
-    __slots__ = ['aw', 'comport', 'baudrate', 'bytesize', 'parity', 'stopbits', 'timeout', 'devicefunctionlist', 'device', 'SP']
-    
+class extraserialport(object):
     def __init__(self, aw):
         self.aw = aw
         
@@ -6118,12 +5843,12 @@ class extraserialport():
             #open port
             if not self.SP.isOpen():
                 self.SP.open()
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             self.SP.close()
 #            libtime.sleep(0.7) # on OS X opening a serial port too fast after closing the port get's disabled
-            error = QApplication.translate("Error Message","Serial Exception:")
+            error = QApplication.translate("Error Message","Serial Exception:",None)
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror(error + " Unable to open serial port",getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror(error + " Unable to open serial port",exc_tb.tb_lineno)
 
     def closeport(self):
         if self.SP is not None:
@@ -6136,29 +5861,29 @@ class extraserialport():
             try:
                 import serial  # @UnusedImport
                 self.SP = serial.Serial()
-            except Exception as e:  # pylint: disable=broad-except
+            except Exception as e:
                 if error:
                     _, _, exc_tb = sys.exc_info()
-                    self.aw.qmc.adderror((QApplication.translate("Error Message","Serial Exception:") + " connect() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                    self.aw.qmc.adderror((QApplication.translate("Error Message","Serial Exception:",None) + " connect() {0}").format(str(e)),exc_tb.tb_lineno)
         if self.SP is not None:
             try:
                 self.openport()
-                return bool(self.SP.isOpen())
-            except Exception as e:  # pylint: disable=broad-except
+                if self.SP.isOpen():
+                    return True
+                else:
+                    return False
+            except Exception as e:
                 if error:
                     _, _, exc_tb = sys.exc_info()
-                    self.aw.qmc.adderror((QApplication.translate("Error Message","Serial Exception:") + " connect() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                    self.aw.qmc.adderror((QApplication.translate("Error Message","Serial Exception:",None) + " connect() {0}").format(str(e)),exc_tb.tb_lineno)
                 return False
         else:
             return False
 
 class scaleport(extraserialport):
     """ this class handles the communications with the scale"""
-    
-    __slots__ = []
-    
     def __init__(self,aw):
-        super().__init__(aw)
+        super(scaleport, self).__init__(aw)
         
         #default initial settings. They are changed by settingsload() at initiation of program acording to the device chosen
         self.comport = "/dev/cu.usbserial-FTFKDA5O"      #NOTE: this string should not be translated.
@@ -6180,24 +5905,27 @@ class scaleport(extraserialport):
             try:
                 if self.SP.isOpen():
                     self.SP.write(str2cmd('BTDS\r\n'))
-            except Exception: # pylint: disable=broad-except
+            except Exception:
                 pass
-        super().closeport()
+        super(scaleport, self).closeport()
         
     # returns one of weight (g), density (g/l), or moisture (%).  Others return -1.
     def readWeight(self,scale_weight=None):
         if scale_weight != None:
             return scale_weight,-1,-1
-        if self.device is not None and self.device != "None" and self.device != "" and self.device != "acaia":
-            wei,den,moi = self.devicefunctionlist[self.device]()
-            if moi is not None and moi > -1:
-                return -1, -1, self.aw.float2float(moi)
-            if den is not None and den > -1:
-                return -1, self.aw.float2float(den), -1
-            if wei is not None and wei > -1:
-                return self.aw.float2float(wei), -1, -1
-            return -1,-1,-1
-        return -1,-1,-1
+        else:
+            if self.device is not None and self.device != "None" and self.device != "" and self.device != "acaia":
+                wei,den,moi = self.devicefunctionlist[self.device]()
+                if moi is not None and moi > -1:
+                    return -1, -1, self.aw.float2float(moi)
+                elif den is not None and den > -1:
+                    return -1, self.aw.float2float(den), -1
+                elif wei is not None and wei > -1:
+                    return self.aw.float2float(wei), -1, -1
+                else:
+                    return -1,-1,-1
+            else:
+                return -1,-1,-1
             
     def readLine(self):
         return str(self.SP.readline().decode('ascii'))
@@ -6222,12 +5950,13 @@ class scaleport(extraserialport):
                     sa = v.decode('ascii').split('g')
                     if len(sa) == 2:
                         return int(sa[0].replace(" ", "")), -1, -1
-                    # some times the unit is just missing, we assume it is g
-                    sa = v.decode('ascii').split('\r\n')
-                    if len(sa) == 2:
-                        return int(sa[0].replace(" ", "")),-1,-1
-            return -1, -1, -1
-        except Exception:  # pylint: disable=broad-except
+                    else:
+                        # some times the unit is just missing, we assume it is g
+                        sa = v.decode('ascii').split('\r\n')
+                        if len(sa) == 2:
+                            return int(sa[0].replace(" ", "")),-1,-1
+                        return -1, -1, -1
+        except Exception:
             return -1, -1, -1
 
     def readShore930(self):
@@ -6244,7 +5973,8 @@ class scaleport(extraserialport):
                         w = re.findall(r'([0-9\.]+)',str(line1))
                         if len(w) == 1:
                             return toFloat(w[0]),-1,-1
-                        return -1,-1,-1
+                        else:
+                            return -1,-1,-1
 
                     density = re.search(r'Test Weight',str(line1))
                     if density:
@@ -6253,7 +5983,8 @@ class scaleport(extraserialport):
                         if len(d) == 1:
                             den = toFloat(d[0]) *12.8718597   # convert from LBS/BU to g/
                             return -1,toFloat(den),-1
-                        return -1,-1,-1
+                        else:
+                            return -1,-1,-1
 
                     moisture = re.search(r'Beans',str(line1))
                     if moisture:
@@ -6262,19 +5993,19 @@ class scaleport(extraserialport):
 #                        line3 = self.SP.readline() # unused!
                         if len(m) == 1:
                             return -1,-1,toFloat(m[0])
+                        else:
+                            return -1,-1,-1
+
+                    else:
                         return -1,-1,-1
-            return -1,-1,-1
-        except Exception:  # pylint: disable=broad-except
+        except Exception:
             return -1,-1,-1
 
 
 class colorport(extraserialport):
     """ this class handles the communications with the color meter"""
-    
-    __slots__ = []
-    
     def __init__(self,aw):
-        super().__init__(aw)
+        super(colorport, self).__init__(aw)
         
         #default initial settings. They are changed by settingsload() at initiation of program acording to the device chosen
         self.comport = "/dev/cu.usbserial-FTFKDA5O"      #NOTE: this string should not be translated.
@@ -6293,7 +6024,8 @@ class colorport(extraserialport):
     def readColor(self):
         if self.device is not None and self.device != "None" and self.device != "":
             return self.devicefunctionlist[self.device]()
-        return -1
+        else:
+            return -1
 
     def readline_terminated(self,eol=b'\r'):
         leneol = len(eol)
@@ -6329,8 +6061,9 @@ class colorport(extraserialport):
                     if "SCAN" in v:
                         n = int(v.split(":")[1]) # response should have format "SCAN:128"
                         return n
-                    if retry > 0:
-                        return self.readTonino(retry-1)
-            return -1
-        except Exception:  # pylint: disable=broad-except
+                    elif retry > 0:
+                        return self.readTonino(self,retry-1)
+                    else:
+                        return -1
+        except Exception:
             return -1

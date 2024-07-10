@@ -10,9 +10,8 @@ export PATH=$PATH:$HOME/.local/bin
 if [ ! -z $APPVEYOR ]; then
     # Appveyor environment
     echo "NOTICE: Appveyor build"
-#    export PYTHON_PATH=/home/appveyor/venv3.9.10/lib/python3.9/site-packages
-    export PYTHON_PATH=/home/appveyor/venv3.10.2/lib/python3.10/site-packages
-    export QT_PATH=$PYTHON_PATH/PyQt6/Qt6
+    export PYTHON_PATH=/home/appveyor/venv3.9/lib/python3.9/site-packages
+    export QT_PATH=$PYTHON_PATH/PyQt5/Qt
 elif [ -d /usr/lib/python3/dist-packages/PyQt5 ]; then
     # ARM builds
     export PYTHON_PATH=`python3 -m site --user-site`
@@ -46,7 +45,7 @@ rm -rf dist/artisan.d
 mkdir dist/translations
 
 
-for lan in ar, da, de, en, el, es, fa, fi, fr, gd, he, hu, id, it, ja, ko, lv, nl, no, pl, pt_BR, pt, sk, sv, th, tr, uk, vi, zh_CN, zh_TW; do
+for lan in ar, da, de, en, el, es, fa, fi, fr, gd, he, hu, id, it, ja, ko, lv, nl, no, pl, pt_BR, pt, ru, sk, sv, th, tr, vi, zh_CN, zh_TW; do
      QTBASE_FILE=$QT_PATH/translations/qtbase_${lan}.qm
      QT_FILE=$QT_PATH/translations/qt_${lan}.qm
      if [ -e ${QTBASE_FILE} ]
@@ -59,10 +58,9 @@ done
 
 cp translations/*.qm dist/translations
 
-# copy data (mpl-data is now copied to matplotlib/mpl-data by pyinstaller)
-#cp -R $PYTHON_PATH/matplotlib/mpl-data dist
-#rm -rf dist/mpl-data/sample_data
-rm -rf dist/matplotlib/sample_data
+# copy data
+cp -R $PYTHON_PATH/matplotlib/mpl-data dist
+rm -rf dist/mpl-data/sample_data
 
 # copy file icon and other includes
 cp artisan-alog.xml dist
@@ -90,7 +88,6 @@ cp includes/report-template.htm dist
 cp includes/roast-template.htm dist
 cp includes/ranking-template.htm dist
 cp includes/jquery-1.11.1.min.js dist
-cp includes/logging.yaml dist
 cp -R icons dist
 cp -R Wheels dist
 cp README.txt dist
@@ -108,33 +105,12 @@ mkdir dist/Icons
 find includes/Icons -name '.*.aset' -exec rm -r {} \;
 cp -R includes/Icons/* dist/Icons
 
-mkdir dist/yoctopuce
-mkdir dist/yoctopuce/cdll
-cp $PYTHON_PATH/yoctopuce/cdll/*64.so dist/yoctopuce/cdll
+cp $PYTHON_PATH/yoctopuce/cdll/* dist
 
 cp /usr/lib/libsnap7.so dist
 
 cp README.txt dist
 cp ../LICENSE dist/LICENSE.txt
-
-# remove automatically collected PyQt6 libs that are not used to save space
-rm -f dist/libQt6Multimedia*.*
-rm -f dist/libQt6Quick3D*.*
-rm -f dist/libQt6QuickC*.*
-rm -f dist/libQt6QuickD*.*
-rm -f dist/libQt6QuickD*.*
-rm -f dist/libQt6QuickL*.*
-rm -f dist/libQt6QuickP*.*
-rm -f dist/libQt6QuickT*.*
-rm -f dist/libQt6QuickS*.*
-rm -f dist/libQt6RemoteObjects*.*
-rm -f dist/libQt6Sensors*.*
-rm -f dist/libQt6SerialPort*.*
-rm -f dist/libQt6ShaderTools*.*
-rm -f dist/libQt6Sql*.*
-rm -f dist/libQt6Test*.*
-rm -rf dist/PyQt6/Qt6/translations
-rm -rf dist/PyQt6/Qt6/qml/QtQuick3D
 
 # remove automatically collected libs that might break things on some installations (eg. Ubuntu 16.04)
 # so it is better to rely on the system installed once

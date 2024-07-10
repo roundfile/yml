@@ -58,7 +58,6 @@ Recent changes:
 - hacked around the problem: The unicode elipsis \x85 "…" is not properly handled.  These seem to get into the Excel file when cut and paste from the blog.
 Must be replaced with three periods "..." in the Excel file.  
 - Alt-Enter in Excel to create newlines now tolerated
-- adds support for PyQt6
  
 '''
 
@@ -68,13 +67,7 @@ import importlib
 import subprocess
 import sys
 import re
-
-try:
-    #pylint: disable = E, W, R, C
-    from PyQt6.QtWidgets import QApplication
-except:
-    #pylint: disable = E, W, R, C
-    from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication
 from openpyxl import load_workbook
 import prettytable
 
@@ -85,7 +78,7 @@ ind = "    "     #indent
 nlind = "\n" + ind   #new line plus indent
 
 def translateStr(str, group='HelpDlg'):
-    t_str = "QApplication.translate('" + group + "','" + u(str) + "')"
+    t_str = "QApplication.translate('" + group + "','" + u(str) + "',None)"
     return t_str
 
 def generateRows(ws):
@@ -174,10 +167,7 @@ def buildpyCode(fname_in):
     # wrap the output with python code to allow it to execute    
     outstr += 'import prettytable'
     outstr += '\n' + 'import re'
-    outstr += '\n' + 'try:'
-    outstr += '\n' + '  from PyQt5.QtWidgets import QApplication'
-    outstr += '\n' + 'except Exception:'
-    outstr += '\n' + '  from PyQt6.QtWidgets import QApplication'
+    outstr += '\n' + 'from PyQt5.QtWidgets import QApplication'
     outstr += '\n'
     outstr += '\ndef content():'
     outstr += nlind + "strlist = []"
@@ -284,27 +274,28 @@ def writehtmlFile(fname_in, fname_out, fname_htm):
     outfile.close()
     
 if __name__ == "__main__":
+    
     if len(sys.argv) > 1:
-        currPath = (os.path.dirname(__file__)) + '/'
-        #print(f"{currPath=}")
         if sys.argv[1] == "all":
-            for filename in os.listdir(currPath + '../input_files/'):
+            for filename in os.listdir('../input_files/'):
                 if filename.endswith(".xlsx"): 
                     fn = filename.replace(".xlsx","")
-                    fname_in =  currPath + '../input_files/' + filename
-                    fname_out = currPath + '../../../src/help/' + fn + '_help.py'
-                    fname_htm = currPath + '../Output_html/' + fn + '_help.html'
-                    print(f"\n{filename}")
+                    fname_in =  '../input_files/' + filename
+                    fname_out = '../../../src/help/' + fn + '_help.py'
+                    fname_htm = '../Output_html/' + fn + '_help.html'
+                    print()
+                    print(filename)
                     writepyFile(fname_in,fname_out)
                     writehtmlFile(fname_in,fname_out,fname_htm)
                     continue
                 else:
                     continue
         else:   #only one file
-            fname_in =  currPath + '../input_files/' + sys.argv[1] + '.xlsx'
-            fname_out = currPath + '../../../src/help/' + sys.argv[1] + '_help.py'
-            fname_htm = currPath + '../Output_html/' + sys.argv[1] + '_help.html'
-            print(f"\n{sys.argv[1]}.xslx")
+            fname_in =  '../input_files/' + sys.argv[1] + '.xlsx'
+            fname_out = '../../../src/help/' + sys.argv[1] + '_help.py'
+            fname_htm = '../Output_html/' + sys.argv[1] + '_help.html'
+            print()
+            print(sys.argv[1] + '.xlsx')
             writepyFile(fname_in,fname_out)
             writehtmlFile(fname_in,fname_out,fname_htm)
     else:

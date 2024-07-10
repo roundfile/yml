@@ -3,9 +3,8 @@ AmbientTempSource=5
 Delay=5000
 Oversampling=false
 dropDuplicates=true
-dropDuplicatesLimit=0.1
+dropDuplicatesLimit=0.3
 roastertype_setup=Arc 800
-ETfunction=
 
 [Device]
 id=115

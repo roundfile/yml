@@ -2,8 +2,6 @@
 Delay=3000
 Oversampling=true
 roastertype_setup=HARTANZAH
-dropDuplicates=true
-dropDuplicatesLimit=0.2
 
 [Device]
 id=29

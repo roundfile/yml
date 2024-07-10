@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
-#
+#!/usr/bin/env python3
+
 # ABOUT
 # Hottop 2k+ support for Artisan
 
@@ -20,16 +20,8 @@ import multiprocessing as mp
 from multiprocessing.sharedctypes import Value
 from ctypes import c_bool, c_double
 import serial
-import logging
-try:
-    from typing import Final
-except ImportError:
-    # for Python 3.7:
-    from typing_extensions import Final
 
 import time
-
-_log: Final = logging.getLogger(__name__)
 
 process = None
 control = False # Hottop under control?
@@ -62,21 +54,22 @@ xSET_COOLING_MOTOR = None
 def hex2int(h1,h2=None):
     if h2:
         return int(h1*256 + h2)
-    return int(h1)
+    else:
+        return int(h1)
         
 def openport(p):
     try:
         if not p.isOpen():
             p.open()
-    except Exception as e: # pylint: disable=broad-except
-        _log.exception(e)
+    except Exception:
+        pass
         
 def closeport(p):
     try:
         if p == None and p.isOpen():
             p.close()
-    except Exception as e: # pylint: disable=broad-except
-        _log.exception(e)
+    except Exception:
+        pass
         
 def gettemperatures(p,retry=True):
     BT = -1
@@ -121,22 +114,29 @@ def gettemperatures(p,retry=True):
                     DRUM_MOTOR = hex2int(r[17])
                     COOLING_MOTOR = hex2int(r[18])
                     CHAFF_TRAY = hex2int(r[19])
-    except Exception as e: # pylint: disable=broad-except
-        _log.exception(e)
+    except Exception:
+        pass
     return BT, ET, HEATER, FAN, MAIN_FAN, SOLENOID, DRUM_MOTOR, COOLING_MOTOR, CHAFF_TRAY
 
 def doWork(interval, comport, baudrate, bytesize, parity, stopbits, timeout,
         aBT, aET, aHEATER, aFAN, aMAIN_FAN, aSOLENOID, aDRUM_MOTOR, aCOOLING_MOTOR, aCHAFF_TRAY,
         aSET_HEATER, aSET_FAN, aSET_MAIN_FAN, aSET_SOLENOID, aSET_DRUM_MOTOR, aSET_COOLING_MOTOR, aCONTROL):
-    global SP # pylint: disable=global-statement
     SP = serial.Serial()
     # configure serial port
-    SP.port = comport
-    SP.baudrate = baudrate
-    SP.bytesize = bytesize
-    SP.parity = parity
-    SP.stopbits = stopbits
-    SP.timeout = timeout    
+    if serial.VERSION.split(".")[0].strip() == "2":
+        SP.setPort(comport)
+        SP.setBaudrate(baudrate)
+        SP.setByteSize(bytesize)
+        SP.setParity(parity)
+        SP.setStopbits(stopbits)
+        SP.setTimeout(timeout)
+    else:
+        SP.port = comport
+        SP.baudrate = baudrate
+        SP.bytesize = bytesize
+        SP.parity = parity
+        SP.stopbits = stopbits
+        SP.timeout = timeout    
     while True:
         # logging part
         BT, ET, HEATER, FAN, MAIN_FAN, SOLENOID, DRUM_MOTOR, COOLING_MOTOR, CHAFF_TRAY = gettemperatures(SP)
@@ -199,16 +199,20 @@ def sendControl(p,aHEATER, aFAN, aMAIN_FAN, aSOLENOID, aDRUM_MOTOR, aCOOLING_MOT
             #p.flushOutput() # deprecated in v3
             p.reset_output_buffer()
             p.write(cmd) 
-    except Exception as e: # pylint: disable=broad-except
-        _log.exeption(e)
+    except Exception:
+#        import traceback
+#        import sys
+#        traceback.print_exc(file=sys.stdout)
+        pass
             
 # prefers set_value, and returns get_value if set_value is -1. If both are -1, returns 0
 def newValue(set_value,get_value):
     if set_value != -1:
         return set_value
-    if get_value != -1:
+    elif get_value != -1:
         return get_value
-    return 0
+    else:
+        return 0
 
 def HOTTOPcontrol(aHEATER, aFAN, aMAIN_FAN, aSOLENOID, aDRUM_MOTOR, aCOOLING_MOTOR,
         aSET_HEATER, aSET_FAN, aSET_MAIN_FAN, aSET_SOLENOID, aSET_DRUM_MOTOR, aSET_COOLING_MOTOR):
@@ -226,7 +230,7 @@ def HOTTOPcontrol(aHEATER, aFAN, aMAIN_FAN, aSOLENOID, aDRUM_MOTOR, aCOOLING_MOT
     cmd[16] = newValue(aSET_SOLENOID.value,aSOLENOID.value)
     cmd[17] = newValue(aSET_DRUM_MOTOR.value,aDRUM_MOTOR.value)
     cmd[18] = newValue(aSET_COOLING_MOTOR.value,aCOOLING_MOTOR.value)
-    cmd[35] = sum(list(cmd[:35])) & 0xFF # checksum
+    cmd[35] = sum([b for b in cmd[:35]]) & 0xFF # checksum
     return bytes(cmd)
 
 
@@ -238,13 +242,15 @@ def takeHottopControl():
     if xCONTROL:
         xCONTROL.value = True
         return True
-    return False
+    else:
+        return False
     
 def releaseHottopControl():
     if xCONTROL and xBT.value < BTleaveControl:
         xCONTROL.value = False
         return True
-    return False
+    else:
+        return False
 
 # BT/ET : double
 # heater : int(0-100)
@@ -253,7 +259,8 @@ def releaseHottopControl():
 def getHottop():
     if xBT != None and xET != None and xHEATER != None and xMAIN_FAN != None:
         return xBT.value, xET.value, xHEATER.value, xMAIN_FAN.value * 10
-    return -1, -1, 0, 0
+    else:
+        return -1, -1, 0, 0
 
 
 # heater : int(0-100)
@@ -279,47 +286,48 @@ def setHottop(heater=None,fan=None,main_fan=None,solenoid=None,drum_motor=None,c
 # interval has to be smaller than 1 (= 1sec)
 def startHottop(interval=1,comport="COM4",baudrate=115200,bytesize=8,parity='N',stopbits=1,timeout=0.5):
     global process, xCONTROL, xBT, xET, xHEATER, xFAN, xMAIN_FAN, xSOLENOID, xDRUM_MOTOR, xCOOLING_MOTOR, xCHAFF_TRAY, \
-        xSET_HEATER, xSET_FAN, xSET_MAIN_FAN, xSET_SOLENOID, xSET_DRUM_MOTOR, xSET_COOLING_MOTOR # pylint: disable=global-statement
+        xSET_HEATER, xSET_FAN, xSET_MAIN_FAN, xSET_SOLENOID, xSET_DRUM_MOTOR, xSET_COOLING_MOTOR
     try:
         if process:
             return False
-        stopHottop() # we stop an already running process to ensure that only one is running
-        lock = mp.Lock()
-        xCONTROL = Value(c_bool, False, lock=lock)
-        # variables to read from the Hottop
-        xBT = Value(c_double, -1.0, lock=lock)
-        xET = Value(c_double, -1.0, lock=lock)
-        xHEATER = Value('i', -1, lock=lock)
-        xFAN = Value('i', -1, lock=lock)
-        xMAIN_FAN = Value('i', -1, lock=lock)
-        xSOLENOID = Value(c_bool, False, lock=lock)
-        xDRUM_MOTOR = Value(c_bool, False, lock=lock)
-        xCOOLING_MOTOR = Value(c_bool, False, lock=lock)
-        xCHAFF_TRAY = Value(c_bool, False, lock=lock)
-        # set variables to write to the Hottop
-        xSET_HEATER = Value('i', -1, lock=lock)
-        xSET_FAN = Value('i', -1, lock=lock)
-        xSET_MAIN_FAN = Value('i', -1, lock=lock)
-        xSET_SOLENOID = Value('i', -1, lock=lock)
-        xSET_DRUM_MOTOR = Value('i', -1, lock=lock)
-        xSET_COOLING_MOTOR = Value('i', -1, lock=lock)
-        # variables to write to the Hottop
-        
-        process = mp.Process(target=doWork, args=(interval,comport,baudrate,bytesize,parity,stopbits,timeout,
-            xBT, xET, xHEATER, xFAN, xMAIN_FAN, xSOLENOID, xDRUM_MOTOR, xCOOLING_MOTOR, xCHAFF_TRAY, \
-            xSET_HEATER, xSET_FAN, xSET_MAIN_FAN, xSET_SOLENOID, xSET_DRUM_MOTOR, xSET_COOLING_MOTOR, xCONTROL))
-        process.start()
-        return True
-    except Exception as e: # pylint: disable=broad-except
-        _log.exception(e)
+        else:
+            stopHottop() # we stop an already running process to ensure that only one is running
+            lock = mp.Lock()
+            xCONTROL = Value(c_bool, False, lock=lock)
+            # variables to read from the Hottop
+            xBT = Value(c_double, -1.0, lock=lock)
+            xET = Value(c_double, -1.0, lock=lock)
+            xHEATER = Value('i', -1, lock=lock)
+            xFAN = Value('i', -1, lock=lock)
+            xMAIN_FAN = Value('i', -1, lock=lock)
+            xSOLENOID = Value(c_bool, False, lock=lock)
+            xDRUM_MOTOR = Value(c_bool, False, lock=lock)
+            xCOOLING_MOTOR = Value(c_bool, False, lock=lock)
+            xCHAFF_TRAY = Value(c_bool, False, lock=lock)
+            # set variables to write to the Hottop
+            xSET_HEATER = Value('i', -1, lock=lock)
+            xSET_FAN = Value('i', -1, lock=lock)
+            xSET_MAIN_FAN = Value('i', -1, lock=lock)
+            xSET_SOLENOID = Value('i', -1, lock=lock)
+            xSET_DRUM_MOTOR = Value('i', -1, lock=lock)
+            xSET_COOLING_MOTOR = Value('i', -1, lock=lock)
+            # variables to write to the Hottop
+            
+            process = mp.Process(target=doWork, args=(interval,comport,baudrate,bytesize,parity,stopbits,timeout,
+                xBT, xET, xHEATER, xFAN, xMAIN_FAN, xSOLENOID, xDRUM_MOTOR, xCOOLING_MOTOR, xCHAFF_TRAY, \
+                xSET_HEATER, xSET_FAN, xSET_MAIN_FAN, xSET_SOLENOID, xSET_DRUM_MOTOR, xSET_COOLING_MOTOR, xCONTROL))
+            process.start()
+            return True
+    except:
         return False
 
 def stopHottop():
-    global process # pylint: disable=global-statement
+    global process
     if process:
         process.terminate()
         process.join()
         process = None
 
 def isHottopLoopRunning():
+    global process
     return bool(process)

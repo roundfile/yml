@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*-
-#
+#!/usr/bin/env python3
+
 # ABOUT
 # Artisan Fuji PID Dialog
 
@@ -7,7 +7,7 @@
 # This program or module is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
 # by the Free Software Foundation, either version 2 of the License, or
-# version 3 of the License, or (at your option) any later version. It is
+# version 3 of the License, or (at your option) any later versison. It is
 # provided for educational purposes and is distributed in the hope that
 # it will be useful, but WITHOUT ANY WARRANTY; without even the implied
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
@@ -18,36 +18,18 @@
 
 import sys
 import time as libtime
-import logging
-try:
-    from typing import Final
-except ImportError:
-    # for Python 3.7:
-    from typing_extensions import Final
 
 from artisanlib.util import stringfromseconds, stringtoseconds
 from artisanlib.dialogs import ArtisanDialog
 from artisanlib.widgets import MyQComboBox
 
-try:
-    #pylint: disable = E, W, R, C
-    from PyQt6.QtCore import Qt, pyqtSlot, QRegularExpression, QSettings # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt6.QtGui import QIntValidator, QRegularExpressionValidator # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt6.QtWidgets import (QApplication, QWidget, QLabel, QTableWidget, QPushButton, # @UnusedImport @Reimport  @UnresolvedImport
-        QComboBox, QHBoxLayout, QVBoxLayout, QCheckBox, QGridLayout, QGroupBox, QLineEdit, # @UnusedImport @Reimport  @UnresolvedImport
-        QMessageBox, QRadioButton, QSpinBox, QStatusBar, QTabWidget, QButtonGroup, QDoubleSpinBox, # @UnusedImport @Reimport  @UnresolvedImport
-        QTimeEdit, QLayout, QSizePolicy, QHeaderView) # @UnusedImport @Reimport  @UnresolvedImport
-except Exception:
-    #pylint: disable = E, W, R, C
-    from PyQt5.QtCore import Qt, pyqtSlot, QRegularExpression, QSettings # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt5.QtWidgets import (QApplication, QWidget, QLabel, QTableWidget, QPushButton, # @UnusedImport @Reimport  @UnresolvedImport
-        QComboBox, QHBoxLayout, QVBoxLayout, QCheckBox, QGridLayout, QGroupBox, QLineEdit, # @UnusedImport @Reimport  @UnresolvedImport
-        QMessageBox, QRadioButton, QSpinBox, QStatusBar, QTabWidget, QButtonGroup, QDoubleSpinBox, # @UnusedImport @Reimport  @UnresolvedImport
-        QTimeEdit, QLayout, QSizePolicy, QHeaderView) # @UnusedImport @Reimport  @UnresolvedImport
+from PyQt5.QtCore import Qt, pyqtSlot, QRegularExpression, QSettings
+from PyQt5.QtGui import QIntValidator, QRegularExpressionValidator
+from PyQt5.QtWidgets import (QApplication, QWidget, QLabel, QTableWidget, QPushButton, 
+    QComboBox, QHBoxLayout, QVBoxLayout, QCheckBox, QGridLayout, QGroupBox, QLineEdit,
+    QMessageBox, QRadioButton, QSpinBox, QStatusBar, QTabWidget, QButtonGroup, QDoubleSpinBox,
+    QTimeEdit, QLayout, QSizePolicy)
 
-
-_log: Final = logging.getLogger(__name__)
 
 ############################################################################
 ######################## Artisan PID CONTROL DIALOG ########################
@@ -55,38 +37,38 @@ _log: Final = logging.getLogger(__name__)
 
 class PID_DlgControl(ArtisanDialog):
     def __init__(self, parent = None, aw = None, activeTab = 0):
-        super().__init__(parent, aw)
+        super(PID_DlgControl,self).__init__(parent, aw)
         self.setModal(True)
-        #self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose) # default is True and this is set by default in ArtisanDialog!
-        self.setWindowTitle(QApplication.translate("Form Caption","PID Control"))
+        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setWindowTitle(QApplication.translate("Form Caption","PID Control",None))
         
         # PID tab
         tab1Layout = QVBoxLayout()
-        pidGrp = QGroupBox(QApplication.translate("GroupBox","p-i-d"))
+        pidGrp = QGroupBox(QApplication.translate("GroupBox","p-i-d",None))
         self.pidKp = QDoubleSpinBox()
-        self.pidKp.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.pidKp.setAlignment(Qt.AlignRight)
         self.pidKp.setRange(.0,9999.)
         self.pidKp.setSingleStep(.1)
         self.pidKp.setDecimals(3)
         self.pidKp.setValue(self.aw.pidcontrol.pidKp)
         pidKpLabel = QLabel("kp")
         self.pidKi = QDoubleSpinBox()
-        self.pidKi.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.pidKi.setAlignment(Qt.AlignRight)
         self.pidKi.setRange(.0,9999.)
         self.pidKi.setSingleStep(.1)
         self.pidKi.setDecimals(3)
         self.pidKi.setValue(self.aw.pidcontrol.pidKi)
         pidKiLabel = QLabel("ki")
         self.pidKd = QDoubleSpinBox()
-        self.pidKd.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.pidKd.setAlignment(Qt.AlignRight)
         self.pidKd.setRange(.0,9999.)
         self.pidKd.setSingleStep(.1)
         self.pidKd.setDecimals(3)
         self.pidKd.setValue(self.aw.pidcontrol.pidKd)
         pidKdLabel = QLabel("kd")
-        pidSetPID = QPushButton(QApplication.translate("Button","Set"))
+        pidSetPID = QPushButton(QApplication.translate("Button","Set",None))
         pidSetPID.clicked.connect(self.pidConf)
-        pidSetPID.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        pidSetPID.setFocusPolicy(Qt.NoFocus)
         
         self.pidSource = QComboBox()
         if self.aw.qmc.device == 19 and self.aw.qmc.PIDbuttonflag:
@@ -103,7 +85,7 @@ class PID_DlgControl(ArtisanDialog):
             else:
                 self.pidSource.setCurrentIndex(1)
         
-        pidSourceLabel = QLabel(QApplication.translate("Label","Source"))
+        pidSourceLabel = QLabel(QApplication.translate("Label","Source",None))
 
         pidGrid = QGridLayout()
         pidGrid.addWidget(pidKpLabel,0,0)
@@ -122,12 +104,12 @@ class PID_DlgControl(ArtisanDialog):
         pidSourceBox.addStretch()
         
         self.pidCycle = QSpinBox()
-        self.pidCycle.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.pidCycle.setAlignment(Qt.AlignRight)
         self.pidCycle.setRange(0,99999)
         self.pidCycle.setSingleStep(100)
         self.pidCycle.setValue(self.aw.pidcontrol.pidCycle)
         self.pidCycle.setSuffix(" ms")
-        pidCycleLabel = QLabel(QApplication.translate("Label","Cycle"))
+        pidCycleLabel = QLabel(QApplication.translate("Label","Cycle",None))
         
         pidCycleBox = QHBoxLayout()
         pidCycleBox.addStretch()  
@@ -160,23 +142,23 @@ class PID_DlgControl(ArtisanDialog):
         if self.aw.qmc.device == 19 and self.aw.qmc.PIDbuttonflag: # ArduinoTC4
             pidVBox.addLayout(pidCycleBox)
         pidVBox.addLayout(pOnLayout)
-        pidVBox.setAlignment(pOnLayout,Qt.AlignmentFlag.AlignRight)
+        pidVBox.setAlignment(pOnLayout,Qt.AlignRight)
         pidVBox.addLayout(pidSetBox)
-        pidVBox.setAlignment(pidSetBox,Qt.AlignmentFlag.AlignRight)
+        pidVBox.setAlignment(pidSetBox,Qt.AlignRight)
         
         #PID target (only shown if interal PID for hottop/modbus/TC4 is active
         controlItems = ["None",self.aw.qmc.etypesf(0),self.aw.qmc.etypesf(1),self.aw.qmc.etypesf(2),self.aw.qmc.etypesf(3)]
         #positiveControl
-        positiveControlLabel = QLabel(QApplication.translate("Label","Positive"))
+        positiveControlLabel = QLabel(QApplication.translate("Label","Positive", None))
         self.positiveControlCombo = QComboBox()
         self.positiveControlCombo.addItems(controlItems)
-        self.positiveControlCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.positiveControlCombo.setFocusPolicy(Qt.NoFocus)
         self.positiveControlCombo.setCurrentIndex(self.aw.pidcontrol.pidPositiveTarget)
         #negativeControl
-        negativeControlLabel = QLabel(QApplication.translate("Label","Negative"))
+        negativeControlLabel = QLabel(QApplication.translate("Label","Negative", None))
         self.negativeControlCombo = QComboBox()
         self.negativeControlCombo.addItems(controlItems)
-        self.negativeControlCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.negativeControlCombo.setFocusPolicy(Qt.NoFocus)
         self.negativeControlCombo.setCurrentIndex(self.aw.pidcontrol.pidNegativeTarget)
         
         controlSelectorLayout = QGridLayout()
@@ -185,8 +167,8 @@ class PID_DlgControl(ArtisanDialog):
         controlSelectorLayout.addWidget(negativeControlLabel,1,0)
         controlSelectorLayout.addWidget(self.negativeControlCombo,1,1)
                 
-        self.invertControlFlag = QCheckBox(QApplication.translate("Label", "Invert Control"))
-        self.invertControlFlag.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.invertControlFlag = QCheckBox(QApplication.translate("Label", "Invert Control", None))
+        self.invertControlFlag.setFocusPolicy(Qt.NoFocus)
         self.invertControlFlag.setChecked(self.aw.pidcontrol.invertControl)
 
         controlVBox = QVBoxLayout()
@@ -198,7 +180,7 @@ class PID_DlgControl(ArtisanDialog):
         controlHBox.addLayout(controlVBox)
         controlHBox.addStretch()
         
-        pidTargetGrp = QGroupBox(QApplication.translate("GroupBox","Target"))
+        pidTargetGrp = QGroupBox(QApplication.translate("GroupBox","Target",None))
         pidTargetGrp.setLayout(controlHBox)
         pidTargetGrp.setContentsMargins(0,10,0,0)
         
@@ -215,63 +197,63 @@ class PID_DlgControl(ArtisanDialog):
         pidGrp.setContentsMargins(0,10,0,0)
         
         self.pidSV = QSpinBox()
-        self.pidSV.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.pidSV.setAlignment(Qt.AlignRight)
         self.pidSV.setRange(0,999)
         self.pidSV.setSingleStep(10)
         self.pidSV.setValue(self.aw.pidcontrol.svValue)
-        pidSVLabel = QLabel(QApplication.translate("Label","SV"))
+        pidSVLabel = QLabel(QApplication.translate("Label","SV",None))
         
         self.pidSVLookahead = QSpinBox()
-        self.pidSVLookahead.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.pidSVLookahead.setAlignment(Qt.AlignRight)
         self.pidSVLookahead.setRange(0,999)
         self.pidSVLookahead.setSingleStep(1)
         self.pidSVLookahead.setValue(self.aw.pidcontrol.svLookahead)
         self.pidSVLookahead.setSuffix(" s")
-        pidSVLookaheadLabel = QLabel(QApplication.translate("Label","Lookahead"))
+        pidSVLookaheadLabel = QLabel(QApplication.translate("Label","Lookahead",None))
         
         self.pidDutySteps = QSpinBox()
-        self.pidDutySteps.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.pidDutySteps.setAlignment(Qt.AlignRight)
         self.pidDutySteps.setRange(1,10)
         self.pidDutySteps.setSingleStep(1)
         self.pidDutySteps.setValue(self.aw.pidcontrol.dutySteps)  
         self.pidDutySteps.setSuffix(" %")
-        pidDutyStepsLabel = QLabel(QApplication.translate("Label","Steps"))
+        pidDutyStepsLabel = QLabel(QApplication.translate("Label","Steps",None))
         
-        pidSetSV = QPushButton(QApplication.translate("Button","Set"))
+        pidSetSV = QPushButton(QApplication.translate("Button","Set",None))
         pidSetSV.clicked.connect(self.setSV)
-        pidSetSV.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        pidSetSV.setFocusPolicy(Qt.NoFocus)
 
-        pidSVModeLabel = QLabel(QApplication.translate("Label","Mode"))
+        pidSVModeLabel = QLabel(QApplication.translate("Label","Mode",None))
         pidModeItems = [
-            QApplication.translate("Label", "Manual"),
-            QApplication.translate("Label", "Ramp/Soak"),
-            QApplication.translate("Label", "Background")]
+            QApplication.translate("Label", "Manual",None),
+            QApplication.translate("Label", "Ramp/Soak",None),
+            QApplication.translate("Label", "Background",None)]
         self.pidMode = QComboBox()
         self.pidMode.addItems(pidModeItems)
         self.pidMode.setCurrentIndex(self.aw.pidcontrol.svMode)
         self.pidMode.currentIndexChanged.connect(self.updatePidMode)
         
-        self.pidSVbuttonsFlag = QCheckBox(QApplication.translate("Label","Buttons"))
+        self.pidSVbuttonsFlag = QCheckBox(QApplication.translate("Label","Buttons",None))
         self.pidSVbuttonsFlag.setChecked(self.aw.pidcontrol.svButtons)
         self.pidSVbuttonsFlag.stateChanged.connect(self.activateONOFFeasySVslot)
-        self.pidSVsliderFlag = QCheckBox(QApplication.translate("Label","Slider"))
+        self.pidSVsliderFlag = QCheckBox(QApplication.translate("Label","Slider",None))
         self.pidSVsliderFlag.setChecked(self.aw.pidcontrol.svSlider)
         self.pidSVsliderFlag.stateChanged.connect(self.activateSVSlider)
         
         self.pidSVSliderMin = QSpinBox()
-        self.pidSVSliderMin.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.pidSVSliderMin.setAlignment(Qt.AlignRight)
         self.pidSVSliderMin.setRange(0,999)
         self.pidSVSliderMin.setSingleStep(10)
         self.pidSVSliderMin.setValue(self.aw.pidcontrol.svSliderMin)
-        pidSVSliderMinLabel = QLabel(QApplication.translate("Label","Min"))
+        pidSVSliderMinLabel = QLabel(QApplication.translate("Label","Min",None))
         self.pidSVSliderMin.valueChanged.connect(self.sliderMinValueChangedSlot)
         
         self.pidSVSliderMax = QSpinBox()
-        self.pidSVSliderMax.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.pidSVSliderMax.setAlignment(Qt.AlignRight)
         self.pidSVSliderMax.setRange(0,999)
         self.pidSVSliderMax.setSingleStep(10)
         self.pidSVSliderMax.setValue(self.aw.pidcontrol.svSliderMax)
-        pidSVSliderMaxLabel = QLabel(QApplication.translate("Label","Max"))
+        pidSVSliderMaxLabel = QLabel(QApplication.translate("Label","Max",None))
         self.pidSVSliderMax.valueChanged.connect(self.sliderMaxValueChangedSlot)
         
         if self.aw.qmc.mode == "F":
@@ -307,20 +289,20 @@ class PID_DlgControl(ArtisanDialog):
         svInputBox.addWidget(pidSetSV)
         
         self.dutyMin = QSpinBox()
-        self.dutyMin.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.dutyMin.setAlignment(Qt.AlignRight)
         self.dutyMin.setRange(-100,100)
         self.dutyMin.setSingleStep(10)
         self.dutyMin.setValue(self.aw.pidcontrol.dutyMin)
         self.dutyMin.setSuffix(" %")
-        dutyMinLabel = QLabel(QApplication.translate("Label","Min"))
+        dutyMinLabel = QLabel(QApplication.translate("Label","Min",None))
         
         self.dutyMax = QSpinBox()
-        self.dutyMax.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.dutyMax.setAlignment(Qt.AlignRight)
         self.dutyMax.setRange(-100,100)
         self.dutyMax.setSingleStep(10)
         self.dutyMax.setValue(self.aw.pidcontrol.dutyMax) 
         self.dutyMax.setSuffix(" %")
-        dutyMaxLabel = QLabel(QApplication.translate("Label","Max"))
+        dutyMaxLabel = QLabel(QApplication.translate("Label","Max",None))
         
         svGrpBox = QVBoxLayout()
         svGrpBox.addStretch()
@@ -328,7 +310,7 @@ class PID_DlgControl(ArtisanDialog):
         svGrpBox.addLayout(sliderBox)
         svGrpBox.addLayout(svInputBox)
         svGrpBox.addStretch()
-        svGrp = QGroupBox(QApplication.translate("GroupBox","Set Value"))
+        svGrp = QGroupBox(QApplication.translate("GroupBox","Set Value",None))
         svGrp.setLayout(svGrpBox)
         svGrp.setContentsMargins(0,10,0,0)
         
@@ -345,7 +327,7 @@ class PID_DlgControl(ArtisanDialog):
         dutyGrpBox.addStretch()
         dutyGrpBox.addLayout(dutyGrid)
         dutyGrpBox.addStretch()
-        dutyGrp = QGroupBox(QApplication.translate("GroupBox","Duty"))
+        dutyGrp = QGroupBox(QApplication.translate("GroupBox","Duty",None))
         dutyGrp.setLayout(dutyGrpBox)
         dutyGrp.setContentsMargins(0,15,0,0)
         
@@ -356,7 +338,7 @@ class PID_DlgControl(ArtisanDialog):
         svBox.addWidget(svGrp)
         svBox.addWidget(dutyGrp)
                 
-        self.startPIDonCHARGE = QCheckBox(QApplication.translate("CheckBox", "Start PID on CHARGE"))
+        self.startPIDonCHARGE = QCheckBox(QApplication.translate("CheckBox", "Start PID on CHARGE",None))
         self.startPIDonCHARGE.setChecked(self.aw.pidcontrol.pidOnCHARGE)
 
         tab1Layout.addLayout(pidBox)
@@ -364,7 +346,7 @@ class PID_DlgControl(ArtisanDialog):
         tab1Layout.addStretch()
         tab1Layout.addWidget(self.startPIDonCHARGE)
 
-        labelLabel = QLabel(QApplication.translate("Label", "Label"))
+        labelLabel = QLabel(QApplication.translate("Label", "Label",None))
         self.labelEdit = QLineEdit() 
 
         labelRow = QHBoxLayout()
@@ -387,43 +369,43 @@ class PID_DlgControl(ArtisanDialog):
         self.ActionWidgets = []
         self.BeepWidgets = []
         self.DescriptionWidgets = []
-        rsGrid.addWidget(QLabel(QApplication.translate("Table","SV")),0,1)
-        rsGrid.addWidget(QLabel(QApplication.translate("Table","Ramp")),0,2)
-        rsGrid.addWidget(QLabel(QApplication.translate("Table","Soak")),0,3)
-        rsGrid.addWidget(QLabel(QApplication.translate("Table","Action")),0,4)
-        rsGrid.addWidget(QLabel(QApplication.translate("Table","Beep")),0,5)
-        rsGrid.addWidget(QLabel(QApplication.translate("Table","Description")),0,6)
+        rsGrid.addWidget(QLabel(QApplication.translate("Table","SV",None)),0,1)
+        rsGrid.addWidget(QLabel(QApplication.translate("Table","Ramp",None)),0,2)
+        rsGrid.addWidget(QLabel(QApplication.translate("Table","Soak",None)),0,3)
+        rsGrid.addWidget(QLabel(QApplication.translate("Table","Action",None)),0,4)
+        rsGrid.addWidget(QLabel(QApplication.translate("Table","Beep",None)),0,5)
+        rsGrid.addWidget(QLabel(QApplication.translate("Table","Description",None)),0,6)
         actions = ["",
-            QApplication.translate("ComboBox","Pop Up"),
-            QApplication.translate("ComboBox","Call Program"),
-            QApplication.translate("ComboBox","Event Button"),
-            QApplication.translate("ComboBox","Slider") + " " + self.aw.qmc.etypesf(0),
-            QApplication.translate("ComboBox","Slider") + " " + self.aw.qmc.etypesf(1),
-            QApplication.translate("ComboBox","Slider") + " " + self.aw.qmc.etypesf(2),
-            QApplication.translate("ComboBox","Slider") + " " + self.aw.qmc.etypesf(3),
-            QApplication.translate("ComboBox","START"),
-            QApplication.translate("ComboBox","DRY"),
-            QApplication.translate("ComboBox","FCs"),
-            QApplication.translate("ComboBox","FCe"),
-            QApplication.translate("ComboBox","SCs"),
-            QApplication.translate("ComboBox","SCe"),
-            QApplication.translate("ComboBox","DROP"),
-            QApplication.translate("ComboBox","COOL END"),
-            QApplication.translate("ComboBox","OFF"),
-            QApplication.translate("ComboBox","CHARGE"),
-            QApplication.translate("ComboBox","RampSoak ON"),
-            QApplication.translate("ComboBox","RampSoak OFF"),
-            QApplication.translate("ComboBox","PID ON"),
-            QApplication.translate("ComboBox","PID OFF"),
-            QApplication.translate("ComboBox","SV"),
-            QApplication.translate("ComboBox","Playback ON"),
-            QApplication.translate("ComboBox","Playback OFF"),
-            QApplication.translate("ComboBox","Set Canvas Color"),
-            QApplication.translate("ComboBox","Reset Canvas Color")]
+            QApplication.translate("ComboBox","Pop Up",None),
+            QApplication.translate("ComboBox","Call Program",None),
+            QApplication.translate("ComboBox","Event Button",None),
+            QApplication.translate("ComboBox","Slider",None) + " " + self.aw.qmc.etypesf(0),
+            QApplication.translate("ComboBox","Slider",None) + " " + self.aw.qmc.etypesf(1),
+            QApplication.translate("ComboBox","Slider",None) + " " + self.aw.qmc.etypesf(2),
+            QApplication.translate("ComboBox","Slider",None) + " " + self.aw.qmc.etypesf(3),
+            QApplication.translate("ComboBox","START",None),
+            QApplication.translate("ComboBox","DRY",None),
+            QApplication.translate("ComboBox","FCs",None),
+            QApplication.translate("ComboBox","FCe",None),
+            QApplication.translate("ComboBox","SCs",None),
+            QApplication.translate("ComboBox","SCe",None),
+            QApplication.translate("ComboBox","DROP",None),
+            QApplication.translate("ComboBox","COOL END",None),
+            QApplication.translate("ComboBox","OFF",None),
+            QApplication.translate("ComboBox","CHARGE",None),
+            QApplication.translate("ComboBox","RampSoak ON",None),
+            QApplication.translate("ComboBox","RampSoak OFF",None),
+            QApplication.translate("ComboBox","PID ON",None),
+            QApplication.translate("ComboBox","PID OFF",None),
+            QApplication.translate("ComboBox","SV",None),
+            QApplication.translate("ComboBox","Playback ON",None),
+            QApplication.translate("ComboBox","Playback OFF",None),
+            QApplication.translate("ComboBox","Set Canvas Color",None),
+            QApplication.translate("ComboBox","Reset Canvas Color",None)]
         for i in range(self.aw.pidcontrol.svLen):
             n = i+1
             svwidget = QSpinBox()
-            svwidget.setAlignment(Qt.AlignmentFlag.AlignRight)
+            svwidget.setAlignment(Qt.AlignRight)
             svwidget.setRange(0,999)
             svwidget.setSingleStep(10)
             if self.aw.qmc.mode == "F":
@@ -433,11 +415,11 @@ class PID_DlgControl(ArtisanDialog):
             self.SVWidgets.append(svwidget)
             rampwidget = QTimeEdit()
             rampwidget.setDisplayFormat("mm:ss")
-            rampwidget.setAlignment(Qt.AlignmentFlag.AlignRight)
+            rampwidget.setAlignment(Qt.AlignRight)
             self.RampWidgets.append(rampwidget)
             soakwidget = QTimeEdit()
             soakwidget.setDisplayFormat("mm:ss")
-            soakwidget.setAlignment(Qt.AlignmentFlag.AlignRight)
+            soakwidget.setAlignment(Qt.AlignRight)
             self.SoakWidgets.append(soakwidget)
             actionwidget = MyQComboBox()
             actionwidget.addItems(actions)  
@@ -445,11 +427,11 @@ class PID_DlgControl(ArtisanDialog):
             #beep
             beepwidget = QWidget()
             beepCheckBox = QCheckBox()
-            beepCheckBox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            beepCheckBox.setFocusPolicy(Qt.NoFocus)
             beepLayout = QHBoxLayout()
             beepLayout.addStretch()
             beepLayout.addWidget(beepCheckBox)
-            beepLayout.addSpacing(6)
+            beepLayout.addSpacing(6);        
             beepLayout.addStretch()
             beepLayout.setContentsMargins(0,0,0,0)
             beepLayout.setSpacing(0)
@@ -468,38 +450,38 @@ class PID_DlgControl(ArtisanDialog):
             rsGrid.addWidget(self.DescriptionWidgets[i],n,6)
         
         ############################
-        importButton = QPushButton(QApplication.translate("Button","Load"))
+        importButton = QPushButton(QApplication.translate("Button","Load",None))
         importButton.setMinimumWidth(80)
-        importButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        importButton.setFocusPolicy(Qt.NoFocus)
         importButton.clicked.connect(self.importrampsoaks)
-        exportButton = QPushButton(QApplication.translate("Button","Save"))
+        exportButton = QPushButton(QApplication.translate("Button","Save",None))
         exportButton.setMinimumWidth(80)
-        exportButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        exportButton.setFocusPolicy(Qt.NoFocus)
         exportButton.clicked.connect(self.exportrampsoaks)
-        self.loadRampSoakFromProfile = QCheckBox(QApplication.translate("CheckBox", "Load from profile"))
+        self.loadRampSoakFromProfile = QCheckBox(QApplication.translate("CheckBox", "Load from profile",None))
         self.loadRampSoakFromProfile.setChecked(self.aw.pidcontrol.loadRampSoakFromProfile)
-        self.loadRampSoakFromProfile.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.loadRampSoakFromBackground = QCheckBox(QApplication.translate("CheckBox", "Load from background"))
+        self.loadRampSoakFromProfile.setFocusPolicy(Qt.NoFocus)
+        self.loadRampSoakFromBackground = QCheckBox(QApplication.translate("CheckBox", "Load from background",None))
         self.loadRampSoakFromBackground.setChecked(self.aw.pidcontrol.loadRampSoakFromBackground)
-        self.loadRampSoakFromBackground.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.loadRampSoakFromBackground.setFocusPolicy(Qt.NoFocus)
         
         self.rsfile = QLabel(self.aw.qmc.rsfile)
-        self.rsfile.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.rsfile.setAlignment(Qt.AlignLeft)
         self.rsfile.setMinimumWidth(300)
-        self.rsfile.setSizePolicy(QSizePolicy.Policy.MinimumExpanding,QSizePolicy.Policy.Preferred)
+        self.rsfile.setSizePolicy(QSizePolicy.MinimumExpanding,QSizePolicy.Preferred)
         
         tab2InnerLayout.addStretch()
         tab2InnerLayout.addLayout(rsGrid)
         tab2InnerLayout.addStretch()
 
-        okButton = QPushButton(QApplication.translate("Button","OK"))
+        okButton = QPushButton(QApplication.translate("Button","OK",None))
         okButton.clicked.connect(self.okAction)
-        onButton = QPushButton(QApplication.translate("Button","On"))
+        onButton = QPushButton(QApplication.translate("Button","On",None))
         onButton.clicked.connect(self.pidONAction)
-        onButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        offButton = QPushButton(QApplication.translate("Button","Off"))
+        onButton.setFocusPolicy(Qt.NoFocus)
+        offButton = QPushButton(QApplication.translate("Button","Off",None))
         offButton.clicked.connect(self.pidOFFAction)
-        offButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        offButton.setFocusPolicy(Qt.NoFocus)
         okButtonLayout = QHBoxLayout()
         okButtonLayout.addWidget(onButton)
         okButtonLayout.addWidget(offButton)
@@ -515,10 +497,10 @@ class PID_DlgControl(ArtisanDialog):
         self.tabWidget = QTabWidget()
         C1Widget = QWidget()
         C1Widget.setLayout(tab1Layout)
-        self.tabWidget.addTab(C1Widget,QApplication.translate("Tab","PID"))
+        self.tabWidget.addTab(C1Widget,QApplication.translate("Tab","PID",None))
         C2Widget = QWidget()
         C2Widget.setLayout(tab2Layout)
-        self.tabWidget.addTab(C2Widget,QApplication.translate("Tab","Ramp/Soak"))
+        self.tabWidget.addTab(C2Widget,QApplication.translate("Tab","Ramp/Soak",None))
         self.tabWidget.setContentsMargins(0,0,0,0)
         ############################
         
@@ -539,24 +521,24 @@ class PID_DlgControl(ArtisanDialog):
         for j in range(self.aw.pidcontrol.RSLen):
             # create tab per RSn set
             RSnGrid = QGridLayout()
-            RSnGrid.addWidget(QLabel(QApplication.translate("Table","SV")),0,1)
-            RSnGrid.addWidget(QLabel(QApplication.translate("Table","Ramp")),0,2)
-            RSnGrid.addWidget(QLabel(QApplication.translate("Table","Soak")),0,3)
-            RSnGrid.addWidget(QLabel(QApplication.translate("Table","Action")),0,4)
-            RSnGrid.addWidget(QLabel(QApplication.translate("Table","Beep")),0,5)
-            RSnGrid.addWidget(QLabel(QApplication.translate("Table","Description")),0,6)
+            RSnGrid.addWidget(QLabel(QApplication.translate("Table","SV",None)),0,1)
+            RSnGrid.addWidget(QLabel(QApplication.translate("Table","Ramp",None)),0,2)
+            RSnGrid.addWidget(QLabel(QApplication.translate("Table","Soak",None)),0,3)
+            RSnGrid.addWidget(QLabel(QApplication.translate("Table","Action",None)),0,4)
+            RSnGrid.addWidget(QLabel(QApplication.translate("Table","Beep",None)),0,5)
+            RSnGrid.addWidget(QLabel(QApplication.translate("Table","Description",None)),0,6)
             SVWidgets = []
             RampWidgets = []
             SoakWidgets = []
             ActionWidgets = []
             BeepWidgets = []
             DescriptionWidgets = []
-            labelLabel = QLabel(QApplication.translate("Label", "Label"))
+            labelLabel = QLabel(QApplication.translate("Label", "Label",None))
             labelEdit = QLineEdit() 
             for i in range(self.aw.pidcontrol.svLen):
                 n = i+1              
                 svwidget = QSpinBox()
-                svwidget.setAlignment(Qt.AlignmentFlag.AlignRight)
+                svwidget.setAlignment(Qt.AlignRight)
                 svwidget.setRange(0,999)
                 svwidget.setSingleStep(10)
                 if self.aw.qmc.mode == "F":
@@ -566,11 +548,11 @@ class PID_DlgControl(ArtisanDialog):
                 SVWidgets.append(svwidget)
                 rampwidget = QTimeEdit()
                 rampwidget.setDisplayFormat("mm:ss")
-                rampwidget.setAlignment(Qt.AlignmentFlag.AlignRight)
+                rampwidget.setAlignment(Qt.AlignRight)
                 RampWidgets.append(rampwidget)
                 soakwidget = QTimeEdit()
                 soakwidget.setDisplayFormat("mm:ss")
-                soakwidget.setAlignment(Qt.AlignmentFlag.AlignRight)
+                soakwidget.setAlignment(Qt.AlignRight)
                 SoakWidgets.append(soakwidget)
                 actionwidget = MyQComboBox()
                 actionwidget.addItems(actions)  
@@ -578,11 +560,11 @@ class PID_DlgControl(ArtisanDialog):
                 #beep
                 beepwidget = QWidget()
                 beepCheckBox = QCheckBox()
-                beepCheckBox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                beepCheckBox.setFocusPolicy(Qt.NoFocus)
                 beepLayout = QHBoxLayout()
                 beepLayout.addStretch()
                 beepLayout.addWidget(beepCheckBox)
-                beepLayout.addSpacing(6)
+                beepLayout.addSpacing(6);        
                 beepLayout.addStretch()
                 beepLayout.setContentsMargins(0,0,0,0)
                 beepLayout.setSpacing(0)
@@ -628,10 +610,10 @@ class PID_DlgControl(ArtisanDialog):
         
             RSnTabWidget = QWidget()
             RSnTabWidget.setLayout(RSnTabLayout)
-            self.tabWidget.addTab(RSnTabWidget,QApplication.translate("Tab","RS")+str(j+1))
+            self.tabWidget.addTab(RSnTabWidget,QApplication.translate("Tab","RS",None)+str(j+1))
             
-            setRSnButton = QPushButton(QApplication.translate("Button","RS")+str(j+1))
-            setRSnButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            setRSnButton = QPushButton(QApplication.translate("Button","RS",None)+str(j+1))
+            setRSnButton.setFocusPolicy(Qt.NoFocus)
             setRSnButton.clicked.connect(self.setRS)
             self.RSnButtons.append(setRSnButton)
             RSbuttonLayout.addWidget(setRSnButton)
@@ -676,7 +658,7 @@ class PID_DlgControl(ArtisanDialog):
         if settings.contains("PIDPosition"):
             self.move(settings.value("PIDPosition"))
         
-        mainLayout.setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
+        mainLayout.setSizeConstraint(QLayout.SetFixedSize)
     
     @pyqtSlot(int)
     def updatePidMode(self,i):
@@ -684,7 +666,8 @@ class PID_DlgControl(ArtisanDialog):
         if self.aw.pidcontrol.pidActive and i == 1:
             self.aw.pidcontrol.pidModeInit()
         else:
-            self.aw.setTimerColor("timer")
+            self.aw.lcd1.setStyleSheet("QLCDNumber { border-radius: 4; color: %s; background-color: %s;}"%(self.aw.lcdpaletteF["timer"],self.aw.lcdpaletteB["timer"]))
+            self.aw.qmc.setTimerLargeLCDcolorSignal.emit(self.aw.lcdpaletteF["timer"],self.aw.lcdpaletteB["timer"])
             if self.aw.qmc.flagon and not self.aw.qmc.flagstart:
                 self.aw.qmc.setLCDtime(0)
     
@@ -718,7 +701,7 @@ class PID_DlgControl(ArtisanDialog):
     
     @pyqtSlot(bool)
     def importrampsoaks(self,_):
-        self.aw.fileImport(QApplication.translate("Message", "Load Ramp/Soak Table"),self.importrampsoaksJSON)
+        self.aw.fileImport(QApplication.translate("Message", "Load Ramp/Soak Table",None),self.importrampsoaksJSON)
     
     @pyqtSlot(bool)
     def setRS(self,_):
@@ -734,8 +717,8 @@ class PID_DlgControl(ArtisanDialog):
             self.setrampsoaks()
             self.aw.pidcontrol.rsfile = ""
             self.rsfile.setText(self.aw.pidcontrol.rsfile)
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+        except:
+            pass
 
     def getRSnSVLabel(self,n):
         return self.RSnTab_LabelWidgets[n].text()
@@ -770,9 +753,9 @@ class PID_DlgControl(ArtisanDialog):
         for i in range(self.aw.pidcontrol.svLen):
             beep = self.RSnTab_BeepWidgets[n][i].layout().itemAt(1).widget()
             if self.aw.pidcontrol.RS_svBeeps[n][i]:
-                beep.setCheckState(Qt.CheckState.Checked)
+                beep.setCheckState(Qt.Checked)
             else:
-                beep.setCheckState(Qt.CheckState.Unchecked)
+                beep.setCheckState(Qt.Unchecked)
     def setRSnSVdescriptions(self,n):
         for i in range(self.aw.pidcontrol.svLen):
             self.RSnTab_DescriptionWidgets[n][i].setText(self.aw.pidcontrol.RS_svDescriptions[n][i])
@@ -781,9 +764,10 @@ class PID_DlgControl(ArtisanDialog):
         try:
             self.aw.qmc.rampSoakSemaphore.acquire(1)
             import io
+            infile = io.open(filename, 'r', encoding='utf-8')
             from json import load as json_load
-            with io.open(filename, 'r', encoding='utf-8') as infile:
-                rampsoaks = json_load(infile)
+            rampsoaks = json_load(infile)
+            infile.close()
             if "svLabel" in rampsoaks:
                 self.aw.pidcontrol.svLabel = rampsoaks["svLabel"]
             else:
@@ -797,20 +781,22 @@ class PID_DlgControl(ArtisanDialog):
             self.setrampsoaks()
             self.aw.qmc.rsfile = filename
             self.rsfile.setText(self.aw.qmc.rsfile)            
-        except Exception as ex: # pylint: disable=broad-except
-            _log.exception(ex)
+        except Exception as ex:
+#            import traceback
+#            traceback.print_exc(file=sys.stdout)
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " importrampsoaksJSON() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " importrampsoaksJSON() {0}").format(str(ex)),exc_tb.tb_lineno)
         finally:
             if self.aw.qmc.rampSoakSemaphore.available() < 1:
                 self.aw.qmc.rampSoakSemaphore.release(1)
     
     @pyqtSlot(bool)
     def exportrampsoaks(self,_):
-        self.aw.fileExport(QApplication.translate("Message", "Save Ramp/Soak Table"),"*.aprs",self.exportrampsoaksJSON)
+        self.aw.fileExport(QApplication.translate("Message", "Save Ramp/Soak Table",None),"*.aprs",self.exportrampsoaksJSON)
         
     def exportrampsoaksJSON(self,filename):
         try:
+            self.aw.qmc.rampSoakSemaphore.acquire(1)
             self.saverampsoaks()
             rampsoaks = {}
             rampsoaks["svLabel"] = self.aw.pidcontrol.svLabel
@@ -821,17 +807,21 @@ class PID_DlgControl(ArtisanDialog):
             rampsoaks["svBeeps"] = self.aw.pidcontrol.svBeeps
             rampsoaks["svDescriptions"] = self.aw.pidcontrol.svDescriptions
             rampsoaks["mode"] = self.aw.qmc.mode
+            outfile = open(filename, 'w')
             from json import dump as json_dump
-            with open(filename, 'w', encoding='utf-8') as outfile:
-                json_dump(rampsoaks, outfile, ensure_ascii=True)
-                outfile.write('\n')
+            json_dump(rampsoaks, outfile, ensure_ascii=True)
+            outfile.write('\n')
+            outfile.close()
             self.aw.qmc.rsfile = filename
             self.rsfile.setText(self.aw.qmc.rsfile) 
             return True
-        except Exception as ex: # pylint: disable=broad-except
+        except Exception as ex:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " exportrampsoaksJSON(): {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " exportrampsoaksJSON(): {0}").format(str(ex)),exc_tb.tb_lineno)
             return False
+        finally:
+            if self.aw.qmc.rampSoakSemaphore.available() < 1:
+                self.aw.qmc.rampSoakSemaphore.release(1)
             
     def saverampsoaks(self):
         try:
@@ -860,9 +850,9 @@ class PID_DlgControl(ArtisanDialog):
                 self.ActionWidgets[i].setCurrentIndex(self.aw.pidcontrol.svActions[i] + 1)
                 beep = self.BeepWidgets[i].layout().itemAt(1).widget() 
                 if self.aw.pidcontrol.svBeeps[i]:
-                    beep.setCheckState(Qt.CheckState.Checked)
+                    beep.setCheckState(Qt.Checked)
                 else:
-                    beep.setCheckState(Qt.CheckState.Unchecked)
+                    beep.setCheckState(Qt.Unchecked)
                 self.DescriptionWidgets[i].setText(self.aw.pidcontrol.svDescriptions[i])
         finally:
             if self.aw.qmc.rampSoakSemaphore.available() < 1:
@@ -968,6 +958,8 @@ class PID_DlgControl(ArtisanDialog):
 
 # common code for all Fuji PXxx subclasses
 class PXpidDlgControl(ArtisanDialog):
+    def __init__(self, parent = None, aw = None):
+        super(PXpidDlgControl,self).__init__(parent, aw)
 
     @pyqtSlot(bool)
     def setpointET(self,_):
@@ -1007,13 +999,13 @@ class PXpidDlgControl(ArtisanDialog):
                 r = self.aw.ser.sendFUJIcommand(command,8)
             #check response from pid and update message on main window
             if r == command:
-                message = QApplication.translate("StatusBar","Decimal position successfully set to 1")
+                message = QApplication.translate("StatusBar","Decimal position successfully set to 1",None)
                 self.status.showMessage(message, 5000)
             else:
-                self.status.showMessage(QApplication.translate("StatusBar","Problem setting decimal position"),5000)
-        except Exception as e: # pylint: disable=broad-except
+                self.status.showMessage(QApplication.translate("StatusBar","Problem setting decimal position",None),5000)
+        except Exception as e:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " setpoint(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " setpoint(): {0}").format(str(e)),exc_tb.tb_lineno)
 
     @pyqtSlot(bool)
     def setthermocoupletypeET(self,_):
@@ -1064,13 +1056,13 @@ class PXpidDlgControl(ArtisanDialog):
             #check response from pid and update message on main window
             if r == command:
                 reg_dict["pvinputtype"][0] = conversiontoindex[index]
-                message = QApplication.translate("StatusBar","Thermocouple type successfully set")
+                message = QApplication.translate("StatusBar","Thermocouple type successfully set",None)
                 self.status.showMessage(message, 5000)
             else:
-                self.status.showMessage(QApplication.translate("StatusBar","Problem setting thermocouple type"),5000)
-        except Exception as e: # pylint: disable=broad-except
+                self.status.showMessage(QApplication.translate("StatusBar","Problem setting thermocouple type",None),5000)
+        except Exception as e:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " setthermocoupletype(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " setthermocoupletype(): {0}").format(str(e)),exc_tb.tb_lineno)
 
     @pyqtSlot(bool)
     def readthermocoupletypeET(self,_):
@@ -1136,9 +1128,9 @@ class PXpidDlgControl(ArtisanDialog):
                         message = "BT type %i: %s"%(Thtype,thermotypes[conversiontoindex.index(Thtype)])
                         self.BTthermocombobox.setCurrentIndex(conversiontoindex.index(Thtype))
                 self.status.showMessage(message,5000)
-        except Exception as e: # pylint: disable=broad-except
+        except Exception as e:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " readthermocoupletype(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " readthermocoupletype(): {0}").format(str(e)),exc_tb.tb_lineno)
 
 
 
@@ -1148,26 +1140,26 @@ class PXpidDlgControl(ArtisanDialog):
 
 class PXRpidDlgControl(PXpidDlgControl):
     def __init__(self, parent = None, aw = None):
-        super().__init__(parent,aw)
+        super(PXRpidDlgControl,self).__init__(parent,aw)
         self.setModal(True)
-        #self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose) # default is True and this is set already in ArtisanDialog by default
-        self.setWindowTitle(QApplication.translate("Form Caption","Fuji PXR PID Control"))
+        self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setWindowTitle(QApplication.translate("Form Caption","Fuji PXR PID Control",None))
         #create Ramp Soak control button colums
         self.labelrs1 = QLabel()
         self.labelrs1.setContentsMargins(5,5,5,5)
         self.labelrs1.setStyleSheet("background-color:'#CCCCCC';")
-        self.labelrs1.setText("<font color='white'><b>" + QApplication.translate("Label", "Ramp Soak HH:MM<BR>(1-4)") + "</b></font>")
+        self.labelrs1.setText("<font color='white'><b>" + QApplication.translate("Label", "Ramp Soak HH:MM<BR>(1-4)",None) + "</b></font>")
         self.labelrs2 = QLabel()
         self.labelrs2.setContentsMargins(5,5,5,5)
         self.labelrs2.setStyleSheet("background-color:'#CCCCCC';")
-        self.labelrs2.setText("<font color='white'><b>" + QApplication.translate("Label", "Ramp Soak HH:MM<BR>(5-8)") + "</b></font>")
-        labelpattern = QLabel(QApplication.translate("Label", "Ramp/Soak Pattern"))
+        self.labelrs2.setText("<font color='white'><b>" + QApplication.translate("Label", "Ramp Soak HH:MM<BR>(5-8)",None) + "</b></font>")
+        labelpattern = QLabel(QApplication.translate("Label", "Ramp/Soak Pattern",None))
         self.patternComboBox =  QComboBox()
         self.patternComboBox.addItems(["1-4","5-8","1-8"])
         self.patternComboBox.setCurrentIndex(self.aw.fujipid.PXR["rampsoakpattern"][0])
         self.status = QStatusBar()
         self.status.setSizeGripEnabled(False)
-        self.status.showMessage(QApplication.translate("StatusBar","Ready"),5000)
+        self.status.showMessage(QApplication.translate("StatusBar","Ready",None),5000)
         self.label_rs1 =  QLabel()
         self.label_rs2 =  QLabel()
         self.label_rs3 =  QLabel()
@@ -1178,18 +1170,18 @@ class PXRpidDlgControl(PXpidDlgControl):
         self.label_rs8 =  QLabel()
         self.paintlabels()
         #update button and exit button
-        button_getall = QPushButton(QApplication.translate("Button","Read Ra/So values"))
-        button_getall.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        button_rson =  QPushButton(QApplication.translate("Button","RampSoak ON"))
-        button_rson.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        button_rsoff =  QPushButton(QApplication.translate("Button","RampSoak OFF"))
-        button_rsoff.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        button_standbyON = QPushButton(QApplication.translate("Button","PID OFF"))
-        button_standbyON.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        button_standbyOFF = QPushButton(QApplication.translate("Button","PID ON"))
-        button_standbyOFF.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        button_getall = QPushButton(QApplication.translate("Button","Read Ra/So values",None))
+        button_getall.setFocusPolicy(Qt.NoFocus)
+        button_rson =  QPushButton(QApplication.translate("Button","RampSoak ON",None))
+        button_rson.setFocusPolicy(Qt.NoFocus)
+        button_rsoff =  QPushButton(QApplication.translate("Button","RampSoak OFF",None))
+        button_rsoff.setFocusPolicy(Qt.NoFocus)
+        button_standbyON = QPushButton(QApplication.translate("Button","PID OFF",None))
+        button_standbyON.setFocusPolicy(Qt.NoFocus)
+        button_standbyOFF = QPushButton(QApplication.translate("Button","PID ON",None))
+        button_standbyOFF.setFocusPolicy(Qt.NoFocus)
 
-        button_exit = QPushButton(QApplication.translate("Button","OK"))
+        button_exit = QPushButton(QApplication.translate("Button","OK",None))
         button_exit.setFocus()
 
         self.patternComboBox.currentIndexChanged.connect(self.paintlabels)
@@ -1200,38 +1192,38 @@ class PXRpidDlgControl(PXpidDlgControl):
         button_standbyOFF.clicked.connect(self.setOFFstandby)
         button_exit.clicked.connect(self.reject)
         #TAB 2
-        tab2svbutton = QPushButton(QApplication.translate("Button","Write SV"))
-        tab2svbutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        tab2svbutton = QPushButton(QApplication.translate("Button","Write SV",None))
+        tab2svbutton.setFocusPolicy(Qt.NoFocus)
         
-        self.tab2easySVbuttonsFlag = QCheckBox(QApplication.translate("Label","SV Buttons"))
+        self.tab2easySVbuttonsFlag = QCheckBox(QApplication.translate("Label","SV Buttons",None))
         self.tab2easySVbuttonsFlag.setChecked(self.aw.pidcontrol.svButtons)
         self.tab2easySVbuttonsFlag.stateChanged.connect(self.setSVbuttons)
-        self.tab2easySVsliderFlag = QCheckBox(QApplication.translate("Label","SV Slider"))
+        self.tab2easySVsliderFlag = QCheckBox(QApplication.translate("Label","SV Slider",None))
         self.tab2easySVsliderFlag.setChecked(self.aw.pidcontrol.svSlider)
         self.tab2easySVsliderFlag.stateChanged.connect(self.setSVsliderSlot)
         
         
-        tab2getsvbutton = QPushButton(QApplication.translate("Button","Read SV"))
-        tab2getsvbutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        tab2getsvbutton = QPushButton(QApplication.translate("Button","Read SV",None))
+        tab2getsvbutton.setFocusPolicy(Qt.NoFocus)
         self.readsvedit = QLineEdit()
         tab2svbutton.clicked.connect(self.setsv)
         tab2getsvbutton.clicked.connect(self.getsv)
-        svwarning1 = QLabel("<CENTER><b>" + QApplication.translate("Label", "WARNING") + "</b><br>"
-                            + QApplication.translate("Label", "Writing eeprom memory") + "<br>"
-                            + QApplication.translate("Label", "<u>Max life</u> 10,000 writes") + "<br>"
-                            + QApplication.translate("Label", "Infinite read life.") + "</CENTER>")
-        svwarning2 = QLabel("<CENTER><b>" + QApplication.translate("Label", "WARNING") + "</b><br>"
-                            + QApplication.translate("Label", "After <u>writing</u> an adjustment,<br>never power down the pid<br>for the next 5 seconds <br>or the pid may never recover.") + "<br>"
-                            + QApplication.translate("Label", "Read operations manual") + "</CENTER>")
+        svwarning1 = QLabel("<CENTER><b>" + QApplication.translate("Label", "WARNING",None) + "</b><br>"
+                            + QApplication.translate("Label", "Writing eeprom memory",None) + "<br>"
+                            + QApplication.translate("Label", "<u>Max life</u> 10,000 writes",None) + "<br>"
+                            + QApplication.translate("Label", "Infinite read life.",None) + "</CENTER>")
+        svwarning2 = QLabel("<CENTER><b>" + QApplication.translate("Label", "WARNING",None) + "</b><br>"
+                            + QApplication.translate("Label", "After <u>writing</u> an adjustment,<br>never power down the pid<br>for the next 5 seconds <br>or the pid may never recover.",None) + "<br>"
+                            + QApplication.translate("Label", "Read operations manual",None) + "</CENTER>")
         self.svedit = QLineEdit()
         self.svedit.setValidator(self.aw.createCLocaleDoubleValidator(0., 999., 1, self.svedit))
         #TAB 3
-        button_p = QPushButton(QApplication.translate("Button","Set p"))
-        button_p.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        button_i = QPushButton(QApplication.translate("Button","Set i"))
-        button_i.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        button_d = QPushButton(QApplication.translate("Button","Set d"))
-        button_d.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        button_p = QPushButton(QApplication.translate("Button","Set p",None))
+        button_p.setFocusPolicy(Qt.NoFocus)
+        button_i = QPushButton(QApplication.translate("Button","Set i",None))
+        button_i.setFocusPolicy(Qt.NoFocus)
+        button_d = QPushButton(QApplication.translate("Button","Set d",None))
+        button_d.setFocusPolicy(Qt.NoFocus)
         plabel =  QLabel("p")
         ilabel =  QLabel("i")
         dlabel =  QLabel("d")
@@ -1244,12 +1236,12 @@ class PXRpidDlgControl(PXpidDlgControl):
         self.pedit.setValidator(QIntValidator(0., 999, self.pedit))
         self.iedit.setValidator(QIntValidator(0, 3200, self.iedit))
         self.dedit.setValidator(QIntValidator(0., 999, self.dedit))
-        button_autotuneON = QPushButton(QApplication.translate("Button","Autotune ON"))
-        button_autotuneON.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        button_autotuneOFF = QPushButton(QApplication.translate("Button","Autotune OFF"))
-        button_autotuneOFF.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        button_readpid = QPushButton(QApplication.translate("Button","Read PID Values"))
-        button_readpid.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        button_autotuneON = QPushButton(QApplication.translate("Button","Autotune ON",None))
+        button_autotuneON.setFocusPolicy(Qt.NoFocus)
+        button_autotuneOFF = QPushButton(QApplication.translate("Button","Autotune OFF",None))
+        button_autotuneOFF.setFocusPolicy(Qt.NoFocus)
+        button_readpid = QPushButton(QApplication.translate("Button","Read PID Values",None))
+        button_readpid.setFocusPolicy(Qt.NoFocus)
         button_autotuneON.clicked.connect(self.setONautotune)
         button_autotuneOFF.clicked.connect(self.setOFFautotune)
         button_p.clicked.connect(self.setpid_p)
@@ -1261,7 +1253,7 @@ class PXRpidDlgControl(PXpidDlgControl):
         self.segmenttable = QTableWidget()
         self.createsegmenttable()
         #****************************   TAB5 WIDGETS
-        BTthermolabelnote = QLabel(QApplication.translate("Label","NOTE: BT Thermocouple type is not stored in the Artisan settings"))
+        BTthermolabelnote = QLabel(QApplication.translate("Label","NOTE: BT Thermocouple type is not stored in the Artisan settings",None))
         self.ETthermocombobox = QComboBox()
         self.BTthermocombobox = QComboBox()
         #self.BTthermocombobox.setStyleSheet("background-color:'lightgrey';")
@@ -1274,14 +1266,14 @@ class PXRpidDlgControl(PXpidDlgControl):
             self.BTthermocombobox.addItems(self.aw.fujipid.PXFthermotypes)
         if self.aw.fujipid.PXR["pvinputtype"][0] in self.aw.fujipid.PXRconversiontoindex:
             self.ETthermocombobox.setCurrentIndex(self.aw.fujipid.PXRconversiontoindex.index(self.aw.fujipid.PXR["pvinputtype"][0]))
-        setETthermocouplebutton = QPushButton(QApplication.translate("Button","Set"))
-        setETthermocouplebutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        setBTthermocouplebutton = QPushButton(QApplication.translate("Button","Set"))
-        setBTthermocouplebutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        getETthermocouplebutton = QPushButton(QApplication.translate("Button","Read"))
-        getETthermocouplebutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        getBTthermocouplebutton = QPushButton(QApplication.translate("Button","Read"))
-        getBTthermocouplebutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        setETthermocouplebutton = QPushButton(QApplication.translate("Button","Set",None))
+        setETthermocouplebutton.setFocusPolicy(Qt.NoFocus)
+        setBTthermocouplebutton = QPushButton(QApplication.translate("Button","Set",None))
+        setBTthermocouplebutton.setFocusPolicy(Qt.NoFocus)
+        getETthermocouplebutton = QPushButton(QApplication.translate("Button","Read",None))
+        getETthermocouplebutton.setFocusPolicy(Qt.NoFocus)
+        getBTthermocouplebutton = QPushButton(QApplication.translate("Button","Read",None))
+        getBTthermocouplebutton.setFocusPolicy(Qt.NoFocus)
         setETthermocouplebutton.setMaximumWidth(80)
         getETthermocouplebutton.setMaximumWidth(80)
         setBTthermocouplebutton.setMaximumWidth(80)
@@ -1290,32 +1282,32 @@ class PXRpidDlgControl(PXpidDlgControl):
         setBTthermocouplebutton.clicked.connect(self.setthermocoupletypeBT)
         getETthermocouplebutton.clicked.connect(self.readthermocoupletypeET)
         getBTthermocouplebutton.clicked.connect(self.readthermocoupletypeBT)
-        PointButtonET = QPushButton(QApplication.translate("Button","Set ET PID to 1 decimal point"))
-        PointButtonET.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        PointButtonBT = QPushButton(QApplication.translate("Button","Set BT PID to 1 decimal point"))
-        PointButtonBT.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        PointButtonET = QPushButton(QApplication.translate("Button","Set ET PID to 1 decimal point",None))
+        PointButtonET.setFocusPolicy(Qt.NoFocus)
+        PointButtonBT = QPushButton(QApplication.translate("Button","Set BT PID to 1 decimal point",None))
+        PointButtonBT.setFocusPolicy(Qt.NoFocus)
         PointButtonET.setMaximumWidth(250)
         PointButtonBT.setMaximumWidth(250)
-        pointlabel = QLabel(QApplication.translate("Label","Artisan uses 1 decimal point"))
+        pointlabel = QLabel(QApplication.translate("Label","Artisan uses 1 decimal point",None))
         PointButtonET.clicked.connect(self.setpointET)
         PointButtonBT.clicked.connect(self.setpointBT)
         
                 
         # Follow Background 
-        self.followBackground = QCheckBox(QApplication.translate("CheckBox", "Follow Background"))
+        self.followBackground = QCheckBox(QApplication.translate("CheckBox", "Follow Background",None))
         self.followBackground.setChecked(self.aw.fujipid.followBackground)
-        self.followBackground.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.followBackground.setFocusPolicy(Qt.NoFocus)
         self.followBackground.stateChanged.connect(self.changeFollowBackground)         #toggle
         # Follow Background Lookahead
         self.pidSVLookahead = QSpinBox()
-        self.pidSVLookahead.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.pidSVLookahead.setAlignment(Qt.AlignRight)
         self.pidSVLookahead.setRange(0,999)
         self.pidSVLookahead.setSingleStep(1)
         self.pidSVLookahead.setValue(self.aw.fujipid.lookahead)  
         self.pidSVLookahead.setSuffix(" s")
-        self.pidSVLookahead.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.pidSVLookahead.setFocusPolicy(Qt.NoFocus)
         self.pidSVLookahead.valueChanged.connect(self.changeLookAhead)
-        pidSVLookaheadLabel = QLabel(QApplication.translate("Label","Lookahead"))
+        pidSVLookaheadLabel = QLabel(QApplication.translate("Label","Lookahead",None))  
         followLayout = QHBoxLayout()
         followLayout.addStretch()
         followLayout.addWidget(pidSVLookaheadLabel)
@@ -1393,14 +1385,14 @@ class PXRpidDlgControl(PXpidDlgControl):
         thermolayoutET.addStretch()
         thermolayoutET.addWidget(getETthermocouplebutton)
         thermolayoutET.addWidget(setETthermocouplebutton)
-        ETGroupBox = QGroupBox(QApplication.translate("Label","ET Thermocouple type"))
+        ETGroupBox = QGroupBox(QApplication.translate("Label","ET Thermocouple type",None))
         ETGroupBox.setLayout(thermolayoutET)
         thermolayoutBT = QHBoxLayout()
         thermolayoutBT.addWidget(self.BTthermocombobox)
         thermolayoutBT.addStretch()
         thermolayoutBT.addWidget(getBTthermocouplebutton)
         thermolayoutBT.addWidget(setBTthermocouplebutton)
-        BTGroupBox = QGroupBox(QApplication.translate("Label","BT Thermocouple type"))
+        BTGroupBox = QGroupBox(QApplication.translate("Label","BT Thermocouple type",None))
         BTGroupBox.setLayout(thermolayoutBT)
         tab5Layout = QVBoxLayout()
         tab5Layout.addWidget(ETGroupBox)
@@ -1415,10 +1407,10 @@ class PXRpidDlgControl(PXpidDlgControl):
         TabWidget = QTabWidget()
         C1Widget = QWidget()
         C1Widget.setLayout(buttonMasterLayout)
-        TabWidget.addTab(C1Widget,QApplication.translate("Tab","RS"))
+        TabWidget.addTab(C1Widget,QApplication.translate("Tab","RS",None))
         C2Widget = QWidget()
         C2Widget.setLayout(svlayout)
-        TabWidget.addTab(C2Widget,QApplication.translate("Tab","SV"))
+        TabWidget.addTab(C2Widget,QApplication.translate("Tab","SV",None))
         tab3Hlayout = QHBoxLayout()
         tab3Hlayout.addStretch()
         tab3Hlayout.addLayout(tab3layout)
@@ -1429,13 +1421,13 @@ class PXRpidDlgControl(PXpidDlgControl):
         tab3Vlayout.addStretch()
         C3Widget = QWidget()        
         C3Widget.setLayout(tab3Vlayout)
-        TabWidget.addTab(C3Widget,QApplication.translate("Tab","PID"))
+        TabWidget.addTab(C3Widget,QApplication.translate("Tab","PID",None))
         C4Widget = QWidget()
         C4Widget.setLayout(tab4layout)
-        TabWidget.addTab(C4Widget,QApplication.translate("Tab","Set RS"))
+        TabWidget.addTab(C4Widget,QApplication.translate("Tab","Set RS",None))
         C5Widget = QWidget()
         C5Widget.setLayout(tab5Layout)
-        TabWidget.addTab(C5Widget,QApplication.translate("Tab","Extra"))
+        TabWidget.addTab(C5Widget,QApplication.translate("Tab","Extra",None))
         #incorporate layouts
         Mlayout = QVBoxLayout()
         Mlayout.addWidget(self.status,0)
@@ -1527,7 +1519,7 @@ class PXRpidDlgControl(PXpidDlgControl):
         self.setONOFFautotune(0)
     
     def setONOFFautotune(self,flag):
-        self.status.showMessage(QApplication.translate("StatusBar","setting autotune..."),500)
+        self.status.showMessage(QApplication.translate("StatusBar","setting autotune...",None),500)
         if self.aw.ser.useModbusPort:
             reg = self.aw.modbus.address2register(self.aw.fujipid.PXR["autotuning"][1],6)
             self.aw.modbus.writeSingleRegister(self.aw.ser.controlETpid[1],reg,flag)
@@ -1539,14 +1531,14 @@ class PXRpidDlgControl(PXpidDlgControl):
         if len(r) == 8:
             if flag == 0:
                 self.aw.fujipid.PXR["autotuning"][0] = 0
-                self.status.showMessage(QApplication.translate("StatusBar","Autotune successfully turned OFF"),5000)
+                self.status.showMessage(QApplication.translate("StatusBar","Autotune successfully turned OFF",None),5000)
             if flag == 1:
                 self.aw.fujipid.PXR["autotuning"][0] = 1
-                self.status.showMessage(QApplication.translate("StatusBar","Autotune successfully turned ON"),5000)
+                self.status.showMessage(QApplication.translate("StatusBar","Autotune successfully turned ON",None),5000)
         else:
-            mssg = QApplication.translate("Error Message","Exception:") + " setONOFFautotune()"
+            mssg = QApplication.translate("Error Message","Exception:",None) + " setONOFFautotune()"
             self.status.showMessage(mssg,5000)
-            self.aw.qmc.adderror(QApplication.translate("Error Message","Exception:") + " setONOFFautotune()")
+            self.aw.qmc.adderror(QApplication.translate("Error Message","Exception:",None) + " setONOFFautotune()")
 
     @pyqtSlot(bool)
     def setONstandby(self,_):
@@ -1560,23 +1552,23 @@ class PXRpidDlgControl(PXpidDlgControl):
         try:
             #standby ON (pid off) will reset: rampsoak modes/autotuning/self tuning
             #flag = 0 standby OFF, flag = 1 standby ON (pid off)
-            self.status.showMessage(QApplication.translate("StatusBar","wait..."),500)
+            self.status.showMessage(QApplication.translate("StatusBar","wait...",None),500)
             res = self.aw.fujipid.setONOFFstandby(flag)
             if res:
                 if flag == 1:
-                    message = QApplication.translate("StatusBar","PID OFF")     #put pid in standby 1 (pid off)
+                    message = QApplication.translate("StatusBar","PID OFF",None)     #put pid in standby 1 (pid off)
                 else:
-                    message = QApplication.translate("StatusBar","PID ON")      #put pid in standby 0 (pid on)
+                    message = QApplication.translate("StatusBar","PID ON",None)      #put pid in standby 0 (pid on)
                 self.status.showMessage(message,5000)
             else:
-                mssg = QApplication.translate("Error Message","Exception:") + " setONOFFstandby()"
+                mssg = QApplication.translate("Error Message","Exception:",None) + " setONOFFstandby()"
                 self.status.showMessage(mssg,5000)
                 self.aw.qmc.adderror(mssg)
-        except Exception as e: # pylint: disable=broad-except
+        except Exception as e:
             #import traceback
             #traceback.print_exc(file=sys.stdout)
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " setONOFFstandby() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " setONOFFstandby() {0}").format(str(e)),exc_tb.tb_lineno)
 
     @pyqtSlot(bool)
     def setsv(self,_):
@@ -1586,7 +1578,7 @@ class PXRpidDlgControl(PXpidDlgControl):
             if self.aw.ser.useModbusPort:
                 reg = self.aw.modbus.address2register(self.aw.fujipid.PXR["sv0"][1],6)
                 self.aw.modbus.writeSingleRegister(self.aw.ser.controlETpid[1],reg,newSVvalue)
-                message = QApplication.translate("StatusBar","SV successfully set to {0}").format(self.svedit.text())
+                message = QApplication.translate("StatusBar","SV successfully set to {0}",None).format(self.svedit.text())
                 self.aw.fujipid.PXR["sv0"][0] = float(str(self.svedit.text()))
                 self.status.showMessage(message,5000)
                 #record command as an Event 
@@ -1596,18 +1588,18 @@ class PXRpidDlgControl(PXpidDlgControl):
                 command = self.aw.fujipid.message2send(self.aw.ser.controlETpid[1],6,self.aw.fujipid.PXR["sv0"][1],newSVvalue)
                 r = self.aw.ser.sendFUJIcommand(command,8)
                 if r == command:
-                    message = QApplication.translate("StatusBar","SV successfully set to {0}").format(self.svedit.text())
+                    message = QApplication.translate("StatusBar","SV successfully set to {0}",None).format(self.svedit.text())
                     self.aw.fujipid.PXR["sv0"][0] = float(str(self.svedit.text()))
                     self.status.showMessage(message,5000)
                     #record command as an Event 
                     strcommand = "SETSV::"+ str("%.1f"%(newSVvalue/10.))
                     self.aw.qmc.DeviceEventRecord(strcommand)
                 else:
-                    mssg = QApplication.translate("Error Message","Exception:") + " setsv()"
+                    mssg = QApplication.translate("Error Message","Exception:",None) + " setsv()"
                     self.status.showMessage(mssg,5000)
                     self.aw.qmc.adderror(mssg)
         else:
-            self.status.showMessage(QApplication.translate("StatusBar","Empty SV box"),5000)
+            self.status.showMessage(QApplication.translate("StatusBar","Empty SV box",None),5000)
             
     @pyqtSlot(bool)
     def getsv(self,_):
@@ -1617,7 +1609,7 @@ class PXRpidDlgControl(PXpidDlgControl):
             self.aw.lcd6.display(self.aw.fujipid.PXR["sv0"][0])
             self.readsvedit.setText(str(self.aw.fujipid.PXR["sv0"][0]))
         else:
-            self.status.showMessage(QApplication.translate("StatusBar","Unable to read SV"),5000)
+            self.status.showMessage(QApplication.translate("StatusBar","Unable to read SV",None),5000)
 
     def checkrampsoakmode(self):
         if self.aw.ser.useModbusPort:
@@ -1629,120 +1621,121 @@ class PXRpidDlgControl(PXpidDlgControl):
         self.aw.fujipid.PXR["rampsoakmode"][0] = currentmode
         if currentmode == 0:
             mode = ["0",
-                    QApplication.translate("Message","OFF"),
-                    QApplication.translate("Message","CONTINUOUS CONTROL"),
-                    QApplication.translate("Message","CONTINUOUS CONTROL"),
-                    QApplication.translate("Message","OFF")]
+                    QApplication.translate("Message","OFF",None),
+                    QApplication.translate("Message","CONTINUOUS CONTROL",None),
+                    QApplication.translate("Message","CONTINUOUS CONTROL",None),
+                    QApplication.translate("Message","OFF",None)]
         elif currentmode == 1:
             mode = ["1",
-                    QApplication.translate("Message","OFF"),
-                    QApplication.translate("Message","CONTINUOUS CONTROL"),
-                    QApplication.translate("Message","CONTINUOUS CONTROL"),
-                    QApplication.translate("Message","ON")]
+                    QApplication.translate("Message","OFF",None),
+                    QApplication.translate("Message","CONTINUOUS CONTROL",None),
+                    QApplication.translate("Message","CONTINUOUS CONTROL",None),
+                    QApplication.translate("Message","ON",None)]
         elif currentmode == 2:
             mode = ["2",
-                    QApplication.translate("Message","OFF"),
-                    QApplication.translate("Message","CONTINUOUS CONTROL"),
-                    QApplication.translate("Message","STANDBY MODE"),
-                    QApplication.translate("Message","OFF")]
+                    QApplication.translate("Message","OFF",None),
+                    QApplication.translate("Message","CONTINUOUS CONTROL",None),
+                    QApplication.translate("Message","STANDBY MODE",None),
+                    QApplication.translate("Message","OFF",None)]
         elif currentmode == 3:
             mode = ["3",
-                    QApplication.translate("Message","OFF"),
-                    QApplication.translate("Message","CONTINUOUS CONTROL"),
-                    QApplication.translate("Message","STANDBY MODE"),
-                    QApplication.translate("Message","ON")]
+                    QApplication.translate("Message","OFF",None),
+                    QApplication.translate("Message","CONTINUOUS CONTROL",None),
+                    QApplication.translate("Message","STANDBY MODE",None),
+                    QApplication.translate("Message","ON",None)]
         elif currentmode == 4:
             mode = ["4",
-                    QApplication.translate("Message","OFF"),
-                    QApplication.translate("Message","STANDBY MODE"),
-                    QApplication.translate("Message","CONTINUOUS CONTROL"),
-                    QApplication.translate("Message","OFF")]
+                    QApplication.translate("Message","OFF",None),
+                    QApplication.translate("Message","STANDBY MODE",None),
+                    QApplication.translate("Message","CONTINUOUS CONTROL",None),
+                    QApplication.translate("Message","OFF",None)]
         elif currentmode == 5:
             mode = ["5",
-                    QApplication.translate("Message","OFF"),
-                    QApplication.translate("Message","STANDBY MODE"),
-                    QApplication.translate("Message","CONTINUOUS CONTROL"),
-                    QApplication.translate("Message","ON")]
+                    QApplication.translate("Message","OFF",None),
+                    QApplication.translate("Message","STANDBY MODE",None),
+                    QApplication.translate("Message","CONTINUOUS CONTROL",None),
+                    QApplication.translate("Message","ON",None)]
         elif currentmode == 6:
             mode = ["6",
-                    QApplication.translate("Message","OFF"),
-                    QApplication.translate("Message","STANDBY MODE"),
-                    QApplication.translate("Message","STANDBY MODE"),
-                    QApplication.translate("Message","OFF")]
+                    QApplication.translate("Message","OFF",None),
+                    QApplication.translate("Message","STANDBY MODE",None),
+                    QApplication.translate("Message","STANDBY MODE",None),
+                    QApplication.translate("Message","OFF",None)]
         elif currentmode == 7:
             mode = ["7",
-                    QApplication.translate("Message","OFF"),
-                    QApplication.translate("Message","STANDBY MODE"),
-                    QApplication.translate("Message","STANDBY MODE"),
-                    QApplication.translate("Message","ON")]
+                    QApplication.translate("Message","OFF",None),
+                    QApplication.translate("Message","STANDBY MODE",None),
+                    QApplication.translate("Message","STANDBY MODE",None),
+                    QApplication.translate("Message","ON",None)]
         elif currentmode == 8:
             mode = ["8",
-                    QApplication.translate("Message","ON"),
-                    QApplication.translate("Message","CONTINUOUS CONTROL"),
-                    QApplication.translate("Message","CONTINUOUS CONTROL"),
-                    QApplication.translate("Message","OFF")]
+                    QApplication.translate("Message","ON",None),
+                    QApplication.translate("Message","CONTINUOUS CONTROL",None),
+                    QApplication.translate("Message","CONTINUOUS CONTROL",None),
+                    QApplication.translate("Message","OFF",None)]
         elif currentmode == 9:
             mode = ["9",
-                    QApplication.translate("Message","ON"),
-                    QApplication.translate("Message","CONTINUOUS CONTROL"),
-                    QApplication.translate("Message","CONTINUOUS CONTROL"),
-                    QApplication.translate("Message","ON")]
+                    QApplication.translate("Message","ON",None),
+                    QApplication.translate("Message","CONTINUOUS CONTROL",None),
+                    QApplication.translate("Message","CONTINUOUS CONTROL",None),
+                    QApplication.translate("Message","ON",None)]
         elif currentmode == 10:
             mode = ["10",
-                    QApplication.translate("Message","ON"),
-                    QApplication.translate("Message","CONTINUOUS CONTROL"),
-                    QApplication.translate("Message","STANDBY MODE"),
-                    QApplication.translate("Message","OFF")]
+                    QApplication.translate("Message","ON",None),
+                    QApplication.translate("Message","CONTINUOUS CONTROL",None),
+                    QApplication.translate("Message","STANDBY MODE",None),
+                    QApplication.translate("Message","OFF",None)]
         elif currentmode == 11:
             mode = ["11",
-                    QApplication.translate("Message","ON"),
-                    QApplication.translate("Message","CONTINUOUS CONTROL"),
-                    QApplication.translate("Message","STANDBY MODE"),
-                    QApplication.translate("Message","ON")]
+                    QApplication.translate("Message","ON",None),
+                    QApplication.translate("Message","CONTINUOUS CONTROL",None),
+                    QApplication.translate("Message","STANDBY MODE",None),
+                    QApplication.translate("Message","ON",None)]
         elif currentmode == 12:
             mode = ["12",
-                    QApplication.translate("Message","ON"),
-                    QApplication.translate("Message","STANDBY MODE"),
-                    QApplication.translate("Message","CONTINUOUS CONTROL"),
-                    QApplication.translate("Message","OFF")]
+                    QApplication.translate("Message","ON",None),
+                    QApplication.translate("Message","STANDBY MODE",None),
+                    QApplication.translate("Message","CONTINUOUS CONTROL",None),
+                    QApplication.translate("Message","OFF",None)]
         elif currentmode == 13:
             mode = ["13",
-                    QApplication.translate("Message","ON"),
-                    QApplication.translate("Message","STANDBY MODE"),
-                    QApplication.translate("Message","CONTINUOUS CONTROL"),
-                    QApplication.translate("Message","ON")]
+                    QApplication.translate("Message","ON",None),
+                    QApplication.translate("Message","STANDBY MODE",None),
+                    QApplication.translate("Message","CONTINUOUS CONTROL",None),
+                    QApplication.translate("Message","ON",None)]
         elif currentmode == 14:
             mode = ["14",
-                    QApplication.translate("Message","ON"),
-                    QApplication.translate("Message","STANDBY MODE"),
-                    QApplication.translate("Message","STANDBY MODE"),
-                    QApplication.translate("Message","OFF")]
+                    QApplication.translate("Message","ON",None),
+                    QApplication.translate("Message","STANDBY MODE",None),
+                    QApplication.translate("Message","STANDBY MODE",None),
+                    QApplication.translate("Message","OFF",None)]
         elif currentmode == 15:
             mode = ["15",
-                    QApplication.translate("Message","ON"),
-                    QApplication.translate("Message","STANDBY MODE"),
-                    QApplication.translate("Message","STANDBY MODE"),
-                    QApplication.translate("Message","ON")]
+                    QApplication.translate("Message","ON",None),
+                    QApplication.translate("Message","STANDBY MODE",None),
+                    QApplication.translate("Message","STANDBY MODE",None),
+                    QApplication.translate("Message","ON",None)]
         else:
             return -1
-        string =  QApplication.translate("Message","The rampsoak-mode tells how to start and end the ramp/soak") + "\n\n"
-        string += QApplication.translate("Message","Your rampsoak mode in this pid is:") + "\n\n"
-        string += QApplication.translate("Message","Mode = {0}").format(mode[0]) + "\n"
+        string =  QApplication.translate("Message","The rampsoak-mode tells how to start and end the ramp/soak",None) + "\n\n"
+        string += QApplication.translate("Message","Your rampsoak mode in this pid is:",None) + "\n\n"
+        string += QApplication.translate("Message","Mode = {0}",None).format(mode[0]) + "\n"
         string += "-----------------------------------------------------------------------\n"
-        string += QApplication.translate("Message","Start to run from PV value: {0}").format(mode[1]) + "\n"
-        string += QApplication.translate("Message","End output status at the end of ramp/soak: {0}").format(mode[2]) + "\n"
-        string += QApplication.translate("Message","Output status while ramp/soak operation set to OFF: {0}").format(mode[3]) + "\n"
-        string += QApplication.translate("Message","\nRepeat Operation at the end: {0}").format(mode[4]) + "\n"
+        string += QApplication.translate("Message","Start to run from PV value: {0}",None).format(mode[1]) + "\n"
+        string += QApplication.translate("Message","End output status at the end of ramp/soak: {0}",None).format(mode[2]) + "\n"
+        string += QApplication.translate("Message","Output status while ramp/soak operation set to OFF: {0}",None).format(mode[3]) + "\n"
+        string += QApplication.translate("Message","\nRepeat Operation at the end: {0}",None).format(mode[4]) + "\n"
         string += "-----------------------------------------------------------------------\n"
-        string += QApplication.translate("Message","Recomended Mode = 0") + "\n\n"
-        string += QApplication.translate("Message","If you need to change it, change it now and come back later") + "\n"
-        string += QApplication.translate("Message","Use the Parameter Loader Software by Fuji if you need to\n\n") + "\n\n\n"
-        string += QApplication.translate("Message","Continue?")
-        reply = QMessageBox.question(self.aw,QApplication.translate("Message","Ramp Soak start-end mode"),string,
-                            QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.Cancel)
-        if reply == QMessageBox.StandardButton.Yes:
+        string += QApplication.translate("Message","Recomended Mode = 0",None) + "\n\n"
+        string += QApplication.translate("Message","If you need to change it, change it now and come back later",None) + "\n"
+        string += QApplication.translate("Message","Use the Parameter Loader Software by Fuji if you need to\n\n",None) + "\n\n\n"
+        string += QApplication.translate("Message","Continue?",None)
+        reply = QMessageBox.question(self.aw,QApplication.translate("Message","Ramp Soak start-end mode",None),string,
+                            QMessageBox.Yes|QMessageBox.Cancel)
+        if reply == QMessageBox.Cancel:
+            return 0
+        elif reply == QMessageBox.Yes:
             return 1
-        return 0
 
     @pyqtSlot(bool)
     def setONrampsoak(self,_):
@@ -1758,11 +1751,11 @@ class PXRpidDlgControl(PXpidDlgControl):
         if flag == 1:
             check = self.checkrampsoakmode()
             if check == 0:
-                self.status.showMessage(QApplication.translate("StatusBar","Ramp/Soak operation cancelled"), 5000)
+                self.status.showMessage(QApplication.translate("StatusBar","Ramp/Soak operation cancelled",None), 5000)
                 return
-            if check == -1:
-                self.status.showMessage(QApplication.translate("StatusBar","No RX data"), 5000)
-            self.status.showMessage(QApplication.translate("StatusBar","RS ON"),500)
+            elif check == -1:
+                self.status.showMessage(QApplication.translate("StatusBar","No RX data",None), 5000)
+            self.status.showMessage(QApplication.translate("StatusBar","RS ON",None),500)
             #0 = 1-4
             #1 = 5-8
             #2 = 1-8
@@ -1772,19 +1765,19 @@ class PXRpidDlgControl(PXpidDlgControl):
                 self.aw.fujipid.PXR["rampsoakpattern"][0] = currentmode
                 if currentmode != selectedmode:
                     #set mode in pid to match the mode selected in the combobox
-                    self.status.showMessage(QApplication.translate("StatusBar","Need to change pattern mode..."),1000)
+                    self.status.showMessage(QApplication.translate("StatusBar","Need to change pattern mode...",None),1000)
                     res = self.aw.fujipid.setrampsoakmode(selectedmode)
                     if res:
-                        self.status.showMessage(QApplication.translate("StatusBar","Pattern has been changed. Wait 5 secs."), 500)
+                        self.status.showMessage(QApplication.translate("StatusBar","Pattern has been changed. Wait 5 secs.",None), 500)
                     else:
-                        self.status.showMessage(QApplication.translate("StatusBar","Pattern could not be changed"), 5000)
+                        self.status.showMessage(QApplication.translate("StatusBar","Pattern could not be changed",None), 5000)
                         return
                 #combobox mode matches pid mode
                 #set ramp soak mode ON/OFF
                 res = self.aw.fujipid.setrampsoak(flag)
                 if res:
                     #record command as an Event if flag = 1
-                    self.status.showMessage(QApplication.translate("StatusBar","RS ON"), 5000)
+                    self.status.showMessage(QApplication.translate("StatusBar","RS ON",None), 5000)
                     #ramp soak pattern. 0=executes 1 to 4; 1=executes 5 to 8; 2=executes 1 to 8
                     pattern =[[1,4],[5,8],[1,8]]
                     start = pattern[self.aw.fujipid.PXR["rampsoakpattern"][0]][0]
@@ -1798,32 +1791,32 @@ class PXRpidDlgControl(PXpidDlgControl):
                         strcommand += "::" + str(self.aw.fujipid.PXR[svkey][0]) + "::" + str(self.aw.fujipid.PXR[rampkey][0]) + "::" + str(self.aw.fujipid.PXR[soakkey][0])+"::"
                         result += strcommand
                         strcommand = "SETRS"
-                    result = result.strip(":")
+                    result = result.strip("::")
                     self.aw.qmc.DeviceEventRecord(result)
                 else:
-                    self.status.showMessage(QApplication.translate("StatusBar","RampSoak could not be changed"), 5000)
+                    self.status.showMessage(QApplication.translate("StatusBar","RampSoak could not be changed",None), 5000)
             else:
-                mssg = QApplication.translate("Error Message","Exception:") + " setONOFFrampsoak()"
+                mssg = QApplication.translate("Error Message","Exception:",None) + " setONOFFrampsoak()"
                 self.status.showMessage(mssg,5000)
                 self.aw.qmc.adderror(mssg)
         #set ramp soak OFF
         elif flag == 0:
-            self.status.showMessage(QApplication.translate("StatusBar","RS OFF"),500)
+            self.status.showMessage(QApplication.translate("StatusBar","RS OFF",None),500)
             self.aw.fujipid.setrampsoak(flag)
 
     #get all Ramp Soak values for all 8 segments
     @pyqtSlot(bool)
     def getallsegments(self,_):
         for i in range(8):
-            msg = QApplication.translate("StatusBar","Reading Ramp/Soak {0} ...").format(str(i+1))
+            msg = QApplication.translate("StatusBar","Reading Ramp/Soak {0} ...",None).format(str(i+1))
             self.status.showMessage(msg,500)
             k = self.aw.fujipid.getsegment(i+1)
             libtime.sleep(0.03)
             if k == -1:
-                self.status.showMessage(QApplication.translate("StatusBar","problem reading Ramp/Soak"),5000)
+                self.status.showMessage(QApplication.translate("StatusBar","problem reading Ramp/Soak",None),5000)
                 return
             self.paintlabels()
-        self.status.showMessage(QApplication.translate("StatusBar","Finished reading Ramp/Soak val."),5000)
+        self.status.showMessage(QApplication.translate("StatusBar","Finished reading Ramp/Soak val.",None),5000)
         self.createsegmenttable()
 
     @pyqtSlot(bool)
@@ -1835,9 +1828,10 @@ class PXRpidDlgControl(PXpidDlgControl):
             pcommand= self.aw.fujipid.message2send(self.aw.ser.controlETpid[1],3,self.aw.fujipid.PXR["p"][1],1)
             p = self.aw.fujipid.readoneword(pcommand)/10.
         if p == -1 :
-            return
-        self.pedit.setText(str(int(p)))
-        self.aw.fujipid.PXR["p"][0] = p
+            return -1
+        else:
+            self.pedit.setText(str(int(p)))
+            self.aw.fujipid.PXR["p"][0] = p
         #i is int range 0-3200
         if self.aw.ser.useModbusPort:
             reg = self.aw.modbus.address2register(self.aw.fujipid.PXR["i"][1],3)
@@ -1846,9 +1840,10 @@ class PXRpidDlgControl(PXpidDlgControl):
             icommand = self.aw.fujipid.message2send(self.aw.ser.controlETpid[1],3,self.aw.fujipid.PXR["i"][1],1)
             i = self.aw.fujipid.readoneword(icommand)/10.
         if i == -1:
-            return
-        self.iedit.setText(str(int(i)))
-        self.aw.fujipid.PXR["i"][0] = i
+            return -1
+        else:
+            self.iedit.setText(str(int(i)))
+            self.aw.fujipid.PXR["i"][0] = i
         if self.aw.ser.useModbusPort:
             reg = self.aw.modbus.address2register(self.aw.fujipid.PXR["d"][1],3)
             d = self.aw.modbus.readSingleRegister(self.aw.ser.controlETpid[1],reg,3)/10.
@@ -1856,11 +1851,12 @@ class PXRpidDlgControl(PXpidDlgControl):
             dcommand = self.aw.fujipid.message2send(self.aw.ser.controlETpid[1],3,self.aw.fujipid.PXR["d"][1],1)
             d = self.aw.fujipid.readoneword(dcommand)/10.
         if d == -1:
-            return
-        self.dedit.setText(str(int(d)))
-        self.aw.fujipid.PXR["d"][0] = d
+            return -1
+        else:
+            self.dedit.setText(str(int(d)))
+            self.aw.fujipid.PXR["d"][0] = d
             
-        self.status.showMessage(QApplication.translate("StatusBar","Finished reading pid values"),5000)
+        self.status.showMessage(QApplication.translate("StatusBar","Finished reading pid values",None),5000)
 
     @pyqtSlot(bool)
     def setpid_p(self,_):
@@ -1883,14 +1879,14 @@ class PXRpidDlgControl(PXpidDlgControl):
     def createsegmenttable(self):
         self.segmenttable.setRowCount(8)
         self.segmenttable.setColumnCount(4)
-        self.segmenttable.setHorizontalHeaderLabels([QApplication.translate("Table","SV"),
-                                                     QApplication.translate("Table","Ramp HH:MM"),
-                                                     QApplication.translate("Table","Soak HH:MM"),""])
-        self.segmenttable.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.segmenttable.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.segmenttable.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.segmenttable.setHorizontalHeaderLabels([QApplication.translate("Table","SV",None),
+                                                     QApplication.translate("Table","Ramp HH:MM",None),
+                                                     QApplication.translate("Table","Soak HH:MM",None),""])
+        self.segmenttable.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.segmenttable.setSelectionBehavior(QTableWidget.SelectRows)
+        self.segmenttable.setSelectionMode(QTableWidget.SingleSelection)
         self.segmenttable.setShowGrid(True)
-        self.segmenttable.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+        self.segmenttable.verticalHeader().setSectionResizeMode(2)
         regextime = QRegularExpression(r"^-?[0-9]?[0-9]?[0-9]:[0-5][0-9]$")
         #populate table
         for i in range(8):
@@ -1905,9 +1901,9 @@ class PXRpidDlgControl(PXpidDlgControl):
             rampedit.setValidator(QRegularExpressionValidator(regextime,self))
             soakedit  = QLineEdit(stringfromseconds(self.aw.fujipid.PXR[soakkey][0]))
             soakedit.setValidator(QRegularExpressionValidator(regextime,self))
-            setButton = QPushButton(QApplication.translate("Button","Set"))
+            setButton = QPushButton(QApplication.translate("Button","Set",None))
             setButton.clicked.connect(self.setsegment)
-            setButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            setButton.setFocusPolicy(Qt.NoFocus)
             #add widgets to the table
             self.segmenttable.setCellWidget(i,0,svedit)
             self.segmenttable.setCellWidget(i,1,rampedit)
@@ -1954,38 +1950,38 @@ class PXRpidDlgControl(PXpidDlgControl):
                 self.aw.fujipid.PXR[rampkey][0] = ramp
                 self.aw.fujipid.PXR[soakkey][0] = soak
                 self.paintlabels()
-                self.status.showMessage(QApplication.translate("StatusBar","Ramp/Soak successfully written"),5000) 
+                self.status.showMessage(QApplication.translate("StatusBar","Ramp/Soak successfully written",None),5000) 
             else:
-                self.aw.qmc.adderror(QApplication.translate("Error Message","Segment values could not be written into PID"))
+                self.aw.qmc.adderror(QApplication.translate("Error Message","Segment values could not be written into PID",None))
 
 
 ############################################################################
-######################## FUJI PXG4/PXF PID CONTROL DIALOG ##################
+######################## FUJI PXG4 PID CONTROL DIALOG ######################
 ############################################################################
 
 class PXG4pidDlgControl(PXpidDlgControl):
     def __init__(self, parent = None, aw = None):
-        super().__init__(parent, aw)
+        super(PXG4pidDlgControl,self).__init__(parent, aw)
         self.setModal(True)
-        #self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose) # default is True and this is set already in ArtisanDialog by default
+        self.setAttribute(Qt.WA_DeleteOnClose)
         if self.aw.ser.controlETpid[0] == 0:
-            self.setWindowTitle(QApplication.translate("Form Caption","Fuji PXG PID Control"))
+            self.setWindowTitle(QApplication.translate("Form Caption","Fuji PXG PID Control",None))
         else:
-            self.setWindowTitle(QApplication.translate("Form Caption","Fuji PXF PID Control"))
+            self.setWindowTitle(QApplication.translate("Form Caption","Fuji PXF PID Control",None))
         self.status = QStatusBar()
         self.status.setSizeGripEnabled(False)
-        self.status.showMessage(QApplication.translate("StatusBar","Ready"),5000)
+        self.status.showMessage(QApplication.translate("StatusBar","Ready",None),5000)
         #*************    TAB 1 WIDGETS
         labelrs1 = QLabel()
         labelrs1.setContentsMargins(5,5,5,5)
         labelrs1.setStyleSheet("background-color:'#CCCCCC';")
-        labelrs1.setText("<font color='white'><b>" + QApplication.translate("Label", "Ramp Soak (MM:SS)<br>(1-7)") + "</b></font>")
+        labelrs1.setText("<font color='white'><b>" + QApplication.translate("Label", "Ramp Soak (MM:SS)<br>(1-7)",None) + "</b></font>")
         #labelrs1.setMaximumSize(90, 42)
         #labelrs1.setMinimumHeight(50)
         labelrs2 = QLabel()
         labelrs2.setContentsMargins(5,5,5,5)
         labelrs2.setStyleSheet("background-color:'#CCCCCC';")
-        labelrs2.setText("<font color='white'><b>" + QApplication.translate("Label", "Ramp Soak (MM:SS)<br>(8-16)") + "</b></font>")
+        labelrs2.setText("<font color='white'><b>" + QApplication.translate("Label", "Ramp Soak (MM:SS)<br>(8-16)",None) + "</b></font>")
         #labelrs2.setMaximumSize(90, 42)
         #labelrs2.setMinimumHeight(50)
         self.label_rs1 =  QLabel()
@@ -2026,30 +2022,30 @@ class PXG4pidDlgControl(PXpidDlgControl):
             self.patternComboBox.setCurrentIndex(self.aw.fujipid.PXG4["rampsoakpattern"][0])
         else:
             self.patternComboBox.setCurrentIndex(self.aw.fujipid.PXF["rampsoakpattern"][0])
-        self.patternComboBox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.patternComboBox.setFocusPolicy(Qt.NoFocus)
         self.patternComboBox.currentIndexChanged.connect(self.paintlabels)
         self.paintlabels()
-        button_load = QPushButton(QApplication.translate("Button","Load"))
-        button_load.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        button_save = QPushButton(QApplication.translate("Button","Save"))
-        button_save.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        button_writeall = QPushButton(QApplication.translate("Button","Write All"))
-        button_writeall.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        patternlabel = QLabel(QApplication.translate("Label","Pattern"))
-        patternlabel.setAlignment(Qt.AlignmentFlag.AlignRight)
-        button_getall = QPushButton(QApplication.translate("Button","Read RS values"))
-        button_getall.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        button_writeallrs = QPushButton(QApplication.translate("Button","Write RS values"))
-        button_writeallrs.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        button_rson =  QPushButton(QApplication.translate("Button","RampSoak ON"))
-        button_rson.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        button_rsoff =  QPushButton(QApplication.translate("Button","RampSoak OFF"))
-        button_rsoff.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        button_exit = QPushButton(QApplication.translate("Button","OK"))
-        button_standbyON = QPushButton(QApplication.translate("Button","PID OFF"))
-        button_standbyON.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        button_standbyOFF = QPushButton(QApplication.translate("Button","PID ON"))
-        button_standbyOFF.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        button_load = QPushButton(QApplication.translate("Button","Load",None))
+        button_load.setFocusPolicy(Qt.NoFocus)
+        button_save = QPushButton(QApplication.translate("Button","Save",None))
+        button_save.setFocusPolicy(Qt.NoFocus)
+        button_writeall = QPushButton(QApplication.translate("Button","Write All",None))
+        button_writeall.setFocusPolicy(Qt.NoFocus)
+        patternlabel = QLabel(QApplication.translate("Label","Pattern",None))
+        patternlabel.setAlignment(Qt.AlignRight)
+        button_getall = QPushButton(QApplication.translate("Button","Read RS values",None))
+        button_getall.setFocusPolicy(Qt.NoFocus)
+        button_writeallrs = QPushButton(QApplication.translate("Button","Write RS values",None))
+        button_writeallrs.setFocusPolicy(Qt.NoFocus)
+        button_rson =  QPushButton(QApplication.translate("Button","RampSoak ON",None)) 
+        button_rson.setFocusPolicy(Qt.NoFocus)
+        button_rsoff =  QPushButton(QApplication.translate("Button","RampSoak OFF",None))
+        button_rsoff.setFocusPolicy(Qt.NoFocus)
+        button_exit = QPushButton(QApplication.translate("Button","OK",None))
+        button_standbyON = QPushButton(QApplication.translate("Button","PID OFF",None))
+        button_standbyON.setFocusPolicy(Qt.NoFocus)
+        button_standbyOFF = QPushButton(QApplication.translate("Button","PID ON",None))
+        button_standbyOFF.setFocusPolicy(Qt.NoFocus)
         button_getall.clicked.connect(self.getallsegments)
         button_writeallrs.clicked.connect(self.writeRSValues)
         button_rson.clicked.connect(self.setONrampsoak)
@@ -2088,48 +2084,48 @@ class PXG4pidDlgControl(PXpidDlgControl):
         buttonRampSoakLayout2.addWidget(self.label_rs16)
         
         # Follow Background 
-        self.followBackground = QCheckBox(QApplication.translate("CheckBox", "Follow Background"))
+        self.followBackground = QCheckBox(QApplication.translate("CheckBox", "Follow Background",None))
         self.followBackground.setChecked(self.aw.fujipid.followBackground)
-        self.followBackground.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.followBackground.setFocusPolicy(Qt.NoFocus)
         self.followBackground.stateChanged.connect(self.changeFollowBackground)         #toggle
         # Follow Background Lookahead
         self.pidSVLookahead = QSpinBox()
-        self.pidSVLookahead.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.pidSVLookahead.setAlignment(Qt.AlignRight)
         self.pidSVLookahead.setRange(0,999)
         self.pidSVLookahead.setSingleStep(1)
         self.pidSVLookahead.setValue(self.aw.fujipid.lookahead)
         self.pidSVLookahead.setSuffix(" s")
-        self.pidSVLookahead.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.pidSVLookahead.setFocusPolicy(Qt.NoFocus)
         self.pidSVLookahead.valueChanged.connect(self.changeLookAhead)
-        pidSVLookaheadLabel = QLabel(QApplication.translate("Label","Lookahead"))
+        pidSVLookaheadLabel = QLabel(QApplication.translate("Label","Lookahead",None))
         
         # *************** TAB 2 WIDGETS
         labelsv = QLabel()
         labelsv.setContentsMargins(10,10,10,10)
         labelsv.setStyleSheet("background-color:'#CCCCCC';")
-        labelsv.setText("<font color='white'><b>" + QApplication.translate("Label", "SV (7-0)") + "</b></font>")
+        labelsv.setText("<font color='white'><b>" + QApplication.translate("Label", "SV (7-0)",None) + "</b></font>")
         labelsv.setMaximumSize(100, 42)
         labelsv.setMinimumHeight(50)
         labelsvedit = QLabel()
         labelsvedit.setContentsMargins(10,10,10,10)
         labelsvedit.setStyleSheet("background-color:'#CCCCCC';")
-        labelsvedit.setText("<font color='white'><b>" + QApplication.translate("Label", "Write") + "</b></font>")
+        labelsvedit.setText("<font color='white'><b>" + QApplication.translate("Label", "Write",None) + "</b></font>")
         labelsvedit.setMaximumSize(100, 42)
         labelsvedit.setMinimumHeight(50)
-        button_sv1 =QPushButton(QApplication.translate("Button","Write SV1"))
-        button_sv1.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        button_sv2 =QPushButton(QApplication.translate("Button","Write SV2"))
-        button_sv2.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        button_sv3 =QPushButton(QApplication.translate("Button","Write SV3"))
-        button_sv3.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        button_sv4 =QPushButton(QApplication.translate("Button","Write SV4"))
-        button_sv4.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        button_sv5 =QPushButton(QApplication.translate("Button","Write SV5"))
-        button_sv5.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        button_sv6 =QPushButton(QApplication.translate("Button","Write SV6"))
-        button_sv6.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        button_sv7 =QPushButton(QApplication.translate("Button","Write SV7"))
-        button_sv7.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        button_sv1 =QPushButton(QApplication.translate("Button","Write SV1",None))
+        button_sv1.setFocusPolicy(Qt.NoFocus)
+        button_sv2 =QPushButton(QApplication.translate("Button","Write SV2",None))
+        button_sv2.setFocusPolicy(Qt.NoFocus)
+        button_sv3 =QPushButton(QApplication.translate("Button","Write SV3",None))
+        button_sv3.setFocusPolicy(Qt.NoFocus)
+        button_sv4 =QPushButton(QApplication.translate("Button","Write SV4",None))
+        button_sv4.setFocusPolicy(Qt.NoFocus)
+        button_sv5 =QPushButton(QApplication.translate("Button","Write SV5",None))
+        button_sv5.setFocusPolicy(Qt.NoFocus)
+        button_sv6 =QPushButton(QApplication.translate("Button","Write SV6",None))
+        button_sv6.setFocusPolicy(Qt.NoFocus)
+        button_sv7 =QPushButton(QApplication.translate("Button","Write SV7",None))
+        button_sv7.setFocusPolicy(Qt.NoFocus)
         button_sv1.clicked.connect(self.setsv1)
         button_sv2.clicked.connect(self.setsv2)
         button_sv3.clicked.connect(self.setsv3)
@@ -2180,26 +2176,26 @@ class PXG4pidDlgControl(PXpidDlgControl):
             self.radiosv6.setChecked(True)
         elif N == 7:
             self.radiosv7.setChecked(True)
-        self.tab2easySVbuttonsFlag = QCheckBox(QApplication.translate("Label","SV Buttons"))
+        self.tab2easySVbuttonsFlag = QCheckBox(QApplication.translate("Label","SV Buttons",None))
         self.tab2easySVbuttonsFlag.setChecked(self.aw.pidcontrol.svButtons)
         self.tab2easySVbuttonsFlag.stateChanged.connect(self.setSVbuttons)
-        self.tab2easySVsliderFlag = QCheckBox(QApplication.translate("Label","SV Slider"))
+        self.tab2easySVsliderFlag = QCheckBox(QApplication.translate("Label","SV Slider",None))
         self.tab2easySVsliderFlag.setChecked(self.aw.pidcontrol.svSlider)
         self.tab2easySVsliderFlag.stateChanged.connect(self.setSVsliderSlot)
         self.pidSVSliderMin = QSpinBox()
-        self.pidSVSliderMin.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.pidSVSliderMin.setAlignment(Qt.AlignRight)
         self.pidSVSliderMin.setRange(0,999)
         self.pidSVSliderMin.setSingleStep(10)
         self.pidSVSliderMin.setValue(self.aw.pidcontrol.svSliderMin)
         self.pidSVSliderMin.valueChanged.connect(self.sliderMinValueChangedSlot)
-        pidSVSliderMinLabel = QLabel(QApplication.translate("Label","SV min"))
+        pidSVSliderMinLabel = QLabel(QApplication.translate("Label","SV min",None))
         self.pidSVSliderMax = QSpinBox()
-        self.pidSVSliderMax.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.pidSVSliderMax.setAlignment(Qt.AlignRight)
         self.pidSVSliderMax.setRange(0,999)
         self.pidSVSliderMax.setSingleStep(10)
         self.pidSVSliderMax.setValue(self.aw.pidcontrol.svSliderMax)
         self.pidSVSliderMax.valueChanged.connect(self.sliderMaxValueChangedSlot)
-        pidSVSliderMaxLabel = QLabel(QApplication.translate("Label","SV max"))
+        pidSVSliderMaxLabel = QLabel(QApplication.translate("Label","SV max",None))
         if self.aw.qmc.mode == "F":
             self.pidSVSliderMin.setSuffix(" F")
             self.pidSVSliderMax.setSuffix(" F")
@@ -2207,10 +2203,10 @@ class PXG4pidDlgControl(PXpidDlgControl):
             self.pidSVSliderMin.setSuffix(" C")
             self.pidSVSliderMax.setSuffix(" C")
 
-        tab2getsvbutton = QPushButton(QApplication.translate("Button","Read SV (7-0)"))
-        tab2getsvbutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        tab2putsvbutton = QPushButton(QApplication.translate("Button","Write SV (7-0)"))
-        tab2putsvbutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        tab2getsvbutton = QPushButton(QApplication.translate("Button","Read SV (7-0)",None))
+        tab2getsvbutton.setFocusPolicy(Qt.NoFocus)
+        tab2putsvbutton = QPushButton(QApplication.translate("Button","Write SV (7-0)",None))
+        tab2putsvbutton.setFocusPolicy(Qt.NoFocus)
         tab2getsvbutton.clicked.connect(self.getallsv)
         tab2putsvbutton.clicked.connect(self.writeSetValues)
         self.radiosv1.clicked.connect(self.setNsvSlot)
@@ -2224,25 +2220,25 @@ class PXG4pidDlgControl(PXpidDlgControl):
         plabel = QLabel()
         plabel.setContentsMargins(10,10,10,10)
         plabel.setStyleSheet("background-color:'#CCCCCC';")
-        plabel.setText("<font color='white'><b>" + QApplication.translate("Label", "P") + "</b></font>")
+        plabel.setText("<font color='white'><b>" + QApplication.translate("Label", "P",None) + "</b></font>")
         plabel.setMaximumSize(50, 42)
         plabel.setMinimumHeight(50)
         ilabel = QLabel()
         ilabel.setContentsMargins(10,10,10,10)
         ilabel.setStyleSheet("background-color:'#CCCCCC';")
-        ilabel.setText("<font color='white'><b>" + QApplication.translate("Label", "I") + "</b></font>")
+        ilabel.setText("<font color='white'><b>" + QApplication.translate("Label", "I",None) + "</b></font>")
         ilabel.setMaximumSize(50, 42)
         ilabel.setMinimumHeight(50)
         dlabel = QLabel()
         dlabel.setContentsMargins(10,10,10,10)
         dlabel.setStyleSheet("background-color:'#CCCCCC';")
-        dlabel.setText("<font color='white'><b>" + QApplication.translate("Label", "D") + "</b></font>")
+        dlabel.setText("<font color='white'><b>" + QApplication.translate("Label", "D",None) + "</b></font>")
         dlabel.setMaximumSize(50, 42)
         dlabel.setMinimumHeight(50)
         wlabel = QLabel()
         wlabel.setContentsMargins(10,10,10,10)
         wlabel.setStyleSheet("background-color:'#CCCCCC';")
-        wlabel.setText("<font color='white'><b>" + QApplication.translate("Label", "Write") + "</b></font>")
+        wlabel.setText("<font color='white'><b>" + QApplication.translate("Label", "Write",None) + "</b></font>")
         wlabel.setMaximumSize(100, 42)
         wlabel.setMinimumHeight(50)
         self.p1edit =  QLineEdit(str(self.aw.fujipid.PXG4["p1"][0]))
@@ -2311,30 +2307,30 @@ class PXG4pidDlgControl(PXpidDlgControl):
         self.d5edit.setValidator(self.aw.createCLocaleDoubleValidator(0., 999., 1, self.d5edit))
         self.d6edit.setValidator(self.aw.createCLocaleDoubleValidator(0., 999., 1, self.d6edit))
         self.d7edit.setValidator(self.aw.createCLocaleDoubleValidator(0., 999., 1, self.d7edit))
-        self.pid1button = QPushButton(QApplication.translate("Button","pid 1"))
-        self.pid1button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.pid2button = QPushButton(QApplication.translate("Button","pid 2"))
-        self.pid2button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.pid3button = QPushButton(QApplication.translate("Button","pid 3"))
-        self.pid3button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.pid4button = QPushButton(QApplication.translate("Button","pid 4"))
-        self.pid4button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.pid5button = QPushButton(QApplication.translate("Button","pid 5"))
-        self.pid5button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.pid6button = QPushButton(QApplication.translate("Button","pid 6"))
-        self.pid6button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.pid7button = QPushButton(QApplication.translate("Button","pid 7"))
-        self.pid7button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        pidreadallbutton = QPushButton(QApplication.translate("Button","Read PIDs"))
-        pidreadallbutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        pidwriteallbutton = QPushButton(QApplication.translate("Button","Write PIDs"))
-        pidwriteallbutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        autotuneONbutton = QPushButton(QApplication.translate("Button","Autotune ON"))
-        autotuneONbutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        autotuneOFFbutton = QPushButton(QApplication.translate("Button","Autotune OFF"))
-        autotuneOFFbutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        cancel3button = QPushButton(QApplication.translate("Button","Cancel"))
-        cancel3button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.pid1button = QPushButton(QApplication.translate("Button","pid 1",None))
+        self.pid1button.setFocusPolicy(Qt.NoFocus)
+        self.pid2button = QPushButton(QApplication.translate("Button","pid 2",None))
+        self.pid2button.setFocusPolicy(Qt.NoFocus)
+        self.pid3button = QPushButton(QApplication.translate("Button","pid 3",None))
+        self.pid3button.setFocusPolicy(Qt.NoFocus)
+        self.pid4button = QPushButton(QApplication.translate("Button","pid 4",None))
+        self.pid4button.setFocusPolicy(Qt.NoFocus)
+        self.pid5button = QPushButton(QApplication.translate("Button","pid 5",None))
+        self.pid5button.setFocusPolicy(Qt.NoFocus)
+        self.pid6button = QPushButton(QApplication.translate("Button","pid 6",None))
+        self.pid6button.setFocusPolicy(Qt.NoFocus)
+        self.pid7button = QPushButton(QApplication.translate("Button","pid 7",None))
+        self.pid7button.setFocusPolicy(Qt.NoFocus)
+        pidreadallbutton = QPushButton(QApplication.translate("Button","Read PIDs",None))
+        pidreadallbutton.setFocusPolicy(Qt.NoFocus)
+        pidwriteallbutton = QPushButton(QApplication.translate("Button","Write PIDs",None))
+        pidwriteallbutton.setFocusPolicy(Qt.NoFocus)
+        autotuneONbutton = QPushButton(QApplication.translate("Button","Autotune ON",None))
+        autotuneONbutton.setFocusPolicy(Qt.NoFocus)
+        autotuneOFFbutton = QPushButton(QApplication.translate("Button","Autotune OFF",None))
+        autotuneOFFbutton.setFocusPolicy(Qt.NoFocus)
+        cancel3button = QPushButton(QApplication.translate("Button","Cancel",None))
+        cancel3button.setFocusPolicy(Qt.NoFocus)
         self.radiopid1 = QRadioButton()
         self.radiopid2 = QRadioButton()
         self.radiopid3 = QRadioButton()
@@ -2366,11 +2362,11 @@ class PXG4pidDlgControl(PXpidDlgControl):
         self.segmenttable = QTableWidget()
         self.createsegmenttable()
         #****************************   TAB5 WIDGETS
-        BTthermolabelnote = QLabel(QApplication.translate("Label","NOTE: BT Thermocouple type is not stored in the Artisan settings"))
+        BTthermolabelnote = QLabel(QApplication.translate("Label","NOTE: BT Thermocouple type is not stored in the Artisan settings",None))
         self.ETthermocombobox = QComboBox()
-        self.ETthermocombobox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.ETthermocombobox.setFocusPolicy(Qt.NoFocus)
         self.BTthermocombobox = QComboBox()
-        self.BTthermocombobox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.BTthermocombobox.setFocusPolicy(Qt.NoFocus)
         if self.aw.ser.controlETpid[0] == 0: # PXG
             self.ETthermocombobox.addItems(self.aw.fujipid.PXGthermotypes)
             if self.aw.fujipid.PXG4["pvinputtype"][0] in self.aw.fujipid.PXGconversiontoindex:
@@ -2385,14 +2381,14 @@ class PXG4pidDlgControl(PXpidDlgControl):
             self.BTthermocombobox.addItems(self.aw.fujipid.PXRthermotypes)
         else:      #fuji PXF
             self.BTthermocombobox.addItems(self.aw.fujipid.PXFthermotypes)
-        setETthermocouplebutton = QPushButton(QApplication.translate("Button","Set"))
-        setETthermocouplebutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        setBTthermocouplebutton = QPushButton(QApplication.translate("Button","Set"))
-        setBTthermocouplebutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        getETthermocouplebutton = QPushButton(QApplication.translate("Button","Read"))
-        getETthermocouplebutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        getBTthermocouplebutton = QPushButton(QApplication.translate("Button","Read"))
-        getBTthermocouplebutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        setETthermocouplebutton = QPushButton(QApplication.translate("Button","Set",None))
+        setETthermocouplebutton.setFocusPolicy(Qt.NoFocus)
+        setBTthermocouplebutton = QPushButton(QApplication.translate("Button","Set",None))
+        setBTthermocouplebutton.setFocusPolicy(Qt.NoFocus)
+        getETthermocouplebutton = QPushButton(QApplication.translate("Button","Read",None))
+        getETthermocouplebutton.setFocusPolicy(Qt.NoFocus)
+        getBTthermocouplebutton = QPushButton(QApplication.translate("Button","Read",None))
+        getBTthermocouplebutton.setFocusPolicy(Qt.NoFocus)
         setETthermocouplebutton.setMaximumWidth(80)
         getETthermocouplebutton.setMaximumWidth(80)
         setBTthermocouplebutton.setMaximumWidth(80)
@@ -2401,24 +2397,24 @@ class PXG4pidDlgControl(PXpidDlgControl):
         setBTthermocouplebutton.clicked.connect(self.setthermocoupletypeBT)
         getETthermocouplebutton.clicked.connect(self.readthermocoupletypeET)
         getBTthermocouplebutton.clicked.connect(self.readthermocoupletypeBT)
-        PointButtonET = QPushButton(QApplication.translate("Button","Set ET PID to 1 decimal point"))
-        PointButtonET.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        PointButtonBT = QPushButton(QApplication.translate("Button","Set BT PID to 1 decimal point"))
-        PointButtonBT.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        timeunitsbutton = QPushButton(QApplication.translate("Button","Set ET PID to MM:SS time units"))
-        timeunitsbutton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        pointlabel = QLabel(QApplication.translate("Label","Artisan uses 1 decimal point"))
+        PointButtonET = QPushButton(QApplication.translate("Button","Set ET PID to 1 decimal point",None))
+        PointButtonET.setFocusPolicy(Qt.NoFocus)
+        PointButtonBT = QPushButton(QApplication.translate("Button","Set BT PID to 1 decimal point",None))
+        PointButtonBT.setFocusPolicy(Qt.NoFocus)
+        timeunitsbutton = QPushButton(QApplication.translate("Button","Set ET PID to MM:SS time units",None))
+        timeunitsbutton.setFocusPolicy(Qt.NoFocus)
+        pointlabel = QLabel(QApplication.translate("Label","Artisan uses 1 decimal point",None))
         if self.aw.ser.controlETpid[0] == 0:
-            timelabel = QLabel(QApplication.translate("Label","Artisan Fuji PXG uses MINUTES:SECONDS units in Ramp/Soaks"))
+            timelabel = QLabel(QApplication.translate("Label","Artisan Fuji PXG uses MINUTES:SECONDS units in Ramp/Soaks",None))
         else:
-            timelabel = QLabel(QApplication.translate("Label","Artisan Fuji PXF uses MINUTES:SECONDS units in Ramp/Soaks"))
+            timelabel = QLabel(QApplication.translate("Label","Artisan Fuji PXF uses MINUTES:SECONDS units in Ramp/Soaks",None))
         PointButtonET.clicked.connect(self.setpointET)
         PointButtonBT.clicked.connect(self.setpointBT)
         timeunitsbutton.clicked.connect(self.settimeunits)
         # LAYOUTS
         tab1Layout = QGridLayout() #TAB1
         tab1Layout.setSpacing(10)
-        tab1Layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize) # 2
+        tab1Layout.setSizeConstraint(2)
         tab1Layout.addLayout(buttonRampSoakLayout1,0,0)
         tab1Layout.addLayout(buttonRampSoakLayout2,0,1)
         tab1Layout.addWidget(button_rson,1,0)
@@ -2431,7 +2427,7 @@ class PXG4pidDlgControl(PXpidDlgControl):
         tab1Layout.addWidget(button_writeallrs,4,1)
         tab2Layout = QGridLayout() #TAB2 
         tab2Layout.setSpacing(10)
-        tab2Layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize) # 2
+        tab2Layout.setSizeConstraint(2)
         tab2Layout.addWidget(labelsv,0,0)
         tab2Layout.addWidget(labelsvedit,0,1)
         tab2Layout.addWidget(self.sv7edit,1,0)
@@ -2523,14 +2519,14 @@ class PXG4pidDlgControl(PXpidDlgControl):
         thermolayoutET.addStretch()
         thermolayoutET.addWidget(getETthermocouplebutton)
         thermolayoutET.addWidget(setETthermocouplebutton)
-        ETGroupBox = QGroupBox(QApplication.translate("Label","ET Thermocouple type"))
+        ETGroupBox = QGroupBox(QApplication.translate("Label","ET Thermocouple type",None))
         ETGroupBox.setLayout(thermolayoutET)
         thermolayoutBT = QHBoxLayout()
         thermolayoutBT.addWidget(self.BTthermocombobox)
         thermolayoutBT.addStretch()
         thermolayoutBT.addWidget(getBTthermocouplebutton)
         thermolayoutBT.addWidget(setBTthermocouplebutton)
-        BTGroupBox = QGroupBox(QApplication.translate("Label","BT Thermocouple type"))
+        BTGroupBox = QGroupBox(QApplication.translate("Label","BT Thermocouple type",None))
         BTGroupBox.setLayout(thermolayoutBT)
         tab5Layout = QVBoxLayout()
         tab5Layout.addStretch()
@@ -2565,19 +2561,19 @@ class PXG4pidDlgControl(PXpidDlgControl):
         TabWidget = QTabWidget()
         C1Widget = QWidget()
         C1Widget.setLayout(tab1Layout)
-        TabWidget.addTab(C1Widget,QApplication.translate("Tab","RS"))
+        TabWidget.addTab(C1Widget,QApplication.translate("Tab","RS",None))
         C2Widget = QWidget()
         C2Widget.setLayout(tab2Layout)
-        TabWidget.addTab(C2Widget,QApplication.translate("Tab","SV"))
+        TabWidget.addTab(C2Widget,QApplication.translate("Tab","SV",None))
         C3Widget = QWidget()
         C3Widget.setLayout(tab3MasterLayout)
-        TabWidget.addTab(C3Widget,QApplication.translate("Tab","PID"))
+        TabWidget.addTab(C3Widget,QApplication.translate("Tab","PID",None))
         C4Widget = QWidget()
         C4Widget.setLayout(tab4layout)
-        TabWidget.addTab(C4Widget,QApplication.translate("Tab","Set RS"))
+        TabWidget.addTab(C4Widget,QApplication.translate("Tab","Set RS",None))
         C5Widget = QWidget()
         C5Widget.setLayout(tab5Layout)
-        TabWidget.addTab(C5Widget,QApplication.translate("Tab","Extra"))
+        TabWidget.addTab(C5Widget,QApplication.translate("Tab","Extra",None))
         #incorporate layouts
         layout = QVBoxLayout()
         layout.addWidget(self.status,0)
@@ -2625,9 +2621,10 @@ class PXG4pidDlgControl(PXpidDlgControl):
     def loadPIDJSON(self,filename):
         try:
             import io
+            infile = io.open(filename, 'r', encoding='utf-8')
             from json import load as json_load
-            with io.open(filename, 'r', encoding='utf-8') as infile:
-                pids = json_load(infile)
+            pids = json_load(infile)
+            infile.close()
             # load set values
             setvalues = pids["setvalues"]
             for i in range(7):
@@ -2680,11 +2677,11 @@ class PXG4pidDlgControl(PXpidDlgControl):
                 self.aw.fujipid.PXG4[rampkey][0] = stringtoseconds(segments[rampkey])
                 self.aw.fujipid.PXG4[soakkey][0] = stringtoseconds(segments[soakkey])
             self.createsegmenttable()
-        except Exception as ex: # pylint: disable=broad-except
+        except Exception as ex:
 #            import traceback
 #            traceback.print_exc(file=sys.stdout)
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " loadPIDJSON() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " loadPIDJSON() {0}").format(str(ex)),exc_tb.tb_lineno)
 
     @pyqtSlot(bool)
     def writeSetValues(self,_=False):
@@ -2740,14 +2737,15 @@ class PXG4pidDlgControl(PXpidDlgControl):
                 segments[rampkey] = stringfromseconds(self.aw.fujipid.PXG4[rampkey][0])
                 segments[soakkey] = stringfromseconds(self.aw.fujipid.PXG4[soakkey][0])
             pids["segments"] = segments
+            outfile = open(filename, 'w')
             from json import dump as json_dump
-            with open(filename, 'w', encoding='utf-8') as outfile:
-                json_dump(pids, outfile, ensure_ascii=True)
-                outfile.write('\n')
+            json_dump(pids, outfile, ensure_ascii=True)
+            outfile.write('\n')
+            outfile.close()
             return True
-        except Exception as ex: # pylint: disable=broad-except
+        except Exception as ex:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " savePIDJSON(): {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " savePIDJSON(): {0}").format(str(ex)),exc_tb.tb_lineno)
             return False
 
     @pyqtSlot(bool)
@@ -2770,9 +2768,9 @@ class PXG4pidDlgControl(PXpidDlgControl):
                 self.status.showMessage(message, 5000)
             else:
                 self.status.showMessage(QApplication.translate("StatusBar","Problem setting time units",None),5000)
-        except Exception as e: # pylint: disable=broad-except
+        except Exception as e:
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " settimeunits(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " settimeunits(): {0}").format(str(e)),exc_tb.tb_lineno)
     
     @pyqtSlot(int)
     def paintlabels(self,_=0):
@@ -2919,8 +2917,8 @@ class PXG4pidDlgControl(PXpidDlgControl):
             if N != svn:
                 string = QApplication.translate("Message","Current sv = {0}. Change now to sv = {1}?",None).format(str(N),str(svn))
                 reply = QMessageBox.question(self.aw,QApplication.translate("Message","Change svN",None),string,
-                                    QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.Cancel)
-                if reply == QMessageBox.StandardButton.Yes:
+                                    QMessageBox.Yes|QMessageBox.Cancel)
+                if reply == QMessageBox.Yes:
                     #change variable svN
                     if self.aw.ser.useModbusPort:
                         reg = self.aw.modbus.address2register(reg_dict["selectsv"][1],6)
@@ -2939,7 +2937,7 @@ class PXG4pidDlgControl(PXpidDlgControl):
                             self.status.showMessage(message, 5000)
                     else:
                         self.status.showMessage(QApplication.translate("StatusBar","Problem setting SV",None),5000)
-                elif reply == QMessageBox.StandardButton.Cancel:
+                elif reply == QMessageBox.Cancel:
                     self.status.showMessage(QApplication.translate("StatusBar","Cancelled svN change",None),5000)
                     #set radio button
                     if N == 1:
@@ -3001,8 +2999,8 @@ class PXG4pidDlgControl(PXpidDlgControl):
             if N != pidn:
                 string = QApplication.translate("Message","Current pid = {0}. Change now to pid ={1}?",None).format(str(N),str(pidn))
                 reply = QMessageBox.question(self.aw,QApplication.translate("Message","Change svN",None),string,
-                                    QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.Cancel)
-                if reply == QMessageBox.StandardButton.Yes:
+                                    QMessageBox.Yes|QMessageBox.Cancel)
+                if reply == QMessageBox.Yes:
                     #change variable svN
                     if self.aw.ser.useModbusPort:
                         reg = self.aw.modbus.address2register(reg_dict["selectedpid"][1],6)
@@ -3021,7 +3019,7 @@ class PXG4pidDlgControl(PXpidDlgControl):
                         mssg = QApplication.translate("StatusBar","setNpid(): bad confirmation",None)
                         self.status.showMessage(mssg,1000)
                         self.aw.qmc.adderror(mssg)
-                elif reply == QMessageBox.StandardButton.Cancel:
+                elif reply == QMessageBox.Cancel:
                     self.status.showMessage(QApplication.translate("StatusBar","Cancelled pid change",None),5000)
                     #put back radio button
                     if N == 1:
@@ -3626,10 +3624,11 @@ class PXG4pidDlgControl(PXpidDlgControl):
         string += "\nUse the Parameter Loader Software by Fuji if you need to\n\n"
         string += "\n\n\nContinue?" 
         reply = QMessageBox.question(self.aw,QApplication.translate("Message","Ramp Soak start-end mode",None),string,
-                            QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.Cancel)
-        if reply == QMessageBox.StandardButton.Yes:
+                            QMessageBox.Yes|QMessageBox.Cancel)
+        if reply == QMessageBox.Cancel:
+            return 0
+        elif reply == QMessageBox.Yes:
             return 1
-        return 0
 
     @pyqtSlot(bool)
     def setONrampsoak(self,_):
@@ -3649,7 +3648,7 @@ class PXG4pidDlgControl(PXpidDlgControl):
             if check == 0:
                 self.status.showMessage(QApplication.translate("StatusBar","Ramp/Soak operation cancelled",None), 5000)
                 return
-            if check == -1:
+            elif check == -1:
                 self.status.showMessage(QApplication.translate("StatusBar","No RX data",None), 5000)
             self.status.showMessage(QApplication.translate("StatusBar","RS ON",None),500)
             selectedmode = self.patternComboBox.currentIndex()
@@ -3685,7 +3684,7 @@ class PXG4pidDlgControl(PXpidDlgControl):
                     strcommand += "::" + str(reg_dict[svkey][0]) + "::" + str(reg_dict[rampkey][0]) + "::" + str(reg_dict[soakkey][0])+"::"
                     result += strcommand
                     strcommand = "SETRS"
-                result = result.strip(":")
+                result = result.strip("::")
                 self.aw.qmc.DeviceEventRecord(result)
             else:
                 self.status.showMessage(QApplication.translate("StatusBar","RampSoak could not be changed",None), 5000)
@@ -3742,11 +3741,11 @@ class PXG4pidDlgControl(PXpidDlgControl):
             else:
                 message = QApplication.translate("StatusBar","Unable",None)
                 self.status.showMessage(QApplication.translate("StatusBar","No data received",None),5000)
-        except Exception as e: # pylint: disable=broad-except
+        except Exception as e:
             #import traceback
             #traceback.print_exc(file=sys.stdout)
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " setONOFFstandby() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " setONOFFstandby() {0}").format(str(e)),exc_tb.tb_lineno)
 
     #get all Ramp Soak values for all 8 segments
     @pyqtSlot(bool)
@@ -3787,11 +3786,11 @@ class PXG4pidDlgControl(PXpidDlgControl):
         reg_dict["selectedpid"][0] = N
         string = QApplication.translate("StatusBar","Current pid = {0}. Proceed with autotune command?",None).format(str(N))
         reply = QMessageBox.question(self.aw,QApplication.translate("Message","Ramp Soak start-end mode",None),string,
-                            QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.Cancel)
-        if reply == QMessageBox.StandardButton.Cancel:
+                            QMessageBox.Yes|QMessageBox.Cancel)
+        if reply == QMessageBox.Cancel:
             self.status.showMessage(QApplication.translate("StatusBar","Autotune cancelled",None),5000)
-            return
-        if reply == QMessageBox.StandardButton.Yes:
+            return 0
+        elif reply == QMessageBox.Yes:
             if self.aw.ser.useModbusPort:
                 reg = self.aw.modbus.address2register(reg_dict["autotuning"][1],6)
                 self.aw.modbus.writeSingleRegister(self.aw.ser.controlETpid[1],reg,flag)
@@ -3861,11 +3860,11 @@ class PXG4pidDlgControl(PXpidDlgControl):
         self.segmenttable.setHorizontalHeaderLabels([QApplication.translate("StatusBar","SV",None),
                                                      QApplication.translate("StatusBar","Ramp (MM:SS)",None),
                                                      QApplication.translate("StatusBar","Soak (MM:SS)",None),""])
-        self.segmenttable.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.segmenttable.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.segmenttable.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
+        self.segmenttable.setEditTriggers(QTableWidget.NoEditTriggers)
+        self.segmenttable.setSelectionBehavior(QTableWidget.SelectRows)
+        self.segmenttable.setSelectionMode(QTableWidget.SingleSelection)
         self.segmenttable.setShowGrid(True)
-        self.segmenttable.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
+        self.segmenttable.verticalHeader().setSectionResizeMode(2)
         regextime = QRegularExpression(r"^-?[0-9]?[0-9]?[0-9]:[0-5][0-9]$")
         #populate table
         for i in range(16):
@@ -3880,7 +3879,7 @@ class PXG4pidDlgControl(PXpidDlgControl):
             soakedit  = QLineEdit(stringfromseconds(self.aw.fujipid.PXG4[soakkey][0]))
             soakedit.setValidator(QRegularExpressionValidator(regextime,self))
             setButton = QPushButton(QApplication.translate("Button","Set",None))
-            setButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            setButton.setFocusPolicy(Qt.NoFocus)
             setButton.clicked.connect(self.setsegment)
             #add widgets to the table
             self.segmenttable.setCellWidget(i,0,svedit)
@@ -3942,9 +3941,9 @@ class PXG4pidDlgControl(PXpidDlgControl):
 
 class DTApidDlgControl(ArtisanDialog):
     def __init__(self, parent = None, aw = None):
-        super().__init__(parent, aw)
+        super(DTApidDlgControl,self).__init__(parent, aw)
         self.setModal(True)
-        #self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose) # default is to set to True, which is already set in ArtisanDialog
+        self.setAttribute(Qt.WA_DeleteOnClose)
         self.setWindowTitle(QApplication.translate("Form Caption","Delta DTA PID Control",None))
         self.status = QStatusBar()
         self.status.setSizeGripEnabled(False)
