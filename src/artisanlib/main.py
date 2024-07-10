@@ -617,7 +617,7 @@ from artisanlib.autosave import autosaveDlg
 from artisanlib.platform import platformDlg
 from artisanlib.pid_control import FujiPID, PIDcontrol, DtaPID
 from artisanlib.widgets import (MyQLCDNumber, MajorEventPushButton, 
-    AnimatedMajorEventPushButton, MinorEventPushButton, AuxEventPushButton, ClickableLCDFrame)
+    AnimatedMajorEventPushButton, MinorEventPushButton, AuxEventPushButton)
 from artisanlib.hottop import (startHottop, stopHottop, setHottop,
     releaseHottopControl, takeHottopControl, isHottopLoopRunning)
 
@@ -4215,9 +4215,11 @@ class tgraphcanvas(FigureCanvas):
                     if len(sample_timex):
                         if self.LCDdecimalplaces:
                             lcdformat = "%.1f"
-                            resLCD = "u.u"
                         else:
                             lcdformat = "%.0f"
+                        if aw.qmc.LCDdecimalplaces:
+                            resLCD = "u.u"
+                        else:
                             resLCD = "uu"
                         etstr = resLCD
                         try: # if sample_temp1 is None, which should never be the case, this fails
@@ -7239,85 +7241,29 @@ class tgraphcanvas(FigureCanvas):
 
     def drawET(self,temp):
         if aw.qmc.ETcurve:
-            try:
-                if self.l_temp1 is not None:
-                    self.l_temp1.remove()
-            except Exception: # pylint: disable=broad-except
-                pass
-            self.l_temp1, = self.ax.plot(
-                self.timex,
-                temp,
-                markersize=self.ETmarkersize,
-                marker=self.ETmarker,
-                sketch_params=None,
-                path_effects=[PathEffects.withStroke(linewidth=self.ETlinewidth+aw.qmc.patheffects,foreground=self.palette["background"])],
-                linewidth=self.ETlinewidth,
-                linestyle=self.ETlinestyle,
-                drawstyle=self.ETdrawstyle,
-                color=self.palette["et"],
-                label=aw.arabicReshape(QApplication.translate("Label", "ET", None)))
+            self.l_temp1, = self.ax.plot(self.timex,temp,markersize=self.ETmarkersize,marker=self.ETmarker,
+                sketch_params=None,path_effects=[PathEffects.withStroke(linewidth=self.ETlinewidth+aw.qmc.patheffects,foreground=self.palette["background"])],
+                linewidth=self.ETlinewidth,linestyle=self.ETlinestyle,drawstyle=self.ETdrawstyle,color=self.palette["et"],label=aw.arabicReshape(QApplication.translate("Label", "ET", None)))
 
     def drawBT(self,temp):
         if aw.qmc.BTcurve:
-            try:
-                if self.l_temp2 is not None:
-                    self.l_temp2.remove()
-            except Exception: # pylint: disable=broad-except
-                pass
-            self.l_temp2, = self.ax.plot(
-                self.timex,
-                temp,
-                markersize=self.BTmarkersize,
-                marker=self.BTmarker,
-                sketch_params=None,
-                path_effects=[PathEffects.withStroke(linewidth=self.BTlinewidth+aw.qmc.patheffects,foreground=self.palette["background"])],
-                linewidth=self.BTlinewidth,
-                linestyle=self.BTlinestyle,
-                drawstyle=self.BTdrawstyle,
-                color=self.palette["bt"],
-                label=aw.arabicReshape(QApplication.translate("Label", "BT", None)))
+            self.l_temp2, = self.ax.plot(self.timex,temp,markersize=self.BTmarkersize,marker=self.BTmarker,
+                sketch_params=None,path_effects=[PathEffects.withStroke(linewidth=self.BTlinewidth+aw.qmc.patheffects,foreground=self.palette["background"])],
+                linewidth=self.BTlinewidth,linestyle=self.BTlinestyle,drawstyle=self.BTdrawstyle,color=self.palette["bt"],label=aw.arabicReshape(QApplication.translate("Label", "BT", None)))
 
     def drawDeltaET(self,trans,start,end):
         if self.DeltaETflag:
-            try:
-                if self.l_delta1 is not None:
-                    self.l_delta1.remove()
-            except Exception: # pylint: disable=broad-except
-                pass
-            self.l_delta1, = self.ax.plot(
-                self.timex[start:end],
-                self.delta1[start:end],
-                transform=trans,
-                markersize=self.ETdeltamarkersize,
-                marker=self.ETdeltamarker,
-                sketch_params=None,
-                path_effects=[PathEffects.withStroke(linewidth=self.ETdeltalinewidth+aw.qmc.patheffects,foreground=self.palette["background"])],
-                linewidth=self.ETdeltalinewidth,
-                linestyle=self.ETdeltalinestyle,
-                drawstyle=self.ETdeltadrawstyle,
-                color=self.palette["deltaet"],
-                label=aw.arabicReshape(f'{deltaLabelUTF8}{QApplication.translate("Label", "ET", None)}'))
+            self.l_delta1, = self.ax.plot(self.timex[start:end], self.delta1[start:end],transform=trans,markersize=self.ETdeltamarkersize,marker=self.ETdeltamarker,
+            sketch_params=None,path_effects=[PathEffects.withStroke(linewidth=self.ETdeltalinewidth+aw.qmc.patheffects,foreground=self.palette["background"])],
+            linewidth=self.ETdeltalinewidth,linestyle=self.ETdeltalinestyle,drawstyle=self.ETdeltadrawstyle,color=self.palette["deltaet"],
+            label=aw.arabicReshape(f'{deltaLabelUTF8}{QApplication.translate("Label", "ET", None)}'))
 
     def drawDeltaBT(self,trans,start,end):
         if self.DeltaBTflag:
-            try:
-                if self.l_delta2 is not None:
-                    self.l_delta2.remove()
-            except Exception: # pylint: disable=broad-except
-                pass
-            self.l_delta2, = self.ax.plot(
-                self.timex[start:end],
-                self.delta2[start:end],
-                transform=trans,
-                markersize=self.BTdeltamarkersize,
-                marker=self.BTdeltamarker,
-                sketch_params=None,
-                path_effects=[PathEffects.withStroke(linewidth=self.BTdeltalinewidth+aw.qmc.patheffects,foreground=self.palette["background"])],
-                linewidth=self.BTdeltalinewidth,
-                linestyle=self.BTdeltalinestyle,
-                drawstyle=self.BTdeltadrawstyle,
-                color=self.palette["deltabt"],
-                label=aw.arabicReshape(f'{deltaLabelUTF8}{QApplication.translate("Label", "BT", None)}'))
+            self.l_delta2, = self.ax.plot(self.timex[start:end], self.delta2[start:end],transform=trans,markersize=self.BTdeltamarkersize,marker=self.BTdeltamarker,
+            sketch_params=None,path_effects=[PathEffects.withStroke(linewidth=self.BTdeltalinewidth+aw.qmc.patheffects,foreground=self.palette["background"])],
+            linewidth=self.BTdeltalinewidth,linestyle=self.BTdeltalinestyle,drawstyle=self.BTdeltadrawstyle,color=self.palette["deltabt"],
+            label=aw.arabicReshape(f'{deltaLabelUTF8}{QApplication.translate("Label", "BT", None)}'))
 
     # if profileDataSemaphore lock cannot be fetched the redraw is not performed
     def lazyredraw(self, recomputeAllDeltas=True, smooth=True,sampling=False):
@@ -7715,11 +7661,6 @@ class tgraphcanvas(FigureCanvas):
                                     stemp3B = self.stemp2BX[n3]
                             if not self.backgroundShowFullflag:
                                 stemp3B = [None]*bcharge_idx + stemp3B[bcharge_idx:bdrop_idx+1] + [None]*(len(self.timeB)-bdrop_idx-1)
-                            try:
-                                if self.l_back3 is not None:
-                                    self.l_back3.remove()
-                            except Exception: # pylint: disable=broad-except
-                                pass
                             self.l_back3, = self.ax.plot(self.extratimexB[n3], stemp3B, markersize=self.XTbackmarkersize,marker=self.XTbackmarker,
                                                         sketch_params=None,path_effects=[],transform=trans,
                                                         linewidth=self.XTbacklinewidth,linestyle=self.XTbacklinestyle,drawstyle=self.XTbackdrawstyle,color=self.backgroundxtcolor,
@@ -7755,11 +7696,6 @@ class tgraphcanvas(FigureCanvas):
                                     stemp4B = self.stemp2BX[n4]
                             if not self.backgroundShowFullflag:
                                 stemp4B = [None]*bcharge_idx + stemp4B[bcharge_idx:bdrop_idx+1] + [None]*(len(self.timeB)-bdrop_idx-1)
-                            try:
-                                if self.l_back4 is not None:
-                                    self.l_back4.remove()
-                            except Exception: # pylint: disable=broad-except
-                                pass                                
                             self.l_back4, = self.ax.plot(self.extratimexB[n4], stemp4B, markersize=self.YTbackmarkersize,marker=self.YTbackmarker,
                                                         sketch_params=None,path_effects=[],transform=trans,
                                                         linewidth=self.YTbacklinewidth,linestyle=self.YTbacklinestyle,drawstyle=self.YTbackdrawstyle,color=self.backgroundytcolor,
@@ -7775,11 +7711,6 @@ class tgraphcanvas(FigureCanvas):
                             temp_etb = [None]*bcharge_idx + self.stemp1B[bcharge_idx:bdrop_idx+1] + [None]*(len(self.timeB)-bdrop_idx-1)
                     else:
                         temp_etb = [None]*len(self.timeB)
-                    try:
-                        if self.l_back1 is not None:
-                            self.l_back1.remove()
-                    except Exception: # pylint: disable=broad-except
-                        pass
                     self.l_back1, = self.ax.plot(self.timeB,temp_etb,markersize=self.ETbackmarkersize,marker=self.ETbackmarker,
                                                 sketch_params=None,path_effects=[],
                                                 linewidth=self.ETbacklinewidth,linestyle=self.ETbacklinestyle,drawstyle=self.ETbackdrawstyle,color=self.backgroundmetcolor,
@@ -7792,11 +7723,6 @@ class tgraphcanvas(FigureCanvas):
                             temp_btb = [None]*bcharge_idx + self.stemp2B[bcharge_idx:bdrop_idx+1] + [None]*(len(self.timeB)-bdrop_idx-1)
                     else:
                         temp_btb = [None]*len(self.timeB)
-                    try:
-                        if self.l_back2 is not None:
-                            self.l_back2.remove()
-                    except Exception: # pylint: disable=broad-except
-                        pass
                     self.l_back2, = self.ax.plot(self.timeB, temp_btb,markersize=self.BTbackmarkersize,marker=self.BTbackmarker,
                                                 linewidth=self.BTbacklinewidth,linestyle=self.BTbacklinestyle,drawstyle=self.BTbackdrawstyle,color=self.backgroundbtcolor,
                                                 sketch_params=None,path_effects=[],
@@ -7833,43 +7759,13 @@ class tgraphcanvas(FigureCanvas):
                         if self.delta_ax:
                             trans = self.delta_ax.transData #=self.delta_ax.transScale + (self.delta_ax.transLimits + self.delta_ax.transAxes)
                             if self.DeltaETBflag and len(self.timeB) == len(self.delta1B):
-                                try:
-                                    if self.l_delta1B is not None:
-                                        self.l_delta1B.remove()
-                                except Exception: # pylint: disable=broad-except
-                                    pass
-                                self.l_delta1B, = self.ax.plot(
-                                    self.timeB,
-                                    self.delta1B,
-                                    transform=trans,
-                                    markersize=self.ETBdeltamarkersize,
-                                    sketch_params=None,path_effects=[],
-                                    marker=self.ETBdeltamarker,
-                                    linewidth=self.ETBdeltalinewidth,
-                                    linestyle=self.ETBdeltalinestyle,
-                                    drawstyle=self.ETBdeltadrawstyle,
-                                    color=self.backgrounddeltaetcolor,
-                                    alpha=self.backgroundalpha,
-                                    label=aw.arabicReshape(QApplication.translate("Label", "BackgroundDeltaET", None)))
+                                self.l_delta1B, = self.ax.plot(self.timeB, self.delta1B,transform=trans,markersize=self.ETBdeltamarkersize,
+                                sketch_params=None,path_effects=[],
+                                marker=self.ETBdeltamarker,linewidth=self.ETBdeltalinewidth,linestyle=self.ETBdeltalinestyle,drawstyle=self.ETBdeltadrawstyle,color=self.backgrounddeltaetcolor,alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundDeltaET", None)))
                             if self.DeltaBTBflag and len(self.timeB) == len(self.delta2B):
-                                try:
-                                    if self.l_delta2B is not None:
-                                        self.l_delta2B.remove()
-                                except Exception: # pylint: disable=broad-except
-                                    pass
-                                self.l_delta2B, = self.ax.plot(
-                                    self.timeB,
-                                    self.delta2B,
-                                    transform=trans,
-                                    markersize=self.BTBdeltamarkersize,
-                                    sketch_params=None,path_effects=[],
-                                    marker=self.BTBdeltamarker,
-                                    linewidth=self.BTBdeltalinewidth,
-                                    linestyle=self.BTBdeltalinestyle,
-                                    drawstyle=self.BTBdeltadrawstyle,
-                                    color=self.backgrounddeltabtcolor,
-                                    alpha=self.backgroundalpha,
-                                    label=aw.arabicReshape(QApplication.translate("Label", "BackgroundDeltaBT", None)))
+                                self.l_delta2B, = self.ax.plot(self.timeB, self.delta2B,transform=trans,markersize=self.BTBdeltamarkersize,
+                                sketch_params=None,path_effects=[],
+                                marker=self.BTBdeltamarker,linewidth=self.BTBdeltalinewidth,linestyle=self.BTBdeltalinestyle,drawstyle=self.BTBdeltadrawstyle,color=self.backgrounddeltabtcolor,alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundDeltaBT", None)))
                     #check backgroundevents flag
                     if self.backgroundeventsflag:
                         if self.mode == "F":
@@ -8608,11 +8504,6 @@ class tgraphcanvas(FigureCanvas):
                             E1x = [None]
                             E1y = [None]
                             ds = "steps-post"
-                        try:
-                            if self.l_eventtype1dots is not None:
-                                self.l_eventtype1dots.remove()
-                        except Exception: # pylint: disable=broad-except
-                            pass
                         self.l_eventtype1dots, = self.ax.plot(E1x, E1y, color=self.EvalueColor[0],
                                                             marker = (self.EvalueMarker[0] if self.eventsGraphflag != 4 else None),
                                                             markersize = self.EvalueMarkerSize[0],
@@ -8637,11 +8528,6 @@ class tgraphcanvas(FigureCanvas):
                             E2x = [None]
                             E2y = [None]
                             ds = "steps-post"
-                        try:
-                            if self.l_eventtype2dots is not None:
-                                self.l_eventtype2dots.remove()
-                        except Exception: # pylint: disable=broad-except
-                            pass
                         self.l_eventtype2dots, = self.ax.plot(E2x, E2y, color=self.EvalueColor[1],
                                                             marker = (self.EvalueMarker[1] if self.eventsGraphflag != 4 else None),
                                                             markersize = self.EvalueMarkerSize[1],
@@ -8668,11 +8554,6 @@ class tgraphcanvas(FigureCanvas):
                             E3x = [None]
                             E3y = [None]
                             ds = "steps-post"
-                        try:
-                            if self.l_eventtype3dots is not None:
-                                self.l_eventtype3dots.remove()
-                        except Exception: # pylint: disable=broad-except
-                            pass
                         self.l_eventtype3dots, = self.ax.plot(E3x, E3y, color=self.EvalueColor[2],
                                                             marker = (self.EvalueMarker[2] if self.eventsGraphflag != 4 else None),
                                                             markersize = self.EvalueMarkerSize[2],
@@ -8699,11 +8580,6 @@ class tgraphcanvas(FigureCanvas):
                             E4x = [None]
                             E4y = [None]
                             ds = "steps-post"
-                        try:
-                            if self.l_eventtype4dots is not None:
-                                self.l_eventtype4dots.remove()
-                        except Exception: # pylint: disable=broad-except
-                            pass
                         self.l_eventtype4dots, = self.ax.plot(E4x, E4y, color=self.EvalueColor[3],
                                                             marker = (self.EvalueMarker[3] if self.eventsGraphflag != 4 else None),
                                                             markersize = self.EvalueMarkerSize[3],
@@ -8864,21 +8740,8 @@ class tgraphcanvas(FigureCanvas):
                         self.delta_ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
                     
                 ##### Extra devices-curves
-                for l in self.extratemp1lines + self.extratemp2lines:
-                    try:
-                        if l is not None:
-                            l.remove()
-                    except Exception: # pylint: disable=broad-except
-                        pass
                 self.extratemp1lines,self.extratemp2lines = [],[]
-                for i in range(min(
-                        len(self.extratimex),
-                        len(self.extratemp1),
-                        len(self.extradevicecolor1),
-                        len(self.extraname1),
-                        len(self.extratemp2),
-                        len(self.extradevicecolor2),
-                        len(self.extraname2))):
+                for i in range(min(len(self.extratimex),len(self.extratemp1),len(self.extradevicecolor1),len(self.extraname1),len(self.extratemp2),len(self.extradevicecolor2),len(self.extraname2))):
                     if self.extratimex[i] is not None and self.extratimex[i] and len(self.extratimex[i])>1:
                         timexi_lin = numpy.linspace(self.extratimex[i][0],self.extratimex[i][-1],len(self.extratimex[i]))
                     else:
@@ -9005,22 +8868,18 @@ class tgraphcanvas(FigureCanvas):
                         self.handles.append(self.l_eventtype4dots)
                         self.labels.append(aw.arabicReshape(self.etypesf(3)))
 
-                if not self.designerflag:
-                    if aw.qmc.BTcurve:
-                        if self.flagstart: # no smoothed lines in this case, pass normal BT
-                            aw.qmc.l_annotations = self.place_annotations(aw.qmc.TPalarmtimeindex,aw.qmc.ylimit - aw.qmc.ylimit_min,self.timex,self.timeindex,self.temp2,self.temp2)
-                        else:
-                            TP_index = aw.findTP()
-                            if aw.qmc.annotationsflag:
-                                aw.qmc.l_annotations = self.place_annotations(TP_index,aw.qmc.ylimit - aw.qmc.ylimit_min,self.timex,self.timeindex,self.temp2,self.stemp2)
-                            if self.timeindex[6]:
-                                self.writestatistics(TP_index)
-                        #add the time and temp annotations to the bt list
-                        for x in aw.qmc.l_annotations:
-                            self.l_bteventannos.append(x)
-                    elif self.timeindex[6]:
+                if not self.designerflag and aw.qmc.BTcurve:
+                    if self.flagstart: # no smoothed lines in this case, pass normal BT
+                        aw.qmc.l_annotations = self.place_annotations(aw.qmc.TPalarmtimeindex,aw.qmc.ylimit - aw.qmc.ylimit_min,self.timex,self.timeindex,self.temp2,self.temp2)
+                    else:
                         TP_index = aw.findTP()
-                        self.writestatistics(TP_index)
+                        if aw.qmc.annotationsflag:
+                            aw.qmc.l_annotations = self.place_annotations(TP_index,aw.qmc.ylimit - aw.qmc.ylimit_min,self.timex,self.timeindex,self.temp2,self.stemp2)
+                        if self.timeindex[6]:
+                            self.writestatistics(TP_index)
+                    #add the time and temp annotations to the bt list
+                    for x in aw.qmc.l_annotations:
+                        self.l_bteventannos.append(x)
 
                 if not sampling and not aw.qmc.flagon and self.timeindex[6] and aw.qmc.statssummary:
                     self.statsSummary()
@@ -11095,17 +10954,14 @@ class tgraphcanvas(FigureCanvas):
                             pass
                         
                         self.xaxistosm(redraw=False) # need to fix uneven x-axis labels like -0:13
-                        
-                        if self.BTcurve:
-                            # only if BT is shown we place the annotation:
-                            d = aw.qmc.ylimit - aw.qmc.ylimit_min
-                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation", "CHARGE", None))
-                            t2 = self.temp2[self.timeindex[0]]
-                            tx = self.timex[self.timeindex[0]]
-                            self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,t2,t2,d)
-                            self.l_annotations += self.annotate(t2,st1,tx,t2,self.ystep_up,self.ystep_down,draggable_anno_key=0)
-                            
+                        d = aw.qmc.ylimit - aw.qmc.ylimit_min
+                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation", "CHARGE", None))
+                        t2 = self.temp2[self.timeindex[0]]
+                        tx = self.timex[self.timeindex[0]]
+                        self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,t2,t2,d)
+                        self.l_annotations += self.annotate(t2,st1,tx,t2,self.ystep_up,self.ystep_down,draggable_anno_key=0)
                         # mark active slider values that are not zero
+
                         for slidernr in range(4):
                             if aw.eventslidervisibilities[slidernr]:
                                 # we record also for inactive sliders as some button press actions might have changed the event values also for those
@@ -11244,18 +11100,15 @@ class tgraphcanvas(FigureCanvas):
                                 return
                         if aw.qmc.phasesbuttonflag:
                             self.phases[1] = int(round(self.temp2[self.timeindex[1]]))
-                        if self.BTcurve:
-                            # only if BT is shown we place the annotation:
-                            #calculate time elapsed since charge time
-                            st = stringfromseconds(self.timex[self.timeindex[1]]-start,False)
-                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","DE {0}", None).format(st))
-                            #anotate temperature
-                            d = aw.qmc.ylimit - aw.qmc.ylimit_min
-                            self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[0]],self.temp2[self.timeindex[1]],d)
-                            self.l_annotations += self.annotate(self.temp2[self.timeindex[1]],st1,self.timex[self.timeindex[1]],self.temp2[self.timeindex[1]],self.ystep_up,self.ystep_down,draggable_anno_key=1)
-                            #self.fig.canvas.draw() # not needed as self.annotate does the (partial) redraw
-                            self.updateBackground() # but we need
-                        
+                        #calculate time elapsed since charge time
+                        st = stringfromseconds(self.timex[self.timeindex[1]]-start,False)
+                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","DE {0}", None).format(st))
+                        #anotate temperature
+                        d = aw.qmc.ylimit - aw.qmc.ylimit_min
+                        self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[0]],self.temp2[self.timeindex[1]],d)
+                        self.l_annotations += self.annotate(self.temp2[self.timeindex[1]],st1,self.timex[self.timeindex[1]],self.temp2[self.timeindex[1]],self.ystep_up,self.ystep_down,draggable_anno_key=1)
+                        #self.fig.canvas.draw() # not needed as self.annotate does the (partial) redraw
+                        self.updateBackground() # but we need
                         aw.qmc.phasesLCDmode = aw.qmc.phasesLCDmode_l[1]
     
                 else:
@@ -11358,19 +11211,16 @@ class tgraphcanvas(FigureCanvas):
                                 return
                         if aw.qmc.phasesbuttonflag:
                             self.phases[2] = int(round(self.temp2[self.timeindex[2]]))
-                        if self.BTcurve:
-                            # only if BT is shown we place the annotation:
-                            #calculate time elapsed since charge time
-                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","FCs {0}", None).format(stringfromseconds(self.timex[self.timeindex[2]]-start,False)))
-                            d = aw.qmc.ylimit - aw.qmc.ylimit_min
-                            if self.timeindex[1]:
-                                self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[1]],self.temp2[self.timeindex[2]],d)
-                            else:
-                                self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[0]],self.temp2[self.timeindex[2]],d)
-                            self.l_annotations += self.annotate(self.temp2[self.timeindex[2]],st1,self.timex[self.timeindex[2]],self.temp2[self.timeindex[2]],self.ystep_up,self.ystep_down,draggable_anno_key=2)
-                            #self.fig.canvas.draw() # not needed as self.annotate does the (partial) redraw
-                            self.updateBackground() # but we need
-                        
+                        #calculate time elapsed since charge time
+                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","FCs {0}", None).format(stringfromseconds(self.timex[self.timeindex[2]]-start,False)))
+                        d = aw.qmc.ylimit - aw.qmc.ylimit_min
+                        if self.timeindex[1]:
+                            self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[1]],self.temp2[self.timeindex[2]],d)
+                        else:
+                            self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[0]],self.temp2[self.timeindex[2]],d)
+                        self.l_annotations += self.annotate(self.temp2[self.timeindex[2]],st1,self.timex[self.timeindex[2]],self.temp2[self.timeindex[2]],self.ystep_up,self.ystep_down,draggable_anno_key=2)
+                        #self.fig.canvas.draw() # not needed as self.annotate does the (partial) redraw
+                        self.updateBackground() # but we need
                         aw.qmc.phasesLCDmode = aw.qmc.phasesLCDmode_l[2]
                 else:
                     message = QApplication.translate("Message","FC START: Scope is not recording", None)
@@ -11466,15 +11316,13 @@ class tgraphcanvas(FigureCanvas):
                                 self.timeindex[3] = max(0,len(self.timex)-1)
                             else:
                                 return
-                        if self.BTcurve:
-                            # only if BT is shown we place the annotation:
-                            #calculate time elapsed since charge time
-                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","FCe {0}", None).format(stringfromseconds(self.timex[self.timeindex[3]]-start,False)))
-                            d = aw.qmc.ylimit - aw.qmc.ylimit_min
-                            self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[2]],self.temp2[self.timeindex[3]],d)
-                            self.l_annotations += self.annotate(self.temp2[self.timeindex[3]],st1,self.timex[self.timeindex[3]],self.temp2[self.timeindex[3]],self.ystep_up,self.ystep_down,draggable_anno_key=3)
-                            #self.fig.canvas.draw() # not needed as self.annotate does the (partial) redraw
-                            self.updateBackground() # but we need
+                        #calculate time elapsed since charge time
+                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","FCe {0}", None).format(stringfromseconds(self.timex[self.timeindex[3]]-start,False)))
+                        d = aw.qmc.ylimit - aw.qmc.ylimit_min
+                        self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[2]],self.temp2[self.timeindex[3]],d)
+                        self.l_annotations += self.annotate(self.temp2[self.timeindex[3]],st1,self.timex[self.timeindex[3]],self.temp2[self.timeindex[3]],self.ystep_up,self.ystep_down,draggable_anno_key=3)
+                        #self.fig.canvas.draw() # not needed as self.annotate does the (partial) redraw
+                        self.updateBackground() # but we need
                 else:
                     message = QApplication.translate("Message","FC END: Scope is not recording", None)
                     aw.sendmessage(message)
@@ -11571,17 +11419,15 @@ class tgraphcanvas(FigureCanvas):
                                 self.timeindex[4] = max(0,len(self.timex)-1)
                             else:
                                 return
-                        if self.BTcurve:
-                            # only if BT is shown we place the annotation:
-                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","SCs {0}", None).format(stringfromseconds(self.timex[self.timeindex[4]]-start,False)))
-                            d = aw.qmc.ylimit - aw.qmc.ylimit_min
-                            if self.timeindex[3]:
-                                self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[3]],self.temp2[self.timeindex[4]],d)
-                            else:
-                                self.ystep_down,self.ystep_up = self.findtextgap(0,0,self.temp2[self.timeindex[4]],self.temp2[self.timeindex[4]],d)
-                            self.l_annotations += self.annotate(self.temp2[self.timeindex[4]],st1,self.timex[self.timeindex[4]],self.temp2[self.timeindex[4]],self.ystep_up,self.ystep_down,draggable_anno_key=4)
-                            #self.fig.canvas.draw() # not needed as self.annotate does the (partial) redraw
-                            self.updateBackground() # but we need
+                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","SCs {0}", None).format(stringfromseconds(self.timex[self.timeindex[4]]-start,False)))
+                        d = aw.qmc.ylimit - aw.qmc.ylimit_min
+                        if self.timeindex[3]:
+                            self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[3]],self.temp2[self.timeindex[4]],d)
+                        else:
+                            self.ystep_down,self.ystep_up = self.findtextgap(0,0,self.temp2[self.timeindex[4]],self.temp2[self.timeindex[4]],d)
+                        self.l_annotations += self.annotate(self.temp2[self.timeindex[4]],st1,self.timex[self.timeindex[4]],self.temp2[self.timeindex[4]],self.ystep_up,self.ystep_down,draggable_anno_key=4)
+                        #self.fig.canvas.draw() # not needed as self.annotate does the (partial) redraw
+                        self.updateBackground() # but we need
                 else:
                     message = QApplication.translate("Message","SC START: Scope is not recording", None)
                     aw.sendmessage(message)
@@ -11686,14 +11532,12 @@ class tgraphcanvas(FigureCanvas):
                                 self.timeindex[5] = max(0,len(self.timex)-1)
                             else:
                                 return
-                        if self.BTcurve:
-                            # only if BT is shown we place the annotation:
-                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","SCe {0}", None).format(stringfromseconds(self.timex[self.timeindex[5]]-start,False)))
-                            d = aw.qmc.ylimit - aw.qmc.ylimit_min
-                            self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[4]],self.temp2[self.timeindex[5]],d)
-                            self.l_annotations += self.annotate(self.temp2[self.timeindex[5]],st1,self.timex[self.timeindex[5]],self.temp2[self.timeindex[5]],self.ystep_up,self.ystep_down,draggable_anno_key=5)
-                            #self.fig.canvas.draw() # not needed as self.annotate does the (partial) redraw
-                            self.updateBackground() # but we need
+                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","SCe {0}", None).format(stringfromseconds(self.timex[self.timeindex[5]]-start,False)))
+                        d = aw.qmc.ylimit - aw.qmc.ylimit_min
+                        self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[4]],self.temp2[self.timeindex[5]],d)
+                        self.l_annotations += self.annotate(self.temp2[self.timeindex[5]],st1,self.timex[self.timeindex[5]],self.temp2[self.timeindex[5]],self.ystep_up,self.ystep_down,draggable_anno_key=5)
+                        #self.fig.canvas.draw() # not needed as self.annotate does the (partial) redraw
+                        self.updateBackground() # but we need
                 else:
                     message = QApplication.translate("Message","SC END: Scope is not recording", None)
                     aw.sendmessage(message)
@@ -11808,23 +11652,21 @@ class tgraphcanvas(FigureCanvas):
                                 self.timeindex[6] = max(0,len(self.timex)-1)
                             else:
                                 return
-                        if self.BTcurve:
-                            # only if BT is shown we place the annotation:
-                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","DROP {0}", None).format(stringfromseconds(self.timex[self.timeindex[6]]-start,False)))
-                            d = aw.qmc.ylimit - aw.qmc.ylimit_min
-                            if self.timeindex[5]:
-                                self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[5]],self.temp2[self.timeindex[6]],d)
-                            elif self.timeindex[4]:
-                                self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[4]],self.temp2[self.timeindex[6]],d)
-                            elif self.timeindex[3]:
-                                self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[3]],self.temp2[self.timeindex[6]],d)
-                            elif self.timeindex[2]:
-                                self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[2]],self.temp2[self.timeindex[6]],d)
-                            elif self.timeindex[1]:
-                                self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[1]],self.temp2[self.timeindex[6]],d)
-                            self.l_annotations += self.annotate(self.temp2[self.timeindex[6]],st1,self.timex[self.timeindex[6]],self.temp2[self.timeindex[6]],self.ystep_up,self.ystep_down,draggable_anno_key=6)
-                            #self.fig.canvas.draw() # not needed as self.annotate does the (partial) redraw
-                            self.updateBackground() # but we need
+                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","DROP {0}", None).format(stringfromseconds(self.timex[self.timeindex[6]]-start,False)))
+                        d = aw.qmc.ylimit - aw.qmc.ylimit_min
+                        if self.timeindex[5]:
+                            self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[5]],self.temp2[self.timeindex[6]],d)
+                        elif self.timeindex[4]:
+                            self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[4]],self.temp2[self.timeindex[6]],d)
+                        elif self.timeindex[3]:
+                            self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[3]],self.temp2[self.timeindex[6]],d)
+                        elif self.timeindex[2]:
+                            self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[2]],self.temp2[self.timeindex[6]],d)
+                        elif self.timeindex[1]:
+                            self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[1]],self.temp2[self.timeindex[6]],d)
+                        self.l_annotations += self.annotate(self.temp2[self.timeindex[6]],st1,self.timex[self.timeindex[6]],self.temp2[self.timeindex[6]],self.ystep_up,self.ystep_down,draggable_anno_key=6)
+                        #self.fig.canvas.draw() # not needed as self.annotate does the (partial) redraw
+                        self.updateBackground() # but we need
     
                         try:
                             # update ambient temperature if a ambient temperature source is configured and no value yet established
@@ -11968,16 +11810,14 @@ class tgraphcanvas(FigureCanvas):
                                 self.timeindex[7] = max(0,len(self.timex)-1)
                             else:
                                 return
-                        if self.BTcurve:
-                            # only if BT is shown we place the annotation:
-                            #calculate time elapsed since charge time
-                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","CE {0}", None).format(stringfromseconds(self.timex[self.timeindex[7]] - start)))
-                            #anotate temperature
-                            d = aw.qmc.ylimit - aw.qmc.ylimit_min
-                            self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[6]],self.temp2[self.timeindex[7]],d)
-                            self.l_annotations += self.annotate(self.temp2[self.timeindex[7]],st1,self.timex[self.timeindex[7]],self.temp2[self.timeindex[7]],self.ystep_up,self.ystep_down,draggable_anno_key=7)
-                            #self.fig.canvas.draw() # not needed as self.annotate does the (partial) redraw
-                            self.updateBackground() # but we need
+                        #calculate time elapsed since charge time
+                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","CE {0}", None).format(stringfromseconds(self.timex[self.timeindex[7]] - start)))
+                        #anotate temperature
+                        d = aw.qmc.ylimit - aw.qmc.ylimit_min
+                        self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[6]],self.temp2[self.timeindex[7]],d)
+                        self.l_annotations += self.annotate(self.temp2[self.timeindex[7]],st1,self.timex[self.timeindex[7]],self.temp2[self.timeindex[7]],self.ystep_up,self.ystep_down,draggable_anno_key=7)
+                        #self.fig.canvas.draw() # not needed as self.annotate does the (partial) redraw
+                        self.updateBackground() # but we need
                 else:
                     message = QApplication.translate("Message","COOL: Scope is not recording", None)
                     aw.sendmessage(message)
@@ -15046,22 +14886,21 @@ def my_fedit(data, title="", comment="", icon=None, parent=None, apply=None):
             try:
                 # Set / Curves
                 for index, curve in enumerate(data):
-                    if len(curvelabels) > index:
-                        line = linedict[curvelabels[index]]
-                        (label, linestyle, drawstyle, linewidth, color, marker, markersize,
-                         markerfacecolor, markeredgecolor) = curve
-                        line.set_label(label)
-                        line.set_linestyle(linestyle)
-                        line.set_drawstyle(drawstyle)
-                        line.set_linewidth(linewidth)
-                        rgba = mcolors.to_rgba(color)
-                        line.set_alpha(None)
-                        line.set_color(rgba)
-                        if marker != 'none':
-                            line.set_marker(marker)
-                            line.set_markersize(markersize)
-                            line.set_markerfacecolor(markerfacecolor)
-                            line.set_markeredgecolor(markeredgecolor)
+                    line = linedict[curvelabels[index]]
+                    (label, linestyle, drawstyle, linewidth, color, marker, markersize,
+                     markerfacecolor, markeredgecolor) = curve
+                    line.set_label(label)
+                    line.set_linestyle(linestyle)
+                    line.set_drawstyle(drawstyle)
+                    line.set_linewidth(linewidth)
+                    rgba = mcolors.to_rgba(color)
+                    line.set_alpha(None)
+                    line.set_color(rgba)
+                    if marker != 'none':
+                        line.set_marker(marker)
+                        line.set_markersize(markersize)
+                        line.set_markerfacecolor(markerfacecolor)
+                        line.set_markeredgecolor(markeredgecolor)
                 # Redraw
                 figure.canvas.draw()
                 if not (axes.get_xlim() == orig_xlim and axes.get_ylim() == orig_ylim):
@@ -16708,10 +16547,10 @@ class ApplicationWindow(QMainWindow):
         #TODO: keep
         button_font_size_small_pt = self.button_font_size_pt - 3
         button_font_size_small_selected_pt = self.button_font_size_pt - 2
-#        button_font_size_tiny_pt = self.button_font_size_pt - 4
-#        button_font_size_micro_pt = self.button_font_size_pt - 5
+        button_font_size_tiny_pt = self.button_font_size_pt - 4
+        button_font_size_micro_pt = self.button_font_size_pt - 5
         if platf == 'Windows':
-            self.button_font_size_pt = self.button_font_size_pt - 2
+            button_font_size_pt = self.button_font_size_pt - 2
 
         # button width in px
         if platf == 'Windows':
@@ -16720,20 +16559,20 @@ class ApplicationWindow(QMainWindow):
             self.small_button_min_width_str = "75px"
             self.tiny_button_min_width_str = "60px"
             # TODO: keep
-#            self.main_button_min_width_px: Final = 110
+            main_button_min_width_px: Final = 110
             self.standard_button_min_width_px: Final = 90
-#            self.small_button_min_width_px: Final = 75
-            #self.tiny_button_min_width_px: Final = 60
+            small_button_min_width_px: Final = 75
+            tiny_button_min_width_px: Final = 60
         else:
             # TODO: remove
             self.main_button_min_width_str = "100px"
             self.small_button_min_width_str = "60px"
             self.tiny_button_min_width_str = "50px"
             # TODO: keep
-#            self.main_button_min_width_px = 100
+            main_button_min_width_px = 100
             self.standard_button_min_width_px = 75
-#            self.small_button_min_width_px = 60
-#            self.tiny_button_min_width_px = 50
+            small_button_min_width_px = 60
+            tiny_button_min_width_px = 50
         
         border_modern = "border-style:solid; border-radius:4;border-color:grey; border-width:0;" # modernize
 
@@ -17003,6 +16842,66 @@ class ApplicationWindow(QMainWindow):
                     color: white;
                     background-color:""" + createGradient('#85cae1') + """ ;
                 }
+            """,
+            "SELECTED":     """
+                QPushButton {
+                    min-width: """ + str(self.standard_button_min_width_px) + """px;
+                    """ + border_modern + """
+                    font-size: """ + self.button_font_size_small_selected + """;
+                    font-weight: bold;
+                    color: white;
+                    background-color:""" + createGradient('#d4336a') + """ ;
+                }
+                QPushButton:flat{
+                    color: darkgrey;
+                    background-color: #f9e2ea;
+                }
+                QPushButton:flat:hover:!pressed{
+                    color: #F5F5F5;
+                    background-color: #e687a8;
+                }
+                QPushButton:flat:hover:pressed{
+                    color: #EEEEEE;
+                    background-color: #d4336a;
+                }
+                QPushButton:pressed {
+                    color: white;
+                    background-color:""" + createGradient('#147bb3') + """ ;
+                }
+                QPushButton:hover:!pressed {
+                    color: white;
+                    background-color:""" + createGradient('#cc0f50') + """ ;
+                }
+            """,
+            "SELECTED_MAIN":     """
+                QPushButton {
+                    min-width: """ + str(self.standard_button_min_width_px) + """px;
+                    """ + border_modern + """
+                    font-size: """ + self.button_font_size_small_selected + """;
+                    font-weight: bold;
+                    color: white;
+                    background-color:""" + createGradient('#c00b40') + """ ;
+                }
+                QPushButton:flat{
+                    color: darkgrey;
+                    background-color: #f0b7cb;
+                }
+                QPushButton:flat:hover:!pressed{
+                    color: #F5F5F5;
+                    background-color: #db5785;
+                }
+                QPushButton:flat:hover:pressed{
+                    color: #EEEEEE;
+                    background-color: #cc0f50;
+                }
+                QPushButton:pressed {
+                    color: white;
+                    background-color:""" + createGradient('#147bb3') + """ ;
+                }
+                QPushButton:hover:!pressed {
+                    color: white;
+                    background-color:""" + createGradient('#c70d49') + """ ;
+                }
             """
             }
         # we use this high to dynamically adjust the button size to different font sizes (important for high-dpi displays on Windows)
@@ -17193,8 +17092,13 @@ class ApplicationWindow(QMainWindow):
         self.lcd1.clicked.connect(self.superusermodeLeftClicked)
         self.lcd1.setVisible(False)
 
+
         self.lcd2 = self.ArtisanLCD() # Temperature ET
+        self.lcd2.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.lcd2.customContextMenuRequested.connect(self.setTareET)
         self.lcd3 = self.ArtisanLCD() # Temperature BT
+        self.lcd3.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+        self.lcd3.customContextMenuRequested.connect(self.setTareBT)
         self.lcd4 = self.ArtisanLCD() # rate of change ET
         self.lcd5 = self.ArtisanLCD() # rate of change BT
         self.lcd6 = self.ArtisanLCD() # pid sv
@@ -17268,10 +17172,10 @@ class ApplicationWindow(QMainWindow):
         self.extraFill1,self.extraFill2 = [0]*self.nLCDS,[0]*self.nLCDS # alpha values 0-100 in % of fill between extra curve and x-axis
         for i in range(self.nLCDS):
             #configure LCDs
-            self.extraLCDframe1.append(ClickableLCDFrame())
+            self.extraLCDframe1.append(QFrame())
             self.extraLCD1.append(self.ArtisanLCD())
             self.extraLCDlabel1.append(QLabel())
-            self.extraLCDframe2.append(ClickableLCDFrame())
+            self.extraLCDframe2.append(QFrame())
             self.extraLCD2.append(self.ArtisanLCD())
             self.extraLCDlabel2.append(QLabel())
             self.extraLCDframe1[i].setVisible(False)
@@ -17287,12 +17191,11 @@ class ApplicationWindow(QMainWindow):
             else:
                 self.extraLCD1[i].display("--")
                 self.extraLCD2[i].display("--")
-            self.extraLCDframe1[i].setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-            self.extraLCDframe1[i].customContextMenuRequested.connect(self.setTare_slot)
-            self.extraLCDframe1[i].left_clicked.connect(self.toggleExtraCurve1)
-            self.extraLCDframe2[i].setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-            self.extraLCDframe2[i].customContextMenuRequested.connect(self.setTare_slot)
-            self.extraLCDframe2[i].left_clicked.connect(self.toggleExtraCurve2)
+            self.extraLCD1[i].setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+            self.extraLCD1[i].setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+            self.extraLCD1[i].customContextMenuRequested.connect(self.setTare_slot)
+            self.extraLCD2[i].setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+            self.extraLCD2[i].customContextMenuRequested.connect(self.setTare_slot)
             self.extraLCDframe2[i].setVisible(False)
             self.extraLCD1[i].setStyleSheet("QLCDNumber { border-radius: 4; color: %s; background-color: %s;}"%(self.lcdpaletteF["sv"],self.lcdpaletteB["sv"]))
             self.extraLCD2[i].setStyleSheet("QLCDNumber { border-radius: 4; color: %s; background-color: %s;}"%(self.lcdpaletteF["sv"],self.lcdpaletteB["sv"]))
@@ -17551,31 +17454,23 @@ class ApplicationWindow(QMainWindow):
         LCDlayout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
 
         #place control buttons + LCDs inside vertical button layout manager
-        self.LCD2frame = ClickableLCDFrame()
-        self.LCD2frame.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.LCD2frame.customContextMenuRequested.connect(self.setTareET)
-        self.LCD2frame.left_clicked.connect(self.toggleETCurve)
+        self.LCD2frame = QFrame()
         w = self.makeLCDbox(self.label2,self.lcd2,self.LCD2frame)
         LCDlayout.addWidget(w)
         LCDlayout.setAlignment(w,Qt.AlignmentFlag.AlignRight)
 
-        self.LCD3frame = ClickableLCDFrame()
-        self.LCD3frame.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        self.LCD3frame.customContextMenuRequested.connect(self.setTareBT)
-        self.LCD3frame.left_clicked.connect(self.toggleBTCurve)
+        self.LCD3frame = QFrame()
         w = self.makeLCDbox(self.label3,self.lcd3,self.LCD3frame)
         LCDlayout.addWidget(w)
         LCDlayout.setAlignment(w,Qt.AlignmentFlag.AlignRight)
 
-        self.LCD4frame = ClickableLCDFrame()
-        self.LCD4frame.left_clicked.connect(self.toggleDeltaETCurve)
+        self.LCD4frame = QFrame()
         w = self.makeLCDbox(self.label4,self.lcd4,self.LCD4frame)
         LCDlayout.addWidget(w)
         LCDlayout.setAlignment(w,Qt.AlignmentFlag.AlignRight)
         self.LCD4frame.setVisible(False) # by default this one is not visible
 
-        self.LCD5frame = ClickableLCDFrame()
-        self.LCD5frame.left_clicked.connect(self.toggleDeltaBTCurve)
+        self.LCD5frame = QFrame()
         w = self.makeLCDbox(self.label5,self.lcd5,self.LCD5frame)
         LCDlayout.addWidget(w)
         LCDlayout.setAlignment(w,Qt.AlignmentFlag.AlignRight)
@@ -17978,46 +17873,6 @@ class ApplicationWindow(QMainWindow):
         QTimer.singleShot(2000,self.donate)
 
         QTimer.singleShot(0,lambda : _log.info("startup time: %.2f", libtime.process_time() - startup_time))
-
-    @pyqtSlot()
-    def toggleETCurve(self):
-        self.qmc.ETcurve = not self.qmc.ETcurve
-        self.qmc.redraw(recomputeAllDeltas=False,smooth=False)
-    
-    @pyqtSlot()
-    def toggleBTCurve(self):
-        self.qmc.BTcurve = not self.qmc.BTcurve
-        self.qmc.redraw(recomputeAllDeltas=False,smooth=False)
-    @pyqtSlot()
-    
-    def toggleDeltaETCurve(self):
-        self.qmc.DeltaETflag = not self.qmc.DeltaETflag
-        self.qmc.redraw(recomputeAllDeltas=False,smooth=False)
-    
-    @pyqtSlot()
-    def toggleDeltaBTCurve(self):
-        self.qmc.DeltaBTflag = not self.qmc.DeltaBTflag
-        self.qmc.redraw(recomputeAllDeltas=False,smooth=False)
-    
-    @pyqtSlot()
-    def toggleExtraCurve1(self):
-        try:
-            sender = self.sender()
-            i = self.extraLCDframe1.index(sender)
-            self.extraCurveVisibility1[i] = not self.extraCurveVisibility1[i]
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
-        self.qmc.redraw(recomputeAllDeltas=False,smooth=False)
-    
-    @pyqtSlot()
-    def toggleExtraCurve2(self):
-        try:
-            sender = self.sender()
-            i = self.extraLCDframe2.index(sender)
-            self.extraCurveVisibility2[i] = not self.extraCurveVisibility2[i]
-        except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
-        self.qmc.redraw(recomputeAllDeltas=False,smooth=False)
 
     def addLanguage(self, locale, menu_entry):
         languageAction = QAction(menu_entry, self)
@@ -19968,38 +19823,42 @@ class ApplicationWindow(QMainWindow):
             r = (numpy.digitize([v],ls)[0]+aw.eventslidermin[i] - 1) / 10.
         return max(aw.eventslidermin[i]/10., min(aw.eventslidermax[i] / 10.,r))
 
-    def curveSimilarity2(self,exp=-1,analysis_starttime=0,analysis_endtime=0): # pylint: disable=no-self-use
+    def curveSimilarity2(self, exp=-1,analysis_starttime=0,analysis_endtime=0): # pylint: disable=no-self-use
         result = {}
         try:
             analysis_start = aw.qmc.time2index(analysis_starttime)
-            analysis_end = aw.qmc.time2index(analysis_endtime) +1 # +1 was added 9/25
-            np_bt = numpy.array(aw.qmc.stemp2[analysis_start:analysis_end])
-            np_dbt = numpy.array(aw.qmc.delta2[analysis_start:analysis_end])
-            #compare to background curve?
-            if exp == 4:  
+            analysis_end = aw.qmc.time2index(analysis_endtime)
+            analysis_BT = aw.qmc.stemp2[analysis_start:analysis_end]
+            analysis_DeltaBT = aw.qmc.delta2[analysis_start:analysis_end]
+            if exp == 4:
                 # create background BT and background delta BT arrays over the interval of interest
-                xarray = numpy.array(aw.qmc.timex[analysis_start:analysis_end])
+                xarray = numpy.array(aw.qmc.timex[aw.time2index(analysis_starttime):aw.time2index(analysis_endtime)])
                 # replace None entries with 0 in the background delta list
-                _delta2B = [0 if x is None else x for x in aw.qmc.delta2B]
-                np_dbtb = numpy.array([self.qmc.timetemparray2temp(aw.qmc.timeB,_delta2B,x) for x in xarray])
-                np_btb = numpy.array([self.qmc.timetemparray2temp(aw.qmc.timeB,aw.qmc.temp2B,x) for x in xarray])
+                _delta2B = [0 if i is None else i for i in aw.qmc.delta2B]
+                analysis_DeltaBTB = numpy.array([self.qmc.timetemparray2temp(aw.qmc.timeB,_delta2B,x) for x in xarray])
+                analysis_BTB = numpy.array([self.qmc.timetemparray2temp(aw.qmc.timeB,aw.qmc.temp2B,x) for x in xarray])
             else:
-                np_btb = numpy.array(aw.qmc.stemp2B[analysis_start:analysis_end])
-                np_dbtb = numpy.array(aw.qmc.delta2B[analysis_start:analysis_end])
+                analysis_BTB = aw.qmc.stemp2B[analysis_start:analysis_end]
+                analysis_DeltaBTB = aw.qmc.delta2B[analysis_start:analysis_end]
 
             # Replace None values in the Delta curves with the closest numeric value on the right
-            for i in range(len(np_dbt) - 1, -1, -1):
-                if np_dbt[i] is None:
+            for i in range(len(analysis_DeltaBT) - 1, -1, -1):
+                if analysis_DeltaBT[i] is None:
                     try:
-                        np_dbt[i] = np_dbt[i+1]
+                        analysis_DeltaBT[i] = analysis_DeltaBT[i+1]
                     except Exception: # pylint: disable=broad-except
-                        np_dbt[i] = 0
-            for i in range(len(np_dbtb) - 1, -1, -1):
-                if np_dbtb[i] is None:
+                        analysis_DeltaBT[i] = 0
+            for i in range(len(analysis_DeltaBTB) - 1, -1, -1):
+                if analysis_DeltaBTB[i] is None:
                     try:
-                        np_dbtb[i] = np_dbtb[i+1]
+                        analysis_DeltaBTB[i] = analysis_DeltaBTB[i+1]
                     except Exception: # pylint: disable=broad-except
-                        np_dbtb[i] = 0
+                        analysis_DeltaBTB[i] = 0
+
+            np_bt = numpy.array(analysis_BT)
+            np_btb = numpy.array(analysis_BTB)
+            np_dbt = numpy.array(analysis_DeltaBT)
+            np_dbtb = numpy.array(analysis_DeltaBTB)
 
             #MSE
             mse_BT = numpy.mean(numpy.square(np_bt - np_btb))
@@ -20025,13 +19884,13 @@ class ApplicationWindow(QMainWindow):
                 # RoR at time of FCs, and Actual RoR versus Template RoR at FCs
                 RoR_FCs_act = aw.qmc.delta2[aw.qmc.timeindex[2]]
                 try:
-                    #dave Need to clean up.  Better way to get the index value??  Maybe aw.qmc.timeindex[2]-analysis_start ??
-                    fcs_idx = aw.qmc.timeindex[2]-analysis_start                    +2
-                    RoR_FCs_delta = RoR_FCs_act - np_dbtb[fcs_idx]
-
-                    fcs_idx_oldway = numpy.asarray(np_dbt==aw.qmc.delta2[aw.qmc.timeindex[2]]).nonzero()
-                    if fcs_idx != fcs_idx_oldway[0][0]:
-                        _log.info("Mismatch with fcs_idx methods. fcs_idx:%s fcs_idx_oldway:%s",fcs_idx, fcs_idx_oldway[0][0])
+                    fcs_idx = numpy.where(np_dbt==aw.qmc.delta2[aw.qmc.timeindex[2]])
+                    RoR_FCs_templ = np_dbtb[fcs_idx[0][0]].item()  #it is possible for fcs_idx[0] to be a tuple so we take the first element
+                    RoR_FCs_delta = RoR_FCs_act - RoR_FCs_templ
+                    if (fcs_idx[0][-1] - fcs_idx[0][0]) != (len(fcs_idx[0]) - 1) or len(fcs_idx[0]) > 3:  #if there are multiple and discontiguous elements in fcs_idx
+                        #we don't have an accurate value
+                        #print(fcs_idx[0])
+                        RoR_FCs_delta = float('nan')
                 except Exception: # pylint: disable=broad-except
                     RoR_FCs_delta = float('nan')
 
@@ -20041,41 +19900,35 @@ class ApplicationWindow(QMainWindow):
 
                 # calculate the rise, crash and flick
                 #create array of differences between actual curve and the fit curve
-                deltas_all = numpy.array(np_dbt - np_dbtb, dtype=float)
+                deltas_all = numpy.array(np_dbt - np_dbtb)
                 #array indicating actual curve is greater than fit curve (+1) or is less than (-1)
-                signs_all = numpy.sign(deltas_all,dtype=float)
-                #array with start index of each interal between crossings plus the last interval's end sample
-                starts = numpy.r_[0, numpy.flatnonzero(~numpy.isclose(signs_all[1:], signs_all[:-1])) + 1.].astype(int)
+                signs_all = numpy.sign(deltas_all)
+                #array with start index of each interal between crossings
+                starts = numpy.r_[0, numpy.flatnonzero(~numpy.isclose(signs_all[1:], signs_all[:-1])) + 1]
+                #array with the length of each interal between crossings
+                lengths = numpy.diff(numpy.r_[starts, len(signs_all)])
+                #array indicating segment has actual greater than fit (+1) or actual less than fit (-1)
+                signs = signs_all[starts]
+                #array of max difference for each segment
+                maxdeltas = []
+                for i in range(len(starts)):
+                    maxdeltas.append(numpy.amax(numpy.absolute(deltas_all[starts[i]:starts[i]+lengths[i]])) * signs[i])
+                #array of lengths in seconds
+                seconds = lengths * self.qmc.profile_sampling_interval
 
                 # array of all the time index values
                 timeindexs_all = numpy.arange(analysis_start, analysis_end, 1)
                 # time indexes of the segements
                 timeindexs = timeindexs_all[starts]
-                
-                # array with all time values
-                times_all = numpy.array(aw.qmc.timex[analysis_start:analysis_end])
-                # array with start times
-                times = times_all[starts]
-                # add the ending (DROP) time to use when creating deltatimes
-                times = numpy.append(times,times_all[-1])
-                # array containing the delta times from segment start to end 
-                deltatimes = numpy.diff(times)
 
-                #array indicating segment has actual greater than fit (+1) or actual less than fit (-1)
-                signs = signs_all[starts]
-                #array of max difference for each segment
-                maxdeltas = []
-                for i in range(len(starts)-1):
-                    maxdeltas.append(numpy.amax(numpy.absolute(deltas_all[starts[i]:starts[i+1]])) * signs[i])
-                               
                 # thresholds
                 segtimethreshold = aw.qmc.segmentsamplesthreshold * self.qmc.profile_sampling_interval
                 segdeltathreshold = aw.qmc.segmentdeltathreshold
                 reductions = numpy.zeros_like(signs)
 
                 # mark segments that are insignificant and should be combined to the left
-                for i in range(len(starts)-1):
-                    if deltatimes[i] <= segtimethreshold or abs(maxdeltas[i]) <= segdeltathreshold:
+                for i in range(len(starts)):
+                    if seconds[i] <= segtimethreshold or abs(maxdeltas[i]) <= segdeltathreshold:
                         reductions[i] = 1
 
                 # extend the reduction to include the sample on the right when its sign matches the sign of the first segment in the reduction
@@ -20083,7 +19936,7 @@ class ApplicationWindow(QMainWindow):
                 prevreduction = 0
                 addtoprev = numpy.copy(reductions)   #can replace 'addtoprev[]' with change -in-place 'reductions[]' once debugged
                 addtoprev[0] = 0      #the first entry is never combined to the left.
-                for i in range(1,len(starts)-1):
+                for i in range(1,len(starts)):
                     # reductions = 1
                     if reductions[i] == 1:
                         prevreduction = 1
@@ -20097,54 +19950,59 @@ class ApplicationWindow(QMainWindow):
 
                 # generate the per segement arrays
                 _starts = numpy.zeros_like(starts)
-                _deltatimes = numpy.zeros_like(starts,dtype=float)
-                _starts[-1] = starts[-1]  #set the last value which is not really a start
+                _lengths = numpy.zeros_like(starts)
+                _seconds = numpy.zeros_like(starts)
+                addtoprev[0] = 0
                 lasti = 0
-                for i in range(0,len(starts)-1):
-                    if addtoprev[i] == 1 and i+1 < len(starts)-1:
-                        _deltatimes[lasti] += deltatimes[i]
+                for i in range(0,len(starts)):
+                    if addtoprev[i] == 1 and i+1 < len(starts):
+                        _lengths[lasti] += lengths[i]
+                        _seconds[lasti] += seconds[i]
                     elif addtoprev[i] == 1 :
-                        _deltatimes[lasti] += numpy.sum(deltatimes[i:])
+                        _lengths[lasti] += numpy.sum(lengths[i:])
+                        _seconds[lasti] += numpy.sum(seconds[i:])
                     else:
+                        _lengths[i] = lengths[i]
+                        _seconds[i] = seconds[i]
                         _starts[i] = starts[i]
-                        _deltatimes[i] = deltatimes[i]
                         lasti = i
                 mask = numpy.r_[0, numpy.flatnonzero(_starts)]
                 starts_seg = _starts[mask]
+                lengths_seg = _lengths[mask]
                 signs_seg = signs[mask]
-                deltatimes_seg = _deltatimes[mask]
+                seconds_seg = _seconds[mask]
                 timeindexs_seg = timeindexs[mask]
                 maxdeltas_seg = []
-                for i in range(len(mask)-1):
+                for i in range(len(mask)):
                     if i < len(mask) -1:
                         maxdeltas_seg.append(numpy.amax(numpy.absolute(maxdeltas[mask[i]:mask[i+1]])) * signs_seg[i])
                     else:
-                        maxdeltas_seg.append(numpy.amax(numpy.absolute(maxdeltas[mask[i]:mask[-2]])) * signs_seg[i])
+                        maxdeltas_seg.append(numpy.amax(numpy.absolute(maxdeltas[mask[i]:])) * signs_seg[i])
 
                 # Per segment metrics
-                segment_rmse_deltas = [] #segment root mean square error (difference)
-                segment_mse_deltas = []  #segment mean square error (difference)
-                segment_abc_deltas = []  #segmnt area between the curves
-                for i in range(len(starts_seg)-1):
-                    segment_deltas = deltas_all[starts_seg[i]:starts_seg[i+1]]
+                segment_rmse_deltas = [] #segement root mean square error (difference)
+                segment_mse_deltas = []  #segement mean square error (difference)
+                segment_abc_deltas = []  #segemnt area between the curves
+                for i in range(len(starts_seg)):
+                    segment_deltas = deltas_all[starts_seg[i]:starts_seg[i]+lengths_seg[i]+1]
                     segment_abs_deltas = numpy.absolute(segment_deltas)
                     segment_rmse_deltas.append(numpy.sqrt(numpy.mean(numpy.square(segment_deltas))))
                     segment_mse_deltas.append(numpy.mean(numpy.square(segment_deltas)))
-                    segment_times = times_all[starts_seg[i]:starts_seg[i+1]]
-                    segment_abc_deltas.append(numpy.trapz(segment_abs_deltas, x=segment_times))  #alternate method
+                    segment_abc_deltas.append(numpy.sum((segment_abs_deltas[1:] + segment_abs_deltas[:-1]) * self.qmc.profile_sampling_interval /2))  #trapazoidal area height*(base1+base2)/2
+                    #segment_abc_deltas.append(numpy.trapz(segment_abs_deltas, dx=self.qmc.profile_sampling_interval))  #alternate method
 
                 # interval of interest metrics
                 ioi_start = self.eventtime2string(aw.qmc.timex[timeindexs_seg[0]] - aw.qmc.timex[aw.qmc.timeindex[0]])
-                ioi_seconds = analysis_endtime - analysis_starttime
+                ioi_seconds = (analysis_end - analysis_start) * self.qmc.profile_sampling_interval
                 ioi_duration = self.eventtime2string(ioi_seconds)
                 ioi_abs_deltas = numpy.absolute(deltas_all)
-                #ioi_maxdelta = deltas_all[numpy.where(ioi_abs_deltas == numpy.amax(ioi_abs_deltas))[0][0]]
-                ioi_maxdelta = deltas_all[numpy.asarray(ioi_abs_deltas == numpy.amax(ioi_abs_deltas)).nonzero()[0][0]]
-                ioi_abc_deltas = numpy.sum(numpy.trapz(ioi_abs_deltas, x=times_all))
+                ioi_maxdelta = deltas_all[numpy.where(ioi_abs_deltas == numpy.amax(ioi_abs_deltas))[0][0]]
+#                ioi_mse_deltas = numpy.mean(numpy.square(deltas_all))
+                ioi_abc_deltas = numpy.sum((ioi_abs_deltas[1:] + ioi_abs_deltas[:-1]) * self.qmc.profile_sampling_interval /2)  #trapazoidal area height*(base1+base2)/2
                 ioi_abcprime = ioi_abc_deltas / ioi_seconds
 
                 # general information
-                fitRoR = 60*(np_dbtb[-1] - np_dbtb[0]) / (aw.qmc.timex[timeindexs_all[-1]] - aw.qmc.timex[timeindexs_all[0]])
+                fitRoR = 60*(analysis_DeltaBTB[-1] - analysis_DeltaBTB[0]) / (aw.qmc.timex[timeindexs_all[-1]] - aw.qmc.timex[timeindexs_all[0]])
                 fitTypes = [QApplication.translate("Label","ln()",None),
                             "",
                             QApplication.translate("Label","x",None) + "\u00b2",
@@ -20152,9 +20010,9 @@ class ApplicationWindow(QMainWindow):
                             QApplication.translate("Label","Bkgnd",None), ""]
                 fitType = fitTypes[exp]
                 if aw.qmc.filterDropOuts:
-                    smoothspikes = QApplication.translate("Label","On",None)
+                    smoothspikes = "On"
                 else:
-                    smoothspikes = QApplication.translate("Label","Off",None)
+                    smoothspikes = "Off"
 
                 # build a table of results
                 tbl = prettytable.PrettyTable()
@@ -20164,14 +20022,18 @@ class ApplicationWindow(QMainWindow):
                                    QApplication.translate("Label","Swing",None),
                                    QApplication.translate("Label","ABC/secs",None)  ]
                 tbl.float_format = "5.2"
-                for i in range(len(mask)-1):
+                for i in range(len(mask)):
                     thistime = self.eventtime2string(aw.qmc.timex[timeindexs_seg[i]] - aw.qmc.timex[aw.qmc.timeindex[0]])
-                    duration = self.eventtime2string(deltatimes_seg[i])
+                    duration = self.eventtime2string(seconds_seg[i])
                     if i > 0:
                         swing = maxdeltas_seg[i] - maxdeltas_seg[i-1]
                     else:
                         swing = ""
-                    abcprime = segment_abc_deltas[i] / deltatimes_seg[i]
+#                    if signs_seg[i] == 1:
+#                        abovebelow = QApplication.translate("Label","Above",None)
+#                    else:
+#                        abovebelow = QApplication.translate("Label","Below",None)
+                    abcprime = segment_abc_deltas[i] / seconds_seg[i]
                     tbl.add_row([thistime, duration, maxdeltas_seg[i], swing, abcprime ])
                 if len(mask) > 1:
                     tbl.add_row(['~~~~~','~~~~~','~~~~~','~~~~~','~~~~~'])
@@ -20193,14 +20055,14 @@ class ApplicationWindow(QMainWindow):
                 tbl2.add_row([QApplication.translate("Label","Fit RoRoR (C/min/min)",None), fitRoR, QApplication.translate("Label","Actual RoR at FCs",None), RoR_FCs_act])
                 segmentresultstr += "{}{}".format("\n", tbl2.get_string(border=False,header=False))
 
-                # this table is here to help with validation
-                if False:  # pylint: disable=condition-evals-to-constant
+                # this table is here just to help with validation
+                if aw.superusermode and False:  #disabled # pylint: disable=condition-evals-to-constant
                     tbl3 = prettytable.PrettyTable()
-                    tbl3.field_names = ["Start","Duration","Max Delta","Sign","Reduction","TimeIndex"  ]
+                    tbl3.field_names = ["Start","Duration","Length", "Max Delta","Sign","Reduction","TimeIndex"  ]
                     tbl3.float_format = "5.2"
                     for i in range(len(maxdeltas)):
-                        thistime = self.eventtime2string(aw.qmc.timex[timeindexs[i]]-aw.qmc.timex[aw.qmc.timeindex[0]])
-                        tbl3.add_row([thistime,deltatimes[i],maxdeltas[i],signs[i],reductions[i],timeindexs[i]])
+                        thistime = self.eventtime2string(aw.qmc.timex[timeindexs[i]-aw.qmc.timeindex[0]])
+                        tbl3.add_row([thistime,seconds[i],lengths[i],maxdeltas[i],signs[i],reductions[i],timeindexs[i]])
                     segmentresultstr += "{}{}".format("\n", tbl3.get_string(border=False))
 
                 result['segmentresultstr'] = segmentresultstr
@@ -20228,7 +20090,6 @@ class ApplicationWindow(QMainWindow):
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
             aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " curveSimilatrity2(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
-
         return result
 
     # computes the similarity between BT and backgroundBT as well as ET and backgroundET
@@ -20322,7 +20183,7 @@ class ApplicationWindow(QMainWindow):
             aw.largeExtraLCDs_dialog.updateDecimals()
 
     def ArtisanLCD(self):
-        lcd = MyQLCDNumber()
+        lcd = QLCDNumber()
         lcd.setSegmentStyle(QLCDNumber.SegmentStyle.Flat)
         lcd.setFrameStyle(QFrame.Shadow.Plain)
         lcd.setSmallDecimalPoint(False)
@@ -23988,6 +23849,13 @@ class ApplicationWindow(QMainWindow):
                     nextcmd = self.nextActiveButton(self.keyboardmoveindex)
                 # activate the button at index nextcmd
                 self.keyboardButtonList[nextcmd].setSelected(True)
+                
+#                if self.keyboardButtonStyles[nextcmd] in ["CHARGE", "DROP"]:
+#                    self.keyboardButtonList[nextcmd].setStyleSheet(self.pushbuttonstyles["SELECTED_MAIN"])
+#                else:
+#                    self.keyboardButtonList[nextcmd].setStyleSheet(self.pushbuttonstyles["SELECTED"])
+#                # turn the style of the button at index self.keyboardmoveindex to standard
+#                self.keyboardButtonList[self.keyboardmoveindex].setStyleSheet(self.pushbuttonstyles[self.keyboardButtonStyles[self.keyboardmoveindex]])
                 self.keyboardButtonList[self.keyboardmoveindex].setSelected(False)
                 # update self.keyboardmoveindex
                 self.keyboardmoveindex = nextcmd
@@ -26984,11 +26852,6 @@ class ApplicationWindow(QMainWindow):
                 else:
                     self.deleteBackground() # delete a loaded background if any
             aw.autoAdjustAxis()
-            if "devices" in profile:
-                self.qmc.profile_meter = decodeLocal(profile["devices"][0])
-            else:
-                self.qmc.profile_meter = "Unknown"
-            _log.debug(self.profilequality())
             return True
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
@@ -26996,77 +26859,6 @@ class ApplicationWindow(QMainWindow):
             _, _, exc_tb = sys.exc_info()
             QMessageBox.information(aw,QApplication.translate("Error Message", "Exception:",None) + " setProfile()",str(ex) + "@line " + str(getattr(exc_tb, 'tb_lineno', '?')))
             return False
-
-    def profilequality(self):
-        bt = numpy.array(aw.qmc.temp2)
-        tx = numpy.array(aw.qmc.timex)
-        profile_sampling_interval = aw.qmc.profile_sampling_interval
-
-        # Meter
-        # The meter is added to setProfile() as it was not previously read.  It useful here for trending.
-        #    The Meter device is written to the profile whenever it is saved, meaning that it can be changed
-        #     in the profile without warning and may not reflect the actual meter used to record the profile.
-        meter = aw.qmc.profile_meter
-
-        # Count the number of decimal places in a float
-        def ndec(num):
-            return len(re.sub(r'(?:[{0}]+$)', '', str(num)).split('.')[1])
-
-        # Total number of samples
-        totalSamples = len(aw.qmc.timex)
-        
-        # Calculate the average number of decimals in an array of floats
-        ndec_arr = numpy.array([ndec(x) for x in bt])
-        avgDecimal = numpy.average(ndec_arr)
-
-        # Count the number of consecutive duplicates
-        markdup = numpy.diff(bt).astype(bool)  # False (or 0) marks a duplicate
-        dups = numpy.count_nonzero(markdup==0)   # counts the 0s
-        blank = numpy.count_nonzero(bt==-1)  # counts missing values  
-
-        # Count skipped samples (missing timex)
-        tx_diff = numpy.diff(tx)
-        avg_sample = numpy.average(tx_diff)
-        longest_sample = numpy.max(tx_diff)
-        shortest_sample = numpy.min(tx_diff)
-        skipped_sample_time = 1.5*avg_sample
-        skipped = numpy.count_nonzero(tx_diff > skipped_sample_time)
-        bins = [0, 1*profile_sampling_interval, 1.5*profile_sampling_interval, 4**profile_sampling_interval, 1000]
-        hist = numpy.histogram(tx_diff,bins=bins)
-
-        # Aperiodic sample ratio
-        aperiodicRatio = avg_sample / profile_sampling_interval
-        
-        # Missing events
-        missingEvents = "Missing key events: "
-        lenLabel = len(missingEvents)
-        if aw.qmc.timeindex[0] == -1:
-            missingEvents += "CHARGE "
-        if aw.qmc.timeindex[2] == 0:
-            missingEvents += "FCs "
-        if aw.qmc.timeindex[6] == 0:
-            missingEvents += "DROP "
-        if len(missingEvents) == lenLabel:
-            missingEvents += "None "
-
-        # Output string
-        output =  "Profile quality metrics"
-        output += "\nTitle: {}".format(aw.qmc.title)
-        output += "\nMeter: {}".format(meter)
-        output += "\nAverage decimals: {:.2f}".format(avgDecimal)
-        output += "\nTotal Samples {}".format(totalSamples)
-        output += "\nDuplicate Samples: {}".format(dups)
-        output += "\nBlank Samples: {}".format(blank)
-        output += "\nSkipped Samples: {}  More than {:.2f} secs".format(skipped, skipped_sample_time)
-        output += "\nHistogram of Sample Times: {}  Bins: <1x, 1x-1.5x, 1.5x-4x, >4x Profile Sampling Interval".format(hist[0])
-        output += "\nShortest Sample Interval: {:.2f}".format(shortest_sample)
-        output += "\nLongest Sample Interval: {:.2f}".format(longest_sample)
-        output += "\nAverage Sample Time: {:.2f}".format(avg_sample)
-        output += "\nProfile Sampling Interval {:.2f}".format(profile_sampling_interval)
-        output += "\nAperiodic Samples Ratio: {:.2f}".format(aperiodicRatio)
-        output += "\n{}".format(missingEvents)
-
-        return output
 
     @staticmethod
     def weightVolumeDigits(v):
@@ -29692,140 +29484,140 @@ class ApplicationWindow(QMainWindow):
 
     def fetchCurveStyles(self):
         try:
-            if self.qmc.l_temp1 is not None:
-                self.qmc.ETlinestyle = self.qmc.l_temp1.get_linestyle()
+            if aw.qmc.l_temp1:
+                self.qmc.ETlinestyle = aw.qmc.l_temp1.get_linestyle()
                 #hack: set all drawing styles to default as those can not be edited by the user directly (only via "steps")
                 # otherwise the drawingstyle cannot be set back to default!
                 if self.qmc.ETlinestyle == self.qmc.linestyle_default:
-                    self.qmc.ETdrawstyle = self.qmc.l_temp1.get_drawstyle()
+                    self.qmc.ETdrawstyle = aw.qmc.l_temp1.get_drawstyle()
                 else:
                     self.qmc.ETdrawstyle = self.qmc.drawstyle_default
-                self.qmc.ETlinewidth = self.qmc.l_temp1.get_linewidth()
-                m = self.qmc.l_temp1.get_marker()
+                self.qmc.ETlinewidth = aw.qmc.l_temp1.get_linewidth()
+                m = aw.qmc.l_temp1.get_marker()
                 if not isinstance(m, (int)):
                     self.qmc.ETmarker = m
-                self.qmc.palette["et"] = self.getColor(self.qmc.l_temp1)
-            if self.qmc.l_temp2 is not None:
-                self.qmc.BTlinestyle = self.qmc.l_temp2.get_linestyle()
+                self.qmc.palette["et"] = self.getColor(aw.qmc.l_temp1)
+            if aw.qmc.l_temp2:
+                self.qmc.BTlinestyle = aw.qmc.l_temp2.get_linestyle()
                 #hack: set all drawing styles to default as those can not be edited by the user directly (only via "steps")
                 if self.qmc.BTlinestyle == self.qmc.linestyle_default:
-                    self.qmc.BTdrawstyle = self.qmc.l_temp2.get_drawstyle()
+                    self.qmc.BTdrawstyle = aw.qmc.l_temp2.get_drawstyle()
                 else:
                     self.qmc.BTdrawstyle = self.qmc.drawstyle_default
-                self.qmc.BTlinewidth = self.qmc.l_temp2.get_linewidth()
-                m = self.qmc.l_temp2.get_marker()
+                self.qmc.BTlinewidth = aw.qmc.l_temp2.get_linewidth()
+                m = aw.qmc.l_temp2.get_marker()
                 if not isinstance(m, (int)):
                     self.qmc.BTmarker = m
-                self.qmc.BTmarkersize = self.qmc.l_temp2.get_markersize()
-                self.qmc.palette["bt"] = self.getColor(self.qmc.l_temp2)
-            if self.qmc.l_delta1 is not None:
-                self.qmc.ETdeltalinestyle = self.qmc.l_delta1.get_linestyle()
+                self.qmc.BTmarkersize = aw.qmc.l_temp2.get_markersize()
+                self.qmc.palette["bt"] = self.getColor(aw.qmc.l_temp2)
+            if aw.qmc.l_delta1:
+                self.qmc.ETdeltalinestyle = aw.qmc.l_delta1.get_linestyle()
                 #hack: set all drawing styles to default as those can not be edited by the user directly (only via "steps")
                 if self.qmc.ETdeltalinestyle == self.qmc.linestyle_default:
-                    self.qmc.ETdeltadrawstyle = self.qmc.l_delta1.get_drawstyle()
+                    self.qmc.ETdeltadrawstyle = aw.qmc.l_delta1.get_drawstyle()
                 else:
                     self.qmc.ETdeltadrawstyle = self.qmc.drawstyle_default
-                self.qmc.ETdeltalinewidth = self.qmc.l_delta1.get_linewidth()
-                m = self.qmc.l_delta1.get_marker()
+                self.qmc.ETdeltalinewidth = aw.qmc.l_delta1.get_linewidth()
+                m = aw.qmc.l_delta1.get_marker()
                 if not isinstance(m, (int)):
                     self.qmc.ETdeltamarker = m
-                self.qmc.ETdeltamarkersize = self.qmc.l_delta1.get_markersize()
-                self.qmc.palette["deltaet"] = self.getColor(self.qmc.l_delta1)
-            if self.qmc.l_delta2 is not None:
-                self.qmc.BTdeltalinestyle = self.qmc.l_delta2.get_linestyle()
+                self.qmc.ETdeltamarkersize = aw.qmc.l_delta1.get_markersize()
+                self.qmc.palette["deltaet"] = self.getColor(aw.qmc.l_delta1)
+            if aw.qmc.l_delta2:
+                self.qmc.BTdeltalinestyle = aw.qmc.l_delta2.get_linestyle()
                 #hack: set all drawing styles to default as those can not be edited by the user directly (only via "steps")
                 if self.qmc.BTdeltalinestyle == self.qmc.linestyle_default:
-                    self.qmc.BTdeltadrawstyle = self.qmc.l_delta2.get_drawstyle()
+                    self.qmc.BTdeltadrawstyle = aw.qmc.l_delta2.get_drawstyle()
                 else:
                     self.qmc.BTdeltadrawstyle = self.qmc.drawstyle_default
-                self.qmc.BTdeltalinewidth = self.qmc.l_delta2.get_linewidth()
-                m = self.qmc.l_delta2.get_marker()
+                self.qmc.BTdeltalinewidth = aw.qmc.l_delta2.get_linewidth()
+                m = aw.qmc.l_delta2.get_marker()
                 if not isinstance(m, (int)):
                     self.qmc.BTdeltamarker = m
-                self.qmc.BTdeltamarkersize = self.qmc.l_delta2.get_markersize()
-                self.qmc.palette["deltabt"] = self.getColor(self.qmc.l_delta2)
-            if self.qmc.l_back1 is not None:
-                self.qmc.ETbacklinestyle = self.qmc.l_back1.get_linestyle()
+                self.qmc.BTdeltamarkersize = aw.qmc.l_delta2.get_markersize()
+                self.qmc.palette["deltabt"] = self.getColor(aw.qmc.l_delta2)
+            if aw.qmc.l_back1:
+                self.qmc.ETbacklinestyle = aw.qmc.l_back1.get_linestyle()
                 #hack: set all drawing styles to default as those can not be edited by the user directly (only via "steps")
                 if self.qmc.ETbacklinestyle == self.qmc.linestyle_default:
-                    self.qmc.ETbackdrawstyle = self.qmc.l_back1.get_drawstyle()
+                    self.qmc.ETbackdrawstyle = aw.qmc.l_back1.get_drawstyle()
                 else:
                     self.qmc.ETbackdrawstyle = self.qmc.drawstyle_default
-                self.qmc.ETbacklinewidth = self.qmc.l_back1.get_linewidth()
-                m = self.qmc.l_back1.get_marker()
+                self.qmc.ETbacklinewidth = aw.qmc.l_back1.get_linewidth()
+                m = aw.qmc.l_back1.get_marker()
                 if not isinstance(m, (int)):
                     self.qmc.ETbackmarker = m
-                self.qmc.ETbackmarkersize = self.qmc.l_back1.get_markersize()
-                self.qmc.backgroundmetcolor = self.getColor(self.qmc.l_back1)
-            if self.qmc.l_back2 is not None:
-                self.qmc.BTbacklinestyle = self.qmc.l_back2.get_linestyle()
+                self.qmc.ETbackmarkersize = aw.qmc.l_back1.get_markersize()
+                self.qmc.backgroundmetcolor = self.getColor(aw.qmc.l_back1)
+            if aw.qmc.l_back2:
+                self.qmc.BTbacklinestyle = aw.qmc.l_back2.get_linestyle()
                 #hack: set all drawing styles to default as those can not be edited by the user directly (only via "steps")
                 if self.qmc.BTbacklinestyle == self.qmc.linestyle_default:
-                    self.qmc.BTbackdrawstyle = self.qmc.l_back2.get_drawstyle()
+                    self.qmc.BTbackdrawstyle = aw.qmc.l_back2.get_drawstyle()
                 else:
                     self.qmc.BTbackdrawstyle = self.qmc.drawstyle_default
-                self.qmc.BTbacklinewidth = self.qmc.l_back2.get_linewidth()
-                m = self.qmc.l_back2.get_marker()
+                self.qmc.BTbacklinewidth = aw.qmc.l_back2.get_linewidth()
+                m = aw.qmc.l_back2.get_marker()
                 if not isinstance(m, (int)):
                     self.qmc.BTbackmarker = m
-                self.qmc.BTbackmarkersize = self.qmc.l_back2.get_markersize()
-                self.qmc.backgroundbtcolor = self.getColor(self.qmc.l_back2)
-            if self.qmc.l_back3 is not None:
-                self.qmc.XTbacklinestyle = self.qmc.l_back3.get_linestyle()
+                self.qmc.BTbackmarkersize = aw.qmc.l_back2.get_markersize()
+                self.qmc.backgroundbtcolor = self.getColor(aw.qmc.l_back2)
+            if aw.qmc.l_back3:
+                self.qmc.XTbacklinestyle = aw.qmc.l_back3.get_linestyle()
                 #hack: set all drawing styles to default as those can not be edited by the user directly (only via "steps")
                 if self.qmc.XTbacklinestyle == self.qmc.linestyle_default:
-                    self.qmc.XTbackdrawstyle = self.qmc.l_back3.get_drawstyle()
+                    self.qmc.XTbackdrawstyle = aw.qmc.l_back3.get_drawstyle()
                 else:
                     self.qmc.XTbackdrawstyle = self.qmc.drawstyle_default
-                self.qmc.XTbacklinewidth = self.qmc.l_back3.get_linewidth()
-                m = self.qmc.l_back3.get_marker()
+                self.qmc.XTbacklinewidth = aw.qmc.l_back3.get_linewidth()
+                m = aw.qmc.l_back3.get_marker()
                 if not isinstance(m, (int)):
                     self.qmc.XTbackmarker = m
-                self.qmc.XTbackmarkersize = self.qmc.l_back3.get_markersize()
-                self.qmc.backgroundxtcolor = self.getColor(self.qmc.l_back3)
-            if self.qmc.l_back4 is not None:
-                self.qmc.YTbacklinestyle = self.qmc.l_back4.get_linestyle()
+                self.qmc.XTbackmarkersize = aw.qmc.l_back3.get_markersize()
+                self.qmc.backgroundxtcolor = self.getColor(aw.qmc.l_back3)
+            if aw.qmc.l_back4:
+                self.qmc.YTbacklinestyle = aw.qmc.l_back4.get_linestyle()
                 #hack: set all drawing styles to default as those can not be edited by the user directly (only via "steps")
                 if self.qmc.YTbacklinestyle == self.qmc.linestyle_default:
-                    self.qmc.YTbackdrawstyle = self.qmc.l_back4.get_drawstyle()
+                    self.qmc.YTbackdrawstyle = aw.qmc.l_back4.get_drawstyle()
                 else:
                     self.qmc.YTbackdrawstyle = self.qmc.drawstyle_default
-                self.qmc.YTbacklinewidth = self.qmc.l_back4.get_linewidth()
-                m = self.qmc.l_back4.get_marker()
+                self.qmc.YTbacklinewidth = aw.qmc.l_back4.get_linewidth()
+                m = aw.qmc.l_back4.get_marker()
                 if not isinstance(m, (int)):
                     self.qmc.YTbackmarker = m
-                self.qmc.YTbackmarkersize = self.qmc.l_back4.get_markersize()
-                self.qmc.backgroundytcolor = self.getColor(self.qmc.l_back4)
-            if self.qmc.l_delta1B is not None:
-                self.qmc.ETBdeltalinestyle = self.qmc.l_delta1B.get_linestyle()
+                self.qmc.YTbackmarkersize = aw.qmc.l_back4.get_markersize()
+                self.qmc.backgroundytcolor = self.getColor(aw.qmc.l_back4)
+            if aw.qmc.l_delta1B:
+                self.qmc.ETBdeltalinestyle = aw.qmc.l_delta1B.get_linestyle()
                 #hack: set all drawing styles to default as those can not be edited by the user directly (only via "steps")
                 if self.qmc.ETBdeltalinestyle == self.qmc.linestyle_default:
-                    self.qmc.ETBdeltadrawstyle = self.qmc.l_delta1B.get_drawstyle()
+                    self.qmc.ETBdeltadrawstyle = aw.qmc.l_delta1B.get_drawstyle()
                 else:
                     self.qmc.ETBdeltadrawstyle = self.qmc.drawstyle_default
-                self.qmc.ETBdeltalinewidth = self.qmc.l_delta1B.get_linewidth()
-                m = self.qmc.l_delta1B.get_marker()
+                self.qmc.ETBdeltalinewidth = aw.qmc.l_delta1B.get_linewidth()
+                m = aw.qmc.l_delta1B.get_marker()
                 if not isinstance(m, (int)):
                     self.qmc.ETBdeltamarker = m
-                self.qmc.ETBdeltamarkersize = self.qmc.l_delta1B.get_markersize()
-                self.qmc.backgrounddeltaetcolor = self.getColor(self.qmc.l_delta1B)
-            if self.qmc.l_delta2B is not None:
-                self.qmc.BTBdeltalinestyle = self.qmc.l_delta2B.get_linestyle()
+                self.qmc.ETBdeltamarkersize = aw.qmc.l_delta1B.get_markersize()
+                self.qmc.backgrounddeltaetcolor = self.getColor(aw.qmc.l_delta1B)
+            if aw.qmc.l_delta2B:
+                self.qmc.BTBdeltalinestyle = aw.qmc.l_delta2B.get_linestyle()
                 #hack: set all drawing styles to default as those can not be edited by the user directly (only via "steps")
                 if self.qmc.BTBdeltalinestyle == self.qmc.linestyle_default:
-                    self.qmc.BTBdeltadrawstyle = self.qmc.l_delta2B.get_drawstyle()
+                    self.qmc.BTBdeltadrawstyle = aw.qmc.l_delta2B.get_drawstyle()
                 else:
                     self.qmc.BTBdeltadrawstyle = self.qmc.drawstyle_default
-                self.qmc.BTBdeltalinewidth = self.qmc.l_delta2B.get_linewidth()
-                m = self.qmc.l_delta2B.get_marker()
+                self.qmc.BTBdeltalinewidth = aw.qmc.l_delta2B.get_linewidth()
+                m = aw.qmc.l_delta2B.get_marker()
                 if not isinstance(m, (int)):
                     self.qmc.BTBdeltamarker = m
-                self.qmc.BTBdeltamarkersize = self.qmc.l_delta2B.get_markersize()
-                self.qmc.backgrounddeltabtcolor = self.getColor(self.qmc.l_delta2B)
+                self.qmc.BTBdeltamarkersize = aw.qmc.l_delta2B.get_markersize()
+                self.qmc.backgrounddeltabtcolor = self.getColor(aw.qmc.l_delta2B)
             x1 = x2 = 0
-            for i in range(len(self.qmc.extradevices)):
-                if len(self.extraCurveVisibility1)>i and self.extraCurveVisibility1[i] is not None and len(self.qmc.extratemp1lines) > x1:
-                    l1 = self.qmc.extratemp1lines[x1]
+            for i in range(len(aw.qmc.extradevices)):
+                if aw.extraCurveVisibility1[i]:
+                    l1 = aw.qmc.extratemp1lines[x1]
                     self.qmc.extralinestyles1[i] = l1.get_linestyle()
                     if self.qmc.extralinestyles1[i] == self.qmc.linestyle_default:
                         self.qmc.extradrawstyles1[i] = l1.get_drawstyle()
@@ -29836,12 +29628,12 @@ class ApplicationWindow(QMainWindow):
                     if not isinstance(m, (int)):
                         self.qmc.extramarkers1[i] = m
                     self.qmc.extramarkersizes1[i] = l1.get_markersize()
-                    self.qmc.extradevicecolor1[i] = self.getColor(l1)
-                    self.setLabelColor(self.extraLCDlabel1[i],QColor(self.qmc.extradevicecolor1[i]))
-                    self.qmc.extraname1[i] = l1.get_label()
+                    aw.qmc.extradevicecolor1[i] = self.getColor(l1)
+                    aw.setLabelColor(aw.extraLCDlabel1[i],QColor(aw.qmc.extradevicecolor1[i]))
+                    aw.qmc.extraname1[i] = l1.get_label()
                     x1 = x1 + 1
-                if len(self.extraCurveVisibility2)> i and self.extraCurveVisibility2[i] is not None and len(self.qmc.extratemp2lines) > x2:
-                    l2 = self.qmc.extratemp2lines[x2]
+                if aw.extraCurveVisibility2[i]:
+                    l2 = aw.qmc.extratemp2lines[x2]
                     self.qmc.extralinestyles2[i] = l2.get_linestyle()
                     if self.qmc.extralinestyles2[i] == self.qmc.linestyle_default:
                         self.qmc.extradrawstyles2[i] = l2.get_drawstyle()
@@ -29852,9 +29644,9 @@ class ApplicationWindow(QMainWindow):
                     if not isinstance(m, (int)):
                         self.qmc.extramarkers2[i] = m
                     self.qmc.extramarkersizes2[i] = l2.get_markersize()
-                    self.qmc.extradevicecolor2[i] = self.getColor(l2)
-                    self.setLabelColor(self.extraLCDlabel2[i],QColor(self.qmc.extradevicecolor2[i]))
-                    self.qmc.extraname2[i] = l2.get_label()
+                    aw.qmc.extradevicecolor2[i] = self.getColor(l2)
+                    aw.setLabelColor(aw.extraLCDlabel2[i],QColor(aw.qmc.extradevicecolor2[i]))
+                    aw.qmc.extraname2[i] = l2.get_label()
                     x2 = x2 + 1
             if self.qmc.eventsGraphflag in [2,3,4]:
                 m = self.qmc.l_eventtype1dots.get_marker()
@@ -29888,7 +29680,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            self.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " fetchCurveStyles() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " fetchCurveStyles() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     #Saves the settings when closing application. See the oppposite settingsLoad()
     def closeEvent(self,event):
