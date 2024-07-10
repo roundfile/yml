@@ -741,7 +741,7 @@ class editGraphDlg(ArtisanResizeablDialog):
                 dryEndIndex = self.aw.findDryEnd(TP_index)
             self.charge_idx = self.aw.findBTbreak(0,dryEndIndex,offset=0.5)
             self.drop_idx = self.aw.findBTbreak(dryEndIndex,offset=0.2)
-            if self.drop_idx != 0 and self.drop_idx != self.aw.qmc.timeindex[6]:
+            if self.drop_idx not in (0, self.aw.qmc.timeindex[6]):
                 drop_str = stringfromseconds(self.aw.qmc.timex[self.drop_idx]-self.aw.qmc.timex[self.aw.qmc.timeindex[0]])
         drylabel = QLabel("<b>" + QApplication.translate("Label", "DRY END",None) + "</b>")
         drylabel.setAlignment(Qt.AlignmentFlag.AlignHCenter | Qt.AlignmentFlag.AlignVCenter)
@@ -1458,6 +1458,7 @@ class editGraphDlg(ArtisanResizeablDialog):
             propGrid.addWidget(self.tareComboBox,1,7)
             propGrid.addLayout(inButtonLayout,1,8)
             propGrid.addLayout(outButtonLayout,1,9)
+
             
             if self.aw.scale.device == "acaia":
                 try:
@@ -1467,12 +1468,13 @@ class editGraphDlg(ArtisanResizeablDialog):
                     from artisanlib.acaia import AcaiaBLE
                     acaia = AcaiaBLE()
                     self.ble = BleInterface(
-                        [(acaia.SERVICE_UUID_LEGACY, acaia.CHAR_UUID_LEGACY), (acaia.SERVICE_UUID_CURRENT, acaia.CHAR_UUID_CURRENT)],
+                        [(acaia.SERVICE_UUID_LEGACY, [AcaiaBLE.CHAR_UUID_LEGACY]),
+                         (acaia.SERVICE_UUID, [AcaiaBLE.CHAR_UUID, AcaiaBLE.CHAR_UUID_WRITE])],
                         acaia.processData,
                         acaia.sendHeartbeat,
                         acaia.sendStop,
-                        acaia.reset)
-                            
+                        acaia.reset,
+                        [acaia.DEVICE_NAME_LUNAR, acaia.DEVICE_NAME_PEARL, acaia.DEVICE_NAME_PEARL2021])                          
                     # start BLE loop
                     self.ble.deviceDisconnected.connect(self.ble_scan_failed)
                     self.ble.weightChanged.connect(self.ble_weight_changed)
@@ -1796,7 +1798,7 @@ class editGraphDlg(ArtisanResizeablDialog):
 #        import datetime
 #        ts = libtime.time()
 #        st = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
-#        print(st,"ble_scan_failed")
+#        _log.debug("ble_scan_failed: %s", st)
         self.scale_weight = None
         self.scale_battery = None
         self.scaleWeight.setText("")
@@ -2004,6 +2006,7 @@ class editGraphDlg(ArtisanResizeablDialog):
             self.plus_blends_combo.blockSignals(True)  
             self.plus_blends_combo.clear()
             blend_items = plus.stock.getBlendLabels(self.plus_blends)
+            
             # HACK to prevent those cutted menu items on macOS and Qt 5.15.1:
             if sys.platform.startswith("darwin"):
                 blend_items = [l + "  " for l in blend_items]
