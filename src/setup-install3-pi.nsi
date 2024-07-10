@@ -171,11 +171,11 @@ Function .onInit
     Abort
   ${EndIf}
     
-  ${If} ${LEGACY} == "True"
-  ${AndIf} ${AtLeastWin10}
-    MessageBox mb_iconStop "Artisan Legacy builds require 64 bit Windows 7 or Windows 8 to install and run." 
-    Abort
-  ${EndIf}
+;  ${If} ${LEGACY} == "True"
+;  ${AndIf} ${AtLeastWin10}
+;    MessageBox mb_iconStop "Artisan Legacy builds require 64 bit Windows 7 or Windows 8 to install and run." 
+;    Abort
+;  ${EndIf}
     
   ${If} ${LEGACY} == "True"
   ${AndIfNot} ${AtLeastWin7}
