@@ -176,7 +176,7 @@ if mpl_version[0] > 2 and mpl_version[1] > 2:
 #   export DYLD_FRAMEWORK_PATH=~/Qt5.5.0/5.5/clang_64/lib/
 # (see Mac OS X specific notes in the PyQt5 documentation)
 #print(QImageReader.supportedImageFormats())
-#print(QLibraryInfo.path(QLibraryInfo.LibraryLocation.PluginsPath))
+#print(QLibraryInfo.location(QLibraryInfo.LibraryLocation.PluginsPath))
 
 svgsupport = next((x for x in QImageReader.supportedImageFormats() if x == b'svg'),None)
 
@@ -296,7 +296,7 @@ class Artisan(QtSingleApplication):
                     # not yet open, lets try to find the path to that roastUUID and open it
                     profile_path = plus.register.getPath(roast_UUID)
                     if profile_path:
-                        aw.sendmessage(QApplication.translate("Message","URL open profile: {0}").format(profile_path))
+                        aw.sendmessage(QApplication.translate("Message","URL open profile: {0}",None).format(profile_path))
                         file_url = QUrl.fromLocalFile(profile_path)
                         if url.authority() == 'template':
                             file_url.setQuery("template")
@@ -313,7 +313,7 @@ class Artisan(QtSingleApplication):
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
             elif url.scheme() == "file":
-                aw.sendmessage(QApplication.translate("Message","URL open profile: {0}").format(url.toDisplayString()))
+                aw.sendmessage(QApplication.translate("Message","URL open profile: {0}",None).format(url.toDisplayString()))
                 url_query = None
                 if url.hasQuery():
                     url_query = url.query()
@@ -674,14 +674,10 @@ class tgraphcanvas(FigureCanvas):
     markCoolSignal = pyqtSignal()
     toggleMonitorSignal = pyqtSignal()
     toggleRecorderSignal = pyqtSignal()
-    processAlarmSignal = pyqtSignal(int, bool, int, str)
+    processAlarmSignal = pyqtSignal(int,bool,int,str)
     alarmsetSignal = pyqtSignal(int)
-    moveBackgroundSignal = pyqtSignal(str, int)
+    moveBackgroundSignal = pyqtSignal(str,int)
     eventRecordSignal = pyqtSignal(int)
-    showCurveSignal = pyqtSignal(str, bool)
-    showExtraCurveSignal = pyqtSignal(int, str, bool)
-    showEventsSignal = pyqtSignal(int, bool)
-    showBackgroundEventsSignal = pyqtSignal(bool)
     
     umlaute_dict : Final = {
        uchr(228): 'ae',  # U+00E4   \xc3\xa4
@@ -740,10 +736,10 @@ class tgraphcanvas(FigureCanvas):
         'organization_setup', 'operator_setup', 'roastertype_setup', 'roastersize_setup', 'roasterheating_setup', 'drumspeed_setup', 'machinesetup_energy_ratings',
         'machinesetup', 'roastingnotes', 'cuppingnotes', 'roastdate', 'roastepoch', 'lastroastepoch', 'batchcounter', 'batchsequence', 'batchprefix', 'neverUpdateBatchCounter', 
         'roastbatchnr', 'roastbatchprefix', 'roastbatchpos', 'roasttzoffset', 'roastUUID', 'plus_default_store', 'plus_store', 'plus_store_label', 'plus_coffee',
-        'plus_coffee_label', 'plus_blend_spec', 'plus_blend_spec_labels', 'plus_blend_label', 'plus_sync_record_hash', 'beans', 'projectFlag', 'curveVisibilityCache', 'ETcurve', 'BTcurve',
+        'plus_coffee_label', 'plus_blend_spec', 'plus_blend_spec_labels', 'plus_blend_label', 'plus_sync_record_hash', 'beans', 'projectFlag', 'ETcurve', 'BTcurve',
         'ETlcd', 'BTlcd', 'swaplcds', 'LCDdecimalplaces', 'foregroundShowFullflag', 'DeltaETflag', 'DeltaBTflag', 'DeltaETlcdflag', 'DeltaBTlcdflag', 
         'swapdeltalcds', 'PIDbuttonflag', 'Controlbuttonflag', 'deltaETfilter', 'deltaBTfilter', 'curvefilter', 'deltaETspan', 'deltaBTspan',
-        'deltaETsamples', 'deltaBTsamples', 'profile_sampling_interval', 'background_profile_sampling_interval', 'profile_meter', 'optimalSmoothing', 'polyfitRoRcalc',
+        'deltaETsamples', 'deltaBTsamples', 'profile_sampling_interval', 'background_profile_sampling_interval', 'optimalSmoothing', 'polyfitRoRcalc',
         'patheffects', 'graphstyle', 'graphfont', 'buttonvisibility', 'buttonactions', 'buttonactionstrings', 'extrabuttonactions', 'extrabuttonactionstrings',
         'xextrabuttonactions', 'xextrabuttonactionstrings', 'autoChargeFlag', 'autoDropFlag', 'autoChargeIdx', 'autoDropIdx', 'markTPflag', 'autoTPIdx',
         'autoDRYflag', 'autoFCsFlag', 'autoCHARGEenabled', 'autoDRYenabled', 'autoFCsenabled', 'autoDROPenabled', 'autoDryIdx', 'autoFCsIdx', 'projectionconstant',
@@ -829,104 +825,104 @@ class tgraphcanvas(FigureCanvas):
         self.EvalueColor_default = ['#43A7CF','#49B160','#800080','#AD0427']
         self.EvalueTextColor_default = ['white','#FFFFFF','white','#FFFFFF']
 
-        self.artisanflavordefaultlabels: Final = [QApplication.translate("Textbox", "Acidity"),
-                                            QApplication.translate("Textbox", "Aftertaste"),
-                                            QApplication.translate("Textbox", "Clean Cup"),
-                                            QApplication.translate("Textbox", "Head"),
-                                            QApplication.translate("Textbox", "Fragrance"),
-                                            QApplication.translate("Textbox", "Sweetness"),
-                                            QApplication.translate("Textbox", "Aroma"),
-                                            QApplication.translate("Textbox", "Balance"),
-                                            QApplication.translate("Textbox", "Body")]
+        self.artisanflavordefaultlabels: Final = [QApplication.translate("Textbox", "Acidity",None),
+                                            QApplication.translate("Textbox", "Aftertaste",None),
+                                            QApplication.translate("Textbox", "Clean Cup",None),
+                                            QApplication.translate("Textbox", "Head",None),
+                                            QApplication.translate("Textbox", "Fragrance",None),
+                                            QApplication.translate("Textbox", "Sweetness",None),
+                                            QApplication.translate("Textbox", "Aroma",None),
+                                            QApplication.translate("Textbox", "Balance",None),
+                                            QApplication.translate("Textbox", "Body",None)]
 
         # custom labels are stored in the application settings and can be edited by the user
         self.customflavorlabels = self.artisanflavordefaultlabels
 
-        self.SCCAflavordefaultlabels: Final = [QApplication.translate("Textbox", "Sour"),
-                                        QApplication.translate("Textbox", "Flavor"),
-                                        QApplication.translate("Textbox", "Critical\nStimulus"),
-                                        QApplication.translate("Textbox", "Aftertaste"),
-                                        QApplication.translate("Textbox", "Bitter"),
-                                        QApplication.translate("Textbox", "Astringency"),
-                                        QApplication.translate("Textbox", "Solubles\nConcentration"),
-                                        QApplication.translate("Textbox", "Mouthfeel"),
-                                        QApplication.translate("Textbox", "Other"),
-                                        QApplication.translate("Textbox", "Aromatic\nComplexity"),
-                                        QApplication.translate("Textbox", "Roast\nColor"),
-                                        QApplication.translate("Textbox", "Aromatic\nPungency"),
-                                        QApplication.translate("Textbox", "Sweet"),
-                                        QApplication.translate("Textbox", "Acidity"),
-                                        QApplication.translate("Textbox", "pH"),
-                                        QApplication.translate("Textbox", "Balance")]
+        self.SCCAflavordefaultlabels: Final = [QApplication.translate("Textbox", "Sour",None),
+                                        QApplication.translate("Textbox", "Flavor",None),
+                                        QApplication.translate("Textbox", "Critical\nStimulus",None),
+                                        QApplication.translate("Textbox", "Aftertaste",None),
+                                        QApplication.translate("Textbox", "Bitter",None),
+                                        QApplication.translate("Textbox", "Astringency",None),
+                                        QApplication.translate("Textbox", "Solubles\nConcentration",None),
+                                        QApplication.translate("Textbox", "Mouthfeel",None),
+                                        QApplication.translate("Textbox", "Other",None),
+                                        QApplication.translate("Textbox", "Aromatic\nComplexity",None),
+                                        QApplication.translate("Textbox", "Roast\nColor",None),
+                                        QApplication.translate("Textbox", "Aromatic\nPungency",None),
+                                        QApplication.translate("Textbox", "Sweet",None),
+                                        QApplication.translate("Textbox", "Acidity",None),
+                                        QApplication.translate("Textbox", "pH",None),
+                                        QApplication.translate("Textbox", "Balance",None)]
 
-        self.CQIflavordefaultlabels: Final =  [QApplication.translate("Textbox", "Fragance"),
-                                        QApplication.translate("Textbox", "Aroma"),
-                                        QApplication.translate("Textbox", "Flavor"),
-                                        QApplication.translate("Textbox", "Acidity"),
-                                        QApplication.translate("Textbox", "Body"),
-                                        QApplication.translate("Textbox", "Aftertaste")]
+        self.CQIflavordefaultlabels: Final =  [QApplication.translate("Textbox", "Fragance",None),
+                                        QApplication.translate("Textbox", "Aroma",None),
+                                        QApplication.translate("Textbox", "Flavor",None),
+                                        QApplication.translate("Textbox", "Acidity",None),
+                                        QApplication.translate("Textbox", "Body",None),
+                                        QApplication.translate("Textbox", "Aftertaste",None)]
 
-        self.SweetMariasflavordefaultlabels: Final = [QApplication.translate("Textbox", "Dry Fragrance"),
-                                            QApplication.translate("Textbox", "Uniformity"),
-                                            QApplication.translate("Textbox", "Complexity"),
-                                            QApplication.translate("Textbox", "Clean Cup"),
-                                            QApplication.translate("Textbox", "Sweetness"),
-                                            QApplication.translate("Textbox", "Finish"),
-                                            QApplication.translate("Textbox", "Body"),
-                                            QApplication.translate("Textbox", "Flavor"),
-                                            QApplication.translate("Textbox", "Brightness"),
-                                            QApplication.translate("Textbox", "Wet Aroma")]
+        self.SweetMariasflavordefaultlabels: Final = [QApplication.translate("Textbox", "Dry Fragrance",None),
+                                            QApplication.translate("Textbox", "Uniformity",None),
+                                            QApplication.translate("Textbox", "Complexity",None),
+                                            QApplication.translate("Textbox", "Clean Cup",None),
+                                            QApplication.translate("Textbox", "Sweetness",None),
+                                            QApplication.translate("Textbox", "Finish",None),
+                                            QApplication.translate("Textbox", "Body",None),
+                                            QApplication.translate("Textbox", "Flavor",None),
+                                            QApplication.translate("Textbox", "Brightness",None),
+                                            QApplication.translate("Textbox", "Wet Aroma",None)]
 
-        self.Cflavordefaultlabels: Final = [QApplication.translate("Textbox", "Fragrance"),
-                                            QApplication.translate("Textbox", "Aroma"),
-                                            QApplication.translate("Textbox", "Taste"),
-                                            QApplication.translate("Textbox", "Nose"),
-                                            QApplication.translate("Textbox", "Aftertaste"),
-                                            QApplication.translate("Textbox", "Body"),
-                                            QApplication.translate("Textbox", "Acidity")]
+        self.Cflavordefaultlabels: Final = [QApplication.translate("Textbox", "Fragrance",None),
+                                            QApplication.translate("Textbox", "Aroma",None),
+                                            QApplication.translate("Textbox", "Taste",None),
+                                            QApplication.translate("Textbox", "Nose",None),
+                                            QApplication.translate("Textbox", "Aftertaste",None),
+                                            QApplication.translate("Textbox", "Body",None),
+                                            QApplication.translate("Textbox", "Acidity",None)]
 
-        self.Eflavordefaultlabels: Final = [QApplication.translate("Textbox", "Fragrance-Aroma"),
-                                            QApplication.translate("Textbox", "Acidity"),
-                                            QApplication.translate("Textbox", "Flavor"),
-                                            QApplication.translate("Textbox", "Body"),
-                                            QApplication.translate("Textbox", "Aftertaste"),
-                                            QApplication.translate("Textbox", "Balance")]
+        self.Eflavordefaultlabels: Final = [QApplication.translate("Textbox", "Fragrance-Aroma",None),
+                                            QApplication.translate("Textbox", "Acidity",None),
+                                            QApplication.translate("Textbox", "Flavor",None),
+                                            QApplication.translate("Textbox", "Body",None),
+                                            QApplication.translate("Textbox", "Aftertaste",None),
+                                            QApplication.translate("Textbox", "Balance",None)]
 
 
-        self.coffeegeekflavordefaultlabels: Final = [QApplication.translate("Textbox", "Aroma"),
-                                            QApplication.translate("Textbox", "Acidity"),
-                                            QApplication.translate("Textbox", "Mouthfeel"),
-                                            QApplication.translate("Textbox", "Flavour"),
-                                            QApplication.translate("Textbox", "Aftertaste"),
-                                            QApplication.translate("Textbox", "Balance")]
+        self.coffeegeekflavordefaultlabels: Final = [QApplication.translate("Textbox", "Aroma",None),
+                                            QApplication.translate("Textbox", "Acidity",None),
+                                            QApplication.translate("Textbox", "Mouthfeel",None),
+                                            QApplication.translate("Textbox", "Flavour",None),
+                                            QApplication.translate("Textbox", "Aftertaste",None),
+                                            QApplication.translate("Textbox", "Balance",None)]
 
-        self.Intelligentsiaflavordefaultlabels: Final = [QApplication.translate("Textbox", "Sweetness"),
-                                            QApplication.translate("Textbox", "Acidity"),
-                                            QApplication.translate("Textbox", "Body"),
-                                            QApplication.translate("Textbox", "Finish")]
+        self.Intelligentsiaflavordefaultlabels: Final = [QApplication.translate("Textbox", "Sweetness",None),
+                                            QApplication.translate("Textbox", "Acidity",None),
+                                            QApplication.translate("Textbox", "Body",None),
+                                            QApplication.translate("Textbox", "Finish",None)]
 
-        self.IstitutoInternazionaleAssaggiatoriCaffe: Final = [QApplication.translate("Textbox", "Roast Color"),
-                                            QApplication.translate("Textbox", "Crema Texture"),
-                                            QApplication.translate("Textbox", "Crema Volume"),
-                                            QApplication.translate("Textbox", "Fragrance"),
-                                            QApplication.translate("Textbox", "Body"),
-                                            QApplication.translate("Textbox", "Acidity"),
-                                            QApplication.translate("Textbox", "Bitterness"),
-                                            QApplication.translate("Textbox", "Defects"),
-                                            QApplication.translate("Textbox", "Aroma Intensity"),
-                                            QApplication.translate("Textbox", "Aroma Persistence"),
-                                            QApplication.translate("Textbox", "Balance")]
+        self.IstitutoInternazionaleAssaggiatoriCaffe: Final = [QApplication.translate("Textbox", "Roast Color",None),
+                                            QApplication.translate("Textbox", "Crema Texture",None),
+                                            QApplication.translate("Textbox", "Crema Volume",None),
+                                            QApplication.translate("Textbox", "Fragrance",None),
+                                            QApplication.translate("Textbox", "Body",None),
+                                            QApplication.translate("Textbox", "Acidity",None),
+                                            QApplication.translate("Textbox", "Bitterness",None),
+                                            QApplication.translate("Textbox", "Defects",None),
+                                            QApplication.translate("Textbox", "Aroma Intensity",None),
+                                            QApplication.translate("Textbox", "Aroma Persistence",None),
+                                            QApplication.translate("Textbox", "Balance",None)]
 
-        self.WorldCoffeeRoastingChampionship: Final = [QApplication.translate("Textbox", "Aroma"),
-                                            QApplication.translate("Textbox", "Flavour"),
-                                            QApplication.translate("Textbox", "Flavour"),
-                                            QApplication.translate("Textbox", "Aftertaste"),
-                                            QApplication.translate("Textbox", "Acidity"),
-                                            QApplication.translate("Textbox", "Body"),
-                                            QApplication.translate("Textbox", "Balance"),
-                                            QApplication.translate("Textbox", "Balance"),
-                                            QApplication.translate("Textbox", "Overall"),
-                                            QApplication.translate("Textbox", "Overall")]
+        self.WorldCoffeeRoastingChampionship: Final = [QApplication.translate("Textbox", "Aroma",None),
+                                            QApplication.translate("Textbox", "Flavour",None),
+                                            QApplication.translate("Textbox", "Flavour",None),
+                                            QApplication.translate("Textbox", "Aftertaste",None),
+                                            QApplication.translate("Textbox", "Acidity",None),
+                                            QApplication.translate("Textbox", "Body",None),
+                                            QApplication.translate("Textbox", "Balance",None),
+                                            QApplication.translate("Textbox", "Balance",None),
+                                            QApplication.translate("Textbox", "Overall",None),
+                                            QApplication.translate("Textbox", "Overall",None)]
 
         self.ax1 = self.ax2 = None
         
@@ -1474,7 +1470,7 @@ class tgraphcanvas(FigureCanvas):
         self.roastpropertiesflag = 1  #resets roast properties if not zero
         self.roastpropertiesAutoOpenFlag = 0  #open roast properties dialog on CHARGE if not zero
         self.roastpropertiesAutoOpenDropFlag = 0  #open roast properties dialog on DROP if not zero
-        self.title = QApplication.translate("Scope Title", "Roaster Scope")
+        self.title = QApplication.translate("Scope Title", "Roaster Scope",None)
         self.title_show_always = False
         self.ambientTemp = 0.
         self.ambientTempSource = 0 # indicates the temperature curve that is used to automatically fill the ambient temperature on DROP
@@ -1625,10 +1621,10 @@ class tgraphcanvas(FigureCanvas):
         self.backgroundReproduceBeep = False
         self.backgroundPlaybackEvents = False
         self.backgroundPlaybackDROP = False
-        self.Betypes = [QApplication.translate("ComboBox", "Air"),
-                        QApplication.translate("ComboBox", "Drum"),
-                        QApplication.translate("ComboBox", "Damper"),
-                        QApplication.translate("ComboBox", "Burner"),
+        self.Betypes = [QApplication.translate("ComboBox", "Air",None),
+                        QApplication.translate("ComboBox", "Drum",None),
+                        QApplication.translate("ComboBox", "Damper",None),
+                        QApplication.translate("ComboBox", "Burner",None),
                         "--"]
         self.backgroundFlavors = []
         self.flavorbackgroundflag = False
@@ -1648,9 +1644,9 @@ class tgraphcanvas(FigureCanvas):
         
         self.heating_types: Final = [
             "",
-            QApplication.translate("ComboBox", "Propane Gas (LPG)"),
-            QApplication.translate("ComboBox", "Natural Gas (NG)"),
-            QApplication.translate("ComboBox", "Electric")
+            QApplication.translate("ComboBox", "Propane Gas (LPG)",None),
+            QApplication.translate("ComboBox", "Natural Gas (NG)",None),
+            QApplication.translate("ComboBox", "Electric",None)
         ]
 
         #General notes. Accessible through "edit graph properties" of graph menu. WYSIWYG viewer/editor.
@@ -1705,8 +1701,6 @@ class tgraphcanvas(FigureCanvas):
 
         self.beans = ""
 
-        self.curveVisibilityCache = None # caches the users curve visibility settings to be reset after recording
-        
         #flags to show projections, draw Delta ET, and draw Delta BT
         self.projectFlag = True
         self.ETcurve = True
@@ -1733,8 +1727,7 @@ class tgraphcanvas(FigureCanvas):
         self.deltaETsamples = 6 # the number of samples that make up the delta span, to be used in the delta computations (> 0!)
         self.deltaBTsamples = 6 # the number of samples that make up the delta span, to be used in the delta computations (> 0!)
         self.profile_sampling_interval = None # will be updated on loading a profile
-        self.background_profile_sampling_interval = None # will be updated on loading a profile into the background        
-        self.profile_meter = "Unknown" # will be updated on loading a profile
+        self.background_profile_sampling_interval = None # will be updated on loading a profile into the background
 
         self.optimalSmoothing = False
         self.polyfitRoRcalc = True
@@ -1825,16 +1818,16 @@ class tgraphcanvas(FigureCanvas):
         # use self.temp2[self.specialevents[x]] to get the BT temperature of an event.
         self.specialevents = []
         #ComboBox text event types. They can be modified in eventsDlg()
-        self.etypes = [QApplication.translate("ComboBox", "Air"),
-                       QApplication.translate("ComboBox", "Drum"),
-                       QApplication.translate("ComboBox", "Damper"),
-                       QApplication.translate("ComboBox", "Burner"),
+        self.etypes = [QApplication.translate("ComboBox", "Air",None),
+                       QApplication.translate("ComboBox", "Drum",None),
+                       QApplication.translate("ComboBox", "Damper",None),
+                       QApplication.translate("ComboBox", "Burner",None),
                        "--"]
         #default etype settings to restore
-        self.etypesdefault: Final = [QApplication.translate("ComboBox", "Air"),
-                              QApplication.translate("ComboBox", "Drum"),
-                              QApplication.translate("ComboBox", "Damper"),
-                              QApplication.translate("ComboBox", "Burner"),
+        self.etypesdefault: Final = [QApplication.translate("ComboBox", "Air",None),
+                              QApplication.translate("ComboBox", "Drum",None),
+                              QApplication.translate("ComboBox", "Damper",None),
+                              QApplication.translate("ComboBox", "Burner",None),
                               "--"]
         #stores the type of each event as index of self.etypes. None = 0, Power = 1, etc.
         self.specialeventstype = []
@@ -2391,7 +2384,7 @@ class tgraphcanvas(FigureCanvas):
         #EnergyUse
         self.energyunits: Final = ["BTU", "kJ", "kCal", "kWh", "hph"]
         self.powerunits: Final = ["BTU/h", "kJ/h", "kCal/h", "kW", "hp"]
-        self.sourcenames: Final = ["LPG", "NG", QApplication.translate("ComboBox","Elec")]
+        self.sourcenames: Final = ["LPG", "NG", QApplication.translate("ComboBox","Elec",None)]
         ## setup defaults (stored in app :
         # Burners
         self.loadlabels_setup = [""]*4                   # burner labels
@@ -2413,14 +2406,14 @@ class tgraphcanvas(FigureCanvas):
         self.electricEnergyMix_setup = 0                   # the amount of renewable electric energy in the energy mix in %
         # Others
         self.energyresultunit_setup = 0                    # index in list self.powerunits
-        self.kind_list: Final = [QApplication.translate("Label","Preheat Measured"),
-                          QApplication.translate("Label","Preheat %"),
-                          QApplication.translate("Label","BBP Measured"),
-                          QApplication.translate("Label","BBP %"),
-                          QApplication.translate("Label","Cooling Measured"),
-                          QApplication.translate("Label","Cooling %"),
-                          QApplication.translate("Label","Continuous"),
-                          QApplication.translate("Label","Roast Event")]
+        self.kind_list: Final = [QApplication.translate("Label","Preheat Measured",None),
+                          QApplication.translate("Label","Preheat %",None),
+                          QApplication.translate("Label","BBP Measured",None),
+                          QApplication.translate("Label","BBP %",None),
+                          QApplication.translate("Label","Cooling Measured",None),
+                          QApplication.translate("Label","Cooling %",None),
+                          QApplication.translate("Label","Continuous",None),
+                          QApplication.translate("Label","Roast Event",None)]
 
         ## working variables (stored in .alog profiles):
         # Burners
@@ -2514,61 +2507,10 @@ class tgraphcanvas(FigureCanvas):
         self.alarmsetSignal.connect(self.selectAlarmSet)
         self.moveBackgroundSignal.connect(self.moveBackgroundAndRedraw)
         self.eventRecordSignal.connect(self.EventRecordSlot)
-        self.showCurveSignal.connect(self.showCurve)
-        self.showExtraCurveSignal.connect(self.showExtraCurve)
-        self.showEventsSignal.connect(self.showEvents)
-        self.showBackgroundEventsSignal.connect(self.showBackgroundEvents)
 
     #NOTE: empty Figure is initialy drawn at the end of aw.settingsload()
     #################################    FUNCTIONS    ###################################
     #####################################################################################
-
-
-    @pyqtSlot(str, bool)
-    def showCurve(self, name: str, state: bool):
-        changed = False
-        if name == "ET" and self.ETcurve != state:
-            self.ETcurve = state
-            changed = True
-        elif name == "BT" and self.BTcurve != state:
-            self.BTcurve = state
-            changed = True
-        elif name == "DeltaET" and self.DeltaETflag != state:
-            self.DeltaETflag = state
-            changed = True
-        elif name == "DeltaBT" and self.DeltaBTflag != state:
-            self.DeltaBTflag = state
-            changed = True
-        elif name == "BackgroundET" and self.backgroundETcurve != state:
-            self.backgroundETcurve = state
-            changed = True
-        elif name == "BackgroundBT" and self.backgroundBTcurve != state:
-            self.backgroundBTcurve = state
-            changed = True
-        if changed:
-            self.redraw(recomputeAllDeltas=False,smooth=False)
-
-    @pyqtSlot(int, str, bool)
-    def showExtraCurve(self, extra_device: int, curve: str, state: bool):
-        if curve.strip() == "T1" and len(aw.extraCurveVisibility1) > extra_device and aw.extraCurveVisibility1[extra_device] != state:
-            aw.extraCurveVisibility1[extra_device] = state
-            self.redraw(recomputeAllDeltas=False,smooth=False)
-        elif curve.strip() == "T2" and len(aw.extraCurveVisibility2) > extra_device and aw.extraCurveVisibility2[extra_device] != state:
-            aw.extraCurveVisibility2[extra_device] = state
-            self.redraw(recomputeAllDeltas=False,smooth=False)
-
-    @pyqtSlot(int, bool)
-    def showEvents(self, event_type: int, state: bool):
-        event_type -= 1
-        if len(self.showEtypes) > event_type > 0 and self.showEtypes[event_type] != state:
-            self.showEtypes[event_type] = state
-            self.redraw(recomputeAllDeltas=False,smooth=False)
-
-    @pyqtSlot(bool)
-    def showBackgroundEvents(self, state: bool):
-        if state != self.backgroundeventsflag:
-            self.backgroundeventsflag = state
-            self.redraw(recomputeAllDeltas=False,smooth=False)
 
     def ax_lines_clear(self):
         if isinstance(self.ax.lines,list): # MPL < v3.5
@@ -2858,15 +2800,8 @@ class tgraphcanvas(FigureCanvas):
     def fit_titles(self):
         #truncate title and statistic line to width of axis system to avoid that the MPL canvas goes into miser mode
         try:
-            r = None
-            try:
-                r = self.fig.canvas.get_renderer() # MPL fails on savePDF with 'FigureCanvasPdf' object has no attribute 'get_renderer'
-            except Exception: # pylint: disable=broad-except
-                pass
-            if r is None:
-                ax_width = self.ax.get_window_extent().width
-            else:
-                ax_width = self.ax.get_window_extent(renderer=r).width
+            r = self.fig.canvas.get_renderer()
+            ax_width = self.ax.get_window_extent(renderer=r).width
             ax_width_for_title = ax_width - self.background_title_width
             redraw = False
             if self.title_text is not None and self.title_artist is not None and self.title_width is not None:
@@ -2945,10 +2880,10 @@ class tgraphcanvas(FigureCanvas):
             if isinstance(event.artist, matplotlib.text.Annotation) and self.showmet and event.artist in [self.met_annotate]:
                 if self.met_timex_temp1_delta[2] is not None and self.met_timex_temp1_delta[2] >= 0:
                     met_time_str = str(self.met_timex_temp1_delta[2])
-                    met_time_msg = QApplication.translate("Message","seconds before FCs")
+                    met_time_msg = QApplication.translate("Message","seconds before FCs", None)
                 else:
                     met_time_str = str(-1*self.met_timex_temp1_delta[2])
-                    met_time_msg = QApplication.translate("Message","seconds after FCs")
+                    met_time_msg = QApplication.translate("Message","seconds after FCs", None)
 
                 message = "MET {}{} @ {}, {} {}".format(
                     str(aw.float2float(self.met_timex_temp1_delta[1],1)),
@@ -3076,7 +3011,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " onpick() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:", None) + " onpick() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     def onrelease_after_pick(self,_):
         if self.legend is not None:
@@ -3108,7 +3043,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " onclick() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " onclick() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
 
     @staticmethod
@@ -3221,7 +3156,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " onclick() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " onclick() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     @pyqtSlot("QAction*")
     def event_popup_action(self,action):
@@ -3338,7 +3273,7 @@ class tgraphcanvas(FigureCanvas):
     # pylint: disable=no-self-use
     def showAlarmPopup(self, message, timeout):
         # alarm popup message with <aw.qmc.alarm_popup_timout>sec timeout
-        amb = ArtisanMessageBox(aw,QApplication.translate("Message", "Alarm notice"),message,timeout=timeout,modal=False)
+        amb = ArtisanMessageBox(aw,QApplication.translate("Message", "Alarm notice",None),message,timeout=timeout,modal=False)
         amb.show()
         #send alarm also to connected WebLCDs clients
         if aw.WebLCDs and aw.WebLCDsAlerts:
@@ -3455,7 +3390,7 @@ class tgraphcanvas(FigureCanvas):
             tx = aw.qmc.timeclock.elapsed()/1000.
             if aw.qmc.l_timeline is None:
                 self.l_timeline = self.ax.axvline(tx,color = self.palette["timeguide"],
-                                        label=aw.arabicReshape(QApplication.translate("Label", "TIMEguide")),
+                                        label=aw.arabicReshape(QApplication.translate("Label", "TIMEguide", None)),
                                         linestyle = '-', linewidth= 1, alpha = .5,sketch_params=None,path_effects=[])
             else:
                 aw.qmc.l_timeline.set_xdata(tx)
@@ -3529,7 +3464,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " filterDropOuts() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " filterDropOuts() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             return temp
 
     # the temp get's averaged using the given decay weights after resampling
@@ -3567,6 +3502,7 @@ class tgraphcanvas(FigureCanvas):
     # sample devices at interval self.delay miliseconds.
     # we can assume within the processing of sample_processing() that flagon=True
     def sample_processing(self, temp1_readings, temp2_readings, timex_readings):
+        _log.debug("sample_processing")
         ##### (try to) lock resources  #########
         gotlock = aw.qmc.profileDataSemaphore.tryAcquire(1,200) # we try to catch a lock for 200ms, if we fail we just skip this sampling round (prevents stacking of waiting calls)
 #        gotlock = aw.qmc.profileDataSemaphore.tryAcquire(1,0) # we try to catch a lock if available but we do not wait, if we fail we just skip this sampling round (prevents stacking of waiting calls)
@@ -4242,7 +4178,7 @@ class tgraphcanvas(FigureCanvas):
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
                 _, _, exc_tb = sys.exc_info()
-                aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " sample() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " sample() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             finally:
                 if aw.qmc.profileDataSemaphore.available() < 1:
                     aw.qmc.profileDataSemaphore.release(1)
@@ -4625,7 +4561,7 @@ class tgraphcanvas(FigureCanvas):
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
                         _, _, exc_tb = sys.exc_info()
-                        self.adderror((QApplication.translate("Error Message","Exception:") + " updategraphics() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                        self.adderror((QApplication.translate("Error Message","Exception:",None) + " updategraphics() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
                     try:
                         if self.backgroundprofile is not None and (self.timeindex[0] > -1 or self.timeindexB[0] < 0):
@@ -4636,7 +4572,7 @@ class tgraphcanvas(FigureCanvas):
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
                         _, _, exc_tb = sys.exc_info()
-                        self.adderror((QApplication.translate("Error Message","Exception:") + " updategraphics() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                        self.adderror((QApplication.translate("Error Message","Exception:",None) + " updategraphics() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
                                 
                     #####
                     if self.patheffects:
@@ -4658,7 +4594,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            self.adderror((QApplication.translate("Error Message","Exception:") + " updategraphics() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.adderror((QApplication.translate("Error Message","Exception:",None) + " updategraphics() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     def setLCDtime(self,ts):
         timestr = stringfromseconds(ts)
@@ -4755,7 +4691,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " timealign() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " timealign() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     # we count
     # - foreground curves
@@ -4938,9 +4874,9 @@ class tgraphcanvas(FigureCanvas):
                         aw.call_prog_with_args(fname)
                         res = True
                     if res:
-                        aw.sendmessage(QApplication.translate("Message","Alarm is calling: {0}").format(fname))
+                        aw.sendmessage(QApplication.translate("Message","Alarm is calling: {0}",None).format(fname))
                     else:
-                        aw.qmc.adderror(QApplication.translate("Message","Calling alarm failed on {0}").format(f))
+                        aw.qmc.adderror(QApplication.translate("Message","Calling alarm failed on {0}",None).format(f))
                 elif action == 2:
                     # alarm event button
                     button_number = None
@@ -4950,7 +4886,7 @@ class tgraphcanvas(FigureCanvas):
                         try:
                             button_number = int(str(bnr.strip())) - 1 # the event buttons presented to the user are numbered from 1 on
                         except Exception: # pylint: disable=broad-except
-                            aw.sendmessage(QApplication.translate("Message","Alarm trigger button error, description '{0}' not a number").format(string))
+                            aw.sendmessage(QApplication.translate("Message","Alarm trigger button error, description '{0}' not a number",None).format(string))
                         if button_number is not None:
                             if -1 < button_number < len(aw.buttonlist):
                                 aw.recordextraevent(button_number)
@@ -4979,8 +4915,8 @@ class tgraphcanvas(FigureCanvas):
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
                         _, _, exc_tb = sys.exc_info()
-                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " setalarm() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
-                        aw.sendmessage(QApplication.translate("Message","Alarm trigger slider error, description '{0}' not a valid number [0-100]").format(string))
+                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " setalarm() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                        aw.sendmessage(QApplication.translate("Message","Alarm trigger slider error, description '{0}' not a valid number [0-100]",None).format(string))
     
                 elif action == 7:
                     # START
@@ -5065,8 +5001,8 @@ class tgraphcanvas(FigureCanvas):
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
                         _, _, exc_tb = sys.exc_info()
-                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " processAlarm() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
-                        aw.sendmessage(QApplication.translate("Message","Alarm trigger SV slider error, description '{0}' not a valid number").format(string))
+                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " processAlarm() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                        aw.sendmessage(QApplication.translate("Message","Alarm trigger SV slider error, description '{0}' not a valid number",None).format(string))
                 elif action == 22:
                     # Playback ON
                     aw.qmc.backgroundPlaybackEvents = True
@@ -5085,7 +5021,7 @@ class tgraphcanvas(FigureCanvas):
             except Exception as ex: # pylint: disable=broad-except
                 _log.exception(ex)
                 _, _, exc_tb = sys.exc_info()
-                self.adderror((QApplication.translate("Error Message","Exception:") + " processAlarm() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                self.adderror((QApplication.translate("Error Message","Exception:",None) + " processAlarm() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
 
     def setalarm(self,alarmnumber):
@@ -5098,7 +5034,7 @@ class tgraphcanvas(FigureCanvas):
         finally:
             if self.alarmSemaphore.available() < 1:
                 self.alarmSemaphore.release(1)  
-        aw.sendmessage(QApplication.translate("Message","Alarm {0} triggered").format(alarmnumber + 1))        
+        aw.sendmessage(QApplication.translate("Message","Alarm {0} triggered", None).format(alarmnumber + 1))        
         self.processAlarmSignal.emit(alarmnumber+1,alarm_beep,alarm_action,alarm_string)
 
     # called only after CHARGE
@@ -5113,7 +5049,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " playbackdrop() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " playbackdrop() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     # called only after CHARGE
     def playbackevent(self):
@@ -5223,7 +5159,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " playbackevent() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " playbackevent() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     #make a projection of change of rate of BT on the graph
     def updateProjection(self):
@@ -5302,7 +5238,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " updateProjection() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " updateProjection() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     # takes array with readings, the current index, the sign of the shift as character and the shift value
     # returns val, evalsign
@@ -5969,7 +5905,7 @@ class tgraphcanvas(FigureCanvas):
                     e = str(e)
                     _, _, exc_tb = sys.exc_info()
                     mathexpression = mathexpression.replace("{","(").replace("}",")") # avoid {x} leading to key arrows
-                    self.adderror((QApplication.translate("Error Message", "Exception:") + " eval_curve_expression(): %s {0} "%mathexpression).format(e),getattr(exc_tb, 'tb_lineno', '?'))
+                    self.adderror((QApplication.translate("Error Message", "Exception:",None) + " eval_curve_expression(): %s {0} "%mathexpression).format(e),getattr(exc_tb, 'tb_lineno', '?'))
                 return -1
         return -1
 
@@ -6123,12 +6059,12 @@ class tgraphcanvas(FigureCanvas):
         #prevents deleting accidentally a finished roast
         if self.safesaveflag == True and len(aw.qmc.timex) > 3:
             if allow_discard:
-                string = QApplication.translate("Message","Save the profile, Discard the profile (Reset), or Cancel?")
+                string = QApplication.translate("Message","Save the profile, Discard the profile (Reset), or Cancel?", None)
                 buttons = QMessageBox.StandardButton.Discard|QMessageBox.StandardButton.Save|QMessageBox.StandardButton.Cancel
             else:
-                string = QApplication.translate("Message","Save the profile or Cancel?")
+                string = QApplication.translate("Message","Save the profile or Cancel?", None)
                 buttons = QMessageBox.StandardButton.Save|QMessageBox.StandardButton.Cancel
-            reply = QMessageBox.warning(aw,QApplication.translate("Message","Profile unsaved"),string,
+            reply = QMessageBox.warning(aw,QApplication.translate("Message","Profile unsaved", None),string,
                                 buttons)
             if reply == QMessageBox.StandardButton.Save:
                 return aw.fileSave(aw.curFile)  #if accepted, calls fileClean() and thus turns safesaveflag = False
@@ -6136,7 +6072,7 @@ class tgraphcanvas(FigureCanvas):
                 self.fileCleanSignal.emit()
                 return True
             if reply == QMessageBox.StandardButton.Cancel:
-                aw.sendmessage(QApplication.translate("Message","Action canceled"))
+                aw.sendmessage(QApplication.translate("Message","Action canceled",None))
             return False
         # nothing to be saved
         return True
@@ -6203,7 +6139,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " clearMeasurements() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " clearMeasurements() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         finally:
             if aw.qmc.profileDataSemaphore.available() < 1:
                 aw.qmc.profileDataSemaphore.release(1)
@@ -6267,7 +6203,7 @@ class tgraphcanvas(FigureCanvas):
             aw.qmc.roastbatchpos = 1 # initialized to 1, set to increased batchsequence on DROP
             aw.qmc.roastbatchprefix = aw.qmc.batchprefix
 
-            aw.sendmessage(QApplication.translate("Message","Scope has been reset"))
+            aw.sendmessage(QApplication.translate("Message","Scope has been reset",None))
             aw.buttonFCs.setDisabled(False)
             aw.buttonFCe.setDisabled(False)
             aw.buttonSCs.setDisabled(False)
@@ -6287,12 +6223,12 @@ class tgraphcanvas(FigureCanvas):
             aw.buttonDROP.setFlat(False)
             aw.buttonDRY.setFlat(False)
             aw.buttonCOOL.setFlat(False)
-            aw.buttonONOFF.setText(QApplication.translate("Button", "ON"))
+            aw.buttonONOFF.setText(QApplication.translate("Button", "ON",None))
             if aw.simulator:
                 aw.buttonONOFF.setStyleSheet(aw.pushbuttonstyles_simulator["OFF"])
             else:
                 aw.buttonONOFF.setStyleSheet(aw.pushbuttonstyles["OFF"])
-            aw.buttonSTARTSTOP.setText(QApplication.translate("Button", "START"))
+            aw.buttonSTARTSTOP.setText(QApplication.translate("Button", "START",None))
             if aw.simulator:
                 aw.buttonSTARTSTOP.setStyleSheet(aw.pushbuttonstyles_simulator["STOP"])
             else:
@@ -6305,7 +6241,7 @@ class tgraphcanvas(FigureCanvas):
 
             # if we are in KeepON mode, the reset triggered by ON should resepect the roastpropertiesflag ("Delete Properties on Reset")
             if self.roastpropertiesflag and (self.flagKeepON or not keepProperties):
-                self.title = QApplication.translate("Scope Title", "Roaster Scope")
+                self.title = QApplication.translate("Scope Title", "Roaster Scope",None)
                 self.roastingnotes = ""
                 self.cuppingnotes = ""
                 self.beans = ""
@@ -6504,7 +6440,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " reset() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " reset() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         finally:
             if aw.qmc.profileDataSemaphore.available() < 1:
                 aw.qmc.profileDataSemaphore.release(1)
@@ -6584,7 +6520,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " smooth() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " smooth() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             return x
 
 
@@ -6779,11 +6715,11 @@ class tgraphcanvas(FigureCanvas):
                     y = stemp[t0idx]
                     ystep_down,ystep_up = self.findtextgap(ystep_down,ystep_up,y,y,d)
                     if startB is not None:
-                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation", "CHARGE"))
+                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation", "CHARGE", None))
                         e = 0
                         a = aw.qmc.backgroundalpha
                     else:
-                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation", "CHARGE"))
+                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation", "CHARGE", None))
                         if aw.qmc.graphfont == 1:
                             st1 = self.__to_ascii(st1)
                         e = 0
@@ -6794,7 +6730,7 @@ class tgraphcanvas(FigureCanvas):
                 #Add TP marker
                 if self.markTPflag and TP_index and TP_index > 0:
                     ystep_down,ystep_up = self.findtextgap(ystep_down,ystep_up,stemp[t0idx],stemp[TP_index],d)
-                    st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","TP {0}"), stringfromseconds(timex[TP_index]-t0,False))
+                    st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","TP {0}", None),stringfromseconds(timex[TP_index]-t0,False))
                     a = 1.
                     e = 0
                     anno_artists += self.annotate(temp[TP_index],st1,timex[TP_index],stemp[TP_index],ystep_up,ystep_down,e,a,draggable,-1)
@@ -6808,13 +6744,13 @@ class tgraphcanvas(FigureCanvas):
                     TP_index = self.backgroundtime2index(TP_time) + timeindex[0]
 
                     TP_time = TP_time - t0
-                    st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","TP {0}"),stringfromseconds(TP_time_loaded,False))
+                    st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","TP {0}", None),stringfromseconds(TP_time_loaded,False))
                     anno_artists += self.annotate(temp[TP_index],st1,timex[TP_index],stemp[TP_index],ystep_up,ystep_down,e,a,draggable,-1)
                 #Add Dry End markers
                 if timeindex[1]:
                     tidx = timeindex[1]
                     ystep_down,ystep_up = self.findtextgap(ystep_down,ystep_up,stemp[t0idx],stemp[tidx],d)
-                    st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","DE {0}"),stringfromseconds(timex[tidx]-t0,False))
+                    st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","DE {0}", None),stringfromseconds(timex[tidx]-t0,False))
                     if timeindex2:
                         a = aw.qmc.backgroundalpha
                     else:
@@ -6829,7 +6765,7 @@ class tgraphcanvas(FigureCanvas):
                         ystep_down,ystep_up = self.findtextgap(ystep_down,ystep_up,stemp[timeindex[1]],stemp[tidx],d)
                     else:
                         ystep_down,ystep_up = self.findtextgap(0,0,stemp[tidx],stemp[tidx],d)
-                    st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","FCs {0}"),stringfromseconds(timex[tidx]-t0,False))
+                    st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","FCs {0}", None),stringfromseconds(timex[tidx]-t0,False))
                     if timeindex2:
                         a = aw.qmc.backgroundalpha
                     else:
@@ -6840,7 +6776,7 @@ class tgraphcanvas(FigureCanvas):
                 if timeindex[3]:
                     tidx = timeindex[3]
                     ystep_down,ystep_up = self.findtextgap(ystep_down,ystep_up,stemp[timeindex[2]],stemp[tidx],d)
-                    st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","FCe {0}"),stringfromseconds(timex[tidx]-t0,False))
+                    st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","FCe {0}", None),stringfromseconds(timex[tidx]-t0,False))
                     if timeindex2:
                         a = aw.qmc.backgroundalpha
                     else:
@@ -6857,7 +6793,7 @@ class tgraphcanvas(FigureCanvas):
                         ystep_down,ystep_up = self.findtextgap(ystep_down,ystep_up,stemp[timeindex[3]],stemp[tidx],d)
                     else:
                         ystep_down,ystep_up = self.findtextgap(0,0,stemp[tidx],stemp[tidx],d)
-                    st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","SCs {0}"),stringfromseconds(timex[tidx]-t0,False))
+                    st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","SCs {0}", None),stringfromseconds(timex[tidx]-t0,False))
                     if timeindex2:
                         a = aw.qmc.backgroundalpha
                     else:
@@ -6868,7 +6804,7 @@ class tgraphcanvas(FigureCanvas):
                 if timeindex[5]:
                     tidx = timeindex[5]
                     ystep_down,ystep_up = self.findtextgap(ystep_down,ystep_up,stemp[timeindex[4]],stemp[tidx],d)
-                    st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","SCe {0}"),stringfromseconds(timex[tidx]-t0,False))
+                    st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","SCe {0}", None),stringfromseconds(timex[tidx]-t0,False))
                     if timeindex2:
                         a = aw.qmc.backgroundalpha
                     else:
@@ -6894,7 +6830,7 @@ class tgraphcanvas(FigureCanvas):
                     else:
                         tx = t0idx
                     ystep_down,ystep_up = self.findtextgap(ystep_down,ystep_up,stemp[tx],stemp[tidx],d)
-                    st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","DROP {0}"),stringfromseconds(timex[tidx]-t0,False))
+                    st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","DROP {0}", None),stringfromseconds(timex[tidx]-t0,False))
                     if aw.qmc.graphfont == 1:
                         st1 = self.__to_ascii(st1)
                     if timeindex2:
@@ -6934,7 +6870,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " place_annotations() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " place_annotations() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
         return anno_artists
 
     @staticmethod
@@ -7151,7 +7087,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " recomputeDeltas() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " recomputeDeltas() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             return [0]*len(timex),[0]*len(timex)
 
     @staticmethod
@@ -7319,7 +7255,7 @@ class tgraphcanvas(FigureCanvas):
                 linestyle=self.ETlinestyle,
                 drawstyle=self.ETdrawstyle,
                 color=self.palette["et"],
-                label=aw.arabicReshape(QApplication.translate("Label", "ET")))
+                label=aw.arabicReshape(QApplication.translate("Label", "ET", None)))
 
     def drawBT(self,temp):
         if aw.qmc.BTcurve:
@@ -7339,7 +7275,7 @@ class tgraphcanvas(FigureCanvas):
                 linestyle=self.BTlinestyle,
                 drawstyle=self.BTdrawstyle,
                 color=self.palette["bt"],
-                label=aw.arabicReshape(QApplication.translate("Label", "BT")))
+                label=aw.arabicReshape(QApplication.translate("Label", "BT", None)))
 
     def drawDeltaET(self,trans,start,end):
         if self.DeltaETflag:
@@ -7360,7 +7296,7 @@ class tgraphcanvas(FigureCanvas):
                 linestyle=self.ETdeltalinestyle,
                 drawstyle=self.ETdeltadrawstyle,
                 color=self.palette["deltaet"],
-                label=aw.arabicReshape(f'{deltaLabelUTF8}{QApplication.translate("Label", "ET")}'))
+                label=aw.arabicReshape(f'{deltaLabelUTF8}{QApplication.translate("Label", "ET", None)}'))
 
     def drawDeltaBT(self,trans,start,end):
         if self.DeltaBTflag:
@@ -7381,7 +7317,7 @@ class tgraphcanvas(FigureCanvas):
                 linestyle=self.BTdeltalinestyle,
                 drawstyle=self.BTdeltadrawstyle,
                 color=self.palette["deltabt"],
-                label=aw.arabicReshape(f'{deltaLabelUTF8}{QApplication.translate("Label", "BT")}'))
+                label=aw.arabicReshape(f'{deltaLabelUTF8}{QApplication.translate("Label", "BT", None)}'))
 
     # if profileDataSemaphore lock cannot be fetched the redraw is not performed
     def lazyredraw(self, recomputeAllDeltas=True, smooth=True,sampling=False):
@@ -7516,7 +7452,7 @@ class tgraphcanvas(FigureCanvas):
                         else:
                             titleB = f"{self.roastbatchprefixB}{self.roastbatchnrB} {self.titleB}"
                     elif __release_sponsor_domain__:
-                        sponsor = QApplication.translate("About","sponsored by {}").format(__release_sponsor_domain__)
+                        sponsor = QApplication.translate("About","sponsored by {}",None).format(__release_sponsor_domain__)
                         titleB = "\n{}".format(sponsor)
 
                 if aw.qmc.flagon or sampling:
@@ -7561,7 +7497,7 @@ class tgraphcanvas(FigureCanvas):
                     if aw.qmc.flagstart:
                         y_label = self.delta_ax.set_ylabel("")
                     else:
-                        y_label = self.delta_ax.set_ylabel(f'{aw.qmc.mode}{aw.arabicReshape(QApplication.translate("Label", "/min"))}',
+                        y_label = self.delta_ax.set_ylabel(f'{aw.qmc.mode}{aw.arabicReshape(QApplication.translate("Label", "/min", None))}',
                             color = self.palette["ylabel"],
                             fontsize="large",
                             fontfamily=prop.get_family()                            
@@ -7787,7 +7723,7 @@ class tgraphcanvas(FigureCanvas):
                             self.l_back3, = self.ax.plot(self.extratimexB[n3], stemp3B, markersize=self.XTbackmarkersize,marker=self.XTbackmarker,
                                                         sketch_params=None,path_effects=[],transform=trans,
                                                         linewidth=self.XTbacklinewidth,linestyle=self.XTbacklinestyle,drawstyle=self.XTbackdrawstyle,color=self.backgroundxtcolor,
-                                                        alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundXT")))
+                                                        alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundXT", None)))
                     if aw.qmc.ytcurveidx > 0:
                         idx4 = aw.qmc.ytcurveidx - 1
                         n4 = idx4 // 2
@@ -7827,7 +7763,7 @@ class tgraphcanvas(FigureCanvas):
                             self.l_back4, = self.ax.plot(self.extratimexB[n4], stemp4B, markersize=self.YTbackmarkersize,marker=self.YTbackmarker,
                                                         sketch_params=None,path_effects=[],transform=trans,
                                                         linewidth=self.YTbacklinewidth,linestyle=self.YTbacklinestyle,drawstyle=self.YTbackdrawstyle,color=self.backgroundytcolor,
-                                                        alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundYT")))
+                                                        alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundYT", None)))
 
 
                     #draw background
@@ -7847,7 +7783,7 @@ class tgraphcanvas(FigureCanvas):
                     self.l_back1, = self.ax.plot(self.timeB,temp_etb,markersize=self.ETbackmarkersize,marker=self.ETbackmarker,
                                                 sketch_params=None,path_effects=[],
                                                 linewidth=self.ETbacklinewidth,linestyle=self.ETbacklinestyle,drawstyle=self.ETbackdrawstyle,color=self.backgroundmetcolor,
-                                                alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundET")))
+                                                alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundET", None)))
                     if aw.qmc.backgroundBTcurve:
                         if self.backgroundShowFullflag:
                             temp_btb = self.stemp2B
@@ -7864,7 +7800,7 @@ class tgraphcanvas(FigureCanvas):
                     self.l_back2, = self.ax.plot(self.timeB, temp_btb,markersize=self.BTbackmarkersize,marker=self.BTbackmarker,
                                                 linewidth=self.BTbacklinewidth,linestyle=self.BTbacklinestyle,drawstyle=self.BTbackdrawstyle,color=self.backgroundbtcolor,
                                                 sketch_params=None,path_effects=[],
-                                                alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundBT")))
+                                                alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundBT", None)))
 
                     # we resample the temperatures to regular interval timestamps
                     if self.timeB is not None and self.timeB:
@@ -7914,7 +7850,7 @@ class tgraphcanvas(FigureCanvas):
                                     drawstyle=self.ETBdeltadrawstyle,
                                     color=self.backgrounddeltaetcolor,
                                     alpha=self.backgroundalpha,
-                                    label=aw.arabicReshape(QApplication.translate("Label", "BackgroundDeltaET")))
+                                    label=aw.arabicReshape(QApplication.translate("Label", "BackgroundDeltaET", None)))
                             if self.DeltaBTBflag and len(self.timeB) == len(self.delta2B):
                                 try:
                                     if self.l_delta2B is not None:
@@ -7933,7 +7869,7 @@ class tgraphcanvas(FigureCanvas):
                                     drawstyle=self.BTBdeltadrawstyle,
                                     color=self.backgrounddeltabtcolor,
                                     alpha=self.backgroundalpha,
-                                    label=aw.arabicReshape(QApplication.translate("Label", "BackgroundDeltaBT")))
+                                    label=aw.arabicReshape(QApplication.translate("Label", "BackgroundDeltaBT", None)))
                     #check backgroundevents flag
                     if self.backgroundeventsflag:
                         if self.mode == "F":
@@ -8026,7 +7962,7 @@ class tgraphcanvas(FigureCanvas):
                                     except Exception as ex: # pylint: disable=broad-except
                                         _log.exception(ex)
                                         _, _, exc_tb = sys.exc_info()
-                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
                                 elif self.backgroundEtypes[i] == 1 and aw.qmc.showEtypes[1]:
                                     self.E2backgroundtimex.append(self.timeB[self.backgroundEvents[i]])
                                     if self.clampEvents:
@@ -8062,7 +7998,7 @@ class tgraphcanvas(FigureCanvas):
                                     except Exception as ex: # pylint: disable=broad-except
                                         _log.exception(ex)
                                         _, _, exc_tb = sys.exc_info()
-                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
                                 elif self.backgroundEtypes[i] == 2 and aw.qmc.showEtypes[2]:
                                     self.E3backgroundtimex.append(self.timeB[self.backgroundEvents[i]])
                                     if self.clampEvents:
@@ -8098,7 +8034,7 @@ class tgraphcanvas(FigureCanvas):
                                     except Exception as ex: # pylint: disable=broad-except
                                         _log.exception(ex)
                                         _, _, exc_tb = sys.exc_info()
-                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
                                 elif self.backgroundEtypes[i] == 3 and aw.qmc.showEtypes[3]:
                                     self.E4backgroundtimex.append(self.timeB[self.backgroundEvents[i]])
                                     if self.clampEvents:
@@ -8134,7 +8070,7 @@ class tgraphcanvas(FigureCanvas):
                                     except Exception as ex: # pylint: disable=broad-except
                                         _log.exception(ex)
                                         _, _, exc_tb = sys.exc_info()
-                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 #                            every = None
                             if len(self.E1backgroundtimex)>0 and len(self.E1backgroundtimex)==len(self.E1backgroundvalues):
                                 if (self.timeindexB[6] > 0 and aw.qmc.extendevents and self.timeB[self.timeindexB[6]] > self.timeB[self.backgroundEvents[E1b_last]]):   #if drop exists and last event was earlier
@@ -8305,6 +8241,7 @@ class tgraphcanvas(FigureCanvas):
                             aw.qmc.l_background_annotations.extend(self.place_annotations(-1,d,self.timeB,self.timeindexB,self.temp2B,self.stemp2B,startB,self.timeindex,TP_time=self.TP_time_B,TP_time_loaded=self.TP_time_B_loaded, draggable=False))
                         except Exception: # pylint: disable=broad-except
                             pass
+#                            traceback.print_exc(file=sys.stdout)
 
                     #show the analysis results if they exist
 #                    if len(self.analysisresultsstr) > 0:
@@ -8368,7 +8305,7 @@ class tgraphcanvas(FigureCanvas):
 #                            print("BT RoR std:",numpy.std([x for x in self.delta2[start:end] if x is not None]))
 #                        except Exception as e: # pylint: disable=broad-except
 #                            _log.exception(e)
-#                
+                
                 # CHARGE-DROP curve index limits
                 charge_idx = 0
                 if self.timeindex[0] > -1:
@@ -8535,7 +8472,7 @@ class tgraphcanvas(FigureCanvas):
                                     except Exception as ex: # pylint: disable=broad-except
                                         _log.exception(ex)
                                         _, _, exc_tb = sys.exc_info()
-                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
                                 elif self.specialeventstype[i] == 1 and aw.qmc.showEtypes[1]:
                                     tx = self.timex[self.specialevents[i]]
                                     if not self.foregroundShowFullflag and ((self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]) or (self.timeindex[6] > 0 and tx > self.timex[self.timeindex[6]])):
@@ -8574,7 +8511,7 @@ class tgraphcanvas(FigureCanvas):
                                     except Exception as ex: # pylint: disable=broad-except
                                         _log.exception(ex)
                                         _, _, exc_tb = sys.exc_info()
-                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
                                 elif self.specialeventstype[i] == 2 and aw.qmc.showEtypes[2]:
                                     tx = self.timex[self.specialevents[i]]
                                     if not self.foregroundShowFullflag and ((self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]) or (self.timeindex[6] > 0 and tx > self.timex[self.timeindex[6]])):
@@ -8612,7 +8549,7 @@ class tgraphcanvas(FigureCanvas):
                                     except Exception as ex: # pylint: disable=broad-except
                                         _log.exception(ex)
                                         _, _, exc_tb = sys.exc_info()
-                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
                                 elif self.specialeventstype[i] == 3 and aw.qmc.showEtypes[3]:
                                     tx = self.timex[self.specialevents[i]]
                                     if not self.foregroundShowFullflag and ((self.timeindex[0] > -1 and tx < self.timex[self.timeindex[0]]) or (self.timeindex[6] > 0 and tx > self.timex[self.timeindex[6]])):
@@ -8650,7 +8587,7 @@ class tgraphcanvas(FigureCanvas):
                                     except Exception as ex: # pylint: disable=broad-except
                                         _log.exception(ex)
                                         _, _, exc_tb = sys.exc_info()
-                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " redraw() anno {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
                             except Exception as e: # pylint: disable=broad-except
                                 _log.exception(e)
 
@@ -8708,6 +8645,7 @@ class tgraphcanvas(FigureCanvas):
                         self.l_eventtype2dots, = self.ax.plot(E2x, E2y, color=self.EvalueColor[1],
                                                             marker = (self.EvalueMarker[1] if self.eventsGraphflag != 4 else None),
                                                             markersize = self.EvalueMarkerSize[1],
+#                                                            picker=2, # deprecated in MPL 3.3.x
                                                             picker=True,
                                                             pickradius=2,#markevery=every,
                                                             linestyle="-",drawstyle=ds,linewidth = self.Evaluelinethickness[1],alpha = self.Evaluealpha[1],label=self.etypesf(1))
@@ -8717,9 +8655,11 @@ class tgraphcanvas(FigureCanvas):
                                 pos = (pos*event_pos_factor)+event_pos_offset
                             if self.foregroundShowFullflag and (self.timeindex[7] > 0 and aw.qmc.extendevents and self.timex[self.timeindex[7]] > self.timex[self.specialevents[E3_last]]):   #if cool exists and last event was earlier
                                 self.E3timex.append(self.timex[self.timeindex[7]]) #time of cool
+#                                self.E3values.append(self.eventpositionbars[min(110,max(0,int(round((self.specialeventsvalue[E3_last]-1)*10))))]) #repeat last event value
                                 self.E3values.append(pos) #repeat last event value
                             elif (self.timeindex[6] > 0 and aw.qmc.extendevents and self.timex[self.timeindex[6]] > self.timex[self.specialevents[E3_last]]):   #if drop exists and last event was earlier
                                 self.E3timex.append(self.timex[self.timeindex[6]]) #time of drop
+#                                self.E3values.append(self.eventpositionbars[min(110,max(0,int(round((self.specialeventsvalue[E3_last]-1)*10))))]) #repeat last event value
                                 self.E3values.append(pos) #repeat last event value
                             E3x = self.E3timex
                             E3y = self.E3values
@@ -8736,6 +8676,7 @@ class tgraphcanvas(FigureCanvas):
                         self.l_eventtype3dots, = self.ax.plot(E3x, E3y, color=self.EvalueColor[2],
                                                             marker = (self.EvalueMarker[2] if self.eventsGraphflag != 4 else None),
                                                             markersize = self.EvalueMarkerSize[2],
+#                                                            picker=2, # deprecated in MPL 3.3.x
                                                             picker=True,
                                                             pickradius=2,#markevery=every,
                                                             linestyle="-",drawstyle=ds,linewidth = self.Evaluelinethickness[2],alpha = self.Evaluealpha[2],label=self.etypesf(2))
@@ -8745,9 +8686,11 @@ class tgraphcanvas(FigureCanvas):
                                 pos = (pos*event_pos_factor)+event_pos_offset
                             if self.foregroundShowFullflag and (self.timeindex[7] > 0 and aw.qmc.extendevents and self.timex[self.timeindex[7]] > self.timex[self.specialevents[E4_last]]):   #if cool exists and last event was earlier
                                 self.E4timex.append(self.timex[self.timeindex[7]]) #time of cool
+#                                self.E4values.append(self.eventpositionbars[min(110,max(0,int(round((self.specialeventsvalue[E4_last]-1)*10))))]) #repeat last event value
                                 self.E4values.append(pos) #repeat last event value
                             elif (self.timeindex[6] > 0 and aw.qmc.extendevents and self.timex[self.timeindex[6]] > self.timex[self.specialevents[E4_last]]):   #if drop exists and last event was earlier
                                 self.E4timex.append(self.timex[self.timeindex[6]]) #time of drop
+#                                self.E4values.append(self.eventpositionbars[min(110,max(0,int(round((self.specialeventsvalue[E4_last]-1)*10))))]) #repeat last event value
                                 self.E4values.append(pos) #repeat last event value
                             E4x = self.E4timex
                             E4y = self.E4values
@@ -8764,6 +8707,7 @@ class tgraphcanvas(FigureCanvas):
                         self.l_eventtype4dots, = self.ax.plot(E4x, E4y, color=self.EvalueColor[3],
                                                             marker = (self.EvalueMarker[3] if self.eventsGraphflag != 4 else None),
                                                             markersize = self.EvalueMarkerSize[3],
+#                                                            picker=2, # deprecated in MPL 3.3.x
                                                             picker=True,
                                                             pickradius=2,#markevery=every,
                                                             linestyle="-",drawstyle=ds,linewidth = self.Evaluelinethickness[3],alpha = self.Evaluealpha[3],label=self.etypesf(3))
@@ -8963,7 +8907,7 @@ class tgraphcanvas(FigureCanvas):
                     except Exception as ex: # pylint: disable=broad-except
                         _log.exception(ex)
                         _, _, exc_tb = sys.exc_info()
-                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " redraw() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
                     try:
                         if aw.extraCurveVisibility2[i]:
                             if (not aw.qmc.flagon or aw.qmc.smooth_curves_on_recording) and (smooth or len(self.extrastemp2[i]) != len(self.extratimex[i])):
@@ -8987,7 +8931,7 @@ class tgraphcanvas(FigureCanvas):
                     except Exception as ex: # pylint: disable=broad-except
                         _log.exception(ex)
                         _, _, exc_tb = sys.exc_info()
-                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " redraw() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
                 ##### ET,BT curves
                 
                 if not self.flagstart and not self.foregroundShowFullflag:
@@ -9013,10 +8957,10 @@ class tgraphcanvas(FigureCanvas):
 
                 if self.DeltaETflag:
                     self.handles.append(self.l_delta1)
-                    self.labels.append(aw.arabicReshape(f"{deltaLabelMathPrefix}{aw.ETname}"))
+                    self.labels.append(aw.arabicReshape(deltaLabelMathPrefix + aw.ETname))
                 if self.DeltaBTflag:
                     self.handles.append(self.l_delta2)
-                    self.labels.append(aw.arabicReshape(f"{deltaLabelMathPrefix}{aw.BTname}"))
+                    self.labels.append(aw.arabicReshape(deltaLabelMathPrefix + aw.BTname))
 
                 nrdevices = len(self.extradevices)
 
@@ -9162,17 +9106,17 @@ class tgraphcanvas(FigureCanvas):
                 if aw.qmc.projectFlag and aw.qmc.BTcurve:
                     self.l_BTprojection, = self.ax.plot([], [],color = self.palette["bt"],
                                                 dashes=dashes_setup,
-                                                label=aw.arabicReshape(QApplication.translate("Label", "BTprojection")),
+                                                label=aw.arabicReshape(QApplication.translate("Label", "BTprojection", None)),
                                                 linestyle = '-.', linewidth= 8, alpha = .3,sketch_params=None,path_effects=[])
                 if aw.qmc.projectFlag and aw.qmc.ETcurve:
                     self.l_ETprojection, = self.ax.plot([], [],color = self.palette["et"],
                                                 dashes=dashes_setup,
-                                                label=aw.arabicReshape(QApplication.translate("Label", "ETprojection")),
+                                                label=aw.arabicReshape(QApplication.translate("Label", "ETprojection", None)),
                                                 linestyle = '-.', linewidth= 8, alpha = .3,sketch_params=None,path_effects=[])
 
                 if aw.qmc.AUCguideFlag:
                     self.l_AUCguide = self.ax.axvline(0,visible=False,color = self.palette["aucguide"],
-                                                label=aw.arabicReshape(QApplication.translate("Label", "AUCguide")),
+                                                label=aw.arabicReshape(QApplication.translate("Label", "AUCguide", None)),
                                                 linestyle = '-', linewidth= 1, alpha = .5,sketch_params=None,path_effects=[])
 
                 # if designer ON
@@ -9197,7 +9141,7 @@ class tgraphcanvas(FigureCanvas):
             except Exception as ex: # pylint: disable=broad-except
                 _log.exception(ex)
                 _, _, exc_tb = sys.exc_info()
-                aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " redraw() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " redraw() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             finally:
                 # we initialize at the end of the redraw the event and flag annotation custom position loaded from a profile as those should have been consumed by now
                 self.l_annotations_pos_dict = {}
@@ -9243,17 +9187,22 @@ class tgraphcanvas(FigureCanvas):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " checkOverlap() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " checkOverlap() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
         return overlap
 
     def annoboxCorners(self,anno):
-        f = self.ax.get_figure()
-        r = f.canvas.get_renderer() # this can fail for PDF generation with 'FigureCanvasPdf' object has no attribute 'get_renderer'
-        anno.update_bbox_position_size(renderer=r)
-        bb = anno.get_window_extent(renderer=r) # bounding box in display space
-        bbox_data = aw.qmc.ax.transData.inverted().transform(bb)
-        bbox = Bbox(bbox_data) # x0, y0, width, height
-        corners = (bbox.bounds[0],bbox.bounds[0]+bbox.bounds[2],bbox.bounds[1],bbox.bounds[1]+bbox.bounds[3])
+        try:
+            f = self.ax.get_figure()
+            r = f.canvas.get_renderer()
+            anno.update_bbox_position_size(renderer=r)
+            bb = anno.get_window_extent(renderer=r) # bounding box in display space
+            bbox_data = aw.qmc.ax.transData.inverted().transform(bb)
+            bbox = Bbox(bbox_data) # x0, y0, width, height
+            corners = (bbox.bounds[0],bbox.bounds[0]+bbox.bounds[2],bbox.bounds[1],bbox.bounds[1]+bbox.bounds[3])
+        except Exception as e: # pylint: disable=broad-except
+            _log.exception(e)
+            _, _, exc_tb = sys.exc_info()
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " annoboxCorners() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
         return corners  # x0, x1, y0, y1
 
     def parseSpecialeventannotation(self,eventanno, eventnum, applyto="foreground", postFCs=False):
@@ -9459,7 +9408,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " parseSpecialeventannotation() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " parseSpecialeventannotation() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             eventanno = ""
 
         return eventanno
@@ -9502,23 +9451,23 @@ class tgraphcanvas(FigureCanvas):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " placelogoimage() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " placelogoimage() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     #watermark image
     def logoloadfile(self,filename=None):
         try:
             if not filename:
-                filename = aw.ArtisanOpenFileDialog(msg=QApplication.translate("Message","Load Image File"),ext="*.png *.jpg")
+                filename = aw.ArtisanOpenFileDialog(msg=QApplication.translate("Message","Load Image File",None),ext="*.png *.jpg")
             if len(filename) == 0:
                 return
             from matplotlib.pyplot import imread
             aw.qmc.logoimg = imread(filename)
             aw.logofilename = filename
-            aw.sendmessage(QApplication.translate("Message","Loaded watermark image {0}").format(filename))
+            aw.sendmessage(QApplication.translate("Message","Loaded watermark image {0}", None).format(filename))
             QTimer.singleShot(500, lambda : self.redraw(recomputeAllDeltas=False)) #some time needed before the redraw on artisan start with no profile loaded.  processevents() does not work here.
         except Exception as ex: # pylint: disable=broad-except
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " logoloadfile() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " logoloadfile() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             aw.logofilename = ""
 
     #add stats summmary to graph
@@ -9532,7 +9481,7 @@ class tgraphcanvas(FigureCanvas):
                 #Admin Info Section
                 if aw.qmc.roastbatchnr > 0:
                     statstr_segments += [aw.qmc.roastbatchprefix, str(aw.qmc.roastbatchnr)]
-                if aw.qmc.title != QApplication.translate("Scope Title", "Roaster Scope"):
+                if aw.qmc.title != QApplication.translate("Scope Title", "Roaster Scope",None):
                     if statstr_segments != []:
                         statstr_segments.append(" ")
                     statstr_segments.append(aw.qmc.title)
@@ -9556,7 +9505,7 @@ class tgraphcanvas(FigureCanvas):
                             roastoftheday_segments.append('st')
                     else:
                         statstr_segments.append(f"\n#{aw.qmc.roastbatchpos}")
-                    statstr_segments += [" ", QApplication.translate("AddlInfo", "Roast of the Day")]
+                    statstr_segments += [" ", QApplication.translate("AddlInfo", "Roast of the Day", None)]
                 
                 if aw.qmc.ambientTemp not in [None,0] or aw.qmc.ambient_humidity not in [None,0] or aw.qmc.ambient_pressure not in [None,0]:
                     statstr_segments.append(skipline)
@@ -9571,7 +9520,7 @@ class tgraphcanvas(FigureCanvas):
                     if aw.qmc.roastertype:
                         statstr_segments += [aw.qmc.roastertype, " "]
                     if aw.qmc.drumspeed:
-                        statstr_segments += ["(", aw.qmc.drumspeed, QApplication.translate("Label", "RPM"), ")"]
+                        statstr_segments += ["(", aw.qmc.drumspeed, QApplication.translate("Label", "RPM",None), ")"]
 
                 #Green Beans Info Section
                 statstr_segments.append(skipline)
@@ -9585,7 +9534,7 @@ class tgraphcanvas(FigureCanvas):
                             statstr_segments.append("..")
                 
                 if aw.qmc.beansize_min or aw.qmc.beansize_max:
-                    statstr_segments += ['\n',  QApplication.translate("AddlInfo", "Screen Size"), ': ']
+                    statstr_segments += ['\n',  QApplication.translate("AddlInfo", "Screen Size", None), ': ']
                     if aw.qmc.beansize_min:
                         statstr_segments.append(str(int(round(aw.qmc.beansize_min))))
                     if aw.qmc.beansize_max:
@@ -9594,43 +9543,43 @@ class tgraphcanvas(FigureCanvas):
                         statstr_segments.append(str(int(round(aw.qmc.beansize_max))))
 
                 if aw.qmc.density[0] and aw.qmc.density[2] != 0:
-                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "Density Green"), ': ', 
+                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "Density Green", None), ': ', 
                         str(aw.float2float(aw.qmc.density[0]/aw.qmc.density[2],2)), ' ', encodeLocal(aw.qmc.density[1]), "/", encodeLocal(aw.qmc.density[3])]
                 if aw.qmc.moisture_greens:
-                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "Moisture Green"), ': ', str(aw.float2float(aw.qmc.moisture_greens,1)), "%"]
+                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "Moisture Green", None), ': ', str(aw.float2float(aw.qmc.moisture_greens,1)), "%"]
                 if aw.qmc.weight[0]:
                     if aw.qmc.weight[2] == "g":
                         w =str(aw.float2float(aw.qmc.weight[0],0))
                     else:
                         w = str(aw.float2float(aw.qmc.weight[0],2))
-                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "Batch Size") , ': ', w, aw.qmc.weight[2], " "]
+                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "Batch Size", None) , ': ', w, aw.qmc.weight[2], " "]
                     if aw.qmc.weight[1]:
                         statstr_segments += ['(-', str(aw.float2float(aw.weight_loss(aw.qmc.weight[0],aw.qmc.weight[1]),1)), "%)"]
                 
                 # Roast Info Section
                 statstr_segments.append(skipline)
                 if "roasted_density" in cp:
-                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "Density Roasted"), ': ', str(cp["roasted_density"]),
+                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "Density Roasted", None), ': ', str(cp["roasted_density"]),
                         ' ', encodeLocal(aw.qmc.density[1]), "/", encodeLocal(aw.qmc.density[3])]
                 if aw.qmc.moisture_roasted:
-                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "Moisture Roasted"), ': ', str(aw.float2float(aw.qmc.moisture_roasted,1)), "%"]
+                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "Moisture Roasted", None), ': ', str(aw.float2float(aw.qmc.moisture_roasted,1)), "%"]
                 if aw.qmc.whole_color > 0:
-                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "Whole Color"), ': #', str(aw.qmc.whole_color), " ",
+                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "Whole Color", None), ': #', str(aw.qmc.whole_color), " ",
                         str(aw.qmc.color_systems[aw.qmc.color_system_idx])]
                 if aw.qmc.ground_color > 0:
-                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "Ground Color"), ': #', str(aw.qmc.ground_color), " ",
+                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "Ground Color", None), ': #', str(aw.qmc.ground_color), " ",
                         str(aw.qmc.color_systems[aw.qmc.color_system_idx])]
                 if "BTU_batch" in cp and cp["BTU_batch"]:
-                    statstr_segments += ["\n", QApplication.translate("AddlInfo", "Energy"), ": ",
+                    statstr_segments += ["\n", QApplication.translate("AddlInfo", "Energy", None), ": ",
                         str(aw.float2float(aw.qmc.convertHeat(cp["BTU_batch"],0,3),2)), "kWh"]
                     if "BTU_batch_per_green_kg" in cp and cp["BTU_batch_per_green_kg"]:
                         statstr_segments += [" (", str(aw.float2float(aw.qmc.convertHeat(cp["BTU_batch_per_green_kg"], 0,3), 2)), "kWh/kg)"]
                 if "CO2_batch" in cp and cp["CO2_batch"]:
-                    statstr_segments += ["\n", QApplication.translate("AddlInfo", "CO2"), ": ", str(aw.float2float(cp["CO2_batch"],0)),"g"]
+                    statstr_segments += ["\n", QApplication.translate("AddlInfo", "CO2", None), ": ", str(aw.float2float(cp["CO2_batch"],0)),"g"]
                     if "CO2_batch_per_green_kg" in cp and cp["CO2_batch_per_green_kg"]:
                         statstr_segments += [" (", str(aw.float2float(cp["CO2_batch_per_green_kg"],0)), "g/kg)"]
                 if cp["AUC"]:
-                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "AUC"), ': ', str(cp["AUC"]), 'C*min [', str(cp["AUCbase"]), aw.qmc.mode, "]"]
+                    statstr_segments += ['\n', QApplication.translate("AddlInfo", "AUC", None), ': ', str(cp["AUC"]), 'C*min [', str(cp["AUCbase"]), aw.qmc.mode, "]"]
 
                 for notes in [aw.qmc.roastingnotes, aw.qmc.cuppingnotes]:
                     if notes is not None and len(notes)>0:
@@ -9687,7 +9636,7 @@ class tgraphcanvas(FigureCanvas):
                     start = 0
 
                 # position the stats summary relative to the right hand edge of the graph
-                drop_label = QApplication.translate("Scope Annotation","DROP {0}").replace(" {0}","")
+                drop_label = QApplication.translate("Scope Annotation","DROP {0}", None).replace(" {0}","")
                 _,_,droptext_end = self.droptextBounds(drop_label,start,statsheight,ls,prop,fc)
                 stats_textbox_bounds = self.statstextboxBounds(self.ax.get_xlim()[1]+border,statsheight,statstr,ls,prop,fc)
                 stats_textbox_width = stats_textbox_bounds[2]
@@ -9728,7 +9677,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " statsSummary() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " statsSummary() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     def statstextboxBounds(self,x_pos,y_pos,textstr,ls,prop,fc):
         
@@ -9737,15 +9686,8 @@ class tgraphcanvas(FigureCanvas):
             warnings.simplefilter("ignore")
             t = self.ax.text(x_pos, y_pos, textstr, verticalalignment='top',linespacing=ls,fontproperties=prop,color=fc,path_effects=[])
             f = self.ax.get_figure()
-            r = None
-            try:
-                r = f.canvas.get_renderer() # this might fail with 'FigureCanvasPdf' object has no attribute 'get_renderer' for PDF generation
-            except Exception: # pylint: disable=broad-except
-                pass
-            if r is None:
-                t.update_bbox_position_size()
-            else:
-                t.update_bbox_position_size(renderer=r)
+            r = f.canvas.get_renderer()
+            t.update_bbox_position_size(renderer=r)
             bb = t.get_window_extent(renderer=r) # bounding box in display space
             bbox_data = aw.qmc.ax.transData.inverted().transform(bb)
             bbox = Bbox(bbox_data)
@@ -9897,8 +9839,8 @@ class tgraphcanvas(FigureCanvas):
                 if silent:
                     reply = QMessageBox.StandardButton.Yes
                 else:
-                    string = QApplication.translate("Message", "Convert profile data to Fahrenheit?")
-                    reply = QMessageBox.question(aw,QApplication.translate("Message", "Convert Profile Temperature"),string,
+                    string = QApplication.translate("Message", "Convert profile data to Fahrenheit?",None)
+                    reply = QMessageBox.question(aw,QApplication.translate("Message", "Convert Profile Temperature",None),string,
                             QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.Cancel)
                 if reply == QMessageBox.StandardButton.Cancel:
                     return
@@ -9945,20 +9887,20 @@ class tgraphcanvas(FigureCanvas):
 
                         self.fahrenheitMode(setdefaultaxes=setdefaultaxes)
                         if not silent:
-                            aw.sendmessage(QApplication.translate("Message","Profile changed to Fahrenheit"))
+                            aw.sendmessage(QApplication.translate("Message","Profile changed to Fahrenheit", None))
 
                     elif not silent:
-                        QMessageBox.information(aw,QApplication.translate("Message", "Convert Profile Temperature"),
-                                                QApplication.translate("Message", "Unable to comply. You already are in Fahrenheit"))
-                        aw.sendmessage(QApplication.translate("Message","Profile not changed"))
+                        QMessageBox.information(aw,QApplication.translate("Message", "Convert Profile Temperature",None),
+                                                QApplication.translate("Message", "Unable to comply. You already are in Fahrenheit", None))
+                        aw.sendmessage(QApplication.translate("Message","Profile not changed", None))
                         return
 
             elif t == "C":
                 if silent:
                     reply = QMessageBox.StandardButton.Yes
                 else:
-                    string = QApplication.translate("Message", "Convert profile data to Celsius?")
-                    reply = QMessageBox.question(aw,QApplication.translate("Message", "Convert Profile Temperature"),string,
+                    string = QApplication.translate("Message", "Convert profile data to Celsius?",None)
+                    reply = QMessageBox.question(aw,QApplication.translate("Message", "Convert Profile Temperature",None),string,
                             QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.Cancel)
                 if reply == QMessageBox.StandardButton.Cancel:
                     return
@@ -10007,20 +9949,20 @@ class tgraphcanvas(FigureCanvas):
 
                         self.celsiusMode(setdefaultaxes=setdefaultaxes)
                         if not silent:
-                            aw.sendmessage(QApplication.translate("Message","Profile changed to Celsius"))
+                            aw.sendmessage(QApplication.translate("Message","Profile changed to Celsius", None))
 
                     elif not silent:
-                        QMessageBox.information(aw,QApplication.translate("Message", "Convert Profile Temperature"),
-                                                QApplication.translate("Message", "Unable to comply. You already are in Celsius"))
-                        aw.sendmessage(QApplication.translate("Message","Profile not changed"))
+                        QMessageBox.information(aw,QApplication.translate("Message", "Convert Profile Temperature",None),
+                                                QApplication.translate("Message", "Unable to comply. You already are in Celsius",None))
+                        aw.sendmessage(QApplication.translate("Message","Profile not changed", None))
                         return
 
             if not silent:
                 self.redraw(recomputeAllDeltas=True,smooth=True)
 
         elif not silent:
-            QMessageBox.information(aw,QApplication.translate("Message", "Convert Profile Scale"),
-                                          QApplication.translate("Message", "No profile data found"))
+            QMessageBox.information(aw,QApplication.translate("Message", "Convert Profile Scale",None),
+                                          QApplication.translate("Message", "No profile data found",None))
 
     @pyqtSlot()
     @pyqtSlot(bool)
@@ -10031,11 +9973,11 @@ class tgraphcanvas(FigureCanvas):
     def changeGColor(self,color):
         #load selected dictionary
         if color == 1:
-            aw.sendmessage(QApplication.translate("Message","Colors set to defaults"))
+            aw.sendmessage(QApplication.translate("Message","Colors set to defaults", None))
             fname = os.path.join(getResourcePath(), "Themes", application_name, "Default.athm")
             if os.path.isfile(fname) and not self.flagon:
                 aw.loadSettings_theme(fn=fname,remember=False,reset=False)
-                aw.sendmessage(QApplication.translate("Message","Colors set to Default Theme"))
+                aw.sendmessage(QApplication.translate("Message","Colors set to Default Theme", None))
             else:
                 for k in list(self.palette1.keys()):
                     self.palette[k] = self.palette1[k]
@@ -10047,11 +9989,11 @@ class tgraphcanvas(FigureCanvas):
                 self.backgroundytcolor      = self.palette["yt"]
                 self.EvalueColor = self.EvalueColor_default.copy()
                 self.EvalueTextColor = self.EvalueTextColor_default.copy()
-                aw.sendmessage(QApplication.translate("Message","Colors set to defaults"))
+                aw.sendmessage(QApplication.translate("Message","Colors set to defaults", None))
 
 
         if color == 2:
-            aw.sendmessage(QApplication.translate("Message","Colors set to grey"))
+            aw.sendmessage(QApplication.translate("Message","Colors set to grey", None))
             for k in list(aw.qmc.palette.keys()):
                 c = aw.qmc.palette[k]
                 nc = aw.convertToGreyscale(c)
@@ -10239,7 +10181,7 @@ class tgraphcanvas(FigureCanvas):
             if self.background:
                 if self.flavorbackgroundflag:
                     if len(aw.qmc.backgroundFlavors) != len(aw.qmc.flavors):
-                        message = QApplication.translate("Message","Background does not match number of labels")
+                        message = QApplication.translate("Message","Background does not match number of labels", None)
                         aw.sendmessage(message)
                         self.flavorbackgroundflag = False
                     else:
@@ -10417,7 +10359,7 @@ class tgraphcanvas(FigureCanvas):
                     from Phidget22.PhidgetServerType import PhidgetServerType
                     PhidgetNetwork.enableServerDiscovery(PhidgetServerType.PHIDGETSERVER_DEVICEREMOTE)
                     self.phidgetServiceDiscoveryStarted = True
-                    aw.sendmessage(QApplication.translate("Message","Phidget service discovery started..."))
+                    aw.sendmessage(QApplication.translate("Message","Phidget service discovery started...", None))
                 except Exception as e:  # pylint: disable=broad-except
                     _log.exception(e)
             else:
@@ -10465,13 +10407,17 @@ class tgraphcanvas(FigureCanvas):
                     self.addPhidgetServer()
                 except Exception: # pylint: disable=broad-except
                     if aw.qmc.device in aw.qmc.phidgetDevices:
-                        aw.qmc.adderror(QApplication.translate("Error Message","Exception: PhidgetManager couldn't be started. Verify that the Phidget driver is correctly installed!"))
+                        aw.qmc.adderror(QApplication.translate("Error Message","Exception: PhidgetManager couldn't be started. Verify that the Phidget driver is correctly installed!",None))
+#                        _, _, exc_tb = sys.exc_info()
+#                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " addPhidgetServer() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             if self.phidgetManager is None:
                 try:
                     self.phidgetManager = PhidgetManager()
                 except Exception: # pylint: disable=broad-except
                     if aw.qmc.device in aw.qmc.phidgetDevices:
-                        aw.qmc.adderror(QApplication.translate("Error Message","Exception: PhidgetManager couldn't be started. Verify that the Phidget driver is correctly installed!"))
+                        aw.qmc.adderror(QApplication.translate("Error Message","Exception: PhidgetManager couldn't be started. Verify that the Phidget driver is correctly installed!",None))
+#                        _, _, exc_tb = sys.exc_info()
+#                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " startPhidgetManager() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
         finally:
             sys.stderr = _stderr
 
@@ -10531,7 +10477,7 @@ class tgraphcanvas(FigureCanvas):
             aw.qmc.redraw(True,sampling=True,smooth=aw.qmc.optimalSmoothing) # we need to re-smooth with standard smoothing if ON and optimal-smoothing is ticked
 
             if self.designerflag: return
-            aw.sendmessage(QApplication.translate("Message","Scope monitoring..."))
+            aw.sendmessage(QApplication.translate("Message","Scope monitoring...", None))
             #disable RESET button:
             aw.buttonRESET.setEnabled(False)
             aw.buttonRESET.setVisible(False)
@@ -10541,15 +10487,15 @@ class tgraphcanvas(FigureCanvas):
             else:
                 aw.buttonONOFF.setStyleSheet(aw.pushbuttonstyles["ON"])
             QApplication.processEvents()
-            aw.buttonONOFF.setText(QApplication.translate("Button", "OFF")) # text means click to turn OFF (it is ON)
-            aw.buttonONOFF.setToolTip(QApplication.translate("Tooltip", "Stop monitoring"))
+            aw.buttonONOFF.setText(QApplication.translate("Button", "OFF",None)) # text means click to turn OFF (it is ON)
+            aw.buttonONOFF.setToolTip(QApplication.translate("Tooltip", "Stop monitoring", None))
             aw.buttonSTARTSTOP.setEnabled(True) # ensure that the START button is enabled
             aw.disableEditMenus()
             aw.update_extraeventbuttons_visibility()
             aw.updateExtraButtonsVisibility()
             aw.updateSlidersVisibility() # update visibility of sliders based on the users preference
-            aw.pidcontrol.activateONOFFeasySV(aw.pidcontrol.svButtons and aw.buttonONOFF.isVisible())
-            aw.pidcontrol.activateSVSlider(aw.pidcontrol.svSlider and aw.buttonONOFF.isVisible())
+            aw.pidcontrol.activateONOFFeasySV(aw.pidcontrol.svButtons and aw.buttonONOFF0.isVisible())
+            aw.pidcontrol.activateSVSlider(aw.pidcontrol.svSlider and aw.buttonONOFF0.isVisible())
             self.block_update = False # unblock the updating of the bitblit canvas
             aw.updateReadingsLCDsVisibility() # this one triggers the resize and the recreation of the bitblit canvas
             self.threadserver.createSampleThread()
@@ -10558,7 +10504,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " OnMonitor() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " OnMonitor() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     def OffMonitor(self):
         try:
@@ -10605,9 +10551,9 @@ class tgraphcanvas(FigureCanvas):
                 aw.buttonONOFF.setStyleSheet(aw.pushbuttonstyles_simulator["OFF"])
             else:
                 aw.buttonONOFF.setStyleSheet(aw.pushbuttonstyles["OFF"])
-            aw.buttonONOFF.setToolTip(QApplication.translate("Tooltip", "Start monitoring"))
-            aw.sendmessage(QApplication.translate("Message","Scope stopped"))
-            aw.buttonONOFF.setText(QApplication.translate("Button", "ON")) # text means click to turn OFF (it is ON)
+            aw.buttonONOFF.setToolTip(QApplication.translate("Tooltip", "Start monitoring", None))
+            aw.sendmessage(QApplication.translate("Message","Scope stopped", None))
+            aw.buttonONOFF.setText(QApplication.translate("Button", "ON",None)) # text means click to turn OFF (it is ON)
             # reset time LCD color to the default (might have been changed to red due to long cooling!)
             aw.updateReadingsLCDsVisibility()
             # reset WebLCDs
@@ -10650,7 +10596,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " OffMonitor() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " OffMonitor() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     def getAmbientData(self):
         _log.debug("getAmbientData()")
@@ -10697,19 +10643,19 @@ class tgraphcanvas(FigureCanvas):
             # set and report
             if humidity is not None:
                 self.ambient_humidity = aw.float2float(humidity,1)
-                aw.sendmessage(QApplication.translate("Message","Humidity: {}%").format(self.ambient_humidity))
+                aw.sendmessage(QApplication.translate("Message","Humidity: {}%", None).format(self.ambient_humidity))
                 libtime.sleep(1)
 
             if temp is not None:
                 if self.mode == "F":
                     temp = fromCtoF(temp)
                 self.ambientTemp = aw.float2float(temp,1)
-                aw.sendmessage(QApplication.translate("Message","Temperature: {}{}").format(self.ambientTemp,self.mode))
+                aw.sendmessage(QApplication.translate("Message","Temperature: {}{}", None).format(self.ambientTemp,self.mode))
                 libtime.sleep(1)
 
             if pressure is not None:
                 self.ambient_pressure = aw.float2float(pressure,1)
-                aw.sendmessage(QApplication.translate("Message","Pressure: {}hPa").format(self.ambient_pressure))
+                aw.sendmessage(QApplication.translate("Message","Pressure: {}hPa", None).format(self.ambient_pressure))
         except Exception as e:
             _log.exception(e)
         finally:
@@ -10938,14 +10884,6 @@ class tgraphcanvas(FigureCanvas):
             if not aw.qmc.title_show_always:
                 aw.qmc.setProfileTitle("")
             
-            aw.cacheCurveVisibilities()
-            
-            # disable "green flag" menu:
-            try:
-                aw.ntb.disable_edit_curve_parameters()
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
-            
             # reset LCD timer color that might have been reset by the RS PID in monitoring mode:
             aw.lcd1.setStyleSheet("QLCDNumber { border-radius: 4; color: %s; background-color: %s;}"%(aw.lcdpaletteF["timer"],aw.lcdpaletteB["timer"]))
             aw.qmc.setTimerLargeLCDcolorSignal.emit(aw.lcdpaletteF["timer"],aw.lcdpaletteB["timer"])
@@ -10979,11 +10917,11 @@ class tgraphcanvas(FigureCanvas):
             aw.qmc.profile_sampling_interval = self.delay / 1000.
             aw.qmc.updateDeltaSamples()
             aw.disableSaveActions()
-            aw.sendmessage(QApplication.translate("Message","Scope recording..."))
+            aw.sendmessage(QApplication.translate("Message","Scope recording...", None))
             aw.buttonSTARTSTOP.setEnabled(False)
             aw.buttonSTARTSTOP.setGraphicsEffect(None)
-            aw.buttonONOFF.setText(QApplication.translate("Button", "OFF")) # text means click to turn OFF (it is ON)
-            aw.buttonONOFF.setToolTip(QApplication.translate("Tooltip", "Stop recording"))
+            aw.buttonONOFF.setText(QApplication.translate("Button", "OFF",None)) # text means click to turn OFF (it is ON)
+            aw.buttonONOFF.setToolTip(QApplication.translate("Tooltip", "Stop recording", None))
             aw.buttonONOFF.setEnabled(True) # ensure that the OFF button is enabled
             #disable RESET button:
             aw.buttonRESET.setEnabled(False)
@@ -11013,12 +10951,11 @@ class tgraphcanvas(FigureCanvas):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " OffMonitor() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " OffMonitor() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     def OffRecorder(self, autosave=True):
         try:
             aw.enableSaveActions()
-            aw.resetCurveVisibilities()
             self.flagstart = False
             if aw.simulator:
                 aw.buttonSTARTSTOP.setStyleSheet(aw.pushbuttonstyles_simulator["STOP"])
@@ -11044,23 +10981,17 @@ class tgraphcanvas(FigureCanvas):
                     aw.automaticsave()
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
-            aw.sendmessage(QApplication.translate("Message","Scope recording stopped"))
-            aw.buttonSTARTSTOP.setText(QApplication.translate("Button", "START"))
+            aw.sendmessage(QApplication.translate("Message","Scope recording stopped", None))
+            aw.buttonSTARTSTOP.setText(QApplication.translate("Button", "START",None))
             aw.lowerbuttondialog.setVisible(False)
             aw.messagelabel.setVisible(True)
             aw.phasesLCDs.hide()
             aw.AUCLCD.hide()
             aw.hideEventsMinieditor()
-            
-            # enable "green flag" menu:
-            try:
-                aw.ntb.enable_edit_curve_parameters()
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " OffRecorder() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " OffRecorder() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     @pyqtSlot()
     def toggleRecorderTigger(self):
@@ -11121,7 +11052,7 @@ class tgraphcanvas(FigureCanvas):
                         # undo wrongly set CHARGE
                         ## deactivate autoCHARGE
                         ##aw.qmc.autoCHARGEenabled = False
-                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation", "CHARGE"))
+                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation", "CHARGE", None))
                         if len(self.l_annotations) > 1 and self.l_annotations[-1].get_text() == st1:
                             try:
                                 self.l_annotations[-1].remove()
@@ -11152,7 +11083,7 @@ class tgraphcanvas(FigureCanvas):
                                 if len(self.timex) > 0:
                                     self.timeindex[0] = len(self.timex)-1
                                 else:
-                                    message = QApplication.translate("Message","Not enough data collected yet. Try again in a few seconds")
+                                    message = QApplication.translate("Message","Not enough data collected yet. Try again in a few seconds", None)
                                     aw.sendmessage(message)
                                     return
                             if aw.pidcontrol.pidOnCHARGE and not aw.pidcontrol.pidActive: # Arduino/TC4, Hottop, MODBUS
@@ -11168,7 +11099,7 @@ class tgraphcanvas(FigureCanvas):
                         if self.BTcurve:
                             # only if BT is shown we place the annotation:
                             d = aw.qmc.ylimit - aw.qmc.ylimit_min
-                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation", "CHARGE"))
+                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation", "CHARGE", None))
                             t2 = self.temp2[self.timeindex[0]]
                             tx = self.timex[self.timeindex[0]]
                             self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,t2,t2,d)
@@ -11195,12 +11126,12 @@ class tgraphcanvas(FigureCanvas):
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
             else:
-                message = QApplication.translate("Message","CHARGE: Scope is not recording")
+                message = QApplication.translate("Message","CHARGE: Scope is not recording", None)
                 aw.sendmessage(message)
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " markCharge() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " markCharge() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         finally:
             if aw.qmc.profileDataSemaphore.available() < 1:
                 aw.qmc.profileDataSemaphore.release(1)
@@ -11223,7 +11154,7 @@ class tgraphcanvas(FigureCanvas):
                     else:
                         fmt = "%.0f"
                     bt = fmt%self.temp2[self.timeindex[0]] + aw.qmc.mode
-                    message = QApplication.translate("Message","Roast time starts now 00:00 BT = {0}").format(bt)
+                    message = QApplication.translate("Message","Roast time starts now 00:00 BT = {0}",None).format(bt)
                     aw.sendmessage(message)
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
@@ -11241,7 +11172,7 @@ class tgraphcanvas(FigureCanvas):
             if self.flagstart and self.markTPflag:
                 if aw.qmc.TPalarmtimeindex and self.timeindex[0] != -1 and len(self.timex) > aw.qmc.TPalarmtimeindex:
                     st = stringfromseconds(self.timex[aw.qmc.TPalarmtimeindex]-self.timex[self.timeindex[0]],False)
-                    st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","TP {0}").format(st))
+                    st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","TP {0}", None).format(st))
                     #anotate temperature
                     d = aw.qmc.ylimit - aw.qmc.ylimit_min
                     self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[0]],self.temp2[aw.qmc.TPalarmtimeindex],d)
@@ -11249,13 +11180,13 @@ class tgraphcanvas(FigureCanvas):
                     #self.fig.canvas.draw() # not needed as self.annotate does the (partial) redraw
                     self.updateBackground() # but we need to update the background cache with the new annotation
                     st2 = "%.1f "%self.temp2[aw.qmc.TPalarmtimeindex] + self.mode
-                    message = QApplication.translate("Message","[TP] recorded at {0} BT = {1}").format(st,st2)
+                    message = QApplication.translate("Message","[TP] recorded at {0} BT = {1}", None).format(st,st2)
                     #set message at bottom
                     aw.sendmessage(message)
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " markTP() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " markTP() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         finally:
             if self.profileDataSemaphore.available() < 1:
                 self.profileDataSemaphore.release(1)
@@ -11286,7 +11217,7 @@ class tgraphcanvas(FigureCanvas):
                         # deactivate autoDRY
                         aw.qmc.autoDRYenabled = False
                         st = stringfromseconds(self.timex[self.timeindex[1]]-start,False)
-                        DE_str = aw.arabicReshape(QApplication.translate("Scope Annotation","DE {0}").format(st))
+                        DE_str = aw.arabicReshape(QApplication.translate("Scope Annotation","DE {0}", None).format(st))
                         if len(self.l_annotations) > 1 and self.l_annotations[-1].get_text() == DE_str:
                             try:
                                 self.l_annotations[-1].remove()
@@ -11317,7 +11248,7 @@ class tgraphcanvas(FigureCanvas):
                             # only if BT is shown we place the annotation:
                             #calculate time elapsed since charge time
                             st = stringfromseconds(self.timex[self.timeindex[1]]-start,False)
-                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","DE {0}").format(st))
+                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","DE {0}", None).format(st))
                             #anotate temperature
                             d = aw.qmc.ylimit - aw.qmc.ylimit_min
                             self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[0]],self.temp2[self.timeindex[1]],d)
@@ -11328,12 +11259,12 @@ class tgraphcanvas(FigureCanvas):
                         aw.qmc.phasesLCDmode = aw.qmc.phasesLCDmode_l[1]
     
                 else:
-                    message = QApplication.translate("Message","DRY END: Scope is not recording")
+                    message = QApplication.translate("Message","DRY END: Scope is not recording", None)
                     aw.sendmessage(message)
             except Exception as ex: # pylint: disable=broad-except
                 _log.exception(ex)
                 _, _, exc_tb = sys.exc_info()
-                aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " markDryEnd() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " markDryEnd() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             finally:
                 if aw.qmc.profileDataSemaphore.available() < 1:
                     aw.qmc.profileDataSemaphore.release(1)
@@ -11364,7 +11295,7 @@ class tgraphcanvas(FigureCanvas):
                             start = 0
                         st = stringfromseconds(self.timex[self.timeindex[1]]-start)
                         st2 = "%.1f "%self.temp2[self.timeindex[1]] + self.mode
-                        message = QApplication.translate("Message","[DRY END] recorded at {0} BT = {1}").format(st,st2)
+                        message = QApplication.translate("Message","[DRY END] recorded at {0} BT = {1}", None).format(st,st2)
                         #set message at bottom
                         aw.sendmessage(message)
                     except Exception as e: # pylint: disable=broad-except
@@ -11399,7 +11330,7 @@ class tgraphcanvas(FigureCanvas):
                         # undo wrongly set FCs
                         # deactivate autoFCs
                         aw.qmc.autoFCsenabled = False
-                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","FCs {0}").format(stringfromseconds(self.timex[self.timeindex[2]]-start,False)))
+                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","FCs {0}", None).format(stringfromseconds(self.timex[self.timeindex[2]]-start,False)))
                         if len(self.l_annotations) > 1 and self.l_annotations[-1].get_text() == st1:
                             try:
                                 self.l_annotations[-1].remove()
@@ -11430,7 +11361,7 @@ class tgraphcanvas(FigureCanvas):
                         if self.BTcurve:
                             # only if BT is shown we place the annotation:
                             #calculate time elapsed since charge time
-                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","FCs {0}").format(stringfromseconds(self.timex[self.timeindex[2]]-start,False)))
+                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","FCs {0}", None).format(stringfromseconds(self.timex[self.timeindex[2]]-start,False)))
                             d = aw.qmc.ylimit - aw.qmc.ylimit_min
                             if self.timeindex[1]:
                                 self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[1]],self.temp2[self.timeindex[2]],d)
@@ -11442,12 +11373,12 @@ class tgraphcanvas(FigureCanvas):
                         
                         aw.qmc.phasesLCDmode = aw.qmc.phasesLCDmode_l[2]
                 else:
-                    message = QApplication.translate("Message","FC START: Scope is not recording")
+                    message = QApplication.translate("Message","FC START: Scope is not recording", None)
                     aw.sendmessage(message)
             except Exception as ex: # pylint: disable=broad-except
                 _log.exception(ex)
                 _, _, exc_tb = sys.exc_info()
-                aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " mark1Cstart() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " mark1Cstart() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             finally:
                 if aw.qmc.profileDataSemaphore.available() < 1:
                     aw.qmc.profileDataSemaphore.release(1)
@@ -11480,7 +11411,7 @@ class tgraphcanvas(FigureCanvas):
                         start = 0
                     st1 = stringfromseconds(self.timex[self.timeindex[2]]-start)
                     st2 = "%.1f "%self.temp2[self.timeindex[2]] + self.mode
-                    message = QApplication.translate("Message","[FC START] recorded at {0} BT = {1}").format(st1,st2)
+                    message = QApplication.translate("Message","[FC START] recorded at {0} BT = {1}", None).format(st1,st2)
                     aw.sendmessage(message)
                     aw.onMarkMoveToNext(aw.buttonFCs)
                     if self.autoFCsIdx == 0:
@@ -11510,7 +11441,7 @@ class tgraphcanvas(FigureCanvas):
                         start = 0
                     if aw.buttonFCe.isFlat() and self.timeindex[3] > 0:
                         # undo wrongly set FCe
-                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","FCe {0}").format(stringfromseconds(self.timex[self.timeindex[3]]-start,False)))
+                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","FCe {0}", None).format(stringfromseconds(self.timex[self.timeindex[3]]-start,False)))
                         if len(self.l_annotations) > 1 and self.l_annotations[-1].get_text() == st1:
                             try:
                                 self.l_annotations[-1].remove()
@@ -11538,19 +11469,19 @@ class tgraphcanvas(FigureCanvas):
                         if self.BTcurve:
                             # only if BT is shown we place the annotation:
                             #calculate time elapsed since charge time
-                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","FCe {0}").format(stringfromseconds(self.timex[self.timeindex[3]]-start,False)))
+                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","FCe {0}", None).format(stringfromseconds(self.timex[self.timeindex[3]]-start,False)))
                             d = aw.qmc.ylimit - aw.qmc.ylimit_min
                             self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[2]],self.temp2[self.timeindex[3]],d)
                             self.l_annotations += self.annotate(self.temp2[self.timeindex[3]],st1,self.timex[self.timeindex[3]],self.temp2[self.timeindex[3]],self.ystep_up,self.ystep_down,draggable_anno_key=3)
                             #self.fig.canvas.draw() # not needed as self.annotate does the (partial) redraw
                             self.updateBackground() # but we need
                 else:
-                    message = QApplication.translate("Message","FC END: Scope is not recording")
+                    message = QApplication.translate("Message","FC END: Scope is not recording", None)
                     aw.sendmessage(message)
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
                 _, _, exc_tb = sys.exc_info()
-                aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " mark1Cend() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " mark1Cend() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             finally:
                 if aw.qmc.profileDataSemaphore.available() < 1:
                     aw.qmc.profileDataSemaphore.release(1)
@@ -11586,7 +11517,7 @@ class tgraphcanvas(FigureCanvas):
                         start = 0
                     st1 = stringfromseconds(self.timex[self.timeindex[3]]-start)
                     st2 = "%.1f "%self.temp2[self.timeindex[3]] + self.mode
-                    message = QApplication.translate("Message","[FC END] recorded at {0} BT = {1}").format(st1,st2)
+                    message = QApplication.translate("Message","[FC END] recorded at {0} BT = {1}", None).format(st1,st2)
                     aw.sendmessage(message)
                     aw.onMarkMoveToNext(aw.buttonFCe)
                     self.updategraphicsSignal.emit() # we need this to have the projections redrawn immediately
@@ -11615,7 +11546,7 @@ class tgraphcanvas(FigureCanvas):
                         start = 0
                     if aw.buttonSCs.isFlat() and self.timeindex[4] > 0:
                         # undo wrongly set FCs
-                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","SCs {0}").format(stringfromseconds(self.timex[self.timeindex[4]]-start,False)))
+                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","SCs {0}", None).format(stringfromseconds(self.timex[self.timeindex[4]]-start,False)))
                         if len(self.l_annotations) > 1 and self.l_annotations[-1].get_text() == st1:
                             try:
                                 self.l_annotations[-1].remove()
@@ -11642,7 +11573,7 @@ class tgraphcanvas(FigureCanvas):
                                 return
                         if self.BTcurve:
                             # only if BT is shown we place the annotation:
-                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","SCs {0}").format(stringfromseconds(self.timex[self.timeindex[4]]-start,False)))
+                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","SCs {0}", None).format(stringfromseconds(self.timex[self.timeindex[4]]-start,False)))
                             d = aw.qmc.ylimit - aw.qmc.ylimit_min
                             if self.timeindex[3]:
                                 self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[3]],self.temp2[self.timeindex[4]],d)
@@ -11652,12 +11583,12 @@ class tgraphcanvas(FigureCanvas):
                             #self.fig.canvas.draw() # not needed as self.annotate does the (partial) redraw
                             self.updateBackground() # but we need
                 else:
-                    message = QApplication.translate("Message","SC START: Scope is not recording")
+                    message = QApplication.translate("Message","SC START: Scope is not recording", None)
                     aw.sendmessage(message)
             except Exception as ex: # pylint: disable=broad-except
                 _log.exception(ex)
                 _, _, exc_tb = sys.exc_info()
-                aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " mark2Cstart() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " mark2Cstart() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             finally:
                 if aw.qmc.profileDataSemaphore.available() < 1:
                     aw.qmc.profileDataSemaphore.release(1)
@@ -11700,7 +11631,7 @@ class tgraphcanvas(FigureCanvas):
                             st2 = "%.1f "%self.temp2[self.timeindex[4]] + self.mode
                         except Exception: # pylint: disable=broad-except
                             pass
-                        message = QApplication.translate("Message","[SC START] recorded at {0} BT = {1}").format(st1,st2)
+                        message = QApplication.translate("Message","[SC START] recorded at {0} BT = {1}", None).format(st1,st2)
                         aw.sendmessage(message)
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
@@ -11730,7 +11661,7 @@ class tgraphcanvas(FigureCanvas):
                         start = 0
                     if aw.buttonSCe.isFlat() and self.timeindex[5] > 0:
                         # undo wrongly set FCs
-                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","SCe {0}").format(stringfromseconds(self.timex[self.timeindex[5]]-start,False)))
+                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","SCe {0}", None).format(stringfromseconds(self.timex[self.timeindex[5]]-start,False)))
                         if len(self.l_annotations) > 1 and self.l_annotations[-1].get_text() == st1:
                             try:
                                 self.l_annotations[-1].remove()
@@ -11757,19 +11688,19 @@ class tgraphcanvas(FigureCanvas):
                                 return
                         if self.BTcurve:
                             # only if BT is shown we place the annotation:
-                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","SCe {0}").format(stringfromseconds(self.timex[self.timeindex[5]]-start,False)))
+                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","SCe {0}", None).format(stringfromseconds(self.timex[self.timeindex[5]]-start,False)))
                             d = aw.qmc.ylimit - aw.qmc.ylimit_min
                             self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[4]],self.temp2[self.timeindex[5]],d)
                             self.l_annotations += self.annotate(self.temp2[self.timeindex[5]],st1,self.timex[self.timeindex[5]],self.temp2[self.timeindex[5]],self.ystep_up,self.ystep_down,draggable_anno_key=5)
                             #self.fig.canvas.draw() # not needed as self.annotate does the (partial) redraw
                             self.updateBackground() # but we need
                 else:
-                    message = QApplication.translate("Message","SC END: Scope is not recording")
+                    message = QApplication.translate("Message","SC END: Scope is not recording", None)
                     aw.sendmessage(message)
             except Exception as ex: # pylint: disable=broad-except
                 _log.exception(ex)
                 _, _, exc_tb = sys.exc_info()
-                aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " mark2Cend() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " mark2Cend() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             finally:
                 if aw.qmc.profileDataSemaphore.available() < 1:
                     aw.qmc.profileDataSemaphore.release(1)
@@ -11811,7 +11742,7 @@ class tgraphcanvas(FigureCanvas):
                         start = 0
                     st1 = stringfromseconds(self.timex[self.timeindex[5]]-start)
                     st2 = "%.1f "%self.temp2[self.timeindex[5]] + self.mode
-                    message = QApplication.translate("Message","[SC END] recorded at {0} BT = {1}").format(st1,st2)
+                    message = QApplication.translate("Message","[SC END] recorded at {0} BT = {1}", None).format(st1,st2)
                     aw.sendmessage(message)
                     aw.onMarkMoveToNext(aw.buttonSCe)
                     self.updategraphicsSignal.emit() # we need this to have the projections redrawn immediately
@@ -11843,7 +11774,7 @@ class tgraphcanvas(FigureCanvas):
                         # undo wrongly set FCs
                         # deactivate autoDROP
                         aw.qmc.autoDROPenabled = False
-                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","DROP {0}").format(stringfromseconds(self.timex[self.timeindex[6]]-start,False)))
+                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","DROP {0}", None).format(stringfromseconds(self.timex[self.timeindex[6]]-start,False)))
                         if len(self.l_annotations) > 1 and self.l_annotations[-1].get_text() == st1:
                             try:
                                 self.l_annotations[-1].remove()
@@ -11879,7 +11810,7 @@ class tgraphcanvas(FigureCanvas):
                                 return
                         if self.BTcurve:
                             # only if BT is shown we place the annotation:
-                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","DROP {0}").format(stringfromseconds(self.timex[self.timeindex[6]]-start,False)))
+                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","DROP {0}", None).format(stringfromseconds(self.timex[self.timeindex[6]]-start,False)))
                             d = aw.qmc.ylimit - aw.qmc.ylimit_min
                             if self.timeindex[5]:
                                 self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[5]],self.temp2[self.timeindex[6]],d)
@@ -11913,12 +11844,12 @@ class tgraphcanvas(FigureCanvas):
                             except Exception as e: # pylint: disable=broad-except
                                 _log.exception(e)
                 else:
-                    message = QApplication.translate("Message","DROP: Scope is not recording")
+                    message = QApplication.translate("Message","DROP: Scope is not recording", None)
                     aw.sendmessage(message)
             except Exception as ex: # pylint: disable=broad-except
                 _log.exception(ex)
                 _, _, exc_tb = sys.exc_info()
-                aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " markDrop() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " markDrop() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             finally:
                 if aw.qmc.profileDataSemaphore.available() < 1:
                     aw.qmc.profileDataSemaphore.release(1)
@@ -11966,7 +11897,7 @@ class tgraphcanvas(FigureCanvas):
                                 start = 0
                             st1 = stringfromseconds(self.timex[self.timeindex[6]]-start)
                             st2 = "%.1f "%self.temp2[self.timeindex[6]] + self.mode
-                            message = QApplication.translate("Message","Roast ended at {0} BT = {1}").format(st1,st2)
+                            message = QApplication.translate("Message","Roast ended at {0} BT = {1}", None).format(st1,st2)
                             aw.sendmessage(message)
                         except Exception as e: # pylint: disable=broad-except
                             _log.exception(e)
@@ -12010,7 +11941,7 @@ class tgraphcanvas(FigureCanvas):
                     if aw.buttonCOOL.isFlat() and self.timeindex[7] > 0:
                         # undo wrongly set COOL
     
-                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","CE {0}").format(stringfromseconds(self.timex[self.timeindex[7]] - start)))
+                        st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","CE {0}", None).format(stringfromseconds(self.timex[self.timeindex[7]] - start)))
     
                         if len(self.l_annotations) > 1 and self.l_annotations[-1].get_text() == st1:
                             try:
@@ -12040,7 +11971,7 @@ class tgraphcanvas(FigureCanvas):
                         if self.BTcurve:
                             # only if BT is shown we place the annotation:
                             #calculate time elapsed since charge time
-                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","CE {0}").format(stringfromseconds(self.timex[self.timeindex[7]] - start)))
+                            st1 = aw.arabicReshape(QApplication.translate("Scope Annotation","CE {0}", None).format(stringfromseconds(self.timex[self.timeindex[7]] - start)))
                             #anotate temperature
                             d = aw.qmc.ylimit - aw.qmc.ylimit_min
                             self.ystep_down,self.ystep_up = self.findtextgap(self.ystep_down,self.ystep_up,self.temp2[self.timeindex[6]],self.temp2[self.timeindex[7]],d)
@@ -12048,12 +11979,12 @@ class tgraphcanvas(FigureCanvas):
                             #self.fig.canvas.draw() # not needed as self.annotate does the (partial) redraw
                             self.updateBackground() # but we need
                 else:
-                    message = QApplication.translate("Message","COOL: Scope is not recording")
+                    message = QApplication.translate("Message","COOL: Scope is not recording", None)
                     aw.sendmessage(message)
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
                 _, _, exc_tb = sys.exc_info()
-                aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " markCoolEnd() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " markCoolEnd() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             finally:
                 if aw.qmc.profileDataSemaphore.available() < 1:
                     aw.qmc.profileDataSemaphore.release(1)
@@ -12097,7 +12028,7 @@ class tgraphcanvas(FigureCanvas):
                         start = 0
                     st1 = stringfromseconds(self.timex[self.timeindex[7]]-start)
                     st2 = "%.1f "%self.temp2[self.timeindex[7]] + self.mode
-                    message = QApplication.translate("Message","[COOL END] recorded at {0} BT = {1}").format(st1,st2)
+                    message = QApplication.translate("Message","[COOL END] recorded at {0} BT = {1}", None).format(st1,st2)
                     #set message at bottom
                     aw.sendmessage(message)
                     self.updategraphicsSignal.emit() # we need this to have the projections redrawn immediately
@@ -12227,7 +12158,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " EventRecord() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " EventRecord() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     #Marks location in graph of special events. For example change a fan setting.
     #Uses the position of the time index (variable self.timex) as location in time
@@ -12314,7 +12245,7 @@ class tgraphcanvas(FigureCanvas):
                                 #some times ET is not drawn (ET = 0) when using device NONE
                                 # plot events on BT when showeventsonbt is true
                                 if aw.qmc.ETcurve and not aw.qmc.showeventsonbt and self.temp1[index] >= self.temp2[index]:
-                                    anno = self.ax.annotate(f"{firstletter}{secondletter}",
+                                    anno = self.ax.annotate(firstletter + secondletter,
                                         xy=(self.timex[index],
                                         self.temp1[index]),
                                         xytext=(self.timex[index],row[etype]),
@@ -12326,7 +12257,7 @@ class tgraphcanvas(FigureCanvas):
                                         fontsize=fontsize,
                                         fontproperties=fontprop_small)
                                 elif aw.qmc.BTcurve:
-                                    anno = self.ax.annotate(f"{firstletter}{secondletter}",
+                                    anno = self.ax.annotate(firstletter + secondletter,
                                             xy=(self.timex[index],
                                             self.temp2[index]),
                                             xytext=(self.timex[index],row[etype]),
@@ -12397,7 +12328,7 @@ class tgraphcanvas(FigureCanvas):
                                         boxcolor = self.palette["specialeventbox"]
                                         textcolor = self.palette["specialeventtext"]
                                     if self.eventsGraphflag in [0,3] or self.specialeventstype[-1] > 3:
-                                        anno = self.ax.annotate(f"{firstletter}{secondletter}", xy=(self.timex[index], temp),xytext=(self.timex[index],temp+height),alpha=0.9,
+                                        anno = self.ax.annotate(firstletter + secondletter, xy=(self.timex[index], temp),xytext=(self.timex[index],temp+height),alpha=0.9,
                                                          color=textcolor,
                                                          va="center", ha="center",
                                                          arrowprops=dict(arrowstyle='-',color=boxcolor,alpha=0.4), #,relpos=(0,0)),
@@ -12409,7 +12340,7 @@ class tgraphcanvas(FigureCanvas):
                                     elif self.eventsGraphflag == 4:
                                         if thirdletter != "":
                                             firstletter = ""
-                                        anno = self.ax.annotate(f"{firstletter}{secondletter}{thirdletter}", xy=(self.timex[index], temp),xytext=(self.timex[index],temp),alpha=0.9,
+                                        anno = self.ax.annotate(firstletter + secondletter + thirdletter, xy=(self.timex[index], temp),xytext=(self.timex[index],temp),alpha=0.9,
                                                          color=textcolor,
                                                          va="center", ha="center",
                                                          bbox=dict(boxstyle=boxstyle, fc=boxcolor, ec='none'),
@@ -12430,11 +12361,11 @@ class tgraphcanvas(FigureCanvas):
                         else:
                             start = 0
                         timed = stringfromseconds(self.timex[i] - start)
-                        message = QApplication.translate("Message","Event # {0} recorded at BT = {1} Time = {2}").format(str(Nevents+1),temp,timed)
+                        message = QApplication.translate("Message","Event # {0} recorded at BT = {1} Time = {2}", None).format(str(Nevents+1),temp,timed)
                         aw.sendmessage(message)
                         #write label in mini recorder if flag checked
                         if aw.minieventsflag:
-                            aw.eventlabel.setText(QApplication.translate("Label", "Event #<b>{0} </b>").format(Nevents+1))
+                            aw.eventlabel.setText(QApplication.translate("Label", "Event #<b>{0} </b>",None).format(Nevents+1))
                             aw.eNumberSpinBox.blockSignals(True)
                             try:
                                 aw.eNumberSpinBox.setValue(Nevents+1)
@@ -12450,11 +12381,11 @@ class tgraphcanvas(FigureCanvas):
                             aw.valueEdit.setText(aw.qmc.eventsvalues(self.specialeventsvalue[Nevents]))
                             aw.lineEvent.setText(self.specialeventsStrings[Nevents])
             else:
-                aw.sendmessage(QApplication.translate("Message","Timer is OFF"))
+                aw.sendmessage(QApplication.translate("Message","Timer is OFF", None))
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " EventRecordAction() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " EventRecordAction() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
         finally:
             if takeLock and aw.qmc.profileDataSemaphore.available() < 1:
                 aw.qmc.profileDataSemaphore.release(1)
@@ -12483,7 +12414,7 @@ class tgraphcanvas(FigureCanvas):
                     else:
                         start = 0
                     timed = stringfromseconds(self.timex[i]-start)
-                    message = QApplication.translate("Message","Computer Event # {0} recorded at BT = {1} Time = {2}").format(str(Nevents+1),temp,timed)
+                    message = QApplication.translate("Message","Computer Event # {0} recorded at BT = {1} Time = {2}", None).format(str(Nevents+1),temp,timed)
                     aw.sendmessage(message)
                     #write label in mini recorder if flag checked
                     if aw.minieventsflag:
@@ -12511,7 +12442,7 @@ class tgraphcanvas(FigureCanvas):
                                 temp = self.temp1[index]
                             else:
                                 temp = self.temp2[index]
-                            anno = self.ax.annotate(f"{firstletter}{secondletter}", xy=(self.timex[index], temp),xytext=(self.timex[index],temp+height),alpha=0.9,
+                            anno = self.ax.annotate(firstletter + secondletter, xy=(self.timex[index], temp),xytext=(self.timex[index],temp+height),alpha=0.9,
                                              color=self.palette["specialeventtext"],arrowprops=dict(arrowstyle='-',color=self.palette["bt"],alpha=0.4,relpos=(0,0)),
                                              fontsize=fontsize,fontproperties=fontprop_small,backgroundcolor=aw.qmc.palette["specialeventbox"])
                             try:
@@ -12527,12 +12458,12 @@ class tgraphcanvas(FigureCanvas):
                             #some times ET is not drawn (ET = 0) when using device NONE
                             # plot events on BT when showeventsonbt is true
                             if aw.qmc.ETcurve and not aw.qmc.showeventsonbt and self.temp1[index] >= self.temp2[index]:
-                                anno = self.ax.annotate(f"{firstletter}{secondletter}", xy=(self.timex[index], self.temp1[index]),xytext=(self.timex[index],row[self.specialeventstype[-1]]),alpha=1.,
+                                anno = self.ax.annotate(firstletter + secondletter, xy=(self.timex[index], self.temp1[index]),xytext=(self.timex[index],row[self.specialeventstype[-1]]),alpha=1.,
                                                  color=self.palette["specialeventtext"],arrowprops=dict(arrowstyle='-',
                                                  color=self.palette["et"],alpha=0.4,relpos=(0,0)),fontsize=fontsize,
                                                  fontproperties=fontprop_small,backgroundcolor=aw.qmc.palette["specialeventbox"])
                             elif aw.qmc.BTcurve:
-                                anno = self.ax.annotate(f"{firstletter}{secondletter}", xy=(self.timex[index], self.temp2[index]),xytext=(self.timex[index],row[self.specialeventstype[-1]]),alpha=1.,
+                                anno = self.ax.annotate(firstletter + secondletter, xy=(self.timex[index], self.temp2[index]),xytext=(self.timex[index],row[self.specialeventstype[-1]]),alpha=1.,
                                                  color=self.palette["specialeventtext"],arrowprops=dict(arrowstyle='-',
                                                  color=self.palette["et"],alpha=0.4,relpos=(0,0)),fontsize=fontsize,
                                                  fontproperties=fontprop_small,backgroundcolor=aw.qmc.palette["specialeventbox"])
@@ -12556,7 +12487,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " DeviceEventRecord() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " DeviceEventRecord() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
         finally:
             if aw.qmc.profileDataSemaphore.available() < 1:
                 aw.qmc.profileDataSemaphore.release(1)
@@ -12647,29 +12578,30 @@ class tgraphcanvas(FigureCanvas):
 
                     #end temperature
                     if self.locale_str == "ar":
-                        strline = (
-                                    f'C*min{int(tsb)}={aw.arabicReshape(QApplication.translate("Label", "AUC"))}   '
-                                    f'{aw.arabicReshape(aw.qmc.mode + QApplication.translate("Label", "/min"))}'
-                                    f'{ror}=aw.arabicReshape(QApplication.translate("Label", "RoR"))   '
-                                    f'{ETmax}=aw.arabicReshape(QApplication.translate("Label", "MET"))'
-                                   )
+                        strline = ("C*min{2}=" + aw.arabicReshape(QApplication.translate("Label", "AUC", None)) \
+                                    + " " + aw.arabicReshape(aw.qmc.mode + QApplication.translate("Label", "/min", None)) \
+                                    + "{1}=" + aw.arabicReshape(QApplication.translate("Label", "RoR", None)) \
+                                    + " {0}=" + aw.arabicReshape(QApplication.translate("Label", "MET", None))) \
+                                    .format(ETmax, \
+                                    str(ror), \
+                                    str(int(tsb)))
                         if det is not None:
-                            strline = ("%.1f/%.1f" % (det,dbt)) + self.mode + "=" + QApplication.translate("Label", "CM") + " " + strline
+                            strline = ("%.1f/%.1f" % (det,dbt)) + self.mode + "=" + QApplication.translate("Label", "CM", None) + " " + strline
                         if FCperiod is not None:
-                            strline = "min%s=" % FCperiod + QApplication.translate("Label", "FC") + "   " + strline
+                            strline = "min%s=" % FCperiod + QApplication.translate("Label", "FC", None) + "   " + strline
                     else:
                         strline = ""
                         if temp1_values_max and temp1_values_max > 0:
-                            strline = (QApplication.translate("Label", "MET") + "={0}   ").format(ETmax)
-                        strline += (QApplication.translate("Label", "RoR") + "={0}" \
-                                    + aw.qmc.mode + QApplication.translate("Label", "/min") + "   " \
-                                    + QApplication.translate("Label", "AUC") + "={1}C*min") \
+                            strline = (QApplication.translate("Label", "MET", None) + "={0}   ").format(ETmax)
+                        strline += (QApplication.translate("Label", "RoR", None) + "={0}" \
+                                    + aw.qmc.mode + QApplication.translate("Label", "/min", None) + "   " \
+                                    + QApplication.translate("Label", "AUC", None) + "={1}C*min") \
                                     .format(str(ror), \
                                     str(int(tsb)))
                         if det is not None:
-                            strline = strline + "   " + QApplication.translate("Label", "CM") + ("=%.1f/%.1f" % (det,dbt)) + self.mode
+                            strline = strline + "   " + QApplication.translate("Label", "CM", None) + ("=%.1f/%.1f" % (det,dbt)) + self.mode
                         if FCperiod is not None:
-                            strline = strline + "   " + QApplication.translate("Label", "FC") + "=%smin" % FCperiod
+                            strline = strline + "   " + QApplication.translate("Label", "FC", None) + "=%smin" % FCperiod
                     self.set_xlabel(strline)
                 else:
                     sep = "   "
@@ -12678,7 +12610,7 @@ class tgraphcanvas(FigureCanvas):
                     if tm != "00:00":
                         msg = f"{msg}, {tm}"
                     if aw.qmc.beans and aw.qmc.beans != "":
-                        msg = f"{msg} {abbrevString(aw.qmc.beans,25)}"
+                        msg = f"{msg}{abbrevString(aw.qmc.beans,25)}"
                     if aw.qmc.weight[0]:
                         if aw.qmc.weight[2] in ["g","oz"]:
                             msg += sep + str(aw.float2float(aw.qmc.weight[0],0)) + aw.qmc.weight[2]
@@ -12698,7 +12630,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " writecharacteristics() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " writecharacteristics() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     # calculates self.statisticstimes values and returns dryEndIndex as well as the calcuated statisticstimes array of length 5
     def calcStatistics(self,TP_index):
@@ -12872,9 +12804,9 @@ class tgraphcanvas(FigureCanvas):
                     else:
                         fmtstr = "{2:." + d + "f}{3}"
 
-                    st1 = st1 + fmtstr.format(rates_of_changes[3], aw.qmc.mode, rates_of_changes[0], aw.arabicReshape(aw.qmc.mode + QApplication.translate("Label", "/min")))
-                    st2 = st2 + fmtstr.format(rates_of_changes[4], aw.qmc.mode, rates_of_changes[1], aw.arabicReshape(aw.qmc.mode + QApplication.translate("Label", "/min")))
-                    st3 = st3 + fmtstr.format(rates_of_changes[5], aw.qmc.mode, rates_of_changes[2], aw.arabicReshape(aw.qmc.mode + QApplication.translate("Label", "/min")))
+                    st1 = st1 + fmtstr.format(rates_of_changes[3], aw.qmc.mode, rates_of_changes[0], aw.arabicReshape(aw.qmc.mode + QApplication.translate("Label", "/min",None)))
+                    st2 = st2 + fmtstr.format(rates_of_changes[4], aw.qmc.mode, rates_of_changes[1], aw.arabicReshape(aw.qmc.mode + QApplication.translate("Label", "/min",None)))
+                    st3 = st3 + fmtstr.format(rates_of_changes[5], aw.qmc.mode, rates_of_changes[2], aw.arabicReshape(aw.qmc.mode + QApplication.translate("Label", "/min",None)))
 
                     text = self.ax.text(self.timex[self.timeindex[0]] + self.statisticstimes[1]/2.,statisticslower,st1,
                         color=self.palette["text"],
@@ -12914,7 +12846,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " writestatistics() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " writestatistics() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     @staticmethod
     def convertHeat(value, fromUnit, toUnit=0):
@@ -12934,7 +12866,7 @@ class tgraphcanvas(FigureCanvas):
             energymetrics = {}
             btu_list = []
             if len(self.timex) == 0:
-                #aw.sendmessage(QApplication.translate("Message","No profile data"),append=False)
+                #aw.sendmessage(QApplication.translate("Message","No profile data", None),append=False)
                 return energymetrics, btu_list
 
             # helping function
@@ -12964,7 +12896,7 @@ class tgraphcanvas(FigureCanvas):
                 prev_loadtime = [self.timex[self.timeindex[6]]]*4
             else:
                 prev_loadtime = [self.timex[-1]]*4
-                #aw.sendmessage(QApplication.translate("Message","Profile has no DROP event"),append=False)
+                #aw.sendmessage(QApplication.translate("Message","Profile has no DROP event", None),append=False)
                     
             for i in range(0,4):
                 # iterate specialevents in reverse from DROP to the first event
@@ -13014,7 +12946,7 @@ class tgraphcanvas(FigureCanvas):
                         duration = self.timex[self.timeindex[6]] - self.timex[self.timeindex[0]]
                     else:
                         duration = 0
-                        #aw.sendmessage(QApplication.translate("Message","Missing CHARGE or DROP event"),append=False)
+                        #aw.sendmessage(QApplication.translate("Message","Missing CHARGE or DROP event", None),append=False)
                     load_pct = toInt(self.loadevent_hundpcts[i])  #needed only for the btu_list and outmsg
                     if self.presssure_percents[i] and self.sourcetypes[i] in [0,1]:   # gas loads only
                         # convert pressure to heat
@@ -13193,7 +13125,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " calcEnergyuse() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " calcEnergyuse() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         return energymetrics,btu_list
         
     def measureFromprofile(self):
@@ -13203,7 +13135,7 @@ class tgraphcanvas(FigureCanvas):
         coolDuration = 0
         try:    
             if len(self.timex) == 0:
-                #aw.sendmessage(QApplication.translate("Message","No profile data"),append=False)
+                #aw.sendmessage(QApplication.translate("Message","No profile data", None),append=False)
                 return [-1]*4, [-1]*4, 0, 0
 
             def getEnergy(i,j,duration): 
@@ -13223,7 +13155,7 @@ class tgraphcanvas(FigureCanvas):
                 except Exception as ex: # pylint: disable=broad-except
                     _log.exception(ex)
                     _, _, exc_tb = sys.exc_info()
-                    aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " measureFromprofile() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                    aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " measureFromprofile() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
                 return energy
 
             # if there is a DROP event use that for coolstart
@@ -13280,7 +13212,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " measureFromprofile() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " measureFromprofile() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         return heatEnergy, coolEnergy, heatDuration, coolDuration
 
     #called from markdryend(), markcharge(), mark1Cstart(),  etc when using device 18 (manual mode)
@@ -13340,7 +13272,7 @@ class tgraphcanvas(FigureCanvas):
                         self.stemp1BX[i][j] -= step
                         self.stemp2BX[i][j] -= step
         else:
-            aw.sendmessage(QApplication.translate("Message","Unable to move background"))
+            aw.sendmessage(QApplication.translate("Message","Unable to move background", None))
             return
 
     #points are used to draw interpolation
@@ -13398,7 +13330,7 @@ class tgraphcanvas(FigureCanvas):
 
             return Xpoints,Ypoints
 
-        aw.sendmessage(QApplication.translate("Message","No finished profile found"))
+        aw.sendmessage(QApplication.translate("Message","No finished profile found", None))
         return [],[]
 
     #collects info about the univariate interpolation
@@ -13415,27 +13347,31 @@ class tgraphcanvas(FigureCanvas):
             #interpretation of coefficients: http://www.sagenb.org/home/pub/1708/
             #spline=[ans[0,i]+(x-xi)*(ans[1,i]+(x-xi)*(ans[2,i]+(x-xi)*ans[3,i]/3)/2) for i,xi in enumerate(a[:-1])]
 
-            string = "<b>" + QApplication.translate("Message","Polynomial coefficients (Horner form):") + "</b><br><br>"
+            string = "<b>" + QApplication.translate("Message","Polynomial coefficients (Horner form):",
+                                                    None) + "</b><br><br>"
             string += str(coeffs) + "<br><br>"
-            string += "<b>" + QApplication.translate("Message","Knots:") + "</b><br><br>"
+            string += "<b>" + QApplication.translate("Message","Knots:",
+                                                     None) + "</b><br><br>"
             string += str(knots) + "<br><br>"
-            string += "<b>" + QApplication.translate("Message","Residual:") + "</b><br><br>"
+            string += "<b>" + QApplication.translate("Message","Residual:",
+                                                     None) + "</b><br><br>"
             string += str(resid) + "<br><br>"
-            string += "<b>" + QApplication.translate("Message","Roots:") + "</b><br><br>"
+            string += "<b>" + QApplication.translate("Message","Roots:",
+                                                     None) + "</b><br><br>"
             string += str(roots)
 
-            QMessageBox.information(aw,QApplication.translate("Message","Profile information"),string)
+            QMessageBox.information(aw,QApplication.translate("Message","Profile information",None),string)
 
         except ValueError as e: 
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Value Error:") + " univariateinfo() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Value Error:",None) + " univariateinfo() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             return
 
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " univariateinfo() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " univariateinfo() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             return
 
     def polyfit(self,xarray,yarray,deg,startindex,endindex,_=False,onDeltaAxis=False):
@@ -13491,7 +13427,7 @@ class tgraphcanvas(FigureCanvas):
                     # initial bean temp set to greens_temp or ambient or a fixed temp
                     if aw.qmc.greens_temp > 0:
                         time_l = [charge]
-                        temp_l = [aw.qmc.greens_temp]
+                        temp_l = [aw.qmc.greens_temp]                        
                     elif aw.qmc.ambientTemp != None and aw.qmc.ambientTemp > 0:
                         time_l = [charge]
                         temp_l = [aw.qmc.ambientTemp]
@@ -13540,15 +13476,15 @@ class tgraphcanvas(FigureCanvas):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror(QApplication.translate("Error Message","Error in lnRegression:") + " lnRegression() " + str(e),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror(QApplication.translate("Error Message","Error in lnRegression:",None) + " lnRegression() " + str(e),getattr(exc_tb, 'tb_lineno', '?'))
             if power == 2:
-                fit = QApplication.translate("Label","x") +"\u00b2"
+                fit = QApplication.translate("Label","x",None) +"\u00b2"
             elif power == 3:
-                fit = QApplication.translate("Label","x") +"\u00b3"
+                fit = QApplication.translate("Label","x",None) +"\u00b3"
             else:
-                fit = QApplication.translate("Label","ln()")
-            QMessageBox.warning(aw,QApplication.translate("Message","Curve fit problem"),
-                    QApplication.translate("Message","Cannot fit this curve to " + fit))
+                fit = QApplication.translate("Label","ln()",None)
+            QMessageBox.warning(aw,QApplication.translate("Message","Curve fit problem", None),
+                    QApplication.translate("Message","Cannot fit this curve to " + fit, None))
         return res
 
     #interpolation type
@@ -13570,12 +13506,12 @@ class tgraphcanvas(FigureCanvas):
                 self.fig.canvas.draw()
 
         except ValueError:
-            aw.qmc.adderror(QApplication.translate("Error Message","Value Error:") + " univariate()")
+            aw.qmc.adderror(QApplication.translate("Error Message","Value Error:",None) + " univariate()")
 
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror(QApplication.translate("Error Message","Exception:") + " univariate() " + str(e),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror(QApplication.translate("Error Message","Exception:",None) + " univariate() " + str(e),getattr(exc_tb, 'tb_lineno', '?'))
             return
 
     def drawinterp(self,mode):
@@ -13594,13 +13530,13 @@ class tgraphcanvas(FigureCanvas):
 
         except ValueError as e:
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Value Error:") + " drawinterp() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Value Error:",None) + " drawinterp() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             return
 
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " drawinterp() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " drawinterp() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             return
 
     # calculates the (interpolated) temperature from the given time/temp arrays at timepoint "seconds"
@@ -13781,8 +13717,8 @@ class tgraphcanvas(FigureCanvas):
             aw.deleteBackground()
 
         if len(self.timex):
-            reply = QMessageBox.question(aw,QApplication.translate("Message","Designer Start"),
-                                         QApplication.translate("Message","Importing a profile in to Designer will decimate all data except the main [points].\nContinue?"),
+            reply = QMessageBox.question(aw,QApplication.translate("Message","Designer Start",None),
+                                         QApplication.translate("Message","Importing a profile in to Designer will decimate all data except the main [points].\nContinue?",None),
                                          QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.Cancel)
             if reply == QMessageBox.StandardButton.Yes:
                 res = self.initfromprofile()
@@ -13812,7 +13748,7 @@ class tgraphcanvas(FigureCanvas):
     @pyqtSlot(bool)
     def savepoints(self,_=False):
         try:
-            filename = aw.ArtisanSaveFileDialog(msg=QApplication.translate("Message", "Save Points"),ext="*.adsg")
+            filename = aw.ArtisanSaveFileDialog(msg=QApplication.translate("Message", "Save Points",None),ext="*.adsg")
             if filename:
                 obj = {}
                 obj["timex"] = self.timex
@@ -13821,17 +13757,17 @@ class tgraphcanvas(FigureCanvas):
                 obj["timeindex"] = self.timeindex
                 with codecs.open(filename, 'w+', encoding='utf-8') as f:
                     f.write(repr(obj))
-                aw.sendmessage(QApplication.translate("Message","Points saved"))
+                aw.sendmessage(QApplication.translate("Message","Points saved", None))
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " savepoints() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " savepoints() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     @pyqtSlot()
     @pyqtSlot(bool)
     def loadpoints(self,_=False):
         try:
-            filename = aw.ArtisanOpenFileDialog(msg=QApplication.translate("Message", "Load Points"),ext="*.adsg")
+            filename = aw.ArtisanOpenFileDialog(msg=QApplication.translate("Message", "Load Points",None),ext="*.adsg")
             obj = None
             if os.path.exists(filename):
                 with codecs.open(filename, 'rb', encoding='utf-8') as f:
@@ -13843,11 +13779,11 @@ class tgraphcanvas(FigureCanvas):
                 self.timeindex = obj["timeindex"]
                 self.xaxistosm(redraw=False)
                 self.redrawdesigner()
-                aw.sendmessage(QApplication.translate("Message","Points loaded"))
+                aw.sendmessage(QApplication.translate("Message","Points loaded", None))
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " loadpoints() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " loadpoints() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
 
     #used to start designer from scratch (not from a loaded profile)
@@ -13879,8 +13815,8 @@ class tgraphcanvas(FigureCanvas):
     #loads main points from a profile so that they can be edited
     def initfromprofile(self):
         if self.timeindex[0] == -1 or self.timeindex[6] == 0:
-            QMessageBox.information(aw,QApplication.translate("Message","Designer Init"),
-                                    QApplication.translate("Message","Unable to start designer.\nProfile missing [CHARGE] or [DROP]"))
+            QMessageBox.information(aw,QApplication.translate("Message","Designer Init",None),
+                                    QApplication.translate("Message","Unable to start designer.\nProfile missing [CHARGE] or [DROP]",None))
             self.disconnect_designer()
             return False
 
@@ -13940,18 +13876,18 @@ class tgraphcanvas(FigureCanvas):
 
             fontprop_medium = aw.mpl_fontproperties.copy()
             fontprop_medium.set_size("medium")
-            self.set_xlabel(aw.arabicReshape(QApplication.translate("Label", "Designer")))
+            self.set_xlabel(aw.arabicReshape(QApplication.translate("Label", "Designer",None)))
 
             #draw background
             if self.background:
                 self.ax.plot(self.timeB, self.stemp1B,markersize=self.ETbackmarkersize,marker=self.ETbackmarker,
                                                 sketch_params=None,path_effects=[],
                                                 linewidth=self.ETbacklinewidth,linestyle=self.ETbacklinestyle,drawstyle=self.ETbackdrawstyle,color=self.backgroundmetcolor,
-                                                alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundET")))
+                                                alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundET", None)))
                 self.ax.plot(self.timeB, self.stemp2B,markersize=self.BTbackmarkersize,marker=self.BTbackmarker,
                                                 linewidth=self.BTbacklinewidth,linestyle=self.BTbacklinestyle,drawstyle=self.BTbackdrawstyle,color=self.backgroundbtcolor,
                                                 sketch_params=None,path_effects=[],
-                                                alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundBT")))
+                                                alpha=self.backgroundalpha,label=aw.arabicReshape(QApplication.translate("Label", "BackgroundBT", None)))
 
             #create statistics bar
             #calculate the positions for the statistics elements
@@ -13987,7 +13923,7 @@ class tgraphcanvas(FigureCanvas):
                 func2 = UnivariateSpline(self.timex,self.temp1, k = self.ETsplinedegree)
                 etvals = func2(timez).tolist()
             except Exception: # pylint: disable=broad-except
-                aw.qmc.adderror((QApplication.translate("Error Message", "Exception: redrawdesigner() Roast events may be out of order. Restting Designer.")))
+                aw.qmc.adderror((QApplication.translate("Error Message", "Exception: redrawdesigner() Roast events may be out of order. Restting Designer.",None)))
                 self.reset_designer()
                 return
 
@@ -14003,7 +13939,7 @@ class tgraphcanvas(FigureCanvas):
                 self.ax.plot(timez,deltabtvals,transform=trans,markersize=self.BTdeltamarkersize,marker=self.BTdeltamarker,
                     sketch_params=None,path_effects=[PathEffects.withStroke(linewidth=self.BTdeltalinewidth+aw.qmc.patheffects,foreground=self.palette["background"])],
                     linewidth=self.BTdeltalinewidth,linestyle=self.BTdeltalinestyle,drawstyle=self.BTdeltadrawstyle,color=self.palette["deltabt"],
-                    label=aw.arabicReshape(deltaLabelPrefix + QApplication.translate("Label", "BT")))
+                    label=aw.arabicReshape(deltaLabelPrefix + QApplication.translate("Label", "BT", None)))
 
             if self.DeltaETflag:
                 funcDelta2 = func2.derivative()
@@ -14011,17 +13947,17 @@ class tgraphcanvas(FigureCanvas):
                 self.ax.plot(timez,deltaetvals,transform=trans,markersize=self.ETdeltamarkersize,marker=self.ETdeltamarker,
                     sketch_params=None,path_effects=[PathEffects.withStroke(linewidth=self.ETdeltalinewidth+aw.qmc.patheffects,foreground=self.palette["background"])],
                     linewidth=self.ETdeltalinewidth,linestyle=self.ETdeltalinestyle,drawstyle=self.ETdeltadrawstyle,color=self.palette["deltaet"],
-                    label=aw.arabicReshape(deltaLabelPrefix + QApplication.translate("Label", "ET")))
+                    label=aw.arabicReshape(deltaLabelPrefix + QApplication.translate("Label", "ET", None)))
 
             #add curves
             if self.ETcurve:
                 self.ax.plot(timez, etvals,markersize=self.ETmarkersize,marker=self.ETmarker,linewidth=self.ETlinewidth,
                     linestyle=self.ETlinestyle,drawstyle=self.ETdrawstyle,color=self.palette["et"],
-                        label=QApplication.translate("Label", "ET"))
+                        label=QApplication.translate("Label", "ET", None))
             if self.BTcurve:
                 self.ax.plot(timez, btvals, markersize=self.BTmarkersize,marker=self.BTmarker,linewidth=self.BTlinewidth,
                     linestyle=self.BTlinestyle,drawstyle=self.BTdrawstyle,color=self.palette["bt"],
-                        label=QApplication.translate("Label", "BT"))
+                        label=QApplication.translate("Label", "BT", None))
 
             #add markers (big circles) '0'
             if self.ETcurve:
@@ -14053,31 +13989,31 @@ class tgraphcanvas(FigureCanvas):
 
         designermenu.addSeparator()
 
-        addpointAction = QAction(QApplication.translate("Contextual Menu", "Add point"),self)
+        addpointAction = QAction(QApplication.translate("Contextual Menu", "Add point",None),self)
         addpointAction.triggered.connect(self.addpoint_action)
         designermenu.addAction(addpointAction)
 
-        removepointAction = QAction(QApplication.translate("Contextual Menu", "Remove point"),self)
+        removepointAction = QAction(QApplication.translate("Contextual Menu", "Remove point",None),self)
         removepointAction.triggered.connect(self.removepoint)
         designermenu.addAction(removepointAction)
 
         designermenu.addSeparator()
 
-        loadpointsAction = QAction(QApplication.translate("Contextual Menu", "Load points"),self)
+        loadpointsAction = QAction(QApplication.translate("Contextual Menu", "Load points",None),self)
         loadpointsAction.triggered.connect(self.loadpoints)
         designermenu.addAction(loadpointsAction)
 
-        savepointsAction = QAction(QApplication.translate("Contextual Menu", "Save points"),self)
+        savepointsAction = QAction(QApplication.translate("Contextual Menu", "Save points",None),self)
         savepointsAction.triggered.connect(self.savepoints)
         designermenu.addAction(savepointsAction)
 
         designermenu.addSeparator()
 
-        resetAction = QAction(QApplication.translate("Contextual Menu", "Reset Designer"),self)
+        resetAction = QAction(QApplication.translate("Contextual Menu", "Reset Designer",None),self)
         resetAction.triggered.connect(self.reset_designer)
         designermenu.addAction(resetAction)
 
-        configAction = QAction(QApplication.translate("Contextual Menu", "Config..."),self)
+        configAction = QAction(QApplication.translate("Contextual Menu", "Config...",None),self)
         configAction.triggered.connect(self.desconfig)
         designermenu.addAction(configAction)
 
@@ -14167,25 +14103,25 @@ class tgraphcanvas(FigureCanvas):
                             index = self.timeindex.index(i)
                             if index == 0:
                                 timez = stringfromseconds(0)
-                                aw.sendmessage(QApplication.translate("Message", "[ CHARGE ]") + " " + timez, style="background-color:'#f07800';",append=False)
+                                aw.sendmessage(QApplication.translate("Message", "[ CHARGE ]",None) + " " + timez, style="background-color:'#f07800';",append=False)
                             elif index == 1:
                                 timez = stringfromseconds(self.timex[self.timeindex[1]] - self.timex[self.timeindex[0]])
-                                aw.sendmessage(QApplication.translate("Message", "[ DRY END ]") + " " + timez, style="background-color:'orange';",append=False)
+                                aw.sendmessage(QApplication.translate("Message", "[ DRY END ]",None) + " " + timez, style="background-color:'orange';",append=False)
                             elif index == 2:
                                 timez = stringfromseconds(self.timex[self.timeindex[2]] - self.timex[self.timeindex[0]])
-                                aw.sendmessage(QApplication.translate("Message", "[ FC START ]") + " " + timez, style="background-color:'orange';",append=False)
+                                aw.sendmessage(QApplication.translate("Message", "[ FC START ]",None) + " " + timez, style="background-color:'orange';",append=False)
                             elif index == 3:
                                 timez = stringfromseconds(self.timex[self.timeindex[3]] - self.timex[self.timeindex[0]])
-                                aw.sendmessage(QApplication.translate("Message", "[ FC END ]") + " " + timez, style="background-color:'orange';",append=False)
+                                aw.sendmessage(QApplication.translate("Message", "[ FC END ]",None) + " " + timez, style="background-color:'orange';",append=False)
                             elif index == 4:
                                 timez = stringfromseconds(self.timex[self.timeindex[4]] - self.timex[self.timeindex[0]])
-                                aw.sendmessage(QApplication.translate("Message", "[ SC START ]") + " " + timez, style="background-color:'orange';",append=False)
+                                aw.sendmessage(QApplication.translate("Message", "[ SC START ]",None) + " " + timez, style="background-color:'orange';",append=False)
                             elif index == 5:
                                 timez = stringfromseconds(self.timex[self.timeindex[5]] - self.timex[self.timeindex[0]])
-                                aw.sendmessage(QApplication.translate("Message", "[ SC END ]") + " " + timez, style="background-color:'orange';",append=False)
+                                aw.sendmessage(QApplication.translate("Message", "[ SC END ]",None) + " " + timez, style="background-color:'orange';",append=False)
                             elif index == 6:
                                 timez = stringfromseconds(self.timex[self.timeindex[6]] - self.timex[self.timeindex[0]])
-                                aw.sendmessage(QApplication.translate("Message", "[ DROP ]") + " " + timez, style="background-color:'#f07800';",append=False)
+                                aw.sendmessage(QApplication.translate("Message", "[ DROP ]",None) + " " + timez, style="background-color:'#f07800';",append=False)
                             break
                         if abs(self.temp2[i] - ydata) < 10:
                             self.ax.plot(self.timex[i],self.temp2[i],color = "blue",marker = "o",alpha = .3,markersize=30)
@@ -14256,7 +14192,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " on_motion() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " on_motion() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             self.unrarefy_designer()
             return
 
@@ -14273,7 +14209,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " findTPdes() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " findTPdes() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             return None
 
     #this is used in on_motion() to try to prevent points crossing over points
@@ -14375,7 +14311,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " addpoint() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " addpoint() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             return
 
     #removes point
@@ -14414,7 +14350,7 @@ class tgraphcanvas(FigureCanvas):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " removepoint() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " removepoint() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             return
 
 
@@ -14484,17 +14420,17 @@ class tgraphcanvas(FigureCanvas):
                 functioncall[self.reproducedesigner]() # pylint: disable=not-callable
 
             self.redraw()
-            aw.sendmessage(QApplication.translate("Message", "New profile created"))
+            aw.sendmessage(QApplication.translate("Message", "New profile created",None))
 
         except ValueError:
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror(QApplication.translate("Error Message", "Value Error:") + " createFromDesigner()",getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror(QApplication.translate("Error Message", "Value Error:",None) + " createFromDesigner()",getattr(exc_tb, 'tb_lineno', '?'))
             return
 
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " createFromDesigner() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " createFromDesigner() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             return
 
     #activates mouse events
@@ -14547,7 +14483,7 @@ class tgraphcanvas(FigureCanvas):
                 difftemp = self.temp2[self.timeindex[i]] - self.temp2[self.timeindex[lastindexused]]
                 difftime = (self.timex[self.timeindex[i]] - self.timex[self.timeindex[lastindexused]])/60.
                 if difftime:
-                    string = QApplication.translate("Label", "BT {0} {1}/min for {2}").format("%.1f"%(difftemp/difftime),aw.qmc.mode,stringfromseconds(self.timex[self.timeindex[i]]-self.timex[self.timeindex[lastindexused]]))
+                    string = QApplication.translate("Label", "BT {0} {1}/min for {2}",None).format("%.1f"%(difftemp/difftime),aw.qmc.mode,stringfromseconds(self.timex[self.timeindex[i]]-self.timex[self.timeindex[lastindexused]]))
                     self.specialevents.append(self.timeindex[lastindexused])
                     self.specialeventstype.append(0)
                     self.specialeventsStrings.append(string)
@@ -14563,7 +14499,7 @@ class tgraphcanvas(FigureCanvas):
                 difftemp = self.temp1[self.timeindex[i]] - self.temp1[self.timeindex[lastindexused]]
                 difftime = (self.timex[self.timeindex[i]] - self.timex[self.timeindex[lastindexused]])/60.
                 if difftime:
-                    string = QApplication.translate("Label", "ET {0} {1}/min for {2}").format("%.1f"%(difftemp/difftime),aw.qmc.mode,stringfromseconds(self.timex[self.timeindex[i]]-self.timex[self.timeindex[lastindexused]]))
+                    string = QApplication.translate("Label", "ET {0} {1}/min for {2}",None).format("%.1f"%(difftemp/difftime),aw.qmc.mode,stringfromseconds(self.timex[self.timeindex[i]]-self.timex[self.timeindex[lastindexused]]))
                     self.specialevents.append(self.timeindex[lastindexused])
                     self.specialeventstype.append(0)
                     self.specialeventsStrings.append(string)
@@ -14665,7 +14601,7 @@ class tgraphcanvas(FigureCanvas):
         s = "Wheels" + "\\" + path
         direct = QDir()
         pathDir = direct.toNativeSeparators(s)
-        filename = aw.ArtisanOpenFileDialog(msg=QApplication.translate("Message","Open Wheel Graph"),path=pathDir,ext="*.wg")
+        filename = aw.ArtisanOpenFileDialog(msg=QApplication.translate("Message","Open Wheel Graph",None),path=pathDir,ext="*.wg")
         if filename:
             self.connectWheel()
             aw.loadWheel(filename)
@@ -14679,7 +14615,7 @@ class tgraphcanvas(FigureCanvas):
             self.cuppingnotes = descriptor
         else:
             self.cuppingnotes += "\n" + descriptor
-        s = QApplication.translate("Message", " added to cupping notes")
+        s = QApplication.translate("Message", " added to cupping notes",None)
         aw.sendmessage(descriptor + s)
 
     @pyqtSlot()
@@ -14690,7 +14626,7 @@ class tgraphcanvas(FigureCanvas):
             self.roastingnotes = descriptor
         else:
             self.roastingnotes +=  "\n" + descriptor
-        string = QApplication.translate("Message", " added to roasting notes")
+        string = QApplication.translate("Message", " added to roasting notes",None)
         aw.sendmessage(descriptor + string)
 
     def wheel_pick(self,event):
@@ -14719,17 +14655,17 @@ class tgraphcanvas(FigureCanvas):
 
         elif event.button == 3:
             designermenu = QMenu(aw) # if we bind this to self, we inherit the background-color: transparent from self.fig
-            cuppingAction = QAction(QApplication.translate("Contextual Menu", "Add to Cupping Notes"),self)
+            cuppingAction = QAction(QApplication.translate("Contextual Menu", "Add to Cupping Notes",None),self)
             cuppingAction.triggered.connect(self.addTocuppingnotes)
             designermenu.addAction(cuppingAction)
 
-            roastingAction = QAction(QApplication.translate("Contextual Menu", "Add to Roasting Notes"),self)
+            roastingAction = QAction(QApplication.translate("Contextual Menu", "Add to Roasting Notes",None),self)
             roastingAction.triggered.connect(self.addToroastingnotes)
             designermenu.addAction(roastingAction)
 
             designermenu.addSeparator()
 
-            editAction = QAction(QApplication.translate("Contextual Menu", "Edit"),self)
+            editAction = QAction(QApplication.translate("Contextual Menu", "Edit",None),self)
             editAction.triggered.connect(self.editmode)
             designermenu.addAction(editAction)
 
@@ -14892,13 +14828,13 @@ class tgraphcanvas(FigureCanvas):
 
         except ValueError as e:
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Value Error:") + " drawWheel() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Value Error:",None) + " drawWheel() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             return
 
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " drawWheel() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " drawWheel() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             return
 
     def makewheelcolorpattern(self):
@@ -14946,7 +14882,7 @@ class tgraphcanvas(FigureCanvas):
             self.l_verticalcrossline = None
             self.updateBackground() # update bitlblit backgrounds
             self.crossmarker = True
-            message = QApplication.translate("Message", "Mouse Cross ON: move mouse around")
+            message = QApplication.translate("Message", "Mouse Cross ON: move mouse around",None)
             aw.sendmessage(message)
             self.crossmouseid = self.fig.canvas.mpl_connect('motion_notify_event', self.drawcross)
             self.onreleaseid = self.fig.canvas.mpl_connect('button_release_event', self.onrelease)  #mouse cross lines measurement
@@ -14974,7 +14910,7 @@ class tgraphcanvas(FigureCanvas):
                 pass
             self.l_verticalcrossline = None
             self.resetlines()
-            message = QApplication.translate("Message", "Mouse cross OFF")
+            message = QApplication.translate("Message", "Mouse cross OFF",None)
             aw.sendmessage(message)
             self.updateBackground() # update bitlblit backgrounds
 
@@ -15012,10 +14948,7 @@ class tgraphcanvas(FigureCanvas):
                             if self.base_horizontalcrossline and self.base_verticalcrossline:
                                 aw.qmc.ax.draw_artist(self.base_horizontalcrossline)
                                 aw.qmc.ax.draw_artist(self.base_verticalcrossline)
-                            try:
-                                self.fig.canvas.blit(aw.qmc.ax.get_tightbbox(self.fig.canvas.get_renderer()))
-                            except Exception: # pylint: disable=broad-except
-                                pass
+                            self.fig.canvas.blit(aw.qmc.ax.get_tightbbox(self.fig.canvas.get_renderer()))
                         else:
                             self.updateBackground()
             finally:
@@ -15074,17 +15007,17 @@ def my_fedit(data, title="", comment="", icon=None, parent=None, apply=None):
         data = data[1][0]
         # add translations
         trans = {
-            "Label": QApplication.translate("Label", 'Label'),
-            "<b>Line</b>": "<b>{}</b>".format(QApplication.translate("Label", 'Line')),
-            "Line style": QApplication.translate("Label", 'Line style'),
-            "Draw style": QApplication.translate("Label", 'Draw style'),
-            "Width": QApplication.translate("Label", 'Width'),
-            "Color (RGBA)": QApplication.translate("Label", 'Color (RGBA)'),
-            "<b>Marker</b>": "<b>{}</b>".format(QApplication.translate("Label", 'Marker')),
-            "Style": QApplication.translate("Label", 'Symbol'),
-            "Size": QApplication.translate("Label", 'Size'),
-            "Face color (RGBA)": QApplication.translate("Label", 'Face color (RGBA)'),
-            "Edge color (RGBA)": QApplication.translate("Label", 'Edge color (RGBA)'),
+            "Label": QApplication.translate("Label", 'Label', None),
+            "<b>Line</b>": "<b>{}</b>".format(QApplication.translate("Label", 'Line', None)),
+            "Line style": QApplication.translate("Label", 'Line style', None),
+            "Draw style": QApplication.translate("Label", 'Draw style', None),
+            "Width": QApplication.translate("Label", 'Width', None),
+            "Color (RGBA)": QApplication.translate("Label", 'Color (RGBA)', None),
+            "<b>Marker</b>": "<b>{}</b>".format(QApplication.translate("Label", 'Marker', None)),
+            "Style": QApplication.translate("Label", 'Symbol', None),
+            "Size": QApplication.translate("Label", 'Size', None),
+            "Face color (RGBA)": QApplication.translate("Label", 'Face color (RGBA)', None),
+            "Edge color (RGBA)": QApplication.translate("Label", 'Edge color (RGBA)', None),
         }
         try:
             for l in data:
@@ -15135,7 +15068,7 @@ def my_fedit(data, title="", comment="", icon=None, parent=None, apply=None):
                     figure.canvas.toolbar.push_current()
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
-    return formlayout.fedit_org(data,QApplication.translate("Toolbar", 'Lines'),comment,icon,parent,my_apply) #@UndefinedVariable
+    return formlayout.fedit_org(data,QApplication.translate("Toolbar", 'Lines', None),comment,icon,parent,my_apply) #@UndefinedVariable
 
 #####
 
@@ -15143,14 +15076,14 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
     def __init__(self, plotCanvas, parent,white_icons=False):
         # toolitem entries of the form (text, tooltip_text, image_file, callback)
         self.toolitems = (
-                ('Plus', QApplication.translate("Tooltip", 'Connect to plus service'), 'plus', 'plus'),
-                ('', QApplication.translate("Tooltip", 'Subscription'), 'plus-pro', 'subscription'),
-                (QApplication.translate("Toolbar", 'Home'), QApplication.translate("Tooltip", 'Reset original view'), 'home', 'home'),
-                (QApplication.translate("Toolbar", 'Back'), QApplication.translate("Tooltip", 'Back to  previous view'), 'back', 'back'),
-                (QApplication.translate("Toolbar", 'Forward'), QApplication.translate("Tooltip", 'Forward to next view'), 'forward', 'forward'),
+                ('Plus', QApplication.translate("Tooltip", 'Connect to plus service', None), 'plus', 'plus'),
+                ('', QApplication.translate("Tooltip", 'Subscription', None), 'plus-pro', 'subscription'),
+                (QApplication.translate("Toolbar", 'Home', None), QApplication.translate("Tooltip", 'Reset original view', None), 'home', 'home'),
+                (QApplication.translate("Toolbar", 'Back', None), QApplication.translate("Tooltip", 'Back to  previous view', None), 'back', 'back'),
+                (QApplication.translate("Toolbar", 'Forward', None), QApplication.translate("Tooltip", 'Forward to next view', None), 'forward', 'forward'),
                 (None, None, None, None),
-                (QApplication.translate("Toolbar", 'Pan'), QApplication.translate("Tooltip", 'Pan axes with left mouse, zoom with right'), 'move', 'pan'),
-                (QApplication.translate("Toolbar", 'Zoom'), QApplication.translate("Tooltip", 'Zoom to rectangle'), 'zoom_to_rect', 'zoom'),
+                (QApplication.translate("Toolbar", 'Pan', None), QApplication.translate("Tooltip", 'Pan axes with left mouse, zoom with right', None), 'move', 'pan'),
+                (QApplication.translate("Toolbar", 'Zoom', None), QApplication.translate("Tooltip", 'Zoom to rectangle', None), 'zoom_to_rect', 'zoom'),
         )
         
         # if true, we render Artisan-specific white versions of the icons
@@ -15167,13 +15100,12 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
 
 
 # add green flag menu on matplotlib v2.0 and later
-        self.edit_curve_parameters_action = None
         if len(self.actions()) > 0:
             # insert the "Green Flag" menu item before the last one (which is the x/y coordinate display)
-            self.edit_curve_parameters_action = QAction(self._icon("qt4_editor_options.png"),QApplication.translate("Toolbar", 'Lines'),self)
-            self.edit_curve_parameters_action.triggered.connect(self.my_edit_parameters)
-            self.edit_curve_parameters_action.setToolTip(QApplication.translate("Tooltip", 'Line styles'))
-            self.insertAction(self.actions()[-1], self.edit_curve_parameters_action)
+            a = QAction(self._icon("qt4_editor_options.png"),QApplication.translate("Toolbar", 'Lines', None),self)
+            a.triggered.connect(self.my_edit_parameters)
+            a.setToolTip(QApplication.translate("Tooltip", 'Line styles', None))
+            self.insertAction(self.actions()[-1],a)
 
         # adjust for dark or light canvas and set hover/selection style
         for a in self.actions():
@@ -15219,14 +15151,6 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
             # not yet monkey patched
             formlayout.fedit_org = formlayout.fedit
             formlayout.fedit = my_fedit
-            
-    def enable_edit_curve_parameters(self):
-        if self.edit_curve_parameters_action is not None:
-            self.edit_curve_parameters_action.setEnabled(True)
-    
-    def disable_edit_curve_parameters(self):
-        if self.edit_curve_parameters_action is not None:
-            self.edit_curve_parameters_action.setEnabled(False)
 
     # monkey patch matplotlib navigationbar zoom and pan to update background cache
     def release_pan_new(self, event):
@@ -15295,9 +15219,9 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
         if aw.qmc.flagstart:
             aw.qmc.zoom_follow = not aw.qmc.zoom_follow
             if aw.qmc.zoom_follow:
-                aw.sendmessage(QApplication.translate("Message","follow on"))
+                aw.sendmessage(QApplication.translate("Message","follow on", None))
             else:
-                aw.sendmessage(QApplication.translate("Message","follow off"))
+                aw.sendmessage(QApplication.translate("Message","follow off", None))
         else:
             aw.qmc.zoom_follow = False
         if aw.qmc.zoom_follow:
@@ -15387,8 +15311,8 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
             debug_level = debugLogLevelToggle()
             aw.sendmessage(
                 (
-                    QApplication.translate("Plus", "debug logging ON") if debug_level else
-                    QApplication.translate("Plus", "debug logging OFF")
+                    QApplication.translate("Plus", "debug logging ON", None) if debug_level else
+                    QApplication.translate("Plus", "debug logging OFF", None)
                 )
             )
         elif modifiers == Qt.KeyboardModifier.AltModifier:
@@ -15401,11 +15325,11 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
     def subscription():
         remaining_days = max(0,(aw.plus_paidUntil.date() - datetime.datetime.now().date()).days)
         if remaining_days == 1:
-            days = QApplication.translate("Plus","1 day left")
+            days = QApplication.translate("Plus","1 day left",None)
         else:
-            days = QApplication.translate("Plus","{} days left").format(remaining_days)
+            days = QApplication.translate("Plus","{} days left",None).format(remaining_days)
         pu = aw.plus_paidUntil.date()
-        message = QApplication.translate("Plus","Paid until") + ' ' + QDate(pu.year,pu.month,pu.day).toString(QLocale().dateFormat(QLocale.FormatType.ShortFormat))
+        message = QApplication.translate("Plus","Paid until",None) + ' ' + QDate(pu.year,pu.month,pu.day).toString(QLocale().dateFormat(QLocale.FormatType.ShortFormat))
         if remaining_days <31:
             if remaining_days <=3:
                 style = "background-color:#cc0f50;color:white;"
@@ -15420,7 +15344,7 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
         # n days left <= rot if <=3
         #  3 days, 2 days, 1 day, 0 days left
         #
-        subscription_message_box = ArtisanMessageBox(aw,QApplication.translate("Message", "Subscription"),message)
+        subscription_message_box = ArtisanMessageBox(aw,QApplication.translate("Message", "Subscription",None),message)
         subscription_message_box.show()
 
     @pyqtSlot()
@@ -15434,7 +15358,7 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
                 else:
                     if aw.qmc.flagstart:
                         # temporary set the axis to get proper menu items (same code as in redraw)
-                        aw.qmc.set_xlabel(aw.arabicReshape(QApplication.translate("Label", "Time")))
+                        aw.qmc.set_xlabel(aw.arabicReshape(QApplication.translate("Label", "Time",None)))
                         y_label = aw.qmc.ax.set_ylabel(aw.qmc.mode)
                         try:
                             y_label.set_in_layout(False) # remove x-axis labels from tight_layout calculation
@@ -15442,7 +15366,7 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
                             pass
                         two_ax_mode = (aw.qmc.DeltaETflag or aw.qmc.DeltaBTflag or (aw.qmc.background and (aw.qmc.DeltaETBflag or aw.qmc.DeltaBTBflag))) and not aw.qmc.designerflag
                         if two_ax_mode and aw.qmc.delta_ax:
-                            y_label = aw.qmc.delta_ax.set_ylabel(aw.qmc.mode + aw.arabicReshape(QApplication.translate("Label", "/min")))
+                            y_label = aw.qmc.delta_ax.set_ylabel(aw.qmc.mode + aw.arabicReshape(QApplication.translate("Label", "/min", None)))
                             try:
                                 y_label.set_in_layout(False) # remove x-axis labels from tight_layout calculation
                             except Exception: # pylint: disable=broad-except # set_in_layout not available in mpl<3.x
@@ -15467,7 +15391,7 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " edit_parameters() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " edit_parameters() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
 
 ########################################################################################
@@ -15510,6 +15434,7 @@ class SampleThread(QThread):
     
     # fetch the raw samples from the main and all extra devices once per interval
     def sample(self):
+        _log.debug("sample")
         gotlock = aw.qmc.samplingSemaphore.tryAcquire(1,0) # we try to catch a lock if available but we do not wait, if we fail we just skip this sampling round (prevents stacking of waiting calls)
         if gotlock:
             try:
@@ -15833,7 +15758,7 @@ class ApplicationWindow(QMainWindow):
             self.profilepath = QDir().homePath() + "/Documents/"
         else:
             self.profilepath = QDir().homePath()
-        
+
         # on the Mac preferences should be stored outside of applications in the users ~/Library/Preferences path
         if platf == 'Darwin':
             preference_path = QDir().homePath() + "/Library/Preferences//"
@@ -16048,37 +15973,37 @@ class ApplicationWindow(QMainWindow):
         ###############  create Top MENUS
         
         #Fake entries to get translations for the Mac Application Menu
-        _mac_services = QApplication.translate("MAC_APPLICATION_MENU", "Services")
-        _mac_hide = QApplication.translate("MAC_APPLICATION_MENU", "Hide {0}")
-        _mac_hideothers = QApplication.translate("MAC_APPLICATION_MENU", "Hide Others")
-        _mac_showall = QApplication.translate("MAC_APPLICATION_MENU", "Show All")
-        _mac_preferences = QApplication.translate("MAC_APPLICATION_MENU", "Preferences...")
-        _mac_quit = QApplication.translate("MAC_APPLICATION_MENU", "Quit {0}")
-        _mac_about = QApplication.translate("MAC_APPLICATION_MENU", "About {0}")        
+        _mac_services = QApplication.translate("MAC_APPLICATION_MENU", "Services", None)
+        _mac_hide = QApplication.translate("MAC_APPLICATION_MENU", "Hide {0}", None)
+        _mac_hideothers = QApplication.translate("MAC_APPLICATION_MENU", "Hide Others", None)
+        _mac_showall = QApplication.translate("MAC_APPLICATION_MENU", "Show All", None)
+        _mac_preferences = QApplication.translate("MAC_APPLICATION_MENU", "Preferences...", None)
+        _mac_quit = QApplication.translate("MAC_APPLICATION_MENU", "Quit {0}", None)
+        _mac_about = QApplication.translate("MAC_APPLICATION_MENU", "About {0}", None)        
 
         # the & adds a short cut automatically
-        self.fileMenu = self.menuBar().addMenu("&" + QApplication.translate("Menu", "File"))
-        self.editMenu = self.menuBar().addMenu("&" + QApplication.translate("Menu", "Edit"))
-        self.RoastMenu = self.menuBar().addMenu("&" + QApplication.translate("Menu", "Roast"))
-        self.ConfMenu = self.menuBar().addMenu("&" + QApplication.translate("Menu", "Config"))
-        self.ToolkitMenu = self.menuBar().addMenu("&" + QApplication.translate("Menu", "Tools"))
-        self.viewMenu = self.menuBar().addMenu("&" + QApplication.translate("Menu", "View"))
-        self.helpMenu = self.menuBar().addMenu("&" + QApplication.translate("Menu", "Help"))
+        self.fileMenu = self.menuBar().addMenu("&" + QApplication.translate("Menu", "File", None))
+        self.editMenu = self.menuBar().addMenu("&" + QApplication.translate("Menu", "Edit", None))
+        self.RoastMenu = self.menuBar().addMenu("&" + QApplication.translate("Menu", "Roast", None))
+        self.ConfMenu = self.menuBar().addMenu("&" + QApplication.translate("Menu", "Config", None))
+        self.ToolkitMenu = self.menuBar().addMenu("&" + QApplication.translate("Menu", "Tools", None))
+        self.viewMenu = self.menuBar().addMenu("&" + QApplication.translate("Menu", "View", None))
+        self.helpMenu = self.menuBar().addMenu("&" + QApplication.translate("Menu", "Help", None))
 
         #FILE menu
-        self.newRoastMenu = self.fileMenu.addMenu(QApplication.translate("Menu", "New"))
+        self.newRoastMenu = self.fileMenu.addMenu(QApplication.translate("Menu", "New", None))
 
-        self.fileLoadAction = QAction(QApplication.translate("Menu", "Open..."),self)
+        self.fileLoadAction = QAction(QApplication.translate("Menu", "Open...", None),self)
         self.fileLoadAction.setShortcut(QKeySequence.StandardKey.Open)
         self.fileLoadAction.triggered.connect(self.fileLoad)
         self.fileMenu.addAction(self.fileLoadAction)
 
-        self.openRecentMenu = self.fileMenu.addMenu(QApplication.translate("Menu", "Open Recent"))
+        self.openRecentMenu = self.fileMenu.addMenu(QApplication.translate("Menu", "Open Recent", None))
         for i in range(self.MaxRecentFiles):
             self.openRecentMenu.addAction(self.recentFileActs[i])
         self.updateRecentFileActions()
 
-        self.importMenu = self.fileMenu.addMenu(QApplication.translate("Menu", "Import"))
+        self.importMenu = self.fileMenu.addMenu(QApplication.translate("Menu", "Import", None))
         
         urlImportAction = QAction("Artisan URL...", self)
         urlImportAction.triggered.connect(self.urlImport)
@@ -16153,110 +16078,110 @@ class ApplicationWindow(QMainWindow):
 
         self.fileMenu.addSeparator()
 
-        self.fileSaveAction = QAction(QApplication.translate("Menu", "Save"), self)
+        self.fileSaveAction = QAction(QApplication.translate("Menu", "Save", None), self)
         self.fileSaveAction.setShortcut(QKeySequence.StandardKey.Save)
         self.fileSaveAction.triggered.connect(self.fileSave_current_action)
         self.fileMenu.addAction(self.fileSaveAction)
 
-        self.fileSaveAsAction = QAction(QApplication.translate("Menu", "Save As..."), self)
+        self.fileSaveAsAction = QAction(QApplication.translate("Menu", "Save As...", None), self)
         self.fileSaveAsAction.setShortcut(QKeySequence.StandardKey.SaveAs)
         self.fileSaveAsAction.triggered.connect(self.fileSave_new_action)
         self.fileMenu.addAction(self.fileSaveAsAction)
 
         # same as SaveAs, just that the saved file gets a new roastUUID assigned
-        self.fileSaveCopyAsAction = QAction(QApplication.translate("Menu", "Save a Copy As..."), self)
+        self.fileSaveCopyAsAction = QAction(QApplication.translate("Menu", "Save a Copy As...", None), self)
         self.fileSaveCopyAsAction.triggered.connect(self.fileSave_copy_action)
         self.fileMenu.addAction(self.fileSaveCopyAsAction)
 
         self.fileMenu.addSeparator()
 
-        self.exportMenu = self.fileMenu.addMenu(QApplication.translate("Menu", "Export"))
+        self.exportMenu = self.fileMenu.addMenu(QApplication.translate("Menu", "Export", None))
 
-        fileExportCSVAction = QAction(QApplication.translate("Menu", "Artisan CSV..."), self)
+        fileExportCSVAction = QAction(QApplication.translate("Menu", "Artisan CSV...",None), self)
         fileExportCSVAction.triggered.connect(self.fileExportCSV)
         self.exportMenu.addAction(fileExportCSVAction)
 
-        fileExportJSONAction = QAction(QApplication.translate("Menu", "Artisan JSON..."), self)
+        fileExportJSONAction = QAction(QApplication.translate("Menu", "Artisan JSON...",None), self)
         fileExportJSONAction.triggered.connect(self.fileExportJSON) 
         self.exportMenu.addAction(fileExportJSONAction)
 
         self.exportMenu.addSeparator()
 
-        fileExportExcelAction = QAction(QApplication.translate("Menu", "Excel..."), self)
+        fileExportExcelAction = QAction(QApplication.translate("Menu", "Excel...",None), self)
         fileExportExcelAction.triggered.connect(self.fileExportExcel)
         self.exportMenu.addAction(fileExportExcelAction)
 
         self.exportMenu.addSeparator()
 
-        fileExportPilotAction = QAction(QApplication.translate("Menu", "Probat Pilot..."), self)
+        fileExportPilotAction = QAction(QApplication.translate("Menu", "Probat Pilot...",None), self)
         fileExportPilotAction.triggered.connect(self.fileExportPilot)
         self.exportMenu.addAction(fileExportPilotAction)
 
-        fileExportRoastLoggerAction = QAction(QApplication.translate("Menu", "RoastLogger..."), self)
+        fileExportRoastLoggerAction = QAction(QApplication.translate("Menu", "RoastLogger...",None), self)
         fileExportRoastLoggerAction.triggered.connect(self.fileExportRoastLogger)
         self.exportMenu.addAction(fileExportRoastLoggerAction)
 
-        self.convMenu = self.fileMenu.addMenu(QApplication.translate("Menu", "Convert To"))
+        self.convMenu = self.fileMenu.addMenu(QApplication.translate("Menu", "Convert To", None))
 
-        fileConvertFahrenheitAction = QAction(QApplication.translate("Menu", "Fahrenheit..."), self)
+        fileConvertFahrenheitAction = QAction(QApplication.translate("Menu", "Fahrenheit...",None), self)
         fileConvertFahrenheitAction.triggered.connect(self.fileConvertToFahrenheit)
         self.convMenu.addAction(fileConvertFahrenheitAction)
 
-        fileConvertCelsiusAction = QAction(QApplication.translate("Menu", "Celsius..."), self)
+        fileConvertCelsiusAction = QAction(QApplication.translate("Menu", "Celsius...",None), self)
         fileConvertCelsiusAction.triggered.connect(self.fileConvertToCelsius)
         self.convMenu.addAction(fileConvertCelsiusAction)
 
         self.convMenu.addSeparator()
 
-        fileConvertExcelAction = QAction(QApplication.translate("Menu", "Excel..."), self)
+        fileConvertExcelAction = QAction(QApplication.translate("Menu", "Excel...",None), self)
         fileConvertExcelAction.triggered.connect(self.fileConvertExcel)
         self.convMenu.addAction(fileConvertExcelAction)
 
         self.convMenu.addSeparator()
 
-        fileConvertCSVAction = QAction(QApplication.translate("Menu", "Artisan CSV..."), self)
+        fileConvertCSVAction = QAction(QApplication.translate("Menu", "Artisan CSV...",None), self)
         fileConvertCSVAction.triggered.connect(self.fileConvertCSV)
         self.convMenu.addAction(fileConvertCSVAction)
 
-        fileConvertJSONAction = QAction(QApplication.translate("Menu", "Artisan JSON..."), self)
+        fileConvertJSONAction = QAction(QApplication.translate("Menu", "Artisan JSON...",None), self)
         fileConvertJSONAction.triggered.connect(self.fileConvertJSON)
         self.convMenu.addAction(fileConvertJSONAction)
 
         self.convMenu.addSeparator()
 
-        fileConvertProbatAction = QAction(QApplication.translate("Menu", "Probat Pilot..."), self)
+        fileConvertProbatAction = QAction(QApplication.translate("Menu", "Probat Pilot...",None), self)
         fileConvertProbatAction.triggered.connect(self.fileConvertPilot)
         self.convMenu.addAction(fileConvertProbatAction)
 
-        fileConvertRoastLoggerAction = QAction(QApplication.translate("Menu", "RoastLogger..."), self)
+        fileConvertRoastLoggerAction = QAction(QApplication.translate("Menu", "RoastLogger...",None), self)
         fileConvertRoastLoggerAction.triggered.connect(self.fileConvertRoastLogger)
         self.convMenu.addAction(fileConvertRoastLoggerAction)
 
         self.convMenu.addSeparator()
 
-        fileConvertPNGAction = QAction(QApplication.translate("Menu", "PNG..."), self)
+        fileConvertPNGAction = QAction(QApplication.translate("Menu", "PNG...",None), self)
         fileConvertPNGAction.triggered.connect(self.fileConvertPNG)
         self.convMenu.addAction(fileConvertPNGAction)
 
-        fileConvertJPEGAction = QAction(QApplication.translate("Menu", "JPEG..."), self)
+        fileConvertJPEGAction = QAction(QApplication.translate("Menu", "JPEG...",None), self)
         fileConvertJPEGAction.triggered.connect(self.fileConvertJPEG)
         self.convMenu.addAction(fileConvertJPEGAction)
 
-        fileConvertBMPAction = QAction(QApplication.translate("Menu", "BMP..."), self)
+        fileConvertBMPAction = QAction(QApplication.translate("Menu", "BMP...",None), self)
         fileConvertBMPAction.triggered.connect(self.fileConvertBMP)
         self.convMenu.addAction(fileConvertBMPAction)
 
-        fileConvertSVGAction = QAction(QApplication.translate("Menu", "SVG..."), self)
+        fileConvertSVGAction = QAction(QApplication.translate("Menu", "SVG...",None), self)
         fileConvertSVGAction.triggered.connect(self.fileConvertSVG)
         self.convMenu.addAction(fileConvertSVGAction)
 
-        fileConvertPDFAction = QAction(QApplication.translate("Menu", "PDF..."), self)
+        fileConvertPDFAction = QAction(QApplication.translate("Menu", "PDF...",None), self)
         fileConvertPDFAction.triggered.connect(self.fileConvertPDF)
         self.convMenu.addAction(fileConvertPDFAction)
 
         self.fileMenu.addSeparator()
 
-        self.saveGraphMenu = self.fileMenu.addMenu(QApplication.translate("Menu", "Save Graph"))
+        self.saveGraphMenu = self.fileMenu.addMenu(QApplication.translate("Menu", "Save Graph", None))
 
         PDFAction = QAction("PDF...", self)
         PDFAction.triggered.connect(self.saveVectorGraph_PDF)
@@ -16266,7 +16191,7 @@ class ApplicationWindow(QMainWindow):
         SVGAction.triggered.connect(self.saveVectorGraph_SVG)
         self.saveGraphMenu.addAction(SVGAction)
         
-        fullsizeAction = QAction(QApplication.translate("Menu", "PNG..."), self)
+        fullsizeAction = QAction(QApplication.translate("Menu", "PNG...", None), self)
         fullsizeAction.triggered.connect(self.resizeImg_0_1)
         self.saveGraphMenu.addAction(fullsizeAction)
 
@@ -16310,48 +16235,48 @@ class ApplicationWindow(QMainWindow):
         instagramSizeAction.triggered.connect(self.resizeImgSize_1080_608)
         self.saveGraphMenu.addAction(instagramSizeAction)
 
-        self.reportMenu = self.fileMenu.addMenu(QApplication.translate("Menu", "Report"))
+        self.reportMenu = self.fileMenu.addMenu(QApplication.translate("Menu", "Report", None))
 
-        self.htmlAction = QAction(QApplication.translate("Menu", "Roast"), self)
+        self.htmlAction = QAction(QApplication.translate("Menu", "Roast", None), self)
         self.htmlAction.triggered.connect(self.htmlReport)
         self.htmlAction.setShortcut("Ctrl+R")
         self.reportMenu.addAction(self.htmlAction)
 
-        self.productionMenu = self.reportMenu.addMenu(QApplication.translate("Menu", "Batches"))
+        self.productionMenu = self.reportMenu.addMenu(QApplication.translate("Menu", "Batches", None))
 
-        self.productionWebAction = QAction(QApplication.translate("Menu", "Web..."), self)
+        self.productionWebAction = QAction(QApplication.translate("Menu", "Web...", None), self)
         self.productionWebAction.triggered.connect(self.productionReport)
         self.productionMenu.addAction(self.productionWebAction)
 
-        self.productionCsvAction = QAction(QApplication.translate("Menu", "CSV..."), self)
+        self.productionCsvAction = QAction(QApplication.translate("Menu", "CSV...", None), self)
         self.productionCsvAction.triggered.connect(self.productionCSVReport)
         self.productionMenu.addAction(self.productionCsvAction)
 
-        self.productionExcelAction = QAction(QApplication.translate("Menu", "Excel..."), self)
+        self.productionExcelAction = QAction(QApplication.translate("Menu", "Excel...", None), self)
         self.productionExcelAction.triggered.connect(self.productionExcelReport)
         self.productionMenu.addAction(self.productionExcelAction)
 
-        self.rankingMenu = self.reportMenu.addMenu(QApplication.translate("Menu", "Ranking"))
+        self.rankingMenu = self.reportMenu.addMenu(QApplication.translate("Menu", "Ranking", None))
 
-        self.rankingWebAction = QAction(QApplication.translate("Menu", "Web..."), self)
+        self.rankingWebAction = QAction(QApplication.translate("Menu", "Web...", None), self)
         self.rankingWebAction.triggered.connect(self.rankingReport)
         self.rankingMenu.addAction(self.rankingWebAction)
 
-        self.rankingCsvAction = QAction(QApplication.translate("Menu", "CSV..."), self)
+        self.rankingCsvAction = QAction(QApplication.translate("Menu", "CSV...", None), self)
         self.rankingCsvAction.triggered.connect(self.rankingCSVReport)
         self.rankingMenu.addAction(self.rankingCsvAction)
 
-        self.rankingExcelAction = QAction(QApplication.translate("Menu", "Excel..."), self)
+        self.rankingExcelAction = QAction(QApplication.translate("Menu", "Excel...", None), self)
         self.rankingExcelAction.triggered.connect(self.rankingExcelReport)
         self.rankingMenu.addAction(self.rankingExcelAction)
 
-        self.savestatisticsAction = QAction(QApplication.translate("Menu", "Save Statistics..."), self)
+        self.savestatisticsAction = QAction(QApplication.translate("Menu", "Save Statistics...", None), self)
         self.savestatisticsAction.triggered.connect(self.saveStatistics)
         self.fileMenu.addAction(self.savestatisticsAction)
 
         self.fileMenu.addSeparator()
 
-        self.printAction = QAction(QApplication.translate("Menu", "Print..."), self)
+        self.printAction = QAction(QApplication.translate("Menu", "Print...", None), self)
         self.printAction.setShortcut(QKeySequence.StandardKey.Print)
         self.printAction.triggered.connect(self.filePrint)
         self.fileMenu.addAction(self.printAction)
@@ -16359,139 +16284,139 @@ class ApplicationWindow(QMainWindow):
         if platf == 'Darwin':
             self.quitAction = QAction("Quit", self) # automatically translated by Qt Translators
         else:
-            self.quitAction = QAction(QApplication.translate("MAC_APPLICATION_MENU", "Quit {0}").format(application_name), self)
+            self.quitAction = QAction(QApplication.translate("MAC_APPLICATION_MENU", "Quit {0}", None).format(application_name), self)
         self.quitAction.setMenuRole(QAction.MenuRole.QuitRole)
         self.quitAction.setShortcut(QKeySequence.StandardKey.Quit)
         self.quitAction.triggered.connect(self.fileQuit)
         self.fileMenu.addAction(self.quitAction)
 
         # EDIT menu
-        self.cutAction = QAction(QApplication.translate("Menu", "Cut"), self)
+        self.cutAction = QAction(QApplication.translate("Menu", "Cut", None), self)
         self.cutAction.setShortcut(QKeySequence.StandardKey.Cut)
         self.editMenu.addAction(self.cutAction)
         self.cutAction.triggered.connect(self.on_actionCut_triggered)
-        self.copyAction = QAction(QApplication.translate("Menu", "Copy"), self)
+        self.copyAction = QAction(QApplication.translate("Menu", "Copy", None), self)
         self.copyAction.setShortcut(QKeySequence.StandardKey.Copy)
         self.editMenu.addAction(self.copyAction)
         self.copyAction.triggered.connect(self.on_actionCopy_triggered)
-        self.pasteAction = QAction(QApplication.translate("Menu", "Paste"), self)
+        self.pasteAction = QAction(QApplication.translate("Menu", "Paste", None), self)
         self.pasteAction.setShortcut(QKeySequence.StandardKey.Paste)
         self.editMenu.addAction(self.pasteAction)
         self.pasteAction.triggered.connect(self.on_actionPaste_triggered)
 
         # ROAST menu
-        self.editGraphAction = QAction(QApplication.translate("Menu", "Properties..."), self)
+        self.editGraphAction = QAction(QApplication.translate("Menu", "Properties...", None), self)
         self.editGraphAction.setMenuRole(QAction.MenuRole.NoRole) # without this, this item is not shown in he
         self.editGraphAction.triggered.connect(self.editgraph)
         self.RoastMenu.addAction(self.editGraphAction)
         self.editGraphAction.setShortcut("Ctrl+T")
 
-        self.backgroundAction = QAction(QApplication.translate("Menu", "Background..."), self)
+        self.backgroundAction = QAction(QApplication.translate("Menu", "Background...", None), self)
         self.backgroundAction.triggered.connect(self.background)
         self.RoastMenu.addAction(self.backgroundAction)
         self.backgroundAction.setShortcut("Ctrl+B")
 
-        self.flavorAction = QAction(QApplication.translate("Menu", "Cup Profile..."), self)
+        self.flavorAction = QAction(QApplication.translate("Menu", "Cup Profile...", None), self)
         self.flavorAction.triggered.connect(self.flavorchart)
         self.RoastMenu.addAction(self.flavorAction)
 
         self.RoastMenu.addSeparator()
 
-        self.switchAction = QAction(QApplication.translate("Menu", "Switch Profiles"), self)
+        self.switchAction = QAction(QApplication.translate("Menu", "Switch Profiles", None), self)
         self.switchAction.setShortcut(QKeySequence.StandardKey.Close)
         self.switchAction.triggered.connect(self.switch)
         self.RoastMenu.addAction(self.switchAction)
 
-        self.switchETBTAction = QAction(QApplication.translate("Menu", "Switch ET<->BT"), self)
+        self.switchETBTAction = QAction(QApplication.translate("Menu", "Switch ET<->BT", None), self)
         self.switchETBTAction.triggered.connect(self.switchETBT)
         self.RoastMenu.addAction(self.switchETBTAction)
 
         # CONFIGURATION menu
-        self.machineMenu = QMenu(QApplication.translate("Menu", "Machine"))
+        self.machineMenu = QMenu(QApplication.translate("Menu", "Machine", None))
         # populated in populateMachineMenu/populateListMenu if not empty
         self.populateMachineMenu()
 
-        self.deviceAction = QAction(QApplication.translate("Menu", "Device..."), self)
+        self.deviceAction = QAction(QApplication.translate("Menu", "Device...", None), self)
         self.deviceAction.triggered.connect(self.deviceassigment)
         self.ConfMenu.addAction(self.deviceAction)
         self.deviceAction.setShortcut("Ctrl+D")
 
-        self.commportAction = QAction(QApplication.translate("Menu", "Port..."), self)
+        self.commportAction = QAction(QApplication.translate("Menu", "Port...", None), self)
         self.commportAction.triggered.connect(self.setcommport)
         self.ConfMenu.addAction(self.commportAction)
 
         self.ConfMenu.addSeparator()
 
-        self.calibrateDelayAction = QAction(QApplication.translate("Menu", "Sampling..."), self)
+        self.calibrateDelayAction = QAction(QApplication.translate("Menu", "Sampling...", None), self)
         self.calibrateDelayAction.triggered.connect(self.calibratedelay)
         self.ConfMenu.addAction(self.calibrateDelayAction)
 
         self.ConfMenu.addSeparator()
 
-        self.curvesAction = QAction(QApplication.translate("Menu", "Curves..."), self)
+        self.curvesAction = QAction(QApplication.translate("Menu", "Curves...", None), self)
         self.curvesAction.triggered.connect(self.setCurves)
         self.ConfMenu.addAction(self.curvesAction)
 
         self.ConfMenu.addSeparator()
 
-        self.eventsAction = QAction(QApplication.translate("Menu", "Events..."), self)
+        self.eventsAction = QAction(QApplication.translate("Menu", "Events...", None), self)
         self.eventsAction.triggered.connect(self.eventsconf)
         self.ConfMenu.addAction(self.eventsAction)
         self.eventsAction.setShortcut("Ctrl+E")
 
-        self.alarmAction = QAction(QApplication.translate("Menu", "Alarms..."), self)
+        self.alarmAction = QAction(QApplication.translate("Menu", "Alarms...", None), self)
         self.alarmAction.triggered.connect(self.alarmconfig)
         self.alarmAction.setShortcut("Ctrl+A")
         self.ConfMenu.addAction(self.alarmAction)
 
         self.ConfMenu.addSeparator()
 
-        self.phasesGraphAction = QAction(QApplication.translate("Menu", "Phases..."), self)
+        self.phasesGraphAction = QAction(QApplication.translate("Menu", "Phases...", None), self)
         self.phasesGraphAction.triggered.connect(self.editphases)
         self.ConfMenu.addAction(self.phasesGraphAction)
 
-        self.StatisticsAction = QAction(QApplication.translate("Menu", "Statistics..."), self)
+        self.StatisticsAction = QAction(QApplication.translate("Menu", "Statistics...", None), self)
         self.StatisticsAction.triggered.connect(self.showstatistics)
         self.ConfMenu.addAction(self.StatisticsAction)
 
-        self.WindowconfigAction = QAction(QApplication.translate("Menu", "Axes..."), self)
+        self.WindowconfigAction = QAction(QApplication.translate("Menu", "Axes...", None), self)
         self.WindowconfigAction.triggered.connect(self.Windowconfig)
         self.ConfMenu.addAction(self.WindowconfigAction)
 
         self.ConfMenu.addSeparator()
 
-        self.colorsAction = QAction(QApplication.translate("Menu", "Colors..."), self)
+        self.colorsAction = QAction(QApplication.translate("Menu", "Colors...", None), self)
         self.colorsAction.triggered.connect(self.qmc.changeGColor3)
         self.ConfMenu.addAction(self.colorsAction)
 
-        self.themeMenu = QMenu(QApplication.translate("Menu", "Themes"))
+        self.themeMenu = QMenu(QApplication.translate("Menu", "Themes", None))
         self.populateThemeMenu()
         self.ConfMenu.addMenu(self.themeMenu)
         self.updateRecentThemeActions()
 
         self.ConfMenu.addSeparator()
 
-        self.autosaveAction = QAction(QApplication.translate("Menu", "Autosave..."), self)
+        self.autosaveAction = QAction(QApplication.translate("Menu", "Autosave...", None), self)
         self.autosaveAction.triggered.connect(self.autosaveconf)
         self.ConfMenu.addAction(self.autosaveAction)
 
-        self.batchAction = QAction(QApplication.translate("Menu", "Batch..."), self)
+        self.batchAction = QAction(QApplication.translate("Menu", "Batch...", None), self)
         self.batchAction.triggered.connect(self.batchconf)
         self.ConfMenu.addAction(self.batchAction)
 
         self.ConfMenu.addSeparator()
 
-        self.temperatureConfMenu = self.ConfMenu.addMenu(QApplication.translate("Menu", "Temperature"))
+        self.temperatureConfMenu = self.ConfMenu.addMenu(QApplication.translate("Menu", "Temperature", None))
 
-        self.FahrenheitAction = QAction(QApplication.translate("Menu", "Fahrenheit Mode"), self)
+        self.FahrenheitAction = QAction(QApplication.translate("Menu", "Fahrenheit Mode", None), self)
         self.FahrenheitAction.triggered.connect(self.qmc.fahrenheitModeRedraw)
         self.temperatureConfMenu.addAction(self.FahrenheitAction)
 
-        self.CelsiusAction = QAction(QApplication.translate("Menu", "Celsius Mode"), self)
+        self.CelsiusAction = QAction(QApplication.translate("Menu", "Celsius Mode", None), self)
         self.CelsiusAction.triggered.connect(self.qmc.celsiusModeRedraw)
         self.temperatureConfMenu.addAction(self.CelsiusAction)
 
-        self.languageMenu = self.ConfMenu.addMenu(QApplication.translate("Menu", "Language"))
+        self.languageMenu = self.ConfMenu.addMenu(QApplication.translate("Menu", "Language", None))
         
         # language_menu_actions holds a dict associating iso2 locale strings to language menu actions
         self.language_menu_actions = {}
@@ -16532,50 +16457,50 @@ class ApplicationWindow(QMainWindow):
 
         # TOOLKIT menu
 
-        self.analyzeMenu = self.ToolkitMenu.addMenu(QApplication.translate("Menu", "Analyzer"))
-        self.fitIdealautoAction = QAction(QApplication.translate("Menu","Auto All"),self)
+        self.analyzeMenu = self.ToolkitMenu.addMenu(QApplication.translate("Menu", "Analyzer", None))
+        self.fitIdealautoAction = QAction(QApplication.translate("Menu","Auto All",None),self)
         self.fitIdealautoAction.triggered.connect(self.analysisfitCurvesALL)
         self.fitIdealautoAction.setShortcut("Ctrl+K")
         self.analyzeMenu.addAction(self.fitIdealautoAction)
         self.analyzeMenu.addSeparator()
-        self.fitIdealx2Action = QAction(QApplication.translate("Menu","Fit BT to") + " x\xb2",self)
+        self.fitIdealx2Action = QAction(QApplication.translate("Menu","Fit BT to",None) + " x\xb2",self)
         self.fitIdealx2Action.triggered.connect(self.analysisfitCurvesX2)
         self.analyzeMenu.addAction(self.fitIdealx2Action)
-        self.fitIdealx3Action = QAction(QApplication.translate("Menu","Fit BT to") + " x\xb3",self)
+        self.fitIdealx3Action = QAction(QApplication.translate("Menu","Fit BT to",None) + " x\xb3",self)
         self.fitIdealx3Action.triggered.connect(self.analysisfitCurvesX3)
         self.analyzeMenu.addAction(self.fitIdealx3Action)
-        self.fitIdealx0Action = QAction(QApplication.translate("Menu","Fit BT to") + " ln()",self)
+        self.fitIdealx0Action = QAction(QApplication.translate("Menu","Fit BT to",None) + " ln()",self)
         self.fitIdealx0Action.triggered.connect(self.analysisfitCurvesLN)
         self.analyzeMenu.addAction(self.fitIdealx0Action)
         self.analyzeMenu.addSeparator()
-        self.fitBkgndAction = QAction(QApplication.translate("Menu","Fit BT to Bkgnd"),self)
+        self.fitBkgndAction = QAction(QApplication.translate("Menu","Fit BT to Bkgnd",None),self)
         self.fitBkgndAction.triggered.connect(self.analysisfitCurvesBkgnd)
         self.analyzeMenu.addAction(self.fitBkgndAction)
         self.analyzeMenu.addSeparator()
-        self.clearresultsAction = QAction(QApplication.translate("Menu","Clear results"),self)
+        self.clearresultsAction = QAction(QApplication.translate("Menu","Clear results",None),self)
         self.clearresultsAction.triggered.connect(self.clearResults)
         self.clearresultsAction.setShortcut("Ctrl+Alt+K")
         self.analyzeMenu.addAction(self.clearresultsAction)
 
-        self.roastCompareAction = QAction(QApplication.translate("Menu", "Comparator"), self)
+        self.roastCompareAction = QAction(QApplication.translate("Menu", "Comparator", None), self)
         self.roastCompareAction.triggered.connect(self.roastCompare)
         self.roastCompareAction.setCheckable(True)
         self.roastCompareAction.setChecked(bool(self.comparator))
         self.ToolkitMenu.addAction(self.roastCompareAction)
 
-        self.designerAction = QAction(QApplication.translate("Menu", "Designer") , self)
+        self.designerAction = QAction(QApplication.translate("Menu", "Designer", None) , self)
         self.designerAction.triggered.connect(self.designerTriggered)
         self.designerAction.setCheckable(True)
         self.designerAction.setChecked(self.qmc.designerflag)
         self.ToolkitMenu.addAction(self.designerAction)
 
-        self.simulatorAction = QAction(QApplication.translate("Menu", "Simulator") , self)
+        self.simulatorAction = QAction(QApplication.translate("Menu", "Simulator", None) , self)
         self.simulatorAction.triggered.connect(self.simulate)
         self.simulatorAction.setCheckable(True)
         self.simulatorAction.setChecked(bool(self.simulator))
         self.ToolkitMenu.addAction(self.simulatorAction)
 
-        self.wheeleditorAction = QAction(QApplication.translate("Menu", "Wheel Graph"), self)
+        self.wheeleditorAction = QAction(QApplication.translate("Menu", "Wheel Graph", None), self)
         self.wheeleditorAction.triggered.connect(self.graphwheel)
         self.wheeleditorAction.setCheckable(True)
         self.wheeleditorAction.setChecked(self.qmc.wheelflag)
@@ -16583,17 +16508,17 @@ class ApplicationWindow(QMainWindow):
 
         self.ToolkitMenu.addSeparator()
 
-        self.transformAction = QAction(QApplication.translate("Menu", "Transposer"), self)
+        self.transformAction = QAction(QApplication.translate("Menu", "Transposer", None), self)
         self.transformAction.triggered.connect(self.transform)
         self.ToolkitMenu.addAction(self.transformAction)
 
-        self.temperatureMenu = self.ToolkitMenu.addMenu(QApplication.translate("Menu", "Convert Profile Temperature"))
+        self.temperatureMenu = self.ToolkitMenu.addMenu(QApplication.translate("Menu", "Convert Profile Temperature", None))
 
-        self.ConvertToFahrenheitAction = QAction(QApplication.translate("Menu", "Convert to Fahrenheit"), self)
+        self.ConvertToFahrenheitAction = QAction(QApplication.translate("Menu", "Convert to Fahrenheit", None), self)
         self.ConvertToFahrenheitAction.triggered.connect(self.qmc.convertTemperatureF)
         self.temperatureMenu.addAction(self.ConvertToFahrenheitAction)
 
-        self.ConvertToCelsiusAction = QAction(QApplication.translate("Menu", "Convert to Celsius"), self)
+        self.ConvertToCelsiusAction = QAction(QApplication.translate("Menu", "Convert to Celsius", None), self)
         self.ConvertToCelsiusAction.triggered.connect(self.qmc.convertTemperatureC)
         self.temperatureMenu.addAction(self.ConvertToCelsiusAction)
 
@@ -16606,32 +16531,32 @@ class ApplicationWindow(QMainWindow):
 
         self.ToolkitMenu.addSeparator()
 
-        calculatorAction = QAction(QApplication.translate("Menu", "Calculator"), self)
+        calculatorAction = QAction(QApplication.translate("Menu", "Calculator", None), self)
         calculatorAction.triggered.connect(self.calculator)
         self.ToolkitMenu.addAction(calculatorAction)
 
 
         # VIEW menu
 
-        self.controlsAction = QAction(QApplication.translate("Menu", "Controls"), self)
+        self.controlsAction = QAction(QApplication.translate("Menu", "Controls", None), self)
         self.controlsAction.triggered.connect(self.toggleControls)
         self.controlsAction.setCheckable(True)
         self.controlsAction.setChecked(True)
         self.viewMenu.addAction(self.controlsAction)
 
-        self.readingsAction = QAction(QApplication.translate("Menu", "Readings"), self)
+        self.readingsAction = QAction(QApplication.translate("Menu", "Readings", None), self)
         self.readingsAction.triggered.connect(self.toggleReadings)
         self.readingsAction.setCheckable(True)
         self.readingsAction.setChecked(False)
         self.viewMenu.addAction(self.readingsAction)
 
-        self.buttonsAction = QAction(QApplication.translate("Menu", "Buttons"), self)
+        self.buttonsAction = QAction(QApplication.translate("Menu", "Buttons", None), self)
         self.buttonsAction.triggered.connect(self.toggleExtraButtons)
         self.buttonsAction.setCheckable(True)
         self.buttonsAction.setChecked(False)
         self.viewMenu.addAction(self.buttonsAction)
 
-        self.slidersAction = QAction(QApplication.translate("Menu", "Sliders"), self)
+        self.slidersAction = QAction(QApplication.translate("Menu", "Sliders", None), self)
         self.slidersAction.triggered.connect(self.toggleSliders)
         self.slidersAction.setCheckable(True)
         self.slidersAction.setChecked(False)
@@ -16639,32 +16564,32 @@ class ApplicationWindow(QMainWindow):
 
         self.viewMenu.addSeparator()
 
-        self.lcdsAction = QAction(QApplication.translate("Menu", "Main LCDs"), self)
+        self.lcdsAction = QAction(QApplication.translate("Menu", "Main LCDs", None), self)
         self.lcdsAction.triggered.connect(self.largeLCDs)
         self.lcdsAction.setCheckable(True)
         self.lcdsAction.setChecked(False)
         self.lcdsAction.setShortcut("Ctrl+L")
         self.viewMenu.addAction(self.lcdsAction)
 
-        self.deltalcdsAction = QAction(QApplication.translate("Menu", "Delta LCDs"), self)
+        self.deltalcdsAction = QAction(QApplication.translate("Menu", "Delta LCDs", None), self)
         self.deltalcdsAction.triggered.connect(self.largeDeltaLCDs)
         self.deltalcdsAction.setCheckable(True)
         self.deltalcdsAction.setChecked(False)
         self.viewMenu.addAction(self.deltalcdsAction)
 
-        self.pidlcdsAction = QAction(QApplication.translate("Menu", "PID LCDs"), self)
+        self.pidlcdsAction = QAction(QApplication.translate("Menu", "PID LCDs", None), self)
         self.pidlcdsAction.triggered.connect(self.largePIDLCDs)
         self.pidlcdsAction.setCheckable(True)
         self.pidlcdsAction.setChecked(False)
         self.viewMenu.addAction(self.pidlcdsAction)
 
-        self.extralcdsAction = QAction(QApplication.translate("Menu", "Extra LCDs"), self)
+        self.extralcdsAction = QAction(QApplication.translate("Menu", "Extra LCDs", None), self)
         self.extralcdsAction.triggered.connect(self.largeExtraLCDs)
         self.extralcdsAction.setCheckable(True)
         self.extralcdsAction.setChecked(False)
         self.viewMenu.addAction(self.extralcdsAction)
 
-        self.phaseslcdsAction = QAction(QApplication.translate("Menu", "Phases LCDs"), self)
+        self.phaseslcdsAction = QAction(QApplication.translate("Menu", "Phases LCDs", None), self)
         self.phaseslcdsAction.triggered.connect(self.largePhasesLCDs)
         self.phaseslcdsAction.setCheckable(True)
         self.phaseslcdsAction.setChecked(False)
@@ -16673,7 +16598,7 @@ class ApplicationWindow(QMainWindow):
         self.viewMenu.addSeparator()
 
         if platf != 'Darwin': # MacOS X automatically adds the fullscreen action
-            self.fullscreenAction = QAction(QApplication.translate("Menu", "Full Screen"), self)
+            self.fullscreenAction = QAction(QApplication.translate("Menu", "Full Screen", None), self)
             self.fullscreenAction.triggered.connect(self.toggleFullscreen)
             self.fullscreenAction.setCheckable(True)
             self.fullscreenAction.setChecked(False)
@@ -16683,50 +16608,50 @@ class ApplicationWindow(QMainWindow):
 
         # HELP menu
         if app.artisanviewerMode:
-            helpAboutAction = QAction(QApplication.translate("MAC_APPLICATION_MENU", "About {0}").format(application_viewer_name), self)
+            helpAboutAction = QAction(QApplication.translate("MAC_APPLICATION_MENU", "About {0}", None).format(application_viewer_name), self)
         else:
-            helpAboutAction = QAction(QApplication.translate("MAC_APPLICATION_MENU", "About {0}").format(application_name), self)
+            helpAboutAction = QAction(QApplication.translate("MAC_APPLICATION_MENU", "About {0}", None).format(application_name), self)
         helpAboutAction.setMenuRole(QAction.MenuRole.AboutRole)
         helpAboutAction.triggered.connect(self.helpAbout)
         self.helpMenu.addAction(helpAboutAction)
 
-        aboutQtAction = QAction(QApplication.translate("Menu", "About Qt"), self)
+        aboutQtAction = QAction(QApplication.translate("Menu", "About Qt", None), self)
         aboutQtAction.setMenuRole(QAction.MenuRole.AboutQtRole)
         aboutQtAction.triggered.connect(self.showAboutQt)
         self.helpMenu.addAction(aboutQtAction)
 
-        helpDocumentationAction = QAction(QApplication.translate("Menu", "Documentation"), self)
+        helpDocumentationAction = QAction(QApplication.translate("Menu", "Documentation", None), self)
         helpDocumentationAction.triggered.connect(self.helpHelp)
         helpDocumentationAction.setShortcut(QKeySequence.StandardKey.HelpContents)
         self.helpMenu.addAction(helpDocumentationAction)
 
-        KshortCAction = QAction(QApplication.translate("Menu", "Keyboard Shortcuts"), self)
+        KshortCAction = QAction(QApplication.translate("Menu", "Keyboard Shortcuts", None), self)
         KshortCAction.triggered.connect(self.viewKshortcuts)
         self.helpMenu.addAction(KshortCAction)
 
         self.helpMenu.addSeparator()
 
-        checkUpdateAction = QAction(QApplication.translate("Menu", "Check for Updates"), self)
+        checkUpdateAction = QAction(QApplication.translate("Menu", "Check for Updates", None), self)
         checkUpdateAction.setMenuRole(QAction.MenuRole.NoRole)
         checkUpdateAction.triggered.connect(self.checkUpdate)
         self.helpMenu.addAction(checkUpdateAction)
 
         self.helpMenu.addSeparator()
 
-        errorAction = QAction(QApplication.translate("Menu", "Errors"), self)
+        errorAction = QAction(QApplication.translate("Menu", "Errors", None), self)
         errorAction.triggered.connect(self.viewErrorLog)
         self.helpMenu.addAction(errorAction)
 
-        messageAction = QAction(QApplication.translate("Menu", "Messages"), self)
+        messageAction = QAction(QApplication.translate("Menu", "Messages", None), self)
         messageAction.triggered.connect(self.viewMessageLog)
         self.helpMenu.addAction(messageAction)
 
-        serialAction = QAction(QApplication.translate("Menu", "Serial"), self)
+        serialAction = QAction(QApplication.translate("Menu", "Serial", None), self)
         serialAction.triggered.connect(self.viewSerialLog)
         serialAction.setMenuRole(QAction.MenuRole.NoRole)
         self.helpMenu.addAction(serialAction)
 
-        platformAction = QAction(QApplication.translate("Menu", "Platform"), self)
+        platformAction = QAction(QApplication.translate("Menu", "Platform", None), self)
         platformAction.triggered.connect(self.viewplatform)
         self.helpMenu.addAction(platformAction)
 
@@ -16734,24 +16659,24 @@ class ApplicationWindow(QMainWindow):
         # SETTINGS submenu
         self.helpMenu.addSeparator()
 
-        self.loadSettingsAction = QAction(QApplication.translate("Menu", "Load Settings..."), self)
+        self.loadSettingsAction = QAction(QApplication.translate("Menu", "Load Settings...", None), self)
         self.loadSettingsAction.triggered.connect(self.loadSettings_triggered)
         self.loadSettingsAction.setMenuRole(QAction.MenuRole.NoRole) # avoid specific handling of settings menu
         self.helpMenu.addAction(self.loadSettingsAction)
 
-        self.openRecentSettingMenu = self.helpMenu.addMenu(QApplication.translate("Menu", "Load Recent Settings"))
+        self.openRecentSettingMenu = self.helpMenu.addMenu(QApplication.translate("Menu", "Load Recent Settings", None))
         for i in range(self.MaxRecentFiles):
             self.openRecentSettingMenu.addAction(self.recentSettingActs[i])
         self.updateRecentSettingActions()
 
-        self.saveAsSettingsAction = QAction(QApplication.translate("Menu", "Save Settings..."), self)
+        self.saveAsSettingsAction = QAction(QApplication.translate("Menu", "Save Settings...", None), self)
         self.saveAsSettingsAction.triggered.connect(self.saveSettings)
         self.saveAsSettingsAction.setMenuRole(QAction.MenuRole.NoRole)  # avoid specific handling of settings menu
         self.helpMenu.addAction(self.saveAsSettingsAction)
 
         self.helpMenu.addSeparator()
 
-        self.resetAction = QAction(QApplication.translate("Menu", "Factory Reset"), self)
+        self.resetAction = QAction(QApplication.translate("Menu", "Factory Reset", None), self)
         self.resetAction.triggered.connect(self.resetApplication)
         self.helpMenu.addAction(self.resetAction)
 
@@ -17093,9 +17018,9 @@ class ApplicationWindow(QMainWindow):
 
         #create ON/OFF buttons
 
-        self.buttonONOFF = QPushButton(QApplication.translate("Button", "ON"))
+        self.buttonONOFF = QPushButton(QApplication.translate("Button", "ON", None))
         self.buttonONOFF.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.buttonONOFF.setToolTip(QApplication.translate("Tooltip", "Start monitoring"))
+        self.buttonONOFF.setToolTip(QApplication.translate("Tooltip", "Start monitoring", None))
         self.buttonONOFF.setStyleSheet(self.pushbuttonstyles["OFF"])
         self.buttonONOFF.setGraphicsEffect(self.makeShadow())
         self.buttonONOFF.pressed.connect(self.mainButtonPressed)
@@ -17107,9 +17032,9 @@ class ApplicationWindow(QMainWindow):
             self.buttonONOFF.setVisible(False)
 
         #create START/STOP buttons
-        self.buttonSTARTSTOP = QPushButton(QApplication.translate("Button", "START"))
+        self.buttonSTARTSTOP = QPushButton(QApplication.translate("Button", "START", None))
         self.buttonSTARTSTOP.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.buttonSTARTSTOP.setToolTip(QApplication.translate("Tooltip", "Start recording"))
+        self.buttonSTARTSTOP.setToolTip(QApplication.translate("Tooltip", "Start recording", None))
         self.buttonSTARTSTOP.setStyleSheet(self.pushbuttonstyles["STOP"])
         self.buttonSTARTSTOP.setGraphicsEffect(self.makeShadow())
         self.buttonSTARTSTOP.pressed.connect(self.mainButtonPressed)
@@ -17122,24 +17047,24 @@ class ApplicationWindow(QMainWindow):
             self.buttonSTARTSTOP.setVisible(False)
 
         #create 1C START, 1C END, 2C START and 2C END buttons
-        self.buttonFCs = MinorEventPushButton(QApplication.translate("Button", "FC\nSTART"))
-        self.buttonFCs.setToolTip(QApplication.translate("Tooltip", "First Crack Start"))
+        self.buttonFCs = MinorEventPushButton(QApplication.translate("Button", "FC\nSTART", None))
+        self.buttonFCs.setToolTip(QApplication.translate("Tooltip", "First Crack Start", None))
         self.buttonFCs.clicked.connect(self.qmc.mark1Cstart)
 
-        self.buttonFCe = MinorEventPushButton(QApplication.translate("Button", "FC\nEND"))
-        self.buttonFCe.setToolTip(QApplication.translate("Tooltip", "First Crack End"))
+        self.buttonFCe = MinorEventPushButton(QApplication.translate("Button", "FC\nEND", None))
+        self.buttonFCe.setToolTip(QApplication.translate("Tooltip", "First Crack End", None))
         self.buttonFCe.clicked.connect(self.qmc.mark1Cend)
 
-        self.buttonSCs = MinorEventPushButton(QApplication.translate("Button", "SC\nSTART"))
-        self.buttonSCs.setToolTip(QApplication.translate("Tooltip", "Second Crack Start"))
+        self.buttonSCs = MinorEventPushButton(QApplication.translate("Button", "SC\nSTART", None))
+        self.buttonSCs.setToolTip(QApplication.translate("Tooltip", "Second Crack Start", None))
         self.buttonSCs.clicked.connect(self.qmc.mark2Cstart)
 
-        self.buttonSCe = MinorEventPushButton(QApplication.translate("Button", "SC\nEND"))
-        self.buttonSCe.setToolTip(QApplication.translate("Tooltip", "Second Crack End"))
+        self.buttonSCe = MinorEventPushButton(QApplication.translate("Button", "SC\nEND", None))
+        self.buttonSCe.setToolTip(QApplication.translate("Tooltip", "Second Crack End", None))
         self.buttonSCe.clicked.connect(self.qmc.mark2Cend)
 
         #create RESET button
-        self.buttonRESET = QPushButton(QApplication.translate("Button", "RESET"))
+        self.buttonRESET = QPushButton(QApplication.translate("Button", "RESET", None))
         self.buttonRESET.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.buttonRESET.setStyleSheet(self.pushbuttonstyles["RESET"])
         self.buttonRESET.setGraphicsEffect(self.makeShadow())
@@ -17147,21 +17072,21 @@ class ApplicationWindow(QMainWindow):
         self.buttonRESET.released.connect(self.mainButtonReleased)
         self.buttonRESET.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
         self.buttonRESET.setMinimumHeight(self.standard_button_height)
-        self.buttonRESET.setToolTip(QApplication.translate("Tooltip", "Reset"))
+        self.buttonRESET.setToolTip(QApplication.translate("Tooltip", "Reset", None))
         self.buttonRESET.clicked.connect(self.qmc.resetButtonAction)
 
         #create CHARGE button
-        self.buttonCHARGE = AnimatedMajorEventPushButton(QApplication.translate("Button", "CHARGE"))
-        self.buttonCHARGE.setToolTip(QApplication.translate("Tooltip", "Charge"))
+        self.buttonCHARGE = AnimatedMajorEventPushButton(QApplication.translate("Button", "CHARGE", None))
+        self.buttonCHARGE.setToolTip(QApplication.translate("Tooltip", "Charge", None))
         self.buttonCHARGE.clicked.connect(self.qmc.markCharge)
 
         #create DROP button
-        self.buttonDROP = MajorEventPushButton(QApplication.translate("Button", "DROP"))
-        self.buttonDROP.setToolTip(QApplication.translate("Tooltip", "Drop"))
+        self.buttonDROP = MajorEventPushButton(QApplication.translate("Button", "DROP", None))
+        self.buttonDROP.setToolTip(QApplication.translate("Tooltip", "Drop", None))
         self.buttonDROP.clicked.connect(self.qmc.markDrop)
 
         #create PID control button
-        self.buttonCONTROL = QPushButton(QApplication.translate("Button", "Control"))
+        self.buttonCONTROL = QPushButton(QApplication.translate("Button", "Control", None))
         self.buttonCONTROL.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.buttonCONTROL.setStyleSheet(self.pushbuttonstyles["PID"])
         self.buttonCONTROL.setGraphicsEffect(self.makeShadow())
@@ -17174,74 +17099,74 @@ class ApplicationWindow(QMainWindow):
             self.buttonCONTROL.setVisible(False)
 
         #create EVENT record button
-        self.buttonEVENT = AuxEventPushButton(QApplication.translate("Button", "EVENT"))
-        self.buttonEVENT.setToolTip(QApplication.translate("Tooltip", "Event"))
+        self.buttonEVENT = AuxEventPushButton(QApplication.translate("Button", "EVENT", None))
+        self.buttonEVENT.setToolTip(QApplication.translate("Tooltip", "Event", None))
         self.buttonEVENT.clicked.connect(self.qmc.EventRecord_action)
 
         #create PID+5 button
-        self.buttonSVp5 = QPushButton(QApplication.translate("Button", "SV +5"))
+        self.buttonSVp5 = QPushButton(QApplication.translate("Button", "SV +5", None))
         self.buttonSVp5.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.buttonSVp5.setStyleSheet(self.pushbuttonstyles["SV +"])
         self.buttonSVp5.setMinimumWidth(90)
         self.buttonSVp5.setMinimumHeight(self.standard_button_height)
-        self.buttonSVp5.setToolTip(QApplication.translate("Tooltip", "Increases the current SV value by 5"))
+        self.buttonSVp5.setToolTip(QApplication.translate("Tooltip", "Increases the current SV value by 5", None))
         self.buttonSVp5.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         #create PID+10 button
-        self.buttonSVp10 = QPushButton(QApplication.translate("Button", "SV +10"))
+        self.buttonSVp10 = QPushButton(QApplication.translate("Button", "SV +10", None))
         self.buttonSVp10.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.buttonSVp10.setStyleSheet(self.pushbuttonstyles["SV +"])
         self.buttonSVp10.setMinimumWidth(90)
         self.buttonSVp10.setMinimumHeight(self.standard_button_height)
-        self.buttonSVp10.setToolTip(QApplication.translate("Tooltip", "Increases the current SV value by 10"))
+        self.buttonSVp10.setToolTip(QApplication.translate("Tooltip", "Increases the current SV value by 10", None))
         self.buttonSVp10.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         #create PID+20 button
-        self.buttonSVp20 = QPushButton(QApplication.translate("Button", "SV +20"))
+        self.buttonSVp20 = QPushButton(QApplication.translate("Button", "SV +20", None))
         self.buttonSVp20.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.buttonSVp20.setStyleSheet(self.pushbuttonstyles["SV +"])
         self.buttonSVp20.setMinimumWidth(90)
         self.buttonSVp20.setMinimumHeight(self.standard_button_height)
-        self.buttonSVp20.setToolTip(QApplication.translate("Tooltip", "Increases the current SV value by 20"))
+        self.buttonSVp20.setToolTip(QApplication.translate("Tooltip", "Increases the current SV value by 20", None))
         self.buttonSVp20.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         #create PID-20 button
-        self.buttonSVm20 = QPushButton(QApplication.translate("Button", "SV -20"))
+        self.buttonSVm20 = QPushButton(QApplication.translate("Button", "SV -20", None))
         self.buttonSVm20.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.buttonSVm20.setStyleSheet(self.pushbuttonstyles["SV -"])
         self.buttonSVm20.setMinimumWidth(90)
         self.buttonSVm20.setMinimumHeight(self.standard_button_height)
-        self.buttonSVm20.setToolTip(QApplication.translate("Tooltip", "Decreases the current SV value by 20"))
+        self.buttonSVm20.setToolTip(QApplication.translate("Tooltip", "Decreases the current SV value by 20", None))
         self.buttonSVm20.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         #create PID-10 button
-        self.buttonSVm10 = QPushButton(QApplication.translate("Button", "SV -10"))
+        self.buttonSVm10 = QPushButton(QApplication.translate("Button", "SV -10", None))
         self.buttonSVm10.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.buttonSVm10.setStyleSheet(self.pushbuttonstyles["SV -"])
         self.buttonSVm10.setMinimumWidth(90)
         self.buttonSVm10.setMinimumHeight(self.standard_button_height)
-        self.buttonSVm10.setToolTip(QApplication.translate("Tooltip", "Decreases the current SV value by 10"))
+        self.buttonSVm10.setToolTip(QApplication.translate("Tooltip", "Decreases the current SV value by 10", None))
         self.buttonSVm10.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         #create PID-5 button
-        self.buttonSVm5 = QPushButton(QApplication.translate("Button", "SV -5"))
+        self.buttonSVm5 = QPushButton(QApplication.translate("Button", "SV -5", None))
         self.buttonSVm5.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.buttonSVm5.setStyleSheet(self.pushbuttonstyles["SV -"])
         self.buttonSVm5.setMinimumWidth(90)
         self.buttonSVm5.setMinimumHeight(self.standard_button_height)
-        self.buttonSVm5.setToolTip(QApplication.translate("Tooltip", "Decreases the current SV value by 5"))
+        self.buttonSVm5.setToolTip(QApplication.translate("Tooltip", "Decreases the current SV value by 5", None))
         self.buttonSVm5.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
         #HUD button (button_18 was removed)
 
         #create DRY button
-        self.buttonDRY = MinorEventPushButton(QApplication.translate("Button", "DRY\nEND"))
-        self.buttonDRY.setToolTip(QApplication.translate("Tooltip", "Dry End"))
+        self.buttonDRY = MinorEventPushButton(QApplication.translate("Button", "DRY\nEND", None))
+        self.buttonDRY.setToolTip(QApplication.translate("Tooltip", "Dry End", None))
         self.buttonDRY.clicked.connect(self.qmc.markDryEnd)
 
         #create COOLe button
-        self.buttonCOOL = MinorEventPushButton(QApplication.translate("Button", "COOL\nEND"))
-        self.buttonCOOL.setToolTip(QApplication.translate("Tooltip", "Cool End"))
+        self.buttonCOOL = MinorEventPushButton(QApplication.translate("Button", "COOL\nEND", None))
+        self.buttonCOOL.setToolTip(QApplication.translate("Tooltip", "Cool End", None))
         self.buttonCOOL.clicked.connect(self.qmc.markCoolEnd)
 
         #connect PID sv easy buttons
@@ -17295,42 +17220,42 @@ class ApplicationWindow(QMainWindow):
         self.lcd6.setStyleSheet("QLCDNumber { border-radius: 4; color: %s; background-color: %s;}"%(self.lcdpaletteF["sv"],self.lcdpaletteB["sv"]))
         self.lcd7.setStyleSheet("QLCDNumber { border-radius: 4; color: %s; background-color: %s;}"%(self.lcdpaletteF["sv"],self.lcdpaletteB["sv"]))
 
-        self.lcd1.setToolTip(QApplication.translate("Tooltip", "Timer"))
-        self.lcd2.setToolTip(QApplication.translate("Tooltip", "ET Temperature"))
-        self.lcd3.setToolTip(QApplication.translate("Tooltip", "BT Temperature"))
-        self.lcd4.setToolTip(QApplication.translate("Tooltip", "ET/time (degrees/min)"))
-        self.lcd5.setToolTip(QApplication.translate("Tooltip", "BT/time (degrees/min)"))
-        self.lcd6.setToolTip(QApplication.translate("Tooltip", "Value of SV in PID"))
-        self.lcd7.setToolTip(QApplication.translate("Tooltip", "PID power %"))
+        self.lcd1.setToolTip(QApplication.translate("Tooltip", "Timer",None))
+        self.lcd2.setToolTip(QApplication.translate("Tooltip", "ET Temperature",None))
+        self.lcd3.setToolTip(QApplication.translate("Tooltip", "BT Temperature",None))
+        self.lcd4.setToolTip(QApplication.translate("Tooltip", "ET/time (degrees/min)",None))
+        self.lcd5.setToolTip(QApplication.translate("Tooltip", "BT/time (degrees/min)",None))
+        self.lcd6.setToolTip(QApplication.translate("Tooltip", "Value of SV in PID",None))
+        self.lcd7.setToolTip(QApplication.translate("Tooltip", "PID power %",None))
 
         #MET
         self.label2 = QLabel()
         self.label2.setAlignment(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight)
-        self.label2.setText("<big><b>" + QApplication.translate("Label", "ET") + "</b></big>")
+        self.label2.setText("<big><b>" + QApplication.translate("Label", "ET",None) + "</b></big>")
         self.setLabelColor(self.label2,QColor(self.qmc.palette["et"]))
         #BT
         self.label3 = QLabel()
         self.label3.setAlignment(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight)
-        self.label3.setText("<big><b>" + QApplication.translate("Label", "BT") + "</b></big>")
+        self.label3.setText("<big><b>" + QApplication.translate("Label", "BT",None) + "</b></big>")
         self.setLabelColor(self.label3,QColor(self.qmc.palette["bt"]))
         #DELTA MET
         self.label4 = QLabel()
         self.label4.setAlignment(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight)
-        self.label4.setText(deltaLabelBigPrefix + QApplication.translate("Label", "ET") + "</b></big>")
+        self.label4.setText(deltaLabelBigPrefix + QApplication.translate("Label", "ET",None) + "</b></big>")
         self.setLabelColor(self.label4,QColor(self.qmc.palette["deltaet"]))
         # DELTA BT
         self.label5 = QLabel()
         self.label5.setAlignment(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight)
-        self.label5.setText(deltaLabelBigPrefix + QApplication.translate("Label", "BT") + "</b></big>")
+        self.label5.setText(deltaLabelBigPrefix + QApplication.translate("Label", "BT",None) + "</b></big>")
         self.setLabelColor(self.label5,QColor(self.qmc.palette["deltabt"]))
         # pid sv
         self.label6 = QLabel()
         self.label6.setAlignment(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight)
-        self.label6.setText("<big><b>" + QApplication.translate("Label", "PID SV") + "</b></big>")
+        self.label6.setText("<big><b>" + QApplication.translate("Label", "PID SV",None) + "</b></big>")
         # pid power % duty cycle
         self.label7 = QLabel()
         self.label7.setAlignment(Qt.AlignmentFlag.AlignBottom | Qt.AlignmentFlag.AlignRight)
-        self.label7.setText("<big><b>" + QApplication.translate("Label", "PID %") + "</b></big>")
+        self.label7.setText("<big><b>" + QApplication.translate("Label", "PID %",None) + "</b></big>")
 
         #extra LCDs
         self.nLCDS = 10 # maximum number of LCDs and extra devices
@@ -17396,12 +17321,12 @@ class ApplicationWindow(QMainWindow):
         self.buttonSVm5.setVisible(False)
 
         #### EVENT MINI EDITOR: View&Edits events without opening roast properties Dlg.
-        self.eventlabel = QLabel(QApplication.translate("Label","Event #<b>0 </b>"))
+        self.eventlabel = QLabel(QApplication.translate("Label","Event #<b>0 </b>", None))
         self.eventlabel.setIndent(5)
         self.eNumberSpinBox = QSpinBox()
 
         self.eNumberSpinBox.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.eNumberSpinBox.setToolTip(QApplication.translate("Tooltip", "Number of events found"))
+        self.eNumberSpinBox.setToolTip(QApplication.translate("Tooltip", "Number of events found", None))
         self.eNumberSpinBox.setRange(0,99)
         self.eNumberSpinBox.valueChanged.connect(self.changeEventNumber)
         self.eNumberSpinBox.setMaximumWidth(40)
@@ -17411,14 +17336,14 @@ class ApplicationWindow(QMainWindow):
         self.eventlabel.setStyleSheet("background-color:'#bdbdbd';")
 
         self.etypeComboBox = QComboBox()
-        self.etypeComboBox.setToolTip(QApplication.translate("Tooltip", "Type of event"))
+        self.etypeComboBox.setToolTip(QApplication.translate("Tooltip", "Type of event", None))
         self.etypeComboBox.addItems(self.qmc.etypes)
 
         #regexvalue = QRegularExpression(r"^100|\d?\d?$") # allow event values 0-100 (%)
         regexvalue = QRegularExpression(r"^[1-9][0-9]{1,3}$|^\d$") # allow event values 0-9999
         self.valueEdit = QLineEdit()
         self.valueEdit.setValidator(QRegularExpressionValidator(regexvalue,self))
-        self.valueEdit.setToolTip(QApplication.translate("Tooltip", "Value of event"))
+        self.valueEdit.setToolTip(QApplication.translate("Tooltip", "Value of event", None))
         self.valueEdit.setMaximumWidth(50)
 
         regextime = QRegularExpression(r"^-?[0-9]?[0-9]?[0-9]:[0-5][0-9]$")
@@ -17427,10 +17352,10 @@ class ApplicationWindow(QMainWindow):
         self.etimeline.setMaximumWidth(50)
 
         #create EVENT mini button
-        self.buttonminiEvent = QPushButton(QApplication.translate("Button", "Update"))
+        self.buttonminiEvent = QPushButton(QApplication.translate("Button", "Update", None))
         self.buttonminiEvent.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
         self.buttonminiEvent.clicked.connect(self.miniEventRecord)
-        self.buttonminiEvent.setToolTip(QApplication.translate("Tooltip", "Updates the event"))
+        self.buttonminiEvent.setToolTip(QApplication.translate("Tooltip", "Updates the event", None))
 
         #### CUSTOM events buttons
         self.buttonlist = []
@@ -17585,8 +17510,8 @@ class ApplicationWindow(QMainWindow):
         self.serial_dlg = None # bound to the serial message window if open, update by updategraphics
         self.message_dlg = None # bound to the serial message window if open, update by updategraphics
 
-        self.ETname = QApplication.translate("Label", "ET")
-        self.BTname = QApplication.translate("Label", "BT")
+        self.ETname = QApplication.translate("Label", "ET",None)
+        self.BTname = QApplication.translate("Label", "BT",None)
 
         ####################   APPLICATION WINDOW (AW) LAYOUT  ##############################################
 
@@ -17690,7 +17615,7 @@ class ApplicationWindow(QMainWindow):
 
         # TP
         self.TPlabel = QLabel()
-        self.TPlabel.setText("<small><b>" + QApplication.translate("Label", "TP") + "&raquo;</b></small>")
+        self.TPlabel.setText("<small><b>" + QApplication.translate("Label", "TP",None) + "&raquo;</b></small>")
         self.TPlcd = QLCDNumber()
         self.TPlcd.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.TPlcd.customContextMenuRequested.connect(self.PhaseslcdClicked)
@@ -17708,7 +17633,7 @@ class ApplicationWindow(QMainWindow):
 
         # DRY
         self.DRYlabel = QLabel()
-        self.DRYlabel.setText("<small><b>&raquo;" + QApplication.translate("Label", "DRY") + "</b></small>")
+        self.DRYlabel.setText("<small><b>&raquo;" + QApplication.translate("Label", "DRY",None) + "</b></small>")
         self.DRYlcd = QLCDNumber()
         self.DRYlcd.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.DRYlcd.customContextMenuRequested.connect(self.PhaseslcdClicked)
@@ -17726,7 +17651,7 @@ class ApplicationWindow(QMainWindow):
 
         # FCs
         self.FCslabel = QLabel()
-        self.FCslabel.setText("<small><b>&raquo;" + QApplication.translate("Label", "FCs") + "</b></small>")
+        self.FCslabel.setText("<small><b>&raquo;" + QApplication.translate("Label", "FCs",None) + "</b></small>")
         self.FCslcd = QLCDNumber()
         self.FCslcd.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.FCslcd.customContextMenuRequested.connect(self.PhaseslcdClicked)
@@ -17735,7 +17660,7 @@ class ApplicationWindow(QMainWindow):
 
         # AUC LCD
         self.AUClabel = QLabel()
-        self.AUClabel.setText("<small><b>" + QApplication.translate("Label", "AUC") + "</b></small>")
+        self.AUClabel.setText("<small><b>" + QApplication.translate("Label", "AUC",None) + "</b></small>")
         self.AUClcd = QLCDNumber()
         self.AUClcd.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.AUClcd.customContextMenuRequested.connect(self.AUClcdClicked)
@@ -17770,7 +17695,7 @@ class ApplicationWindow(QMainWindow):
         phasesLCDlayout.setSpacing(0)
         self.phasesLCDs.setLayout(phasesLCDlayout)
         self.phasesLCDs.hide()
-        self.phasesLCDs.setToolTip(QApplication.translate("Tooltip","Phase LCDs: right-click to cycle through TIME, PERCENTAGE and TEMP MODE"))
+        self.phasesLCDs.setToolTip(QApplication.translate("Tooltip","Phase LCDs: right-click to cycle through TIME, PERCENTAGE and TEMP MODE", None))
 
         #level 1
 #        self.level1layout.addWidget(self.ntb)
@@ -18003,26 +17928,26 @@ class ApplicationWindow(QMainWindow):
 
 #        # provide information message to user about sharing settings at start-up
         if settingsRelocated:
-            string =  QApplication.translate("Message","Welcome to version {0} of Artisan!").format(__version__) + "\n\n"
-            string += QApplication.translate("Message","This is a one time message to inform you about a change in Artisan.") + "\n\n"
-            string += QApplication.translate("Message","If you never run older versions of Artisan you can skip this message, the change does not affect you.") + "  "
-            string += QApplication.translate("Message","Artisan preserves all your configuration settings when you exit so they will automatically be available the next time you start Artisan.") + "  "
-            string += QApplication.translate("Message","Beginning with release v2.0, settings will no longer be automatically shared at start-up with versions before v2.0.") + "\n\n"
-            string += QApplication.translate("Message","Do not worry. Since this is the first time you opened this new version Artisan has already loaded your last used settings.") + "\n\n"
-            string += QApplication.translate("Message","To share settings between this version and Artisan versions before v2.0 use 'Help>Save Settings' and 'Help>Load Settings'.") + "\n\n"
-            string += QApplication.translate("Message","Enjoy using Artisan, The Artisan Team")
-            QMessageBox.information(aw,QApplication.translate("Message","One time message about loading settings at start-up"),string)
+            string =  QApplication.translate("Message","Welcome to version {0} of Artisan!", None).format(__version__) + "\n\n"
+            string += QApplication.translate("Message","This is a one time message to inform you about a change in Artisan.", None) + "\n\n"
+            string += QApplication.translate("Message","If you never run older versions of Artisan you can skip this message, the change does not affect you.", None) + "  "
+            string += QApplication.translate("Message","Artisan preserves all your configuration settings when you exit so they will automatically be available the next time you start Artisan.", None) + "  "
+            string += QApplication.translate("Message","Beginning with release v2.0, settings will no longer be automatically shared at start-up with versions before v2.0.", None) + "\n\n"
+            string += QApplication.translate("Message","Do not worry. Since this is the first time you opened this new version Artisan has already loaded your last used settings.", None) + "\n\n"
+            string += QApplication.translate("Message","To share settings between this version and Artisan versions before v2.0 use 'Help>Save Settings' and 'Help>Load Settings'.", None) + "\n\n"
+            string += QApplication.translate("Message","Enjoy using Artisan, The Artisan Team", None)
+            QMessageBox.information(aw,QApplication.translate("Message","One time message about loading settings at start-up", None),string)
 
         # provide information message to user about ArtisanViewer the first time it is started
         if artisanviewerFirstStart:
-            string =  QApplication.translate("Message","Welcome to the ArtisanViewer!").format(__version__) + "\n\n"
-            string += QApplication.translate("Message","This is a one time message to introduce you to the ArtisanViewer.") + "\n\n"
-            string += QApplication.translate("Message","The ArtisanViewer opens whenever a copy of Artisan is already running.") + "\n\n"
-            string += QApplication.translate("Message","ArtisanViewer will preserve all your configuration settings when you exit so they will automatically be available the next time you start ArtisanViewer.") + "\n\n"
-            string += QApplication.translate("Message","Caution, the only way to share settings between Artisan and ArtisanViewer is to explicitly save and load them using 'Help>Save Settings' and 'Help>Load Settings'.") + "\n\n"
-            string += QApplication.translate("Message","Enjoy using ArtisanViewer,") +"\n"
-            string += QApplication.translate("Message","The Artisan Team")
-            QMessageBox.information(aw,QApplication.translate("Message","One time message about ArtisanViewer"),string)
+            string =  QApplication.translate("Message","Welcome to the ArtisanViewer!", None).format(__version__) + "\n\n"
+            string += QApplication.translate("Message","This is a one time message to introduce you to the ArtisanViewer.", None) + "\n\n"
+            string += QApplication.translate("Message","The ArtisanViewer opens whenever a copy of Artisan is already running.", None) + "\n\n"
+            string += QApplication.translate("Message","ArtisanViewer will preserve all your configuration settings when you exit so they will automatically be available the next time you start ArtisanViewer.", None) + "\n\n"
+            string += QApplication.translate("Message","Caution, the only way to share settings between Artisan and ArtisanViewer is to explicitly save and load them using 'Help>Save Settings' and 'Help>Load Settings'.", None) + "\n\n"
+            string += QApplication.translate("Message","Enjoy using ArtisanViewer,", None) +"\n"
+            string += QApplication.translate("Message","The Artisan Team", None)
+            QMessageBox.information(aw,QApplication.translate("Message","One time message about ArtisanViewer", None),string)
             settings.setValue("Mode",self.qmc.mode)  #prevent this popup in case a second instance is started before this first one is closed.
 
 
@@ -18054,57 +17979,24 @@ class ApplicationWindow(QMainWindow):
 
         QTimer.singleShot(0,lambda : _log.info("startup time: %.2f", libtime.process_time() - startup_time))
 
-    # cache curve visibilities on recording start to be able to revert to users settings after recording
-    def cacheCurveVisibilities(self):
-        self.qmc.curveVisibilityCache = (
-            self.qmc.BTcurve,
-            self.qmc.ETcurve,
-            self.qmc.DeltaBTflag,
-            self.qmc.DeltaETflag,
-            self.extraCurveVisibility1,
-        	self.extraCurveVisibility2,
-        )
-
-    # revert curve visibilities to user settings after recording
-    def resetCurveVisibilities(self):
-        if self.qmc.curveVisibilityCache is not None:
-            (self.qmc.BTcurve,
-             self.qmc.ETcurve,
-             self.qmc.DeltaBTflag,
-             self.qmc.DeltaETflag,
-             self.extraCurveVisibility1,
-             self.extraCurveVisibility2) = self.qmc.curveVisibilityCache
-
     @pyqtSlot()
     def toggleETCurve(self):
-        if self.qmc.swaplcds:
-            self.qmc.BTcurve = not self.qmc.BTcurve
-        else:
-            self.qmc.ETcurve = not self.qmc.ETcurve
+        self.qmc.ETcurve = not self.qmc.ETcurve
         self.qmc.redraw(recomputeAllDeltas=False,smooth=False)
     
     @pyqtSlot()
     def toggleBTCurve(self):
-        if self.qmc.swaplcds:
-            self.qmc.ETcurve = not self.qmc.ETcurve
-        else:
-            self.qmc.BTcurve = not self.qmc.BTcurve
+        self.qmc.BTcurve = not self.qmc.BTcurve
         self.qmc.redraw(recomputeAllDeltas=False,smooth=False)
     @pyqtSlot()
     
     def toggleDeltaETCurve(self):
-        if self.qmc.swapdeltalcds:
-            self.qmc.DeltaBTflag = not self.qmc.DeltaBTflag
-        else:
-            self.qmc.DeltaETflag = not self.qmc.DeltaETflag
+        self.qmc.DeltaETflag = not self.qmc.DeltaETflag
         self.qmc.redraw(recomputeAllDeltas=False,smooth=False)
     
     @pyqtSlot()
     def toggleDeltaBTCurve(self):
-        if self.qmc.swapdeltalcds:
-            self.qmc.DeltaETflag = not self.qmc.DeltaETflag
-        else:
-            self.qmc.DeltaBTflag = not self.qmc.DeltaBTflag
+        self.qmc.DeltaBTflag = not self.qmc.DeltaBTflag
         self.qmc.redraw(recomputeAllDeltas=False,smooth=False)
     
     @pyqtSlot()
@@ -18138,10 +18030,10 @@ class ApplicationWindow(QMainWindow):
 
     def sendLog(self) -> None:
         _log.info("sendLog()")
-
+    
         message = MIMEMultipart()
-        if self.plus_email is not None:
-            message["From"] = self.plus_email
+        if plus.config.app_window.plus_email is not None:
+            message["From"] = plus.config.app_window.plus_email
         message["To"] = "{}@{}".format(
             "logfile", "artisan.plus"
         )
@@ -18222,7 +18114,7 @@ class ApplicationWindow(QMainWindow):
             else:
                 # no profile loaded
                 if __release_sponsor_name__:
-                    self.setWindowTitle("{}{} - {} ({})".format(dirtySign,appTitle,__release_sponsor_name__,QApplication.translate("About","Release Sponsor")))
+                    self.setWindowTitle("{}{} - {} ({})".format(dirtySign,appTitle,__release_sponsor_name__,QApplication.translate("About","Release Sponsor",None)))
                 else:
                     self.setWindowTitle("{}{}".format(dirtySign,appTitle))
         except Exception as e: # pylint: disable=broad-except
@@ -18248,7 +18140,7 @@ class ApplicationWindow(QMainWindow):
                 lastdonationpopup = settings.value("lastdonationpopup")
             now = int(libtime.time())
             if not(settings.status() == QSettings.Status.NoError and lastdonationpopup is not None and starts is not None and (now >= lastdonationpopup > now-everytime) and 0 <= starts < everystarts): 
-                message = QApplication.translate("Message","Please support Artisan with your donation!")
+                message = QApplication.translate("Message","Please support Artisan with your donation!",None)
                 message += '<br><br><a href="{0}">{0}</a>'.format("https://artisan-scope.org/donate/")
                 donate_message_box = QMessageBox(self)
                 donate_message_box.setText(message)    
@@ -18509,14 +18401,14 @@ class ApplicationWindow(QMainWindow):
                     if aw.editgraphdialog == False:
                         # syncing from server in progress
                         plus_icon = "plus-dirty"
-                        tooltip = QApplication.translate("Tooltip", 'Syncing with artisan.plus')
+                        tooltip = QApplication.translate("Tooltip", 'Syncing with artisan.plus', None)
                     else:
                         if plus.controller.is_synced():
                             plus_icon = "plus-connected"
-                            tooltip = QApplication.translate("Tooltip", 'Disconnect artisan.plus')
+                            tooltip = QApplication.translate("Tooltip", 'Disconnect artisan.plus', None)
                         else:
                             plus_icon = "plus-unsynced"
-                            tooltip = QApplication.translate("Tooltip", 'Upload to artisan.plus')
+                            tooltip = QApplication.translate("Tooltip", 'Upload to artisan.plus', None)
                     if not aw.plus_readonly:
                         if aw.plus_subscription == "HOME":
                             subscription_icon = "plus-home"
@@ -18536,10 +18428,10 @@ class ApplicationWindow(QMainWindow):
                                     subscription_icon = "plus-pro-low"
                 else:
                     plus_icon = "plus-on"
-                    tooltip = QApplication.translate("Tooltip", 'Disconnect artisan.plus')
+                    tooltip = QApplication.translate("Tooltip", 'Disconnect artisan.plus', None)
             else:
                 plus_icon = "plus-off"
-                tooltip = QApplication.translate("Tooltip", 'Connect artisan.plus')
+                tooltip = QApplication.translate("Tooltip", 'Connect artisan.plus', None)
             if svgsupport:
                 plus_icon += ".svg"
             else:
@@ -18564,7 +18456,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " updatePlusStatus(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " updatePlusStatus(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
 
 
@@ -18835,7 +18727,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " addRecentRoast(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " addRecentRoast(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     @staticmethod
     def recentRoastLabel(rr):
@@ -18875,7 +18767,7 @@ class ApplicationWindow(QMainWindow):
     def updateNewMenuRecentRoasts(self):
         self.newRoastMenu.clear()
         # add NEW menu item
-        newRoastAction = QAction(QApplication.translate("Menu", "New"), self)
+        newRoastAction = QAction(QApplication.translate("Menu", "New", None), self)
         newRoastAction.setShortcut(QKeySequence.StandardKey.New)
         newRoastAction.triggered.connect(self.newRoast)
         self.newRoastMenu.addAction(newRoastAction)
@@ -18977,8 +18869,8 @@ class ApplicationWindow(QMainWindow):
             label = (action.text() if action.data()[1] == "" else "{} {}".format(action.data()[1],action.text()))
             label = label.replace("&&","&") # we reduce those && again to & that were introduced to have the & rendered in the menu entry
             string = QApplication.translate("Message", "Configure for {0}?<br><br>Your current settings will be overwritten!<br><br>"+
-                    "It is advisable to save your current settings beforehand via menu Help >> Save Settings.").format(label)
-            reply = QMessageBox.question(aw,QApplication.translate("Message", "Adjust Settings"),string,
+                    "It is advisable to save your current settings beforehand via menu Help >> Save Settings.",None).format(label)
+            reply = QMessageBox.question(aw,QApplication.translate("Message", "Adjust Settings",None),string,
                 QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.Cancel)
             if reply == QMessageBox.StandardButton.Cancel:
                 return
@@ -19001,15 +18893,15 @@ class ApplicationWindow(QMainWindow):
                 if action.data()[1] == "Phidget":
                     if action.text() == "VINT Ambient Modules":
                         elevation,res = QInputDialog.getInt(self,
-                            QApplication.translate("Message", "Ambient"),
-                            QApplication.translate("Message", "Elevation (MASL)"),value=self.qmc.elevation)
+                            QApplication.translate("Message", "Ambient",None),
+                            QApplication.translate("Message", "Elevation (MASL)",None),value=self.qmc.elevation)
                         if res:
                             try:
                                 self.qmc.elevation = int(elevation)
                             except Exception: # pylint: disable=broad-except
                                 pass
                         else:
-                            self.sendmessage(QApplication.translate("Message","Action canceled"))
+                            self.sendmessage(QApplication.translate("Message","Action canceled",None))
                     else:
                         self.qmc.machinesetup = action.text()
                 else:
@@ -19017,20 +18909,20 @@ class ApplicationWindow(QMainWindow):
                     res = True
                     if self.qmc.device == 29 and self.modbus.type in [3,4]: # MODBUS TCP or UDP
                         host,res = QInputDialog.getText(self,
-                            QApplication.translate("Message", "Machine"),
-                            QApplication.translate("Message", "Network name or IP address"),text=self.modbus.host) #"127.0.0.1"
+                            QApplication.translate("Message", "Machine",None),
+                            QApplication.translate("Message", "Network name or IP address",None),text=self.modbus.host) #"127.0.0.1"
                         if res:
                             self.modbus.host = host
                     elif self.qmc.device == 79: # S7
                         host,res = QInputDialog.getText(self,
-                            QApplication.translate("Message", "Machine"),
-                            QApplication.translate("Message", "Network name or IP address"),text=self.s7.host) #"127.0.0.1"
+                            QApplication.translate("Message", "Machine",None),
+                            QApplication.translate("Message", "Network name or IP address",None),text=self.s7.host) #"127.0.0.1"
                         if res:
                             self.s7.host = host
                     elif self.qmc.device == 111: # WebSocket
                         host,res = QInputDialog.getText(self,
-                            QApplication.translate("Message", "Machine"),
-                            QApplication.translate("Message", "Network name or IP address"),text=self.ws.host) #"127.0.0.1"
+                            QApplication.translate("Message", "Machine",None),
+                            QApplication.translate("Message", "Network name or IP address",None),text=self.ws.host) #"127.0.0.1"
                         if res:
                             self.ws.host = host
                     elif self.qmc.device in [0,9,19,53,101,115] or (self.qmc.device == 29 and self.modbus.type in [0,1,2]): # Fuji, Center301, TC4, Hottop, Behmor or MODBUS serial
@@ -19057,8 +18949,8 @@ class ApplicationWindow(QMainWindow):
                             except Exception: # pylint: disable=broad-except
                                 pass
                         port_name,res = QInputDialog.getItem(self,
-                            QApplication.translate("Message", "Port Configuration"),
-                            QApplication.translate("Message", "Comm Port"),
+                            QApplication.translate("Message", "Port Configuration",None),
+                            QApplication.translate("Message", "Comm Port",None),
                             items,
                             current,
                             False)
@@ -19074,8 +18966,8 @@ class ApplicationWindow(QMainWindow):
                     if res:
                         if self.qmc.roastersize_setup == 0:
                             batchsize,res = QInputDialog.getDouble(self, 
-                                QApplication.translate("Message", "Machine"),
-                                QApplication.translate("Message", "Machine Capacity (kg)"),
+                                QApplication.translate("Message", "Machine",None),
+                                QApplication.translate("Message", "Machine Capacity (kg)",None),
                                 0, # value
                                 0, # min
                                 999, # max
@@ -19088,7 +18980,7 @@ class ApplicationWindow(QMainWindow):
                         # size set, ask for heating
                         if self.qmc.roasterheating_setup == 0:
                             dlg = ArtisanComboBoxDialog(self,aw,QApplication.translate("Message", 
-                                    "Machine"),QApplication.translate("Label", "Heating"),self.qmc.heating_types,0)
+                                    "Machine",None),QApplication.translate("Label", "Heating",None),self.qmc.heating_types,0)
                             if dlg.exec():
                                 res = dlg.idx
                             else:
@@ -19121,8 +19013,8 @@ class ApplicationWindow(QMainWindow):
                                         if "loadevent_hundpcts" in ratings and len(ratings["loadevent_hundpcts"]) == 4:
                                             self.qmc.loadevent_hundpcts_setup = ratings["loadevent_hundpcts"]
                                         self.qmc.restoreEnergyLoadDefaults()
-                                        self.sendmessage(QApplication.translate("Message","Energy loads configured for {0} {1}kg").format(label,self.qmc.roastersize_setup))
-                            self.sendmessage(QApplication.translate("Message","Artisan configured for {0}").format(label))
+                                        self.sendmessage(QApplication.translate("Message","Energy loads configured for {0} {1}kg",None).format(label,self.qmc.roastersize_setup))
+                            self.sendmessage(QApplication.translate("Message","Artisan configured for {0}",None).format(label))
                             _log.info("Artisan configured for %s",label)
                         else:
                             res = None
@@ -19140,7 +19032,7 @@ class ApplicationWindow(QMainWindow):
                         self.qmc.roasterheating_setup = org_roasterheating_setup
                         self.qmc.roasterheating = org_roasterheating
                         #
-                        self.sendmessage(QApplication.translate("Message","Action canceled"))
+                        self.sendmessage(QApplication.translate("Message","Action canceled",None))
                     self.establish_etypes()
 
 
@@ -19151,11 +19043,11 @@ class ApplicationWindow(QMainWindow):
         for i in range(self.MaxRecentFiles):
             submenu.addAction(self.recentThemeActs[i])
 
-        self.loadThemeAction = QAction(QApplication.translate("Menu", "Load Theme..."), self)
+        self.loadThemeAction = QAction(QApplication.translate("Menu", "Load Theme...", None), self)
         self.loadThemeAction.triggered.connect(self.loadSettings_theme_Slot)
         self.loadThemeAction.setMenuRole(QAction.MenuRole.NoRole) # avoid specific handling of settings menu
 
-        self.saveAsThemeAction = QAction(QApplication.translate("Menu", "Save Theme..."), self)
+        self.saveAsThemeAction = QAction(QApplication.translate("Menu", "Save Theme...", None), self)
         self.saveAsThemeAction.triggered.connect(self.saveSettings_theme)
         self.saveAsThemeAction.setMenuRole(QAction.MenuRole.NoRole)  # avoid specific handling of settings menu
 
@@ -19167,14 +19059,14 @@ class ApplicationWindow(QMainWindow):
         action = self.sender()
         if action:
             label = (action.text() if action.data()[1] == "" else "{} {}".format(action.data()[1],action.text()))
-            string = QApplication.translate("Message", "Load theme {0}?").format(label)
-            reply = QMessageBox.question(aw,QApplication.translate("Message", "Adjust Theme Related Settings"),string,
+            string = QApplication.translate("Message", "Load theme {0}?",None).format(label)
+            reply = QMessageBox.question(aw,QApplication.translate("Message", "Adjust Theme Related Settings",None),string,
                 QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.Cancel)
             if reply == QMessageBox.StandardButton.Cancel:
                 return
             if reply == QMessageBox.StandardButton.Yes:
                 aw.loadSettings(fn=action.data()[0],remember=False,reset=False, theme=True)
-                self.sendmessage(QApplication.translate("Message","Loaded theme {0}").format(action.text()))
+                self.sendmessage(QApplication.translate("Message","Loaded theme {0}", None).format(action.text()))
                 libtime.sleep(.8)
                 aw.qmc.redraw(True)
 
@@ -19183,137 +19075,137 @@ class ApplicationWindow(QMainWindow):
         try:
             colorPairsToCheck = [
                 # aw.qmc.palette
-                (QApplication.translate("Label","BT"), aw.qmc.palette["bt"],
-                 QApplication.translate("Label","Background"), aw.qmc.palette["background"]),
+                (QApplication.translate("Label","BT",None), aw.qmc.palette["bt"],
+                 QApplication.translate("Label","Background",None), aw.qmc.palette["background"]),
 
-                (QApplication.translate("Label","ET"), aw.qmc.palette["et"],
-                 QApplication.translate("Label","Background"), aw.qmc.palette["background"]),
+                (QApplication.translate("Label","ET",None), aw.qmc.palette["et"],
+                 QApplication.translate("Label","Background",None), aw.qmc.palette["background"]),
 
-                (deltaLabelPrefix+QApplication.translate("Label","BT"), aw.qmc.palette["deltabt"],
-                 QApplication.translate("Label","Background"), aw.qmc.palette["background"]),
+                (deltaLabelPrefix+QApplication.translate("Label","BT",None), aw.qmc.palette["deltabt"],
+                 QApplication.translate("Label","Background",None), aw.qmc.palette["background"]),
 
-                (deltaLabelPrefix+QApplication.translate("Label","ET"), aw.qmc.palette["deltaet"],
-                 QApplication.translate("Label","Background"), aw.qmc.palette["background"]),
+                (deltaLabelPrefix+QApplication.translate("Label","ET",None), aw.qmc.palette["deltaet"],
+                 QApplication.translate("Label","Background",None), aw.qmc.palette["background"]),
 
-                (QApplication.translate("Label","Markers"), aw.qmc.palette["markers"],
-                 QApplication.translate("Label","Background"), aw.qmc.palette["background"]),
+                (QApplication.translate("Label","Markers",None), aw.qmc.palette["markers"],
+                 QApplication.translate("Label","Background",None), aw.qmc.palette["background"]),
 
-                (QApplication.translate("Label","Text"), aw.qmc.palette["text"],
-                 QApplication.translate("Label","Background"), aw.qmc.palette["background"]),
+                (QApplication.translate("Label","Text",None), aw.qmc.palette["text"],
+                 QApplication.translate("Label","Background",None), aw.qmc.palette["background"]),
 
-                (QApplication.translate("Label","Time Guide"), aw.qmc.palette["timeguide"],
-                 QApplication.translate("Label","Background"), aw.qmc.palette["background"]),
+                (QApplication.translate("Label","Time Guide",None), aw.qmc.palette["timeguide"],
+                 QApplication.translate("Label","Background",None), aw.qmc.palette["background"]),
 
-                (QApplication.translate("Label","Background ET"), aw.qmc.backgroundmetcolor,
-                 QApplication.translate("Label","Background"), aw.qmc.palette["background"]),
+                (QApplication.translate("Label","Background ET",None), aw.qmc.backgroundmetcolor,
+                 QApplication.translate("Label","Background",None), aw.qmc.palette["background"]),
 
-                (QApplication.translate("Label","Background BT"), aw.qmc.backgroundbtcolor,
-                 QApplication.translate("Label","Background"), aw.qmc.palette["background"]),
+                (QApplication.translate("Label","Background BT",None), aw.qmc.backgroundbtcolor,
+                 QApplication.translate("Label","Background",None), aw.qmc.palette["background"]),
 
-                (QApplication.translate("Label","Background")+" "+deltaLabelPrefix+QApplication.translate("Label","ET"), aw.qmc.backgrounddeltaetcolor,
-                 QApplication.translate("Label","Background"), aw.qmc.palette["background"]),
+                (QApplication.translate("Label","Background",None)+" "+deltaLabelPrefix+QApplication.translate("Label","ET",None), aw.qmc.backgrounddeltaetcolor,
+                 QApplication.translate("Label","Background",None), aw.qmc.palette["background"]),
 
-                (QApplication.translate("Label","Background")+" "+deltaLabelPrefix+QApplication.translate("Label","BT"), aw.qmc.backgrounddeltabtcolor,
-                 QApplication.translate("Label","Background"), aw.qmc.palette["background"]),
+                (QApplication.translate("Label","Background",None)+" "+deltaLabelPrefix+QApplication.translate("Label","BT",None), aw.qmc.backgrounddeltabtcolor,
+                 QApplication.translate("Label","Background",None), aw.qmc.palette["background"]),
 
-                (QApplication.translate("Label","Background Extra"), aw.qmc.palette["xt"],
-                 QApplication.translate("Label","Background"), aw.qmc.palette["background"]),
+                (QApplication.translate("Label","Background Extra",None), aw.qmc.palette["xt"],
+                 QApplication.translate("Label","Background",None), aw.qmc.palette["background"]),
 
-                (QApplication.translate("Label","X Label"), aw.qmc.palette["xlabel"],
-                 QApplication.translate("Label","Canvas"), aw.qmc.palette["canvas"]),
+                (QApplication.translate("Label","X Label",None), aw.qmc.palette["xlabel"],
+                 QApplication.translate("Label","Canvas",None), aw.qmc.palette["canvas"]),
 
-                (QApplication.translate("Label","Y Label"), aw.qmc.palette["ylabel"],
-                 QApplication.translate("Label","Canvas"), aw.qmc.palette["canvas"]),
+                (QApplication.translate("Label","Y Label",None), aw.qmc.palette["ylabel"],
+                 QApplication.translate("Label","Canvas",None), aw.qmc.palette["canvas"]),
 
-                (QApplication.translate("Label","Title"), aw.qmc.palette["title"],
-                 QApplication.translate("Label","Canvas"), aw.qmc.palette["canvas"]),
+                (QApplication.translate("Label","Title",None), aw.qmc.palette["title"],
+                 QApplication.translate("Label","Canvas",None), aw.qmc.palette["canvas"]),
 
-                (QApplication.translate("Label","SpecialEventText"), aw.qmc.palette["specialeventtext"],
-                 QApplication.translate("Label","SpecialEventBox"), aw.qmc.palette["specialeventbox"]),
+                (QApplication.translate("Label","SpecialEventText",None), aw.qmc.palette["specialeventtext"],
+                 QApplication.translate("Label","SpecialEventBox",None), aw.qmc.palette["specialeventbox"]),
 
-                (QApplication.translate("Label","Bg SpecialEventText"), aw.qmc.palette["bgeventtext"],
-                 QApplication.translate("Label","Bg SpecialEventBox"), aw.qmc.palette["bgeventmarker"]),
+                (QApplication.translate("Label","Bg SpecialEventText",None), aw.qmc.palette["bgeventtext"],
+                 QApplication.translate("Label","Bg SpecialEventBox",None), aw.qmc.palette["bgeventmarker"]),
 
-                (QApplication.translate("Label","ET"), aw.qmc.palette["et"],
-                 QApplication.translate("Label","Legend bkgnd"), aw.qmc.palette["legendbg"]),
+                (QApplication.translate("Label","ET",None), aw.qmc.palette["et"],
+                 QApplication.translate("Label","Legend bkgnd",None), aw.qmc.palette["legendbg"]),
 
-                (QApplication.translate("Label","BT"), aw.qmc.palette["bt"],
-                 QApplication.translate("Label","Legend bkgnd"), aw.qmc.palette["legendbg"]),
+                (QApplication.translate("Label","BT",None), aw.qmc.palette["bt"],
+                 QApplication.translate("Label","Legend bkgnd",None), aw.qmc.palette["legendbg"]),
 
-                (deltaLabelPrefix+QApplication.translate("Label","ET"), aw.qmc.palette["deltaet"],
-                 QApplication.translate("Label","Legend bkgnd"), aw.qmc.palette["legendbg"]),
+                (deltaLabelPrefix+QApplication.translate("Label","ET",None), aw.qmc.palette["deltaet"],
+                 QApplication.translate("Label","Legend bkgnd",None), aw.qmc.palette["legendbg"]),
 
-                (deltaLabelPrefix+QApplication.translate("Label","BT"), aw.qmc.palette["deltabt"],
-                 QApplication.translate("Label","Legend bkgnd"), aw.qmc.palette["legendbg"]),
+                (deltaLabelPrefix+QApplication.translate("Label","BT",None), aw.qmc.palette["deltabt"],
+                 QApplication.translate("Label","Legend bkgnd",None), aw.qmc.palette["legendbg"]),
 
-                (QApplication.translate("Label","MET Text"), aw.qmc.palette["mettext"],
-                 QApplication.translate("Label","MET Box"), aw.qmc.palette["metbox"]),
+                (QApplication.translate("Label","MET Text",None), aw.qmc.palette["mettext"],
+                 QApplication.translate("Label","MET Box",None), aw.qmc.palette["metbox"]),
 
-                (QApplication.translate("Label","MET Box"), aw.qmc.palette["metbox"],
-                 QApplication.translate("Label","Background"), aw.qmc.palette["background"]),
+                (QApplication.translate("Label","MET Box",None), aw.qmc.palette["metbox"],
+                 QApplication.translate("Label","Background",None), aw.qmc.palette["background"]),
 
                 # aw.lcdpalette
-                (QApplication.translate("Label","Timer LCD Digits"), aw.lcdpaletteF["timer"],
-                 QApplication.translate("Label","Timer LCD Background"), aw.lcdpaletteB["timer"]),
+                (QApplication.translate("Label","Timer LCD Digits",None), aw.lcdpaletteF["timer"],
+                 QApplication.translate("Label","Timer LCD Background",None), aw.lcdpaletteB["timer"]),
 
-                (QApplication.translate("Label","ET LCD Digits"), aw.lcdpaletteF["et"],
-                 QApplication.translate("Label","ET LCD Background"), aw.lcdpaletteB["et"]),
+                (QApplication.translate("Label","ET LCD Digits",None), aw.lcdpaletteF["et"],
+                 QApplication.translate("Label","ET LCD Background",None), aw.lcdpaletteB["et"]),
 
-                (QApplication.translate("Label","BT LCD Digits"), aw.lcdpaletteF["bt"],
-                 QApplication.translate("Label","BT LCD Background"), aw.lcdpaletteB["bt"]),
+                (QApplication.translate("Label","BT LCD Digits",None), aw.lcdpaletteF["bt"],
+                 QApplication.translate("Label","BT LCD Background",None), aw.lcdpaletteB["bt"]),
 
-                (deltaLabelPrefix+QApplication.translate("Label","ET LCD Digits"), aw.lcdpaletteF["deltaet"],
-                 deltaLabelPrefix+QApplication.translate("Label","ET LCD Background"), aw.lcdpaletteB["deltaet"]),
+                (deltaLabelPrefix+QApplication.translate("Label","ET LCD Digits",None), aw.lcdpaletteF["deltaet"],
+                 deltaLabelPrefix+QApplication.translate("Label","ET LCD Background",None), aw.lcdpaletteB["deltaet"]),
 
-                (deltaLabelPrefix+QApplication.translate("Label","BT LCD Digits"), aw.lcdpaletteF["deltabt"],
-                 deltaLabelPrefix+QApplication.translate("Label","BT LCD Background"), aw.lcdpaletteB["deltabt"]),
+                (deltaLabelPrefix+QApplication.translate("Label","BT LCD Digits",None), aw.lcdpaletteF["deltabt"],
+                 deltaLabelPrefix+QApplication.translate("Label","BT LCD Background",None), aw.lcdpaletteB["deltabt"]),
 
-                (QApplication.translate("Label","Extra/PID LCD Digits"), aw.lcdpaletteF["sv"],
-                 QApplication.translate("Label","Extra/PID LCD Background"), aw.lcdpaletteB["sv"]),
+                (QApplication.translate("Label","Extra/PID LCD Digits",None), aw.lcdpaletteF["sv"],
+                 QApplication.translate("Label","Extra/PID LCD Background",None), aw.lcdpaletteB["sv"]),
             ]
 
             # extra devices
             for i in range(len(aw.qmc.extradevices)):
                 if  aw.extraCurveVisibility1[i]:
                     colorPairsToCheck.append(
-                        (aw.qmc.extraname1[i], aw.qmc.extradevicecolor1[i], QApplication.translate("Label","Background"), aw.qmc.palette['background']),
+                        (aw.qmc.extraname1[i], aw.qmc.extradevicecolor1[i], QApplication.translate("Label","Background",None), aw.qmc.palette['background']),
                     )
                     colorPairsToCheck.append(
-                        (aw.qmc.extraname1[i], aw.qmc.extradevicecolor1[i], QApplication.translate("Label","Legend bkgnd"), aw.qmc.palette['background']),
+                        (aw.qmc.extraname1[i], aw.qmc.extradevicecolor1[i], QApplication.translate("Label","Legend bkgnd",None), aw.qmc.palette['background']),
                     )
                 if  aw.extraCurveVisibility2[i]:
                     colorPairsToCheck.append(
-                        (aw.qmc.extraname2[i], aw.qmc.extradevicecolor2[i], QApplication.translate("Label","Background"), aw.qmc.palette['background']),
+                        (aw.qmc.extraname2[i], aw.qmc.extradevicecolor2[i], QApplication.translate("Label","Background",None), aw.qmc.palette['background']),
                     )
                     colorPairsToCheck.append(
-                        (aw.qmc.extraname2[i], aw.qmc.extradevicecolor2[i], QApplication.translate("Label","Legend bkgnd"),aw.qmc.palette['background']),
+                        (aw.qmc.extraname2[i], aw.qmc.extradevicecolor2[i], QApplication.translate("Label","Legend bkgnd",None),aw.qmc.palette['background']),
                     )
 
             # special events
             for i in range(len(aw.qmc.EvalueColor)):
                 colorPairsToCheck.append(
-                    (aw.qmc.etypes[i] +" "+QApplication.translate("Label","Event"), aw.qmc.EvalueColor[i], QApplication.translate("Label","Background"),   aw.qmc.palette['background']),
+                    (aw.qmc.etypes[i] +" "+QApplication.translate("Label","Event",None), aw.qmc.EvalueColor[i], QApplication.translate("Label","Background",None),   aw.qmc.palette['background']),
                 )
                 colorPairsToCheck.append(
-                    (aw.qmc.etypes[i] +" "+QApplication.translate("Label","Event"), aw.qmc.EvalueColor[i], QApplication.translate("Label","Legend bkgnd"), aw.qmc.palette['background']),
+                    (aw.qmc.etypes[i] +" "+QApplication.translate("Label","Event",None), aw.qmc.EvalueColor[i], QApplication.translate("Label","Legend bkgnd",None), aw.qmc.palette['background']),
                 )
                 colorPairsToCheck.append(
-                    (aw.qmc.etypes[i] +" "+QApplication.translate("Label","Slider"),aw.qmc.EvalueColor[i], QApplication.translate("Label","Background"),       aw.qmc.palette['canvas']),
+                    (aw.qmc.etypes[i] +" "+QApplication.translate("Label","Slider",None),aw.qmc.EvalueColor[i], QApplication.translate("Label","Background",None),       aw.qmc.palette['canvas']),
                 )
                 colorPairsToCheck.append(
-                    (aw.qmc.etypes[i] +" "+QApplication.translate("Label","Text"), aw.qmc.EvalueTextColor[i], aw.qmc.etypes[i] +" "+QApplication.translate("Label","Event"), aw.qmc.EvalueColor[i]),
+                    (aw.qmc.etypes[i] +" "+QApplication.translate("Label","Text",None), aw.qmc.EvalueTextColor[i], aw.qmc.etypes[i] +" "+QApplication.translate("Label","Event",None), aw.qmc.EvalueColor[i]),
                 )
 
             #events buttons
             for i in range(len(aw.extraeventstypes)):
                 colorPairsToCheck.append(
-                    (QApplication.translate("Label","Event button")+" "+ aw.extraeventslabels[i], aw.extraeventbuttoncolor[i], " "+QApplication.translate("Label","its text"), aw.extraeventbuttontextcolor[i]),
+                    (QApplication.translate("Label","Event button",None)+" "+ aw.extraeventslabels[i], aw.extraeventbuttoncolor[i], " "+QApplication.translate("Label","its text",None), aw.extraeventbuttontextcolor[i]),
                 )
 
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " getcolorPairsToCheck() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " getcolorPairsToCheck() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
         return colorPairsToCheck
 
@@ -19345,7 +19237,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " colorDifference() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " colorDifference() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
         return cDiff
 
@@ -19373,14 +19265,14 @@ class ApplicationWindow(QMainWindow):
                 if val < aw.qmc.colorDifferenceThreshold :
                     val = aw.float2float(val,1)
                     if showMsg:
-                        aw.sendmessage(QApplication.translate("Message","Detected a color pair that may be hard to see: ") + "{0!s} ({1!s}) <-> {2!s} ({3!s}) [deltaE={4:.1f}]".format(c[0], c[1], c[2], c[3],val))
+                        aw.sendmessage(QApplication.translate("Message","Detected a color pair that may be hard to see: ",None) + "{0!s} ({1!s}) <-> {2!s} ({3!s}) [deltaE={4:.1f}]".format(c[0], c[1], c[2], c[3],val))
 #                    print("checkColors", str(c[0]), "/", str(c[2]), "  Too similar", str(c[1]), str(c[3]), str(val)) #debugprint
 #                else: #debugprint
 #                    print("checkColors", str(c[0]), "/", str(c[2]), "  Okay", str(c[1]), str(c[3]), str(val))  #debugprint
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " checkColors() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " checkColors() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
         return val
 
@@ -19404,7 +19296,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " convertToGreyscale() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " convertToGreyscale() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
         return nc
 
     def labelBorW(self,backgroundcolor):
@@ -19571,7 +19463,7 @@ class ApplicationWindow(QMainWindow):
 
                 if not aw.block_quantification_sampling_ticks[i]:
                     temp,_ = aw.quantifier2tempandtime(i)
-                    if temp is not None: # corresponding curve is available
+                    if temp: # corresponding curve is available
                         linespace = aw.eventquantifierlinspaces[i]
                         if aw.eventquantifiercoarse[i]:
                             linespacethreshold = abs(linespace[1] - linespace[0]) * aw.eventquantifierthresholdcoarse
@@ -19683,7 +19575,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " autoAdjustAxis() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " autoAdjustAxis() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     @pyqtSlot()
     @pyqtSlot(bool)
@@ -19925,14 +19817,22 @@ class ApplicationWindow(QMainWindow):
                         [0.001,         2.6417205e-4,   1.05668821e-3,  2.11337641e-3,  4.2267528e-3,   1.                   ]     # cm^3
                     ]
         return v*convtable[i][o]
+
+#    @pyqtSlot("QPoint")
+#    def superusermodeClicked(self,_):
+#        self.superusermode = not self.superusermode
+#        if self.superusermode:
+#            aw.sendmessage(QApplication.translate("Message","super on",None))
+#        else:
+#            aw.sendmessage(QApplication.translate("Message","super off",None))
             
     @pyqtSlot()
     def superusermodeLeftClicked(self):
         self.superusermode = not self.superusermode
         if self.superusermode:
-            aw.sendmessage(QApplication.translate("Message","super on"))
+            aw.sendmessage(QApplication.translate("Message","super on",None))
         else:
-            aw.sendmessage(QApplication.translate("Message","super off"))
+            aw.sendmessage(QApplication.translate("Message","super off",None))
 
     @pyqtSlot("QPoint")
     def PhaseslcdClicked(self,_): # pylint: disable=no-self-use
@@ -19943,11 +19843,11 @@ class ApplicationWindow(QMainWindow):
     def AUClcdClicked(self,_):
         aw.qmc.AUCLCDmode = (aw.qmc.AUCLCDmode + 1)%3
         if aw.qmc.AUCLCDmode == 0:
-            label = QApplication.translate("Label", "AUC")
+            label = QApplication.translate("Label", "AUC",None)
         elif aw.qmc.AUCLCDmode == 1:
-            label = "&raquo;" + QApplication.translate("Label", "AUC")
+            label = "&raquo;" + QApplication.translate("Label", "AUC",None)
         else:
-            label = QApplication.translate("Label", "AUC FCs")
+            label = QApplication.translate("Label", "AUC FCs",None)
         self.AUClabel.setText("<small><b>" + label + "</b></small>")
         if aw.LargePhasesLCDsFlag and aw.largePhasesLCDs_dialog:
             aw.largePhasesLCDs_dialog.updatePhasesLabels([None,None,None,label])
@@ -20037,28 +19937,24 @@ class ApplicationWindow(QMainWindow):
                 temp = aw.qmc.on_temp2
         else:
             x = (aw.eventquantifiersource[i]-2)
-            try:
-                if aw.qmc.flagstart or not aw.qmc.flagon:
-                    timex = aw.qmc.extratimex[x // 2]
-                else:
-                    timex = aw.qmc.on_extratimex[x // 2]
-                if x % 2 == 0:
-                    # even
-                    if len(aw.qmc.extratemp1) > (x/2):
-                        if aw.qmc.flagstart or not aw.qmc.flagon:
-                            temp = aw.qmc.extratemp1[x // 2]
-                        else:
-                            temp = aw.qmc.on_extratemp1[x // 2]
-                else:
-                    # odd
-                    if len(aw.qmc.extratemp2) > (x/2):
-                        if aw.qmc.flagstart or not aw.qmc.flagon:
-                            temp = aw.qmc.extratemp2[x // 2]
-                        else:
-                            temp = aw.qmc.on_extratemp2[x // 2]
-            except Exception:
-                # timex might not have an index x // 2
-                pass
+            if aw.qmc.flagstart or not aw.qmc.flagon:
+                timex = aw.qmc.extratimex[x // 2]
+            else:
+                timex = aw.qmc.on_extratimex[x // 2]
+            if x % 2 == 0:
+                # even
+                if len(aw.qmc.extratemp1) > (x/2):
+                    if aw.qmc.flagstart or not aw.qmc.flagon:
+                        temp = aw.qmc.extratemp1[x // 2]
+                    else:
+                        temp = aw.qmc.on_extratemp1[x // 2]
+            else:
+                # odd
+                if len(aw.qmc.extratemp2) > (x/2):
+                    if aw.qmc.flagstart or not aw.qmc.flagon:
+                        temp = aw.qmc.extratemp2[x // 2]
+                    else:
+                        temp = aw.qmc.on_extratemp2[x // 2]
         return temp,timex
 
     # returns min/max 0/(aw.eventsMaxValue / 10) for values outside of the given linespace ls defining the interval
@@ -20135,7 +20031,7 @@ class ApplicationWindow(QMainWindow):
 
                     fcs_idx_oldway = numpy.asarray(np_dbt==aw.qmc.delta2[aw.qmc.timeindex[2]]).nonzero()
                     if fcs_idx != fcs_idx_oldway[0][0]:
-                        _log.debug("Mismatch with fcs_idx methods. fcs_idx:%s fcs_idx_oldway:%s",fcs_idx, fcs_idx_oldway[0][0])
+                        _log.info("Mismatch with fcs_idx methods. fcs_idx:%s fcs_idx_oldway:%s",fcs_idx, fcs_idx_oldway[0][0])
                 except Exception: # pylint: disable=broad-except
                     RoR_FCs_delta = float('nan')
 
@@ -20249,24 +20145,24 @@ class ApplicationWindow(QMainWindow):
 
                 # general information
                 fitRoR = 60*(np_dbtb[-1] - np_dbtb[0]) / (aw.qmc.timex[timeindexs_all[-1]] - aw.qmc.timex[timeindexs_all[0]])
-                fitTypes = [QApplication.translate("Label","ln()"),
+                fitTypes = [QApplication.translate("Label","ln()",None),
                             "",
-                            QApplication.translate("Label","x") + "\u00b2",
-                            QApplication.translate("Label","x") + "\u00b3",
-                            QApplication.translate("Label","Bkgnd"), ""]
+                            QApplication.translate("Label","x",None) + "\u00b2",
+                            QApplication.translate("Label","x",None) + "\u00b3",
+                            QApplication.translate("Label","Bkgnd",None), ""]
                 fitType = fitTypes[exp]
                 if aw.qmc.filterDropOuts:
-                    smoothspikes = QApplication.translate("Label","On")
+                    smoothspikes = QApplication.translate("Label","On",None)
                 else:
-                    smoothspikes = QApplication.translate("Label","Off")
+                    smoothspikes = QApplication.translate("Label","Off",None)
 
                 # build a table of results
                 tbl = prettytable.PrettyTable()
-                tbl.field_names = [QApplication.translate("Label","Start"),
-                                   QApplication.translate("Label","Duration"),
-                                   QApplication.translate("Label","Max Delta"),
-                                   QApplication.translate("Label","Swing"),
-                                   QApplication.translate("Label","ABC/secs")  ]
+                tbl.field_names = [QApplication.translate("Label","Start",None),
+                                   QApplication.translate("Label","Duration",None),
+                                   QApplication.translate("Label","Max Delta",None),
+                                   QApplication.translate("Label","Swing",None),
+                                   QApplication.translate("Label","ABC/secs",None)  ]
                 tbl.float_format = "5.2"
                 for i in range(len(mask)-1):
                     thistime = self.eventtime2string(aw.qmc.timex[timeindexs_seg[i]] - aw.qmc.timex[aw.qmc.timeindex[0]])
@@ -20280,7 +20176,7 @@ class ApplicationWindow(QMainWindow):
                 if len(mask) > 1:
                     tbl.add_row(['~~~~~','~~~~~','~~~~~','~~~~~','~~~~~'])
                     tbl.add_row([ioi_start, ioi_duration, ioi_maxdelta, '-', ioi_abcprime ])
-                segmentresultstr = QApplication.translate("Label","Segment Analysis (rise, crash and flick)") + "\n"
+                segmentresultstr = QApplication.translate("Label","Segment Analysis (rise, crash and flick)",None) + "\n"
                 segmentresultstr += tbl.get_string(border=True)
 
                 # build table of general information
@@ -20290,21 +20186,22 @@ class ApplicationWindow(QMainWindow):
                 tbl2.align["A1"] = "r"
                 tbl2.align["B1"] = "r"
                 tbl2.float_format = "5.2"
-                tbl2.add_row([QApplication.translate("Label","Curve Fit"), fitType, '', ''])
-                tbl2.add_row([QApplication.translate("Label","Samples Threshold"), aw.qmc.segmentsamplesthreshold, QApplication.translate("Label","Delta Threshold"), aw.qmc.segmentdeltathreshold])
-                tbl2.add_row([QApplication.translate("Label","Sample rate (secs)"), self.qmc.profile_sampling_interval, QApplication.translate("Label","Smooth Curves/Spikes"), str(int((aw.qmc.curvefilter-1)/2)) + "/" + str(smoothspikes) ])
-                tbl2.add_row([QApplication.translate("Label","Delta Span"), aw.qmc.deltaBTspan, QApplication.translate("Label","Delta Smoothing"), int((aw.qmc.deltaBTfilter-1)/2) ])
-                tbl2.add_row([QApplication.translate("Label","Fit RoRoR (C/min/min)"), fitRoR, QApplication.translate("Label","Actual RoR at FCs"), RoR_FCs_act])
+                tbl2.add_row([QApplication.translate("Label","Curve Fit",None), fitType, '', ''])
+                tbl2.add_row([QApplication.translate("Label","Samples Threshold",None), aw.qmc.segmentsamplesthreshold, QApplication.translate("Label","Delta Threshold",None), aw.qmc.segmentdeltathreshold])
+                tbl2.add_row([QApplication.translate("Label","Sample rate (secs)",None), self.qmc.profile_sampling_interval, QApplication.translate("Label","Smooth Curves/Spikes",None), str(int((aw.qmc.curvefilter-1)/2)) + "/" + str(smoothspikes) ])
+                tbl2.add_row([QApplication.translate("Label","Delta Span",None), aw.qmc.deltaBTspan, QApplication.translate("Label","Delta Smoothing",None), int((aw.qmc.deltaBTfilter-1)/2) ])
+                tbl2.add_row([QApplication.translate("Label","Fit RoRoR (C/min/min)",None), fitRoR, QApplication.translate("Label","Actual RoR at FCs",None), RoR_FCs_act])
                 segmentresultstr += "{}{}".format("\n", tbl2.get_string(border=False,header=False))
 
-#                # this table is here to help with validation
-#                tbl3 = prettytable.PrettyTable()
-#                tbl3.field_names = ["Start","Duration","Max Delta","Sign","Reduction","TimeIndex"  ]
-#                tbl3.float_format = "5.2"
-#                for i in range(len(maxdeltas)):
-#                    thistime = self.eventtime2string(aw.qmc.timex[timeindexs[i]]-aw.qmc.timex[aw.qmc.timeindex[0]])
-#                    tbl3.add_row([thistime,deltatimes[i],maxdeltas[i],signs[i],reductions[i],timeindexs[i]])
-#                segmentresultstr += "{}{}".format("\n", tbl3.get_string(border=False))
+                # this table is here to help with validation
+                if False:  # pylint: disable=condition-evals-to-constant
+                    tbl3 = prettytable.PrettyTable()
+                    tbl3.field_names = ["Start","Duration","Max Delta","Sign","Reduction","TimeIndex"  ]
+                    tbl3.float_format = "5.2"
+                    for i in range(len(maxdeltas)):
+                        thistime = self.eventtime2string(aw.qmc.timex[timeindexs[i]]-aw.qmc.timex[aw.qmc.timeindex[0]])
+                        tbl3.add_row([thistime,deltatimes[i],maxdeltas[i],signs[i],reductions[i],timeindexs[i]])
+                    segmentresultstr += "{}{}".format("\n", tbl3.get_string(border=False))
 
                 result['segmentresultstr'] = segmentresultstr
 
@@ -20330,7 +20227,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " curveSimilatrity2(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " curveSimilatrity2(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
         return result
 
@@ -20464,6 +20361,45 @@ class ApplicationWindow(QMainWindow):
         else:
             self.slider4.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.slider4.clearFocus()
+
+#    @staticmethod
+#    def getAppPath():
+#        res = ""
+#        if platf in ['Darwin','Linux']:
+#            if appFrozen():
+#                res = QApplication.applicationDirPath() + "/../../../"
+#            else:
+#                res = os.path.dirname(os.path.realpath(__file__)) + "/../"
+#        elif platf == "Windows":
+#            if appFrozen():
+#                res = os.path.dirname(sys.executable) + "\\"
+#            else:
+#                res = os.path.dirname(os.path.realpath(__file__)) + "\\..\\"
+#        else:
+#            res = QApplication.applicationDirPath() + "/"
+#        return res
+#
+#    @staticmethod
+#    def getResourcePath():
+#        res = ""
+#        if platf == 'Darwin':
+#            if appFrozen():
+#                res = QApplication.applicationDirPath() + "/../Resources/"
+#            else:
+#                res = os.path.dirname(os.path.realpath(__file__)) + "/../includes/"
+#        elif platf == 'Linux':
+#            if appFrozen():
+#                res = QApplication.applicationDirPath() + "/"
+#            else:
+#                res = os.path.dirname(os.path.realpath(__file__)) + "/../includes/"
+#        elif platf == "Windows":
+#            if appFrozen():
+#                res = os.path.dirname(sys.executable) + "\\"
+#            else:
+#                res = os.path.dirname(os.path.realpath(__file__)) + "\\..\\includes\\"
+#        else:
+#            res = QApplication.applicationDirPath() + "/"
+#        return res
 
     def setFonts(self, redraw=True): # pylint: disable=no-self-use
         # try to select the right font for matplotlib according to the given locale and plattform
@@ -20634,7 +20570,7 @@ class ApplicationWindow(QMainWindow):
                     else:
                         # too high => red
                         auc_style = "QLCDNumber { color: red; }"
-                        self.AUClabel.setText("<small><b>" + QApplication.translate("Label", "AUC") + "&laquo;</b></small>")
+                        self.AUClabel.setText("<small><b>" + QApplication.translate("Label", "AUC",None) + "&laquo;</b></small>")
                     v = abs(int(round(d)))
                     if v > 999:
                         auc_value_str = "---"
@@ -20659,7 +20595,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " updateAUCLCD(): {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " updateAUCLCD(): {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     # returns multiple results on the current state of the phases:
     #  TP, TPlabel, DRY, DRY, FCs, FCslabel
@@ -20692,13 +20628,13 @@ class ApplicationWindow(QMainWindow):
                     # FIN phase temp on LCD1
                     # FIN phase time on LCD2
                     # FIN phase percentage on LCD3
-                    phasesLCDsTooltip = QApplication.translate("Tooltip","Phase LCDs\nCurrently in ALL FINISHING MODE")
+                    phasesLCDsTooltip = QApplication.translate("Tooltip","Phase LCDs\nCurrently in ALL FINISHING MODE", None)
                     if self.qmc.timeindex[6]: # after drop
                         ts = self.qmc.timex[self.qmc.timeindex[6]] - self.qmc.timex[self.qmc.timeindex[2]]
                     else: # before drop
                         ts = tx - self.qmc.timex[self.qmc.timeindex[2]]
-                    DRY2FCsframeTooltip = QApplication.translate("Label","ALL FINISHING MODE")
-                    TPlabel = QApplication.translate("Label", "FCs") + "&raquo;"
+                    DRY2FCsframeTooltip = QApplication.translate("Label","ALL FINISHING MODE",None)
+                    TPlabel = QApplication.translate("Label", "FCs",None) + "&raquo;"
                     #time
                     TP = stringfromseconds(ts,leadingzero=False)
                     #temp
@@ -20707,7 +20643,7 @@ class ApplicationWindow(QMainWindow):
                     else:
                         dBT = self.qmc.temp2[-1]
                     dBT = fmtstr%(dBT-self.qmc.temp2[self.qmc.timeindex[2]])
-                    DRYlabel = QApplication.translate("Label", "FCs") + "&raquo;"
+                    DRYlabel = QApplication.translate("Label", "FCs",None) + "&raquo;"
                     DRY = dBT + self.qmc.mode
                     #percentage
                     if totaltime:
@@ -20716,7 +20652,7 @@ class ApplicationWindow(QMainWindow):
                         finishphaseP = " --- "
                     if not aw.qmc.LCDdecimalplaces and totaltime:
                         finishphaseP += " "
-                    FCslabel = QApplication.translate("Label", "DEV%")
+                    FCslabel = QApplication.translate("Label", "DEV%",None)
                     FCs = finishphaseP
                     # DRY2FCs
                     if  window_width > 950 and self.qmc.timeindex[1]:
@@ -20729,8 +20665,8 @@ class ApplicationWindow(QMainWindow):
 
                     # 1st PhaseLCD: TP
                     if aw.qmc.phasesLCDmode == 0: # time mode
-                        phasesLCDsTooltip = QApplication.translate("Tooltip","Phase LCDs: right-click to cycle through TIME, PERCENTAGE and TEMP MODE\nCurrently in TIME MODE")
-                        TPlabel = QApplication.translate("Label", "TP") + "&raquo;"
+                        phasesLCDsTooltip = QApplication.translate("Tooltip","Phase LCDs: right-click to cycle through TIME, PERCENTAGE and TEMP MODE\nCurrently in TIME MODE", None)
+                        TPlabel = QApplication.translate("Label", "TP",None) + "&raquo;"
                         if self.qmc.flagon:
                             TP_index = self.qmc.TPalarmtimeindex
                         else:
@@ -20747,8 +20683,8 @@ class ApplicationWindow(QMainWindow):
                             # before TP
                             TP = "--:--"
                     elif aw.qmc.phasesLCDmode == 1: # percentage mode
-                        phasesLCDsTooltip = QApplication.translate("Tooltip","Phase LCDs: right-click to cycle through TIME, PERCENTAGE and TEMP MODE\nCurrently in PERCENTAGE MODE")
-                        TPlabel = QApplication.translate("Label", "DRY%")
+                        phasesLCDsTooltip = QApplication.translate("Tooltip","Phase LCDs: right-click to cycle through TIME, PERCENTAGE and TEMP MODE\nCurrently in PERCENTAGE MODE", None)
+                        TPlabel = QApplication.translate("Label", "DRY%",None)
                         if self.qmc.timeindex[1]: # after DRY
                             ts = self.qmc.timex[self.qmc.timeindex[1]] - chrg
                             if totaltime:
@@ -20761,8 +20697,8 @@ class ApplicationWindow(QMainWindow):
                         else:
                             TP = " --- "
                     elif aw.qmc.phasesLCDmode == 2: # temp mode
-                        phasesLCDsTooltip = QApplication.translate("Tooltip","Phase LCDs: right-click to cycle through TIME, PERCENTAGE and TEMP MODE\nCurrently in TEMP MODE")
-                        TPlabel = QApplication.translate("Label", "TP") + "&raquo;"
+                        phasesLCDsTooltip = QApplication.translate("Tooltip","Phase LCDs: right-click to cycle through TIME, PERCENTAGE and TEMP MODE\nCurrently in TEMP MODE", None)
+                        TPlabel = QApplication.translate("Label", "TP",None) + "&raquo;"
                         if self.qmc.flagon:
                             TP_index = self.qmc.TPalarmtimeindex
                         else:
@@ -20786,11 +20722,11 @@ class ApplicationWindow(QMainWindow):
                         else:
                             ts = tx - self.qmc.timex[self.qmc.timeindex[1]]
                         if aw.qmc.phasesLCDmode == 0: # time mode
-                            TP2DRYframeTooltip = QApplication.translate("Label","TIME MODE")
-                            DRYlabel = QApplication.translate("Label", "DRY") + "&raquo;"
+                            TP2DRYframeTooltip = QApplication.translate("Label","TIME MODE",None)
+                            DRYlabel = QApplication.translate("Label", "DRY",None) + "&raquo;"
                             DRY = stringfromseconds(ts,leadingzero=False)
                         elif aw.qmc.phasesLCDmode == 1: # percentage mode
-                            TP2DRYframeTooltip = QApplication.translate("Label","PERCENTAGE MODE")
+                            TP2DRYframeTooltip = QApplication.translate("Label","PERCENTAGE MODE",None)
                             if self.qmc.timeindex[2]:
                                 ts = self.qmc.timex[self.qmc.timeindex[2]] - self.qmc.timex[self.qmc.timeindex[1]]
                             if totaltime:
@@ -20799,16 +20735,16 @@ class ApplicationWindow(QMainWindow):
                                 midphaseP = " --- "
                             if not aw.qmc.LCDdecimalplaces and totaltime:
                                 midphaseP += " "
-                            DRYlabel = QApplication.translate("Label", "RAMP%")
+                            DRYlabel = QApplication.translate("Label", "RAMP%",None)
                             DRY = midphaseP
                         elif aw.qmc.phasesLCDmode == 2: # temp mode
-                            TP2DRYframeTooltip = QApplication.translate("Label","TEMP MODE")
+                            TP2DRYframeTooltip = QApplication.translate("Label","TEMP MODE",None)
                             if self.qmc.timeindex[6]: # after drop
                                 dBT = self.qmc.temp2[self.qmc.timeindex[6]]
                             else:
                                 dBT = self.qmc.temp2[-1]
                             dBT = fmtstr%(dBT-self.qmc.temp2[self.qmc.timeindex[1]])
-                            DRYlabel = QApplication.translate("Label", "DRY") + "&raquo;"
+                            DRYlabel = QApplication.translate("Label", "DRY",None) + "&raquo;"
                             DRY = dBT + self.qmc.mode
                         # TP2DRY
                         if window_width > 950 and self.qmc.TPalarmtimeindex:
@@ -20820,9 +20756,9 @@ class ApplicationWindow(QMainWindow):
                         # before DRY
                         dryexpectedtime = None
                         if aw.qmc.phasesLCDmode == 2:
-                            DRYlabel = "&darr;" + QApplication.translate("Label", "DRY")
+                            DRYlabel = "&darr;" + QApplication.translate("Label", "DRY",None)
                         else:
-                            DRYlabel = "&raquo;" + QApplication.translate("Label", "DRY")
+                            DRYlabel = "&raquo;" + QApplication.translate("Label", "DRY",None)
                         if self.qmc.timeindex[0] > -1 and self.qmc.TPalarmtimeindex and len(self.qmc.delta2) > 0 and self.qmc.delta2[-1] and self.qmc.delta2[-1] > 0:
                             # display expected time to reach DRY as defined in the background profile or the phases dialog
                             if self.qmc.backgroundprofile is not None and self.qmc.timeindexB[1] and not aw.qmc.autoDRYflag: # with AutoDRY, we always use the set DRY phase temperature as target
@@ -20859,14 +20795,14 @@ class ApplicationWindow(QMainWindow):
                         else: # before drop
                             ts = tx - self.qmc.timex[self.qmc.timeindex[2]]
                         if aw.qmc.phasesLCDmode == 0: # time mode
-                            DRY2FCsframeTooltip = QApplication.translate("Label","TIME MODE")
-                            TP2DRYframeTooltip = QApplication.translate("Label","TIME MODE")
-                            FCslabel = QApplication.translate("Label", "FCs") + "&raquo;"
+                            DRY2FCsframeTooltip = QApplication.translate("Label","TIME MODE",None)
+                            TP2DRYframeTooltip = QApplication.translate("Label","TIME MODE",None)
+                            FCslabel = QApplication.translate("Label", "FCs",None) + "&raquo;"
                             FCs = stringfromseconds(ts,leadingzero=False)
                         elif aw.qmc.phasesLCDmode == 1: # percentage mode
-                            DRY2FCsframeTooltip = QApplication.translate("Label","PERCENTAGE MODE")
-                            TP2DRYframeTooltip = QApplication.translate("Label","PERCENTAGE MODE")
-                            FCslabel = QApplication.translate("Label", "DEV%")
+                            DRY2FCsframeTooltip = QApplication.translate("Label","PERCENTAGE MODE",None)
+                            TP2DRYframeTooltip = QApplication.translate("Label","PERCENTAGE MODE",None)
+                            FCslabel = QApplication.translate("Label", "DEV%",None)
                             if totaltime:
                                 finishphaseP = fmtstr%(ts*100./totaltime)
                             else:
@@ -20875,9 +20811,9 @@ class ApplicationWindow(QMainWindow):
                                 finishphaseP += " "
                             FCs = finishphaseP
                         elif aw.qmc.phasesLCDmode == 2: # temp mode
-                            DRY2FCsframeTooltip = QApplication.translate("Label","TEMP MODE")
-                            TP2DRYframeTooltip = QApplication.translate("Label","TEMP MODE")
-                            FCslabel = QApplication.translate("Label", "FCs") + "&raquo;"
+                            DRY2FCsframeTooltip = QApplication.translate("Label","TEMP MODE",None)
+                            TP2DRYframeTooltip = QApplication.translate("Label","TEMP MODE",None)
+                            FCslabel = QApplication.translate("Label", "FCs",None) + "&raquo;"
                             if self.qmc.timeindex[6]: # after drop
                                 dBT = self.qmc.temp2[self.qmc.timeindex[6]]
                             else:
@@ -20894,17 +20830,17 @@ class ApplicationWindow(QMainWindow):
                         # before FCs
                         fcsexpectedtime = None
                         if aw.qmc.phasesLCDmode == 0:
-                            DRY2FCsframeTooltip = QApplication.translate("Label","TIME MODE")
-                            TP2DRYframeTooltip = QApplication.translate("Label","TIME MODE")
-                            FCslabel = "&raquo;" + QApplication.translate("Label", "FCs")
+                            DRY2FCsframeTooltip = QApplication.translate("Label","TIME MODE",None)
+                            TP2DRYframeTooltip = QApplication.translate("Label","TIME MODE",None)
+                            FCslabel = "&raquo;" + QApplication.translate("Label", "FCs",None)
                         elif aw.qmc.phasesLCDmode == 1:
-                            DRY2FCsframeTooltip = QApplication.translate("Label","PERCENTAGE MODE")
-                            TP2DRYframeTooltip = QApplication.translate("Label","PERCENTAGE MODE")
-                            FCslabel = "&raquo;" + QApplication.translate("Label", "FCs")
+                            DRY2FCsframeTooltip = QApplication.translate("Label","PERCENTAGE MODE",None)
+                            TP2DRYframeTooltip = QApplication.translate("Label","PERCENTAGE MODE",None)
+                            FCslabel = "&raquo;" + QApplication.translate("Label", "FCs",None)
                         elif aw.qmc.phasesLCDmode == 2:
-                            DRY2FCsframeTooltip = QApplication.translate("Label","TEMP MODE")
-                            TP2DRYframeTooltip = QApplication.translate("Label","TEMP MODE")
-                            FCslabel = "&darr;" + QApplication.translate("Label", "FCs")
+                            DRY2FCsframeTooltip = QApplication.translate("Label","TEMP MODE",None)
+                            TP2DRYframeTooltip = QApplication.translate("Label","TEMP MODE",None)
+                            FCslabel = "&darr;" + QApplication.translate("Label", "FCs",None)
                         if self.qmc.timeindex[0] > -1 and self.qmc.timeindex[1] and len(self.qmc.delta2) > 0 and self.qmc.delta2[-1] and self.qmc.delta2[-1] > 0:
                             ## after DRY:
                             # display expected time to reach FCs as defined in the background profile or the phases dialog
@@ -20933,15 +20869,15 @@ class ApplicationWindow(QMainWindow):
             else:
                 if aw.qmc.phasesLCDmode == 0: # time mode
                     TP = "--:--"
-                    TPlabel = QApplication.translate("Label", "TP") + "&raquo;"
+                    TPlabel = QApplication.translate("Label", "TP",None) + "&raquo;"
                 elif aw.qmc.phasesLCDmode == 1: # percentage mode
                     TP = " --- "
-                    TPlabel = QApplication.translate("Label", "DRY%")
+                    TPlabel = QApplication.translate("Label", "DRY%",None)
                 elif aw.qmc.phasesLCDmode == 2: # temp mode
                     TP = " --- "
-                    TPlabel = QApplication.translate("Label", "TP") + "&raquo;"
-                DRYlabel = "&raquo;" + QApplication.translate("Label", "DRY")
-                FCslabel = "&raquo;" + QApplication.translate("Label", "FCs")
+                    TPlabel = QApplication.translate("Label", "TP",None) + "&raquo;"
+                DRYlabel = "&raquo;" + QApplication.translate("Label", "DRY",None)
+                FCslabel = "&raquo;" + QApplication.translate("Label", "FCs",None)
                 TP2DRYlabel = ""
                 DRY2FCslabel = ""
                 DRY =  "--:--"
@@ -20949,7 +20885,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " updatePhasesLCDs() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " updatePhasesLCDs() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
         return TP,TPlabel,DRY,DRYlabel,FCs,FCslabel,TP2DRYlabel,DRY2FCslabel,TP2DRYframeTooltip,DRY2FCsframeTooltip,phasesLCDsTooltip
 
 
@@ -21011,7 +20947,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " updatePhasesLCDs() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " updatePhasesLCDs() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     @staticmethod
     def makeLCDbox(label, lcd, lcdframe):
@@ -21219,7 +21155,7 @@ class ApplicationWindow(QMainWindow):
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
                 _, _, exc_tb = sys.exc_info()
-                aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " fireslideraction() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " fireslideraction() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     def calcSliderSendValue(self,n):
         slider_value = self.eventslidervalues[n]
@@ -21425,35 +21361,34 @@ class ApplicationWindow(QMainWindow):
                 cmd_str = str(cmd)
 
                 # we add {BT}, {ET}, {time} substitutions for Serial/CallProgram/MODBUS/S7/WebSocket command actions
-                if action in [1,2,4,7,15,22]:
-                    BT_subst = -1
-                    ET_subst = -1
+                if action in [1,2,4,7,15,22] and (self.qmc.flagstart and len(self.qmc.timex) > 0 or (self.qmc.flagon and len(self.qmc.on_timex) > 0)):
+                    BT_subst = 0
+                    ET_subst = 0
                     timex = 0
-                    BTB_subst = -1
-                    ETB_subst = -1
-                    if (self.qmc.flagstart and len(self.qmc.timex) > 0 or (self.qmc.flagon and len(self.qmc.on_timex) > 0)):
-                        try:
-                            if self.qmc.flagstart and len(self.qmc.timex)>0:
-                                timex = self.qmc.timex[-1]
-                                if self.qmc.timeindex[0] != -1:
-                                    timex -= self.qmc.timex[self.qmc.timeindex[0]]
-                                BT_subst = self.qmc.temp2[-1]
-                                ET_subst = self.qmc.temp1[-1]
-                                if self.qmc.background:
-                                    btb = self.qmc.backgroundSmoothedBTat(timex)
-                                    if btb != -1:
-                                        BTB_subst = btb
-                                    etb = self.qmc.backgroundSmoothedETat(timex)
-                                    if etb != -1:
-                                        ETB_subst = etb
-                            elif self.qmc.flagon:
-                                timex = self.qmc.on_timex[-1]
-                                if self.qmc.timeindex[0] != -1:
-                                    timex -= self.qmc.on_timex[self.qmc.timeindex[0]]
-                                BT_subst = self.qmc.on_temp2[-1]
-                                ET_subst = self.qmc.on_temp1[-1]
-                        except Exception as e: # pylint: disable=broad-except
-                            _log.exception(e)
+                    BTB_subst = 0
+                    ETB_subst = 0
+                    try:
+                        if self.qmc.flagstart and len(self.qmc.timex)>0:
+                            timex = self.qmc.timex[-1]
+                            if self.qmc.timeindex[0] != -1:
+                                timex -= self.qmc.timex[self.qmc.timeindex[0]]
+                            BT_subst = self.qmc.temp2[-1]
+                            ET_subst = self.qmc.temp1[-1]
+                            if self.qmc.background:
+                                btb = self.qmc.backgroundSmoothedBTat(timex)
+                                if btb != -1:
+                                    BTB_subst = btb
+                                etb = self.qmc.backgroundSmoothedETat(timex)
+                                if etb != -1:
+                                    ETB_subst = etb
+                        elif self.qmc.flagon:
+                            timex = self.qmc.on_timex[-1]
+                            if self.qmc.timeindex[0] != -1:
+                                timex -= self.qmc.on_timex[self.qmc.timeindex[0]]
+                            BT_subst = self.qmc.on_temp2[-1]
+                            ET_subst = self.qmc.on_temp1[-1]
+                    except Exception as e: # pylint: disable=broad-except
+                        _log.exception(e)
                     try:
                         if action == 22:
                             # in JSON we have to do string substitution
@@ -21494,7 +21429,7 @@ class ApplicationWindow(QMainWindow):
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
                         _, _, exc_tb = sys.exc_info()
-                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " eventaction() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " eventaction() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
                 elif action == 3: # Multiple Event
                     cmd_list = cmd_str.split(",")
                     for i in range(len(cmd_list)):
@@ -21732,10 +21667,10 @@ class ApplicationWindow(QMainWindow):
                             if cs_a[0] == "set":
                                 if cs_len == 3:
                                     if not aw.ser.phidgetBinaryOUTset(toInt(cs_a[1]), bool(toInt(cs_a[2]))):
-                                        aw.sendmessage(QApplication.translate("Message", "Failed to set(%s, %s)" % (cs_a[1], cs_a[2])))
+                                        aw.sendmessage(QApplication.translate("Message", "Failed to set(%s, %s)" % (cs_a[1], cs_a[2]), None))
                                 elif cs_len == 4:
                                     if not aw.ser.phidgetBinaryOUTset(toInt(cs_a[1]), bool(toInt(cs_a[2])), cs_a[3]):
-                                        aw.sendmessage(QApplication.translate("Message", "Failed to set(%s, %s, %s)" % (cs_a[1], cs_a[2], cs_a[3])))
+                                        aw.sendmessage(QApplication.translate("Message", "Failed to set(%s, %s, %s)" % (cs_a[1], cs_a[2], cs_a[3]), None))
 
                             elif cs_a[0] == "toggle" and cs_len > 1:
                                 c = toInt(cs_a[1])
@@ -21749,7 +21684,7 @@ class ApplicationWindow(QMainWindow):
                                 if aw.ser.phidgetBinaryOUTset(c, bool(newValue),sn):
                                     self.buttonStates[self.lastbuttonpressed] = newValue
                                 else:
-                                    aw.sendmessage(QApplication.translate("Message", "Failed to toggle(%s)" % (cs_a[1])))
+                                    aw.sendmessage(QApplication.translate("Message", "Failed to toggle(%s)" % (cs_a[1]), None))
                                     #clear style that got set in button press event handler
                                     if 0 != self.buttonStates[self.lastbuttonpressed]:
                                         self.setExtraEventButtonStyle(self.lastbuttonpressed, style="pressed")
@@ -21768,7 +21703,7 @@ class ApplicationWindow(QMainWindow):
                                 if 0.0 <= t <= 999999:
                                     aw.ser.phidgetBinaryOUTpulse(c, t, sn)
                                 else:
-                                    aw.sendmessage(QApplication.translate("Message", "Pulse out of range (%d)" % (t)))
+                                    aw.sendmessage(QApplication.translate("Message", "Pulse out of range (%d)" % (t), None))
 
                             elif cs_a[0] == "out" and cs_len > 2:
                                 if cs_len > 3:
@@ -21776,7 +21711,7 @@ class ApplicationWindow(QMainWindow):
                                 else:
                                     sn = None
                                 if not aw.ser.phidgetVOUTsetVOUT(toInt(cs_a[1]), toFloat(eval(cs_a[2])),sn): # pylint: disable=eval-used
-                                    aw.sendmessage(QApplication.translate("Message", "Failed to set VOUT(%s, %s)" % (cs_a[1], cs_a[2] )))
+                                    aw.sendmessage(QApplication.translate("Message", "Failed to set VOUT(%s, %s)" % (cs_a[1], cs_a[2] ), None))
 
                             elif cs_a[0] == "accel" and cs_len > 2:
                                 if cs_len > 3:
@@ -21804,7 +21739,7 @@ class ApplicationWindow(QMainWindow):
                                 if 0 < v <= 100:
                                     aw.moveslider(toInt(cs_a[1]), v)
                                 else:
-                                    aw.sendmessage(QApplication.translate("Message", "Slider out of range (%f)" % (v)))
+                                    aw.sendmessage(QApplication.translate("Message", "Slider out of range (%f)" % (v), None))
                             elif cs_a[0] == "button" and cs_len > 3:
                                 b = toInt(cs_a[1]) - 1 # gui button list is indexed from 1
                                 c = toInt(cs_a[2])
@@ -21816,7 +21751,7 @@ class ApplicationWindow(QMainWindow):
                                 if aw.ser.phidgetBinaryOUTset(c, bool(v & 0x1), sn):
                                     self.buttonStates[b] = v & 0x1
                                 else:
-                                    aw.sendmessage(QApplication.translate("Message", "Failed to set button(%s, %s, %s)" % (cs_a[1], cs_a[2], cs_a[3] )))
+                                    aw.sendmessage(QApplication.translate("Message", "Failed to set button(%s, %s, %s)" % (cs_a[1], cs_a[2], cs_a[3] ), None))
 
                                 if self.buttonStates[b] != 0:
                                     self.setExtraEventButtonStyle(b, style="pressed")
@@ -21854,7 +21789,7 @@ class ApplicationWindow(QMainWindow):
                                 aw.ser.yoctoRELpulse(int(cs_a[1]),int(cs_a[2]),int(cs_a[3]),cs_a[4])
                             else:
                                 #print("no match for command [%s], continue" % (cs_a[0]))
-                                aw.sendmessage(QApplication.translate("Message","No match for command [%s], continuing" % (cs_a[0])))
+                                aw.sendmessage(QApplication.translate("Message","No match for command [%s], continuing" % (cs_a[0]), None))
 
                 elif action == 7: # slider call-program action
                     try:
@@ -21862,7 +21797,7 @@ class ApplicationWindow(QMainWindow):
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
                         _, _, exc_tb = sys.exc_info()
-                        aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " callProgram(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                        aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " callProgram(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
                 elif action == 8: # HOTTOP Heater
                     setHottop(heater=int(cmd))
                 elif action == 9: # HOTTOP Main Fan
@@ -22262,10 +22197,10 @@ class ApplicationWindow(QMainWindow):
                                     value = cs[len("alarms("):-1]
                                     if value.lower() in ("yes", "true", "t", "1"):
                                         aw.qmc.silent_alarms = False
-                                        aw.sendmessage(QApplication.translate("Message","Alarms on"))
+                                        aw.sendmessage(QApplication.translate("Message","Alarms on", None))
                                     else:
                                         aw.qmc.silent_alarms = True
-                                        aw.sendmessage(QApplication.translate("Message","Alarms off"))
+                                        aw.sendmessage(QApplication.translate("Message","Alarms off", None))
                                 except Exception as e: # pylint: disable=broad-except
                                     _log.exception(e)
                             # autoCHARGE(<bool>) enable/disable autoCHARGE
@@ -22274,10 +22209,10 @@ class ApplicationWindow(QMainWindow):
                                     value = cs[len("autoCHARGE("):-1]
                                     if value.lower() in ("yes", "true", "t", "1"):
                                         aw.qmc.autoChargeFlag = True
-                                        aw.sendmessage(QApplication.translate("Message","autoCHARGE on"))
+                                        aw.sendmessage(QApplication.translate("Message","autoCHARGE on", None))
                                     else:
                                         aw.qmc.autoChargeFlag = False
-                                        aw.sendmessage(QApplication.translate("Message","autoCHARGE off"))
+                                        aw.sendmessage(QApplication.translate("Message","autoCHARGE off", None))
                                 except Exception as e: # pylint: disable=broad-except
                                     _log.exception(e)
                             # autoDROP(<bool>) enable/disable autoDROP
@@ -22286,10 +22221,10 @@ class ApplicationWindow(QMainWindow):
                                     value = cs[len("autoDROP("):-1]
                                     if value.lower() in ("yes", "true", "t", "1"):
                                         aw.qmc.autoDropFlag = True
-                                        aw.sendmessage(QApplication.translate("Message","autoDROP on"))
+                                        aw.sendmessage(QApplication.translate("Message","autoDROP on", None))
                                     else:
                                         aw.qmc.autoDropFlag = False
-                                        aw.sendmessage(QApplication.translate("Message","autoDROP off"))
+                                        aw.sendmessage(QApplication.translate("Message","autoDROP off", None))
                                 except Exception as e: # pylint: disable=broad-except
                                     _log.exception(e)
                             # sleep(<n>) sleep <n> seconds (might be a float like in "sleep(1.2)"
@@ -22322,13 +22257,13 @@ class ApplicationWindow(QMainWindow):
                                     value = int(cs[len("pidmode("):-1])
                                     if value == 0:
                                         aw.pidcontrol.svMode = 0
-                                        aw.sendmessage(QApplication.translate("Message","PID mode manual"))
+                                        aw.sendmessage(QApplication.translate("Message","PID mode manual", None))
                                     elif value == 1:
                                         aw.pidcontrol.svMode = 1
-                                        aw.sendmessage(QApplication.translate("Message","PID mode Ramp/Soak"))
+                                        aw.sendmessage(QApplication.translate("Message","PID mode Ramp/Soak", None))
                                     elif value == 2:
                                         aw.pidcontrol.svMode = 2
-                                        aw.sendmessage(QApplication.translate("Message","PID mode background"))
+                                        aw.sendmessage(QApplication.translate("Message","PID mode background", None))
                                 except Exception as e: # pylint: disable=broad-except
                                     _log.exception(e)
                             # playbackmode(<n>) with 0: off, 1: time, 2: BT, 3: ET
@@ -22338,19 +22273,19 @@ class ApplicationWindow(QMainWindow):
                                     if value == 0:
                                         aw.qmc.replayType = 0
                                         aw.qmc.backgroundPlaybackEvents = False
-                                        aw.sendmessage(QApplication.translate("Message","playback off"))
+                                        aw.sendmessage(QApplication.translate("Message","playback off", None))
                                     elif value == 1:
                                         aw.qmc.replayType = 0
                                         aw.qmc.backgroundPlaybackEvents = True
-                                        aw.sendmessage(QApplication.translate("Message","playback by time"))
+                                        aw.sendmessage(QApplication.translate("Message","playback by time", None))
                                     elif value == 2:
                                         aw.qmc.replayType = 1
                                         aw.qmc.backgroundPlaybackEvents = True
-                                        aw.sendmessage(QApplication.translate("Message","playback by BT"))
+                                        aw.sendmessage(QApplication.translate("Message","playback by BT", None))
                                     elif value == 3:
                                         aw.qmc.replayType = 2
                                         aw.qmc.backgroundPlaybackEvents = True
-                                        aw.sendmessage(QApplication.translate("Message","playback by ET"))
+                                        aw.sendmessage(QApplication.translate("Message","playback by ET", None))
                                 except Exception as e: # pylint: disable=broad-except
                                     _log.exception(e)
                             # openProperties : open Roast Properties dialog
@@ -22601,10 +22536,10 @@ class ApplicationWindow(QMainWindow):
                                     lookahead = int(eval(cs[len("pidLookahead("):-1])) # pylint: disable=eval-used
                                     if self.qmc.device == 0 and self.fujipid and self.qmc.Controlbuttonflag: # FUJI PID
                                         self.fujipid.lookahead = lookahead
-                                        self.sendmessage(QApplication.translate("Message","PID Lookahead: {0}").format(self.fujipid.lookahead))
+                                        self.sendmessage(QApplication.translate("Message","PID Lookahead: {0}", None).format(self.fujipid.lookahead))
                                     elif (self.pidcontrol and self.qmc.Controlbuttonflag): # MODBUS hardware PID
                                         self.pidcontrol.svLookahead = lookahead
-                                        aw.sendmessage(QApplication.translate("Message","PID Lookahead: {0}").format(self.pidcontrol.svLookahead))
+                                        aw.sendmessage(QApplication.translate("Message","PID Lookahead: {0}", None).format(self.pidcontrol.svLookahead))
                                 except Exception as e: # pylint: disable=broad-except
                                     _log.exception(e)
                             # keyboard(<bool>) enable/disable keyboard mode
@@ -22616,46 +22551,7 @@ class ApplicationWindow(QMainWindow):
                                         self.moveButtonSignal.emit("enter")
                                 except Exception as e: # pylint: disable=broad-except
                                     _log.exception(e)
-                            # showCurve(<name>, <bool>) with <name> one of { ET, BT, DeltaET, DeltaBT, BackgroundET, BackgroundBT}
-                            elif cs.startswith("showCurve(") and cs.endswith(")"):
-                                try:
-                                    args = cs[len("showCurve("):-1].split(",")
-                                    if len(args) == 2:
-                                        curve_name = args[0]
-                                        state = bool(eval(args[1])) # pylint: disable=eval-used
-                                        self.qmc.showCurveSignal.emit(curve_name, state)
-                                except Exception as e: # pylint: disable=broad-except
-                                    _log.exception(e)
-                            # showExtraCurve(<extra_device>, <curve>, <bool>) with <extra_device> zero-based number of extra device, curve one of { T1, T2 }
-                            elif cs.startswith("showExtraCurve(") and cs.endswith(")"):
-                                try:
-                                    args = cs[len("showExtraCurve("):-1].split(",")
-                                    if len(args) == 3:
-                                        extra_device = int(args[0])
-                                        curve = args[1]
-                                        state = bool(eval(args[2])) # pylint: disable=eval-used
-                                        self.qmc.showExtraCurveSignal.emit(extra_device, curve, state)
-                                except Exception as e: # pylint: disable=broad-except
-                                    _log.exception(e)
-                            # showEvents(<event>, <bool>) with <event_type> a number from [1, 5]
-                            elif cs.startswith("showEvents(") and cs.endswith(")"):
-                                try:
-                                    args = cs[len("showEvents("):-1].split(",")
-                                    if len(args) == 2:
-                                        event_type = int(args[0])
-                                        state = bool(eval(args[1])) # pylint: disable=eval-used
-                                        self.qmc.showEventsSignal.emit(event_type, state)
-                                except Exception as e: # pylint: disable=broad-except
-                                    _log.exception(e)
-                            # showBackgroundEvents(<bool>)
-                            elif cs.startswith("showBackgroundEvents(") and cs.endswith(")"):
-                                try:
-                                    args = cs[len("showBackgroundEvents("):-1].split(",")
-                                    if len(args) == 1:
-                                        state = bool(eval(args[0])) # pylint: disable=eval-used
-                                        self.qmc.showBackgroundEventsSignal.emit(state)
-                                except Exception as e: # pylint: disable=broad-except
-                                    _log.exception(e)
+                                                    
                 elif action == 21: # RC Command
                     # PHIDGETS   sn : has the form <hub_serial>[:<hub_port>], an optional serial number of the hub, optionally specifying the port number the module is connected to
                     ##  pulse(ch,min,max[,sn]) : sets the min/max pulse width in microseconds
@@ -23149,10 +23045,10 @@ class ApplicationWindow(QMainWindow):
     @pyqtSlot(bool)
     def resetApplication(self,_=False):
         if app.artisanviewerMode:
-            string = QApplication.translate("Message","Do you want to reset all settings?<br> ArtisanViewer has to be restarted!")
+            string = QApplication.translate("Message","Do you want to reset all settings?<br> ArtisanViewer has to be restarted!", None)
         else:
-            string = QApplication.translate("Message","Do you want to reset all settings?<br> Artisan has to be restarted!")
-        reply = QMessageBox.warning(aw,QApplication.translate("Message","Factory Reset"),string,
+            string = QApplication.translate("Message","Do you want to reset all settings?<br> Artisan has to be restarted!", None)
+        reply = QMessageBox.warning(aw,QApplication.translate("Message","Factory Reset", None),string,
                             QMessageBox.StandardButton.Cancel | QMessageBox.StandardButton.Reset, QMessageBox.StandardButton.Cancel)
         if reply == QMessageBox.StandardButton.Reset :
             #raise flag. Next time app will open, the settings (bad settings) will not be loaded.
@@ -23725,7 +23621,7 @@ class ApplicationWindow(QMainWindow):
                                 self.autoAdjustAxis()
                             self.qmc.redraw()
                         else:
-                            filename = self.ArtisanOpenFileDialog(msg=QApplication.translate("Message","Load Background"),ext_alt=".alog")
+                            filename = self.ArtisanOpenFileDialog(msg=QApplication.translate("Message","Load Background",None),ext_alt=".alog")
                             if len(filename) != 0:
                                 try:
                                     self.qmc.resetlinecountcaches()
@@ -23744,7 +23640,7 @@ class ApplicationWindow(QMainWindow):
                             aw.analysisfitCurvesALL()
                 elif k == 76:                       #L
                     if not self.qmc.designerflag and not bool(aw.comparator):
-                        filename = aw.ArtisanOpenFileDialog(msg=QApplication.translate("Message","Load Alarms"),ext="*.alrm")
+                        filename = aw.ArtisanOpenFileDialog(msg=QApplication.translate("Message","Load Alarms",None),ext="*.alrm")
                         if len(filename) == 0:
                             return
                         try:
@@ -23759,39 +23655,39 @@ class ApplicationWindow(QMainWindow):
                             aw.fujipid.setrampsoak(1)
                             aw.fujipid.rampsoak = True # even if activation failed to allow to further toggle arround
                             aw.fujipid.followBackground = False
-                            aw.sendmessage(QApplication.translate("Message","PID Mode: Ramp/Soak"))
+                            aw.sendmessage(QApplication.translate("Message","PID Mode: Ramp/Soak", None))
                         elif aw.fujipid.rampsoak: # => background
                             aw.fujipid.setrampsoak(0)
                             aw.fujipid.rampsoak = False # even if activation failed to allow to further toggle arround
                             aw.fujipid.followBackground = True
-                            aw.sendmessage(QApplication.translate("Message","PID Mode: Background"))
+                            aw.sendmessage(QApplication.translate("Message","PID Mode: Background", None))
                         else: # => manual
                             aw.fujipid.setrampsoak(0)
                             aw.fujipid.followBackground = False
-                            aw.sendmessage(QApplication.translate("Message","PID Mode: Manual"))
+                            aw.sendmessage(QApplication.translate("Message","PID Mode: Manual", None))
                     elif (aw.pidcontrol and aw.qmc.Controlbuttonflag): # MODBUS hardware/software PID
                         aw.pidcontrol.svMode = (aw.pidcontrol.svMode+1) %3
                         # 0: manual, 1: Ramp/Soak, 2: Follow (background profile)
                         if aw.pidcontrol.svMode == 0:
-                            aw.sendmessage(QApplication.translate("Message","PID Mode: Manual"))
+                            aw.sendmessage(QApplication.translate("Message","PID Mode: Manual", None))
                         elif  aw.pidcontrol.svMode == 1:
-                            aw.sendmessage(QApplication.translate("Message","PID Mode: Ramp/Soak"))
+                            aw.sendmessage(QApplication.translate("Message","PID Mode: Ramp/Soak", None))
                         elif  aw.pidcontrol.svMode == 2:
-                            aw.sendmessage(QApplication.translate("Message","PID Mode: Background"))
+                            aw.sendmessage(QApplication.translate("Message","PID Mode: Background", None))
                 elif k == 45:                       #-
                     if aw.qmc.device == 0 and aw.fujipid and aw.qmc.Controlbuttonflag: # FUJI PID
                         aw.fujipid.lookahead = max(0,aw.fujipid.lookahead-1)
-                        aw.sendmessage(QApplication.translate("Message","PID Lookahead: {0}").format(aw.fujipid.lookahead))
+                        aw.sendmessage(QApplication.translate("Message","PID Lookahead: {0}", None).format(aw.fujipid.lookahead))
                     elif (aw.pidcontrol and aw.qmc.Controlbuttonflag): # MODBUS hardware PID
                         aw.pidcontrol.svLookahead = max(0,aw.pidcontrol.svLookahead-1)
-                        aw.sendmessage(QApplication.translate("Message","PID Lookahead: {0}").format(aw.pidcontrol.svLookahead))
+                        aw.sendmessage(QApplication.translate("Message","PID Lookahead: {0}", None).format(aw.pidcontrol.svLookahead))
                 elif k == 43:                       #+
                     if aw.qmc.device == 0 and aw.fujipid and aw.qmc.Controlbuttonflag: # FUJI PID
                         aw.fujipid.lookahead = aw.fujipid.lookahead+1
-                        aw.sendmessage(QApplication.translate("Message","PID Lookahead: {0}").format(aw.fujipid.lookahead))
+                        aw.sendmessage(QApplication.translate("Message","PID Lookahead: {0}", None).format(aw.fujipid.lookahead))
                     elif (aw.pidcontrol and aw.qmc.Controlbuttonflag): # MODBUS hardware PID
                         aw.pidcontrol.svLookahead = aw.pidcontrol.svLookahead+1
-                        aw.sendmessage(QApplication.translate("Message","PID Lookahead: {0}").format(aw.pidcontrol.svLookahead))
+                        aw.sendmessage(QApplication.translate("Message","PID Lookahead: {0}", None).format(aw.pidcontrol.svLookahead))
                 elif k == 32:                       #SELECTS ACTIVE BUTTON
                     if self.keyboardmoveflag:
                         self.moveKbutton("space")
@@ -23822,8 +23718,8 @@ class ApplicationWindow(QMainWindow):
                     else:
                         #if designer ON
                         if self.qmc.designerflag:
-                            string = QApplication.translate("Message","Exit Designer?")
-                            reply = QMessageBox.question(aw,QApplication.translate("Message", "Designer Mode ON"),string,QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.Cancel)
+                            string = QApplication.translate("Message","Exit Designer?", None)
+                            reply = QMessageBox.question(aw,QApplication.translate("Message", "Designer Mode ON",None),string,QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.Cancel)
                             if reply == QMessageBox.StandardButton.Yes:
                                 self.stopdesigner()
                             else:
@@ -24060,7 +23956,7 @@ class ApplicationWindow(QMainWindow):
                 self.keyboardmoveflag = 1
                 # deactivate slider keyboard control
                 self.setSliderFocusPolicy(Qt.FocusPolicy.NoFocus)
-                self.sendmessage(QApplication.translate("Message","Keyboard moves turned ON"))
+                self.sendmessage(QApplication.translate("Message","Keyboard moves turned ON", None))
                 self.keyboardmoveindex = self.ignoreFlatButtons(self.keyboardmoveindex) - 1
             elif self.keyboardmoveflag == 1:
                 # turn off
@@ -24068,7 +23964,7 @@ class ApplicationWindow(QMainWindow):
                 # activate slider keyboard control
                 self.setSliderFocusPolicy(Qt.FocusPolicy.StrongFocus)
                 # clear all
-                self.sendmessage(QApplication.translate("Message","Keyboard moves turned OFF"))
+                self.sendmessage(QApplication.translate("Message","Keyboard moves turned OFF", None))
                 self.resetKeyboardButtonMarks()
         #if moves on
         if self.keyboardmoveflag:
@@ -24115,7 +24011,7 @@ class ApplicationWindow(QMainWindow):
         try:
             if prefix == "":
                 title = None
-                if  aw.qmc.title != "" and aw.qmc.title != QApplication.translate("Scope Title", "Roaster Scope"):
+                if  aw.qmc.title != "" and aw.qmc.title != QApplication.translate("Scope Title", "Roaster Scope",None):
                     title = aw.qmc.title
                 if prefix == "" and title:
                     filename = title
@@ -24331,7 +24227,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Error:") + " parseAutosaveprefix() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Error:",None) + " parseAutosaveprefix() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
         return fn
 
     #automatation of filename when saving a file through keyboard shortcut. Speeds things up for batch roasting.
@@ -24356,7 +24252,7 @@ class ApplicationWindow(QMainWindow):
                         # we add the hash over the sync record to be able to detect offline changes
                         pf["plus_sync_record_hash"] = encodeLocal(sync_record_hash)
                     self.serialize(filename_path,pf)
-                    self.sendmessage(QApplication.translate("Message","Profile {0} saved in: {1}").format(filename,self.qmc.autosavepath))
+                    self.sendmessage(QApplication.translate("Message","Profile {0} saved in: {1}", None).format(filename,self.qmc.autosavepath))
                     self.setCurrentFile(filename_path,aw.qmc.autosaveaddtorecentfilesflag)
                     self.qmc.fileCleanSignal.emit()
 
@@ -24388,16 +24284,16 @@ class ApplicationWindow(QMainWindow):
                         _log.exception(e)
 
                     return filename
-                self.sendmessage(QApplication.translate("Message","Autosave path does not exist. Autosave failed."))
+                self.sendmessage(QApplication.translate("Message","Autosave path does not exist. Autosave failed.", None))
                 return None
             if interactive:
-                self.sendmessage(QApplication.translate("Message","Empty path or box unchecked in Autosave"))
+                self.sendmessage(QApplication.translate("Message","Empty path or box unchecked in Autosave", None))
                 self.autosaveconf()
                 return None
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Error:") + " automaticsave() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Error:",None) + " automaticsave() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
         return None
 
     @pyqtSlot()
@@ -24406,7 +24302,7 @@ class ApplicationWindow(QMainWindow):
         self.helpdialog = aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
-                QApplication.translate("Form Caption","Keyboard Shortcuts Help"),
+                QApplication.translate("Form Caption","Keyboard Shortcuts Help",None),
                 keyboardshortcuts_help.content())
 
     #moves events in minieditor
@@ -24419,7 +24315,7 @@ class ApplicationWindow(QMainWindow):
         currentevent = self.eNumberSpinBox.value()
         self.eNumberSpinBox.setDisabled(True)
         try:
-            self.eventlabel.setText(QApplication.translate("Label", "Event #<b>{0} </b>").format(currentevent))
+            self.eventlabel.setText(QApplication.translate("Label", "Event #<b>{0} </b>",None).format(currentevent))
             if currentevent == 0:
                 self.lineEvent.setText("")
                 self.valueEdit.setText("")
@@ -24452,7 +24348,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " changeEventNumber() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " changeEventNumber() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
         finally:
             self.eNumberSpinBox.setDisabled(False)
             self.eNumberSpinBox.setFocus()
@@ -24493,7 +24389,7 @@ class ApplicationWindow(QMainWindow):
                 string += self.qmc.specialeventsStrings[lenevents-1][0:5]
                 string += "..."
 
-            message = QApplication.translate("Message","Event #{0}:  {1} has been updated").format(str(lenevents),string)
+            message = QApplication.translate("Message","Event #{0}:  {1} has been updated", None).format(str(lenevents),string)
             self.sendmessage(message)
 
     @staticmethod
@@ -24565,7 +24461,7 @@ class ApplicationWindow(QMainWindow):
             filepath_elements = filepath_dir.absolutePath().split("/")[:-1] # directories as QStrings (without the filename)
             self.userprofilepath = str(freduce(lambda x,y: x + '/' + y, filepath_elements) + "/")
 
-    def ArtisanOpenFilesDialog(self,msg=QApplication.translate("Message","Select"),ext="*",path=None):
+    def ArtisanOpenFilesDialog(self,msg=QApplication.translate("Message","Select",None),ext="*",path=None):
         if path is None:
             path = self.getDefaultPath()
         res = QFileDialog.getOpenFileNames(self,msg,path,ext)[0]
@@ -24577,7 +24473,7 @@ class ApplicationWindow(QMainWindow):
     #reads and sets the actual directory
     # if ext is given, the file selector allows only file with that extension to be selected for open
     # if ext_alt is given (not None), all files can be selected, but if a file was selected not having the ext_alt the empty string is returned (used in the background profile dialog)
-    def ArtisanOpenFileDialog(self,msg=QApplication.translate("Message","Open"),ext="*",ext_alt=None,path=None):
+    def ArtisanOpenFileDialog(self,msg=QApplication.translate("Message","Open",None),ext="*",ext_alt=None,path=None):
         if path is None:
             path = self.getDefaultPath()
         f = str(QFileDialog.getOpenFileName(self,caption=msg,directory=path,filter=ext)[0])
@@ -24586,9 +24482,9 @@ class ApplicationWindow(QMainWindow):
         self.setDefaultPath(f)
         return f
 
-    def ArtisanOpenURLDialog(self,msg=QApplication.translate("Message","Open")):
+    def ArtisanOpenURLDialog(self,msg=QApplication.translate("Message","Open",None)):
         res = None
-        dlg = ArtisanInputDialog(self,self,msg,QApplication.translate("Message", "URL"))
+        dlg = ArtisanInputDialog(self,self,msg,QApplication.translate("Message", "URL",None))
         if dlg.exec():
             res = dlg.url
         try: # sip not supported on older PyQt versions (RPi!)
@@ -24605,7 +24501,7 @@ class ApplicationWindow(QMainWindow):
     
     #the central SaveFileDialog function that should always be called. Besides triggering the file dialog it
     #reads and sets the actual directory
-    def ArtisanSaveFileDialog(self,msg=QApplication.translate("Message","Save"),ext="*.alog",path=None):
+    def ArtisanSaveFileDialog(self,msg=QApplication.translate("Message","Save",None),ext="*.alog",path=None):
         if path is None:
             path = self.getDefaultPath()
         f = str(QFileDialog.getSaveFileName(self,msg,path,ext)[0])
@@ -24614,7 +24510,7 @@ class ApplicationWindow(QMainWindow):
 
     #the central ExistingDirectoryDialog function that should always be called. Besides triggering the file dialog it
     #reads and sets the actual directory
-    def ArtisanExistingDirectoryDialog(self,msg=QApplication.translate("Message","Select Directory"),path=None,copy=False):
+    def ArtisanExistingDirectoryDialog(self,msg=QApplication.translate("Message","Select Directory",None),path=None,copy=False):
         if path is None:
             path = self.getDefaultPath()
         f = str(QFileDialog.getExistingDirectory(self,msg,path))
@@ -24655,12 +24551,12 @@ class ApplicationWindow(QMainWindow):
 
         if self.qmc.flagstart:
             if self.qmc.timeindex[0] == -1:
-                self.sendmessage(QApplication.translate("Message","NEW ROAST canceled: incomplete profile lacking CHARGE and DROP found"))
+                self.sendmessage(QApplication.translate("Message","NEW ROAST canceled: incomplete profile lacking CHARGE and DROP found", None))
                 return False
             #mark drop if not yet done
             if self.qmc.timeindex[6] == 0:
 #                self.qmc.markDrop()
-                self.sendmessage(QApplication.translate("Message","NEW ROAST canceled: incomplete profile lacking DROP found"))
+                self.sendmessage(QApplication.translate("Message","NEW ROAST canceled: incomplete profile lacking DROP found", None))
                 return False
             #invoke "OFF"
             self.qmc.OffMonitor()
@@ -24670,7 +24566,7 @@ class ApplicationWindow(QMainWindow):
                 #start new roast
                 self.qmc.ToggleRecorder()
                 if filename is not None:
-                    self.sendmessage(QApplication.translate("Message","{0} has been saved. New roast has started").format(filename))
+                    self.sendmessage(QApplication.translate("Message","{0} has been saved. New roast has started", None).format(filename))
         else:
             if len(self.qmc.timex) > 1:
                 self.qmc.ToggleRecorder()
@@ -24695,7 +24591,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " fileLoad() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " fileLoad() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     #loads stored profiles. Called from file menu
     def loadFile(self,filename,quiet=False):
@@ -24719,7 +24615,7 @@ class ApplicationWindow(QMainWindow):
                 if res:
                     res = self.setProfile(filename,obj,quiet=quiet)
             else:
-                self.sendmessage(QApplication.translate("Message","Invalid artisan format"))
+                self.sendmessage(QApplication.translate("Message","Invalid artisan format", None))
                 res = False
             if res:
                 self.qmc.backmoveflag = 1 # this ensures that an already loaded profile gets aligned to the one just loading
@@ -24740,7 +24636,7 @@ class ApplicationWindow(QMainWindow):
                 #Plot everything
                 self.qmc.redraw()
                 self.updatePhasesLCDs()
-                message = QApplication.translate("Message","{0}  loaded ").format(filename)
+                message = QApplication.translate("Message","{0}  loaded ", None).format(filename)
                 self.sendmessage(message)
                 _log.info("profile loaded: %s", filename)
 
@@ -24756,7 +24652,7 @@ class ApplicationWindow(QMainWindow):
         except IOError as ex:
             #traceback.print_exc(file=sys.stdout)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "IO Error:") + " {0}: {1}").format(str(ex),str(filename)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "IO Error:",None) + " {0}: {1}").format(str(ex),str(filename)),getattr(exc_tb, 'tb_lineno', '?'))
             # remove file from the recent file list
             settings = QSettings()
             files = toStringList(settings.value('recentFileList'))
@@ -24771,11 +24667,11 @@ class ApplicationWindow(QMainWindow):
         except ValueError as ex:
             #traceback.print_exc(file=sys.stdout)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Value Error:") + " fileload() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Value Error:",None) + " fileload() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " loadFile() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " loadFile() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         finally:
             if f:
                 f.close()
@@ -24887,9 +24783,9 @@ class ApplicationWindow(QMainWindow):
     def updateSymbolicETBT(self):
         try:
             if len(aw.qmc.timex)<=0:
-                self.sendmessage(QApplication.translate("Message", "No profile data.  ET/BT not recalculated"))
+                self.sendmessage(QApplication.translate("Message", "No profile data.  ET/BT not recalculated",None))
             if not(len(self.qmc.temp1)==len(aw.qmc.temp2)==len(aw.qmc.timex)):
-                self.sendmessage(QApplication.translate("Message", "Problem with the profile data.  ET/BT not recalculated"))
+                self.sendmessage(QApplication.translate("Message", "Problem with the profile data.  ET/BT not recalculated",None))
 
             # be sure there is an equation to process (already checked in devices.py, repeated here in case this is called from elsewhere)
             nonempty_ETfunction = bool(self.qmc.ETfunction is not None and len(self.qmc.ETfunction.strip()))
@@ -24917,7 +24813,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            self.qmc.adderror((QApplication.translate("Error Message", "Exception:") + "updateSymbolicETBT(): {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + "updateSymbolicETBT(): {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         return False
 
     # returns True if data got updated, False otherwise
@@ -24968,7 +24864,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " calcVirtualdevices() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " calcVirtualdevices() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         return False
 
     # tries to load background from the given path, if that fails try to deref the given UUID
@@ -25009,7 +24905,7 @@ class ApplicationWindow(QMainWindow):
             pass
         if os.path.isfile(filename):
             try:
-                self.sendmessage(QApplication.translate("Message","Reading background profile..."))
+                self.sendmessage(QApplication.translate("Message","Reading background profile...",None))
                 self.qmc.resetlinecountcaches()
                 self.loadbackground(filename)
                 self.qmc.background = not self.qmc.hideBgafterprofileload
@@ -25193,7 +25089,7 @@ class ApplicationWindow(QMainWindow):
                 if not aw.curFile and len(self.qmc.timex) < 10: # if no foreground is loaded, autoadjustAxis
                     aw.autoAdjustAxis(True)
 
-                message = QApplication.translate("Message", "Background {0} loaded successfully {1}").format(filename, "")
+                message = QApplication.translate("Message", "Background {0} loaded successfully {1}",None).format(filename, "")
                 self.sendmessage(message)
                 self.qmc.backgroundpath = str(filename)
                 if "roastUUID" in profile:
@@ -25202,21 +25098,21 @@ class ApplicationWindow(QMainWindow):
                     self.qmc.backgroundUUID = None
                 _log.info("background profile loaded: %s", filename)
             else:
-                self.sendmessage(QApplication.translate("Message", "Invalid artisan format"))
+                self.sendmessage(QApplication.translate("Message", "Invalid artisan format",None))
         except IOError as e:
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "IO Error:") + " loadbackground() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "IO Error:",None) + " loadbackground() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             return
 
         except ValueError as e:
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Value Error:") + " loadbackground() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Value Error:",None) + " loadbackground() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             return
 
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " loadbackground() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " loadbackground() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             return
         finally:
             if f:
@@ -25317,14 +25213,14 @@ class ApplicationWindow(QMainWindow):
             if COOL > 0:
                 self.qmc.timeindex[7] = max(0,self.time2index(COOL))
             self.qmc.endofx = self.qmc.timex[-1]
-            self.sendmessage(QApplication.translate("Message","Artisan CSV file loaded successfully"))
+            self.sendmessage(QApplication.translate("Message","Artisan CSV file loaded successfully", None))
             self.qmc.fileDirtySignal.emit()
             aw.autoAdjustAxis()
             self.qmc.redraw()
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " importCSV() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " importCSV() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     def addSerialPort(self):
         n = len(self.qmc.extradevices) - 1
@@ -25435,7 +25331,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " exportJSON() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " exportJSON() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             return False
 
     def indent(self,elem, level=0):
@@ -25459,7 +25355,7 @@ class ApplicationWindow(QMainWindow):
             # only contain one _ followed by an index number like Name_0.xml
             s = filename.split("_")
             if (len(s) < 2 or len(s) > 2):
-                QMessageBox.warning(aw,QApplication.translate("Message", "Warning"),QApplication.translate("Message", "The Probat Shop Pilot Software expects files named <Name>_<Index>.xml like in Test_0.xml on import"))
+                QMessageBox.warning(aw,QApplication.translate("Message", "Warning",None),QApplication.translate("Message", "The Probat Shop Pilot Software expects files named <Name>_<Index>.xml like in Test_0.xml on import",None))
 
             try:
                 import xml.etree.cElementTree as ET
@@ -25576,7 +25472,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " exportPilot() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " exportPilot() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             return False
 
     #Write readings to RoastLogger CSV file
@@ -25651,7 +25547,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " exportRoastLogger() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " exportRoastLogger() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             return False
         finally:
             outfile.close()
@@ -25671,7 +25567,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " importJSON() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " importJSON() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     def importRoastLogger(self,filename):
         self.resetExtraDevices()
@@ -25685,7 +25581,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " importRoastLogger() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " importRoastLogger() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     @staticmethod
     def resetExtraDevices():
@@ -25722,7 +25618,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " resetExtraDevices(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " resetExtraDevices(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     def importRoastLoggerEnc(self,filename,enc='utf-8'):
         roastlogger_action_section = ""
@@ -25844,7 +25740,7 @@ class ApplicationWindow(QMainWindow):
                                         aw.qmc.alarmtemperature.append(float(fields_action[0]))
                                         aw.qmc.alarmaction.append(3+slider_power)    #SLIDER POWER
                                         aw.qmc.alarmbeep.append(0)
-                                        aw.qmc.alarmstrings.append(QApplication.translate("Label",fields_action[1]))
+                                        aw.qmc.alarmstrings.append(QApplication.translate("Label",fields_action[1],None))
     
                                         #add temp alarm - FAN
                                         aw.qmc.alarmflag.append(1)
@@ -25858,7 +25754,7 @@ class ApplicationWindow(QMainWindow):
                                         aw.qmc.alarmtemperature.append(int(fields_action[0]))
                                         aw.qmc.alarmaction.append(3+slider_fan)    #SLIDER FAN
                                         aw.qmc.alarmbeep.append(0)
-                                        aw.qmc.alarmstrings.append(QApplication.translate("Label",fields_action[2]))
+                                        aw.qmc.alarmstrings.append(QApplication.translate("Label",fields_action[2],None))
     
                                 elif roastlogger_action_section.startswith("@actionSecsFCTable"):
                                     if len(fields_action) == 3 and fields_action[0] != "null":
@@ -25875,7 +25771,7 @@ class ApplicationWindow(QMainWindow):
                                         aw.qmc.alarmtemperature.append(0)
                                         aw.qmc.alarmaction.append(3+slider_power)    #SLIDER POWER
                                         aw.qmc.alarmbeep.append(0)
-                                        aw.qmc.alarmstrings.append(QApplication.translate("Label",fields_action[1]))
+                                        aw.qmc.alarmstrings.append(QApplication.translate("Label",fields_action[1],None))
     
                                         #add time alarm - FAN
                                         aw.qmc.alarmflag.append(1)
@@ -25889,7 +25785,7 @@ class ApplicationWindow(QMainWindow):
                                         aw.qmc.alarmtemperature.append(0)
                                         aw.qmc.alarmaction.append(3+slider_fan)    #SLIDER FAN
                                         aw.qmc.alarmbeep.append(0)
-                                        aw.qmc.alarmstrings.append(QApplication.translate("Label",fields_action[2]))
+                                        aw.qmc.alarmstrings.append(QApplication.translate("Label",fields_action[2],None))
     
                                 elif roastlogger_action_section.startswith("@actionResetTable"):
                                     if len(fields_action) == 2 and fields_action[0] != "null":
@@ -25906,7 +25802,7 @@ class ApplicationWindow(QMainWindow):
                                         aw.qmc.alarmtemperature.insert(0,0)
                                         aw.qmc.alarmaction.insert(0,3+slider_power)    #SLIDER POWER
                                         aw.qmc.alarmbeep.insert(0,0)
-                                        aw.qmc.alarmstrings.insert(0,QApplication.translate("Label",fields_action[0]))
+                                        aw.qmc.alarmstrings.insert(0,QApplication.translate("Label",fields_action[0],None))
     
                                         #add temp alarm - FAN
                                         aw.qmc.alarmflag.insert(0,1)
@@ -25920,7 +25816,7 @@ class ApplicationWindow(QMainWindow):
                                         aw.qmc.alarmtemperature.insert(0,0)
                                         aw.qmc.alarmaction.insert(0,3+slider_fan)    #SLIDER POWER
                                         aw.qmc.alarmbeep.insert(0,0)
-                                        aw.qmc.alarmstrings.insert(0,QApplication.translate("Label",fields_action[1]))
+                                        aw.qmc.alarmstrings.insert(0,QApplication.translate("Label",fields_action[1],None))
     
                                 elif roastlogger_action_section.startswith("@loadBeansTable"):
                                     if len(fields_action) == 1 and fields_action[0] != "null":
@@ -25937,7 +25833,7 @@ class ApplicationWindow(QMainWindow):
                                         aw.qmc.alarmtemperature.insert(2,float(fields_action[0])-10)
                                         aw.qmc.alarmaction.insert(2,7)    #inititate 7 (START)
                                         aw.qmc.alarmbeep.insert(2,0)
-                                        aw.qmc.alarmstrings.insert(2,QApplication.translate("Label","Start recording"))
+                                        aw.qmc.alarmstrings.insert(2,QApplication.translate("Label","Start recording",None))
     
                                         #add CHARGE alarm
                                         aw.qmc.alarmflag.insert(3,1)
@@ -25951,7 +25847,7 @@ class ApplicationWindow(QMainWindow):
                                         aw.qmc.alarmtemperature.insert(3,float(fields_action[0]))
                                         aw.qmc.alarmaction.insert(3,0)    #POPUP
                                         aw.qmc.alarmbeep.insert(3,1)      #do beep for charge
-                                        aw.qmc.alarmstrings.insert(3,QApplication.translate("Label","Charge the beans"))
+                                        aw.qmc.alarmstrings.insert(3,QApplication.translate("Label","Charge the beans",None))
                                     break
                         else:
                             if slider_power == -1: error_msg += "Could not find slider named 'Power' "
@@ -25972,7 +25868,7 @@ class ApplicationWindow(QMainWindow):
                     self.qmc.redraw()
     
             if error_msg != "":
-                aw.qmc.adderror(QApplication.translate("Error Message","Roastlogger log file exception: " + error_msg))
+                aw.qmc.adderror(QApplication.translate("Error Message","Roastlogger log file exception: " + error_msg,None))
 
     #Write readings to Artisan csv file
     def exportCSV(self,filename):
@@ -26076,7 +25972,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " exportCSV() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " exportCSV() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             return False
 
     #Write readings to Artisan Excel file
@@ -26139,7 +26035,7 @@ class ApplicationWindow(QMainWindow):
 
                 wb = Workbook()
                 ws = wb.active
-                ws.title = QApplication.translate("HTML Report Template", "Profile")
+                ws.title = QApplication.translate("HTML Report Template", "Profile",None)
 
                 bf = Font(bold=True)
 
@@ -26246,7 +26142,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as ex:
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " exportExcel() {0}").format(str(ex)),exc_tb.tb_lineno)
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " exportExcel() {0}").format(str(ex)),exc_tb.tb_lineno)
             return False
 
     #Write object to file
@@ -26286,7 +26182,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " deserialize() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " deserialize() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             return {}
 #            traceback.print_exc(file=sys.stdout)
 
@@ -26441,7 +26337,6 @@ class ApplicationWindow(QMainWindow):
     #called by fileLoad()
     def setProfile(self,filename,profile,quiet=False):
         try:
-            updateRender = False
             #extra devices load and check
             if "extratimex" in profile:
                 if "extradevices" in profile:
@@ -26462,11 +26357,11 @@ class ApplicationWindow(QMainWindow):
                     except Exception: # pylint: disable=broad-except
                         profiledev = ''
                     if settingdev != profiledev:
-                        string = QApplication.translate("Message","To fully load this profile the extra device configuration needs to be modified.\n\nOverwrite your extra device definitions using the values from the profile?\n\nIt is advisable to save your current settings beforehand via menu Help >> Save Settings.")
+                        string = QApplication.translate("Message","To fully load this profile the extra device configuration needs to be modified.\n\nOverwrite your extra device definitions using the values from the profile?\n\nIt is advisable to save your current settings beforehand via menu Help >> Save Settings.",None)
                         if quiet:
                             reply = QMessageBox.StandardButton.Yes
                         else:
-                            reply = QMessageBox.question(aw,QApplication.translate("Message", "Found a different set of extra devices"), string,
+                            reply = QMessageBox.question(aw,QApplication.translate("Message", "Found a different set of extra devices",None), string,
                                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No | QMessageBox.StandardButton.Cancel, QMessageBox.StandardButton.No)
                         if reply == QMessageBox.StandardButton.Yes:
                             if self.qmc.reset(redraw=False): # operation not canceled by the user in the save dirty state dialog
@@ -26654,7 +26549,7 @@ class ApplicationWindow(QMainWindow):
             if "title" in profile:
                 self.qmc.title = decodeLocal(profile["title"])
             else:
-                self.qmc.title = QApplication.translate("Scope Title", "Roaster Scope")
+                self.qmc.title = QApplication.translate("Scope Title", "Roaster Scope",None)
 
 #PLUS
             if "plus_store" in profile:
@@ -27099,11 +26994,10 @@ class ApplicationWindow(QMainWindow):
             _log.exception(ex)
             # we don't report errors on settingsLoad
             _, _, exc_tb = sys.exc_info()
-            QMessageBox.information(aw,QApplication.translate("Error Message", "Exception:") + " setProfile()",str(ex) + "@line " + str(getattr(exc_tb, 'tb_lineno', '?')))
+            QMessageBox.information(aw,QApplication.translate("Error Message", "Exception:",None) + " setProfile()",str(ex) + "@line " + str(getattr(exc_tb, 'tb_lineno', '?')))
             return False
 
-    @staticmethod
-    def profilequality():
+    def profilequality(self):
         bt = numpy.array(aw.qmc.temp2)
         tx = numpy.array(aw.qmc.timex)
         profile_sampling_interval = aw.qmc.profile_sampling_interval
@@ -27137,7 +27031,7 @@ class ApplicationWindow(QMainWindow):
         shortest_sample = numpy.min(tx_diff)
         skipped_sample_time = 1.5*avg_sample
         skipped = numpy.count_nonzero(tx_diff > skipped_sample_time)
-        bins = [0, 1*profile_sampling_interval, 1.5*profile_sampling_interval, 4*profile_sampling_interval, 9999]
+        bins = [0, 1*profile_sampling_interval, 1.5*profile_sampling_interval, 4**profile_sampling_interval, 1000]
         hist = numpy.histogram(tx_diff,bins=bins)
 
         # Aperiodic sample ratio
@@ -27156,22 +27050,22 @@ class ApplicationWindow(QMainWindow):
             missingEvents += "None "
 
         # Output string
-        output = (
-            f" Profile quality metrics"
-            f"\n  Title: {aw.qmc.title}"
-            f"\n  Meter: {meter}"
-            f"\n  Average decimals: {avgDecimal:.2f}"
-            f"\n  Total Samples {totalSamples}"
-            f"\n  Duplicate Samples: {dups}"
-            f"\n  Blank Samples: {blank}"
-            f"\n  Skipped Samples: {skipped}  (more than {skipped_sample_time:.2f} secs)"
-            f"\n  Histogram of Sample Times: {hist[0]}  Bins: <1x, 1x-1.5x, 1.5x-4x, >4x Profile Sampling Interval"
-            f"\n  Shortest Sample Interval: {shortest_sample:.2f}"
-            f"\n  Longest Sample Interval: {longest_sample:.2f}"
-            f"\n  Average Sample Time: {avg_sample:.2f}"
-            f"\n  Profile Sampling Interval {profile_sampling_interval:.2f}"
-            f"\n  Aperiodic Samples Ratio: {aperiodicRatio:.2f}"
-            f"\n  {missingEvents}")
+        output =  "Profile quality metrics"
+        output += "\nTitle: {}".format(aw.qmc.title)
+        output += "\nMeter: {}".format(meter)
+        output += "\nAverage decimals: {:.2f}".format(avgDecimal)
+        output += "\nTotal Samples {}".format(totalSamples)
+        output += "\nDuplicate Samples: {}".format(dups)
+        output += "\nBlank Samples: {}".format(blank)
+        output += "\nSkipped Samples: {}  More than {:.2f} secs".format(skipped, skipped_sample_time)
+        output += "\nHistogram of Sample Times: {}  Bins: <1x, 1x-1.5x, 1.5x-4x, >4x Profile Sampling Interval".format(hist[0])
+        output += "\nShortest Sample Interval: {:.2f}".format(shortest_sample)
+        output += "\nLongest Sample Interval: {:.2f}".format(longest_sample)
+        output += "\nAverage Sample Time: {:.2f}".format(avg_sample)
+        output += "\nProfile Sampling Interval {:.2f}".format(profile_sampling_interval)
+        output += "\nAperiodic Samples Ratio: {:.2f}".format(aperiodicRatio)
+        output += "\n{}".format(missingEvents)
+
         return output
 
     @staticmethod
@@ -27274,7 +27168,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " computedProfileInformation() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " computedProfileInformation() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         ######### Phases #########
         try:
             # we calcuate the statistics here as the profile might not have yet been rendered and thus the statistics are not yet computed
@@ -27292,7 +27186,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " computedProfileInformation() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " computedProfileInformation() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         ######### RoR #########
         try:
             if TP_time_idx and DRY_time_idx:
@@ -27305,13 +27199,10 @@ class ApplicationWindow(QMainWindow):
                     computedProfile["total_ror"] = self.float2float(((computedProfile["DROP_BT"]-computedProfile["TP_BT"])/(computedProfile["DROP_time"]-computedProfile["TP_time"]))*60.)
                 if aw.qmc.timeindex[2] > 0 and aw.qmc.delta2:
                     computedProfile["fcs_ror"] = self.float2float(aw.qmc.delta2[aw.qmc.timeindex[2]])
-                computedProfile["dry_phase_delta_temp"] = self.float2float(ror[3])
-                computedProfile["mid_phase_delta_temp"] = self.float2float(ror[4])
-                computedProfile["finish_phase_delta_temp"] = self.float2float(ror[5])
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " computedProfileInformation() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " computedProfileInformation() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         ######### ETBTarea #########
         try:
             ts,tse,tsb,_ = aw.ts(self.qmc.timeindex[0],self.qmc.timeindex[6])
@@ -27329,19 +27220,19 @@ class ApplicationWindow(QMainWindow):
             computedProfile["AUCfromeventflag"] = int(aw.qmc.AUCbaseFlag)
             if (aw.qmc.AUCbegin == 0):
                 computedProfile["AUCbegin"] = "CHARGE"
-                if aw.qmc.AUCbaseFlag and "CHARGE_BT" in computedProfile:  # base AUC is taken from BT at AUCbegin event
+                if aw.qmc.AUCbaseFlag:  # base AUC is taken from BT at AUCbegin event
                     computedProfile["AUCbase"] = computedProfile["CHARGE_BT"]
             elif (aw.qmc.AUCbegin == 1):
                 computedProfile["AUCbegin"] = "TP"
-                if aw.qmc.AUCbaseFlag and "TP_BT" in computedProfile:  # base AUC is taken from BT at AUCbegin event
+                if aw.qmc.AUCbaseFlag:  # base AUC is taken from BT at AUCbegin event
                     computedProfile["AUCbase"] = computedProfile["TP_BT"]
             elif (aw.qmc.AUCbegin == 2):
                 computedProfile["AUCbegin"] = "DE"
-                if aw.qmc.AUCbaseFlag and "DRY_BT" in computedProfile:  # base AUC is taken from BT at AUCbegin event
+                if aw.qmc.AUCbaseFlag:  # base AUC is taken from BT at AUCbegin event
                     computedProfile["AUCbase"] = computedProfile["DRY_BT"]
             elif (aw.qmc.AUCbegin == 3):
                 computedProfile["AUCbegin"] = "FCs"
-                if aw.qmc.AUCbaseFlag and "FCs_BT" in computedProfile:  # base AUC is taken from BT at AUCbegin event
+                if aw.qmc.AUCbaseFlag:  # base AUC is taken from BT at AUCbegin event
                     computedProfile["AUCbase"] = computedProfile["FCs_BT"]
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
@@ -27408,7 +27299,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " computedProfileInformation() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " computedProfileInformation() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         ######### Humidity / Pressure #########
         try:
             if aw.qmc.moisture_greens != 0.0 and not math.isnan(aw.qmc.moisture_greens):
@@ -27424,7 +27315,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " computedProfileInformation() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " computedProfileInformation() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         ######### Similarity #########
         try:
             det,dbt = aw.curveSimilarity(aw.qmc.phases[1])
@@ -27479,7 +27370,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " computedProfileInformation() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " computedProfileInformation() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
         ######### RETURN #########
         return computedProfile
 
@@ -27694,14 +27585,14 @@ class ApplicationWindow(QMainWindow):
             except Exception as ex: # pylint: disable=broad-except
                 _log.exception(ex)
                 _, _, exc_tb = sys.exc_info()
-                aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " getProfile(): {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+                aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " getProfile(): {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
 
             return profile
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " getProfile(): {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " getProfile(): {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             return None
 
     @pyqtSlot()
@@ -27733,7 +27624,7 @@ class ApplicationWindow(QMainWindow):
                 else:
                     prefix = self.qmc.autosaveprefix
                 fname = path.absoluteFilePath(self.generateFilename(prefix=prefix))
-                filename = self.ArtisanSaveFileDialog(msg=QApplication.translate("Message", "Save Profile"), path=fname)
+                filename = self.ArtisanSaveFileDialog(msg=QApplication.translate("Message", "Save Profile",None), path=fname)
             if filename:
                 #write
                 pf = self.getProfile()
@@ -27749,7 +27640,7 @@ class ApplicationWindow(QMainWindow):
 
                     # we save the file and set the filename
                     self.serialize(filename,pf)
-                    self.sendmessage(QApplication.translate("Message","Profile saved"))
+                    self.sendmessage(QApplication.translate("Message","Profile saved", None))
                     _log.info("profile saved: %s", filename)
                     if not copy:
                         self.setCurrentFile(filename)
@@ -27779,14 +27670,14 @@ class ApplicationWindow(QMainWindow):
                         else:
                             self.resizeImgToSize(0,0,self.qmc.autosaveimageformat,fname=filename_also)
                     return True
-                self.sendmessage(QApplication.translate("Message","Cancelled"))
+                self.sendmessage(QApplication.translate("Message","Cancelled", None))
                 return False
-            self.sendmessage(QApplication.translate("Message","Cancelled"))
+            self.sendmessage(QApplication.translate("Message","Cancelled", None))
             return False
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " filesave(): {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " filesave(): {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             return False
 
     def fileExport(self,msg,ext,dumper):
@@ -27795,38 +27686,38 @@ class ApplicationWindow(QMainWindow):
             if filename:
                 res = dumper(filename)
                 if res:
-                    self.sendmessage(QApplication.translate("Message","Readings exported"))
+                    self.sendmessage(QApplication.translate("Message","Readings exported", None))
             else:
-                self.sendmessage(QApplication.translate("Message","Cancelled"))
+                self.sendmessage(QApplication.translate("Message","Cancelled", None))
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
-            aw.qmc.adderror((QApplication.translate("Error Message", "IO Error:") + " fileExport(): {0}").format(str(ex)))
+            aw.qmc.adderror((QApplication.translate("Error Message", "IO Error:",None) + " fileExport(): {0}").format(str(ex)))
             return
 
     @pyqtSlot()
     @pyqtSlot(bool)
     def fileExportExcel(self):
-        self.fileExport(QApplication.translate("Message", "Export Excel"),"*.xlsx",self.exportExcel)
+        self.fileExport(QApplication.translate("Message", "Export Excel",None),"*.xlsx",self.exportExcel)
 
     @pyqtSlot()
     @pyqtSlot(bool)
     def fileExportCSV(self):
-        self.fileExport(QApplication.translate("Message", "Export CSV"),"*.csv",self.exportCSV)
+        self.fileExport(QApplication.translate("Message", "Export CSV",None),"*.csv",self.exportCSV)
 
     @pyqtSlot()
     @pyqtSlot(bool)
     def fileExportJSON(self,_=False):
-        self.fileExport(QApplication.translate("Message", "Export JSON"),"*.json",self.exportJSON)
+        self.fileExport(QApplication.translate("Message", "Export JSON",None),"*.json",self.exportJSON)
 
     @pyqtSlot()
     @pyqtSlot(bool)
     def fileExportRoastLogger(self,_=False):
-        self.fileExport(QApplication.translate("Message", "Export RoastLogger"),"*.csv",self.exportRoastLogger)
+        self.fileExport(QApplication.translate("Message", "Export RoastLogger",None),"*.csv",self.exportRoastLogger)
 
     @pyqtSlot()
     @pyqtSlot(bool)
     def fileExportPilot(self,_=False):
-        self.fileExport(QApplication.translate("Message", "Export Probat Pilot"),"*.xml",self.exportPilot)
+        self.fileExport(QApplication.translate("Message", "Export Probat Pilot",None),"*.xml",self.exportPilot)
 
     def fileConvert(self,ext,dumper):
         files = self.ArtisanOpenFilesDialog(ext="*.alog")
@@ -27836,7 +27727,7 @@ class ApplicationWindow(QMainWindow):
             if cont:
                 self.saveExtradeviceSettings()
                 outdir = self.ArtisanExistingDirectoryDialog()
-                progress = QProgressDialog(QApplication.translate("Message", "Converting..."), None, 0, len(files), self)
+                progress = QProgressDialog(QApplication.translate("Message", "Converting...",None), None, 0, len(files), self)
                 progress.setCancelButton(None)
                 progress.setWindowModality(Qt.WindowModality.WindowModal)
                 progress.setAutoClose(True)
@@ -27855,7 +27746,7 @@ class ApplicationWindow(QMainWindow):
                             aw.qmc.redraw() # we need to redraw to ensure populated delta lines
                             dumper(fconv)
                         else:
-                            aw.sendmessage(QApplication.translate("Message","Target file {0} exists. {1} not converted.").format(fconv,fname + str(ext)))
+                            aw.sendmessage(QApplication.translate("Message","Target file {0} exists. {1} not converted.", None).format(fconv,fname + str(ext)))
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
                     i += 1
@@ -27921,7 +27812,7 @@ class ApplicationWindow(QMainWindow):
                 elif filetype == "BMP":
                     fileext = ".bmp"
                 outdir = self.ArtisanExistingDirectoryDialog()
-                progress = QProgressDialog(QApplication.translate("Message", "Converting..."), None, 0, len(files), self)
+                progress = QProgressDialog(QApplication.translate("Message", "Converting...",None), None, 0, len(files), self)
                 progress.setCancelButton(None)
                 progress.setWindowModality(Qt.WindowModality.WindowModal)
                 progress.setAutoClose(True)
@@ -27950,7 +27841,7 @@ class ApplicationWindow(QMainWindow):
                                 del painter
                             image.save(fconv,filetype)
                         else:
-                            aw.sendmessage(QApplication.translate("Message","Target file {0} exists. {1} not converted.").format(fconv,fname + str(fileext)))
+                            aw.sendmessage(QApplication.translate("Message","Target file {0} exists. {1} not converted.", None).format(fconv,fname + str(fileext)))
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
                     i += 1
@@ -27977,7 +27868,7 @@ class ApplicationWindow(QMainWindow):
             loaded_profile = self.curFile
             self.saveExtradeviceSettings()
             outdir = self.ArtisanExistingDirectoryDialog()
-            progress = QProgressDialog(QApplication.translate("Message", "Converting..."), None, 0, len(files), self)
+            progress = QProgressDialog(QApplication.translate("Message", "Converting...",None), None, 0, len(files), self)
             progress.setCancelButton(None)
             progress.setWindowModality(Qt.WindowModality.WindowModal)
             progress.setAutoClose(True)
@@ -27996,7 +27887,7 @@ class ApplicationWindow(QMainWindow):
                         self.qmc.redraw()
                         aw.qmc.fig.savefig(fconv,transparent=True,facecolor='none', edgecolor='none') # transparent=True is need to get the delta curves and legend drawn
                     else:
-                        aw.sendmessage(QApplication.translate("Message","Target file {0} exists. {1} not converted.").format(fconv,fname + str(ext)))
+                        aw.sendmessage(QApplication.translate("Message","Target file {0} exists. {1} not converted.", None).format(fconv,fname + str(ext)))
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
                 i += 1
@@ -28027,7 +27918,7 @@ class ApplicationWindow(QMainWindow):
             cont = aw.qmc.reset(soundOn=False)
             if cont:
                 outdir = self.ArtisanExistingDirectoryDialog()
-                progress = QProgressDialog(QApplication.translate("Message", "Converting..."), None, 0, len(files), self)
+                progress = QProgressDialog(QApplication.translate("Message", "Converting...",None), None, 0, len(files), self)
                 progress.setCancelButton(None)
                 progress.setWindowModality(Qt.WindowModality.WindowModal)
                 progress.setAutoClose(True)
@@ -28046,7 +27937,7 @@ class ApplicationWindow(QMainWindow):
                             aw.qmc.convertTemperature(t,True)
                             aw.fileSave(fconv)
                         else:
-                            aw.sendmessage(QApplication.translate("Message","Target file {0} exists. {1} not converted.").format(fconv,fname))
+                            aw.sendmessage(QApplication.translate("Message","Target file {0} exists. {1} not converted.", None).format(fconv,fname))
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
                     i += 1
@@ -28066,13 +27957,13 @@ class ApplicationWindow(QMainWindow):
                 if reset:
                     aw.qmc.reset(True,False)
                 loader(filename)
-                self.sendmessage(QApplication.translate("Message","Readings imported"))
+                self.sendmessage(QApplication.translate("Message","Readings imported", None))
             else:
-                self.sendmessage(QApplication.translate("Message","Cancelled"))
+                self.sendmessage(QApplication.translate("Message","Cancelled", None))
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " fileImport(): {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " fileImport(): {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     @staticmethod
     def artisanURLextractor(url, _):
@@ -28093,24 +27984,24 @@ class ApplicationWindow(QMainWindow):
     @pyqtSlot(bool)
     def urlImport(self,_=False):
         try:
-            self.importExternalURL(self.artisanURLextractor,QApplication.translate("Message","Import Artisan URL"))
+            self.importExternalURL(self.artisanURLextractor,QApplication.translate("Message","Import Artisan URL", None))
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
     
     @pyqtSlot()
     @pyqtSlot(bool)
     def fileImportCSV(self,_=False):
-        self.fileImport(QApplication.translate("Message", "Import CSV"),self.importCSV,True)
+        self.fileImport(QApplication.translate("Message", "Import CSV",None),self.importCSV,True)
 
     @pyqtSlot()
     @pyqtSlot(bool)
     def fileImportJSON(self,_=False):
-        self.fileImport(QApplication.translate("Message", "Import JSON"),self.importJSON,True)
+        self.fileImport(QApplication.translate("Message", "Import JSON",None),self.importJSON,True)
 
     @pyqtSlot()
     @pyqtSlot(bool)
     def fileImportRoastLogger(self,_=False):
-        self.fileImport(QApplication.translate("Message", "Import RoastLogger"),self.importRoastLogger,True)
+        self.fileImport(QApplication.translate("Message", "Import RoastLogger",None),self.importRoastLogger,True)
 
     #loads the settings at the start of application. See the oppposite closeEventSettings()
     def settingsLoad(self, filename=None, theme=False, machine=False):
@@ -28122,7 +28013,7 @@ class ApplicationWindow(QMainWindow):
                 
                 # a proper artisan-settings.aset file needs at least to contain a Mode tag
                 if not (theme or machine) and not settings.contains("Mode"):
-                    aw.qmc.adderror(QApplication.translate("Error Message","Exception: {} not a valid settings file").format(str(filename)))
+                    aw.qmc.adderror(QApplication.translate("Error Message","Exception: {} not a valid settings file",None).format(str(filename)))
                     return False
             
                 if aw.qmc.neverUpdateBatchCounter or app.artisanviewerMode:
@@ -28135,12 +28026,12 @@ class ApplicationWindow(QMainWindow):
                             current_counter = str(aw.qmc.batchcounter)
                             files_counter = str(files_batchcounter)
                             if aw.qmc.batchcounter < 0:
-                                string = QApplication.translate("Message","Your batch counter is currently turned off. Turn it on and set it to %s from the settings file to be imported?"%(files_counter))
+                                string = QApplication.translate("Message","Your batch counter is currently turned off. Turn it on and set it to %s from the settings file to be imported?"%(files_counter), None)
                             elif files_batchcounter < 0:
-                                string = QApplication.translate("Message","Your batch counter is set to %s. Turn it off as in the settings file to be imported?"%(current_counter))
+                                string = QApplication.translate("Message","Your batch counter is set to %s. Turn it off as in the settings file to be imported?"%(current_counter), None)
                             else:
-                                string = QApplication.translate("Message","Overwrite your current batch counter %s by %s from the settings file to be imported?"%(current_counter,files_counter))
-                            reply = QMessageBox.question(aw,QApplication.translate("Message","Batch Counter"),string,
+                                string = QApplication.translate("Message","Overwrite your current batch counter %s by %s from the settings file to be imported?"%(current_counter,files_counter), None)
+                            reply = QMessageBox.question(aw,QApplication.translate("Message","Batch Counter", None),string,
                                     QMessageBox.StandardButton.Cancel |QMessageBox.StandardButton.No|QMessageBox.StandardButton.Yes)
                             if reply == QMessageBox.StandardButton.Cancel:
                                 aw.sendmessage(QApplication.translate("Message","Load Settings canceled"))
@@ -29070,13 +28961,13 @@ class ApplicationWindow(QMainWindow):
                 self.label2.setText("<big><b>" + self.ETname + "</b></big>")
                 self.label4.setText(deltaLabelBigPrefix + self.ETname + "</b></big>")
             else:
-                self.ETname = QApplication.translate("Label", "ET")
+                self.ETname = QApplication.translate("Label", "ET", None)
             if settings.contains("BTname"):
                 self.BTname = settings.value("BTname")
                 self.label3.setText("<big><b>" + self.BTname + "</b></big>")
                 self.label5.setText(deltaLabelBigPrefix + self.BTname + "</b></big>")
             else:
-                self.BTname = QApplication.translate("Label", "BT")
+                self.BTname = QApplication.translate("Label", "BT", None)
             settings.endGroup()
             settings.beginGroup("Sound")
             self.soundflag = toInt(settings.value("Beep",self.soundflag))
@@ -29269,102 +29160,102 @@ class ApplicationWindow(QMainWindow):
                         self.extraFill1 = [toInt(x) for x in toList(settings.value("extraFill1",self.extraFill1))]
                     if settings.contains("extraFill2"):
                         self.extraFill2 = [toInt(x) for x in toList(settings.value("extraFill2",self.extraFill2))]
-                if settings.contains("devicetablecolumnwidths"):
-                    self.qmc.devicetablecolumnwidths = [toInt(x) for x in toList(settings.value("devicetablecolumnwidths",self.qmc.devicetablecolumnwidths))]
+                #create empty containers
                 settings.endGroup()
 
                 # ensure that extra list length are of the size of the extradevices:
                 self.ensureCorrectExtraDeviceListLenght()
 
+                #restore curve styles
+                settings.beginGroup("CurveStyles")
+                if settings.contains("BTlinestyle"):
+                    self.qmc.BTlinestyle = s2a(toString(settings.value("BTlinestyle",self.qmc.BTlinestyle)))
+                    self.qmc.BTdrawstyle = s2a(toString(settings.value("BTdrawstyle",self.qmc.BTdrawstyle)))
+                    if self.qmc.BTdrawstyle == '-':
+                        self.qmc.BTdrawstyle = self.qmc.drawstyle_default
+                    self.qmc.BTlinewidth = max(0.1,aw.float2float(toFloat(settings.value("BTlinewidth",self.qmc.BTlinewidth))))
+                    self.qmc.BTmarker = s2a(toString(settings.value("BTmarker",self.qmc.BTmarker)))
+                    self.qmc.BTmarkersize = max(0.1,aw.float2float(toFloat(settings.value("BTmarkersize",self.qmc.BTmarkersize))))
+                    self.qmc.ETlinestyle = s2a(toString(settings.value("ETlinestyle",self.qmc.ETlinestyle)))
+                    self.qmc.ETdrawstyle = s2a(toString(settings.value("ETdrawstyle",self.qmc.ETdrawstyle)))
+                    if self.qmc.ETdrawstyle == '-':
+                        self.qmc.ETdrawstyle = self.qmc.drawstyle_default
+                    self.qmc.ETlinewidth = max(0.1,aw.float2float(toFloat(settings.value("ETlinewidth",self.qmc.ETlinewidth))))
+                    self.qmc.ETmarker = s2a(toString(settings.value("ETmarker",self.qmc.ETmarker)))
+                    self.qmc.ETmarkersize = max(0.1,aw.float2float(toFloat(settings.value("ETmarkersize",self.qmc.ETmarkersize))))
+                    self.qmc.BTdeltalinestyle = s2a(toString(settings.value("BTdeltalinestyle",self.qmc.BTdeltalinestyle)))
+                    self.qmc.BTdeltadrawstyle = s2a(toString(settings.value("BTdeltadrawstyle",self.qmc.BTdeltadrawstyle)))
+                    if self.qmc.BTdeltadrawstyle == '-':
+                        self.qmc.BTdeltadrawstyle = self.qmc.drawstyle_default
+                    self.qmc.BTdeltalinewidth = max(0.1,aw.float2float(toFloat(settings.value("BTdeltalinewidth",self.qmc.BTdeltalinewidth))))
+                    self.qmc.BTdeltamarker = s2a(toString(settings.value("BTdeltamarker",self.qmc.BTdeltamarker)))
+                    self.qmc.BTdeltamarkersize = max(0.1,aw.float2float(toFloat(settings.value("BTdeltamarkersize",self.qmc.BTdeltamarkersize))))
+                    self.qmc.ETdeltalinestyle = s2a(toString(settings.value("ETdeltalinestyle",self.qmc.ETdeltalinestyle)))
+                    self.qmc.ETdeltadrawstyle = s2a(toString(settings.value("ETdeltadrawstyle",self.qmc.ETdeltadrawstyle)))
+                    if self.qmc.ETdeltadrawstyle == '-':
+                        self.qmc.ETdeltadrawstyle = self.qmc.drawstyle_default
+                    self.qmc.ETdeltalinewidth = max(0.1,aw.float2float(toFloat(settings.value("ETdeltalinewidth",self.qmc.ETdeltalinewidth))))
+                    self.qmc.ETdeltamarker = s2a(toString(settings.value("ETdeltamarker",self.qmc.ETdeltamarker)))
+                    self.qmc.ETdeltamarkersize = max(0.1,aw.float2float(toFloat(settings.value("ETdeltamarkersize",self.qmc.ETdeltamarkersize))))
+                    self.qmc.BTbacklinestyle = s2a(toString(settings.value("BTbacklinestyle",self.qmc.BTbacklinestyle)))
+                    self.qmc.BTbackdrawstyle = s2a(toString(settings.value("BTbackdrawstyle",self.qmc.BTbackdrawstyle)))
+                    if self.qmc.BTbackdrawstyle == '-':
+                        self.qmc.BTbackdrawstyle = self.qmc.drawstyle_default
+                    self.qmc.BTbacklinewidth = max(0.1,aw.float2float(toFloat(settings.value("BTbacklinewidth",self.qmc.BTbacklinewidth))))
+                    self.qmc.BTbackmarker = s2a(toString(settings.value("BTbackmarker",self.qmc.BTbackmarker)))
+                    self.qmc.BTbackmarkersize = max(0.1,aw.float2float(toFloat(settings.value("BTbackmarkersize",self.qmc.BTbackmarkersize))))
+                    self.qmc.ETbacklinestyle = s2a(toString(settings.value("ETbacklinestyle",self.qmc.ETbacklinestyle)))
+                    self.qmc.ETbackdrawstyle = s2a(toString(settings.value("ETbackdrawstyle",self.qmc.ETbackdrawstyle)))
+                    if self.qmc.ETbackdrawstyle == '-':
+                        self.qmc.ETbackdrawstyle = self.qmc.drawstyle_default
+                    self.qmc.ETbacklinewidth = max(0.1,aw.float2float(toFloat(settings.value("ETbacklinewidth",self.qmc.ETbacklinewidth))))
+                    self.qmc.ETbackmarker = s2a(toString(settings.value("ETbackmarker",self.qmc.ETbackmarker)))
+                    self.qmc.ETbackmarkersize = max(0.1,aw.float2float(toFloat(settings.value("ETbackmarkersize",self.qmc.ETbackmarkersize))))
+                    
+                    self.qmc.XTbacklinestyle = s2a(toString(settings.value("XTbacklinestyle",self.qmc.XTbacklinestyle)))
+                    self.qmc.XTbackdrawstyle = s2a(toString(settings.value("XTbackdrawstyle",self.qmc.XTbackdrawstyle)))
+                    if self.qmc.XTbackdrawstyle == '-':
+                        self.qmc.XTbackdrawstyle = self.qmc.drawstyle_default
+                    self.qmc.XTbacklinewidth = max(0.1,aw.float2float(toFloat(settings.value("XTbacklinewidth",self.qmc.XTbacklinewidth))))
+                    self.qmc.XTbackmarker = s2a(toString(settings.value("XTbackmarker",self.qmc.XTbackmarker)))
+                    self.qmc.XTbackmarkersize = max(0.1,aw.float2float(toFloat(settings.value("XTbackmarkersize",self.qmc.XTbackmarkersize))))
+                    self.qmc.YTbacklinestyle = s2a(toString(settings.value("YTbacklinestyle",self.qmc.XTbacklinestyle)))
+                    self.qmc.YTbackdrawstyle = s2a(toString(settings.value("YTbackdrawstyle",self.qmc.YTbackdrawstyle)))
+                    if self.qmc.YTbackdrawstyle == '-':
+                        self.qmc.YTbackdrawstyle = self.qmc.drawstyle_default
+                    self.qmc.YTbacklinewidth = max(0.1,aw.float2float(toFloat(settings.value("YTbacklinewidth",self.qmc.YTbacklinewidth))))
+                    self.qmc.YTbackmarker = s2a(toString(settings.value("YTbackmarker",self.qmc.YTbackmarker)))
+                    self.qmc.YTbackmarkersize = max(0.1,aw.float2float(toFloat(settings.value("YTbackmarkersize",self.qmc.YTbackmarkersize))))
+                    self.qmc.extralinestyles1 = list(map(str,list(toStringList(settings.value("extralinestyles1",self.qmc.extralinestyles1)))))
+                    self.qmc.extralinestyles2 = list(map(str,list(toStringList(settings.value("extralinestyles2",self.qmc.extralinestyles2)))))
+                    self.qmc.extradrawstyles1 = list(map(str,list(toStringList(settings.value("extradrawstyles1",self.qmc.extradrawstyles1)))))
+                    self.qmc.extradrawstyles1 = [self.qmc.drawstyle_default if s=='-' else s for s in self.qmc.extradrawstyles1]
+                    self.qmc.extradrawstyles2 = list(map(str,list(toStringList(settings.value("extradrawstyles2",self.qmc.extradrawstyles2)))))
+                    self.qmc.extradrawstyles2 = [self.qmc.drawstyle_default if s=='-' else s for s in self.qmc.extradrawstyles2]
+                    self.qmc.extralinewidths1 = [max(0.1,aw.float2float(toFloat(x))) for x in toList(settings.value("extralinewidths1"))]
+                    self.qmc.extralinewidths2 = [max(0.1,aw.float2float(toFloat(x))) for x in toList(settings.value("extralinewidths2"))]
+                    self.qmc.extramarkers1 = list(map(str,list(toStringList(settings.value("extramarkers1",self.qmc.extramarkers1)))))
+                    self.qmc.extramarkers2 = list(map(str,list(toStringList(settings.value("extramarkers2",self.qmc.extramarkers2)))))
+                    self.qmc.extramarkersizes1 = [max(0.1,aw.float2float(toFloat(x))) for x in toList(settings.value("extramarkersizes1"))]
+                    self.qmc.extramarkersizes2 = [max(0.1,aw.float2float(toFloat(x))) for x in toList(settings.value("extramarkersizes2"))]
+                    self.qmc.BTBdeltalinestyle = s2a(toString(settings.value("BTBdeltalinestyle",self.qmc.BTBdeltalinestyle)))
+                    self.qmc.BTBdeltadrawstyle = s2a(toString(settings.value("BTBdeltadrawstyle",self.qmc.BTBdeltadrawstyle)))
+
+                    self.qmc.BTBdeltalinewidth = max(0.1,aw.float2float(toFloat(settings.value("BTBdeltalinewidth",self.qmc.BTBdeltalinewidth))))
+                    self.qmc.BTBdeltamarker = s2a(toString(settings.value("BTBdeltamarker",self.qmc.BTBdeltamarker)))
+                    self.qmc.BTBdeltamarkersize = max(0.1,aw.float2float(toFloat(settings.value("BTBdeltamarkersize",self.qmc.BTBdeltamarkersize))))
+                    self.qmc.ETBdeltalinestyle = s2a(toString(settings.value("ETBdeltalinestyle",self.qmc.ETBdeltalinestyle)))
+                    self.qmc.ETBdeltadrawstyle = s2a(toString(settings.value("ETBdeltadrawstyle",self.qmc.ETBdeltadrawstyle)))
+
+                    self.qmc.ETBdeltalinewidth = max(0.1,aw.float2float(toFloat(settings.value("ETBdeltalinewidth",self.qmc.ETBdeltalinewidth))))
+                    self.qmc.ETBdeltamarker = s2a(toString(settings.value("ETBdeltamarker",self.qmc.ETBdeltamarker)))
+                    self.qmc.ETBdeltamarkersize = max(0.1,aw.float2float(toFloat(settings.value("ETBdeltamarkersize",self.qmc.ETBdeltamarkersize))))
+
+                    if settings.contains("devicetablecolumnwidths"):
+                        self.qmc.devicetablecolumnwidths = [toInt(x) for x in toList(settings.value("devicetablecolumnwidths",self.qmc.devicetablecolumnwidths))]
+                settings.endGroup()
+
                 self.updateExtradeviceSettings()
-
-            #restore curve styles
-            settings.beginGroup("CurveStyles")
-            if settings.contains("BTlinestyle"):
-                self.qmc.BTlinestyle = s2a(toString(settings.value("BTlinestyle",self.qmc.BTlinestyle)))
-                self.qmc.BTdrawstyle = s2a(toString(settings.value("BTdrawstyle",self.qmc.BTdrawstyle)))
-                if self.qmc.BTdrawstyle == '-':
-                    self.qmc.BTdrawstyle = self.qmc.drawstyle_default
-                self.qmc.BTlinewidth = max(0.1,aw.float2float(toFloat(settings.value("BTlinewidth",self.qmc.BTlinewidth))))
-                self.qmc.BTmarker = s2a(toString(settings.value("BTmarker",self.qmc.BTmarker)))
-                self.qmc.BTmarkersize = max(0.1,aw.float2float(toFloat(settings.value("BTmarkersize",self.qmc.BTmarkersize))))
-                self.qmc.ETlinestyle = s2a(toString(settings.value("ETlinestyle",self.qmc.ETlinestyle)))
-                self.qmc.ETdrawstyle = s2a(toString(settings.value("ETdrawstyle",self.qmc.ETdrawstyle)))
-                if self.qmc.ETdrawstyle == '-':
-                    self.qmc.ETdrawstyle = self.qmc.drawstyle_default
-                self.qmc.ETlinewidth = max(0.1,aw.float2float(toFloat(settings.value("ETlinewidth",self.qmc.ETlinewidth))))
-                self.qmc.ETmarker = s2a(toString(settings.value("ETmarker",self.qmc.ETmarker)))
-                self.qmc.ETmarkersize = max(0.1,aw.float2float(toFloat(settings.value("ETmarkersize",self.qmc.ETmarkersize))))
-                self.qmc.BTdeltalinestyle = s2a(toString(settings.value("BTdeltalinestyle",self.qmc.BTdeltalinestyle)))
-                self.qmc.BTdeltadrawstyle = s2a(toString(settings.value("BTdeltadrawstyle",self.qmc.BTdeltadrawstyle)))
-                if self.qmc.BTdeltadrawstyle == '-':
-                    self.qmc.BTdeltadrawstyle = self.qmc.drawstyle_default
-                self.qmc.BTdeltalinewidth = max(0.1,aw.float2float(toFloat(settings.value("BTdeltalinewidth",self.qmc.BTdeltalinewidth))))
-                self.qmc.BTdeltamarker = s2a(toString(settings.value("BTdeltamarker",self.qmc.BTdeltamarker)))
-                self.qmc.BTdeltamarkersize = max(0.1,aw.float2float(toFloat(settings.value("BTdeltamarkersize",self.qmc.BTdeltamarkersize))))
-                self.qmc.ETdeltalinestyle = s2a(toString(settings.value("ETdeltalinestyle",self.qmc.ETdeltalinestyle)))
-                self.qmc.ETdeltadrawstyle = s2a(toString(settings.value("ETdeltadrawstyle",self.qmc.ETdeltadrawstyle)))
-                if self.qmc.ETdeltadrawstyle == '-':
-                    self.qmc.ETdeltadrawstyle = self.qmc.drawstyle_default
-                self.qmc.ETdeltalinewidth = max(0.1,aw.float2float(toFloat(settings.value("ETdeltalinewidth",self.qmc.ETdeltalinewidth))))
-                self.qmc.ETdeltamarker = s2a(toString(settings.value("ETdeltamarker",self.qmc.ETdeltamarker)))
-                self.qmc.ETdeltamarkersize = max(0.1,aw.float2float(toFloat(settings.value("ETdeltamarkersize",self.qmc.ETdeltamarkersize))))
-                self.qmc.BTbacklinestyle = s2a(toString(settings.value("BTbacklinestyle",self.qmc.BTbacklinestyle)))
-                self.qmc.BTbackdrawstyle = s2a(toString(settings.value("BTbackdrawstyle",self.qmc.BTbackdrawstyle)))
-                if self.qmc.BTbackdrawstyle == '-':
-                    self.qmc.BTbackdrawstyle = self.qmc.drawstyle_default
-                self.qmc.BTbacklinewidth = max(0.1,aw.float2float(toFloat(settings.value("BTbacklinewidth",self.qmc.BTbacklinewidth))))
-                self.qmc.BTbackmarker = s2a(toString(settings.value("BTbackmarker",self.qmc.BTbackmarker)))
-                self.qmc.BTbackmarkersize = max(0.1,aw.float2float(toFloat(settings.value("BTbackmarkersize",self.qmc.BTbackmarkersize))))
-                self.qmc.ETbacklinestyle = s2a(toString(settings.value("ETbacklinestyle",self.qmc.ETbacklinestyle)))
-                self.qmc.ETbackdrawstyle = s2a(toString(settings.value("ETbackdrawstyle",self.qmc.ETbackdrawstyle)))
-                if self.qmc.ETbackdrawstyle == '-':
-                    self.qmc.ETbackdrawstyle = self.qmc.drawstyle_default
-                self.qmc.ETbacklinewidth = max(0.1,aw.float2float(toFloat(settings.value("ETbacklinewidth",self.qmc.ETbacklinewidth))))
-                self.qmc.ETbackmarker = s2a(toString(settings.value("ETbackmarker",self.qmc.ETbackmarker)))
-                self.qmc.ETbackmarkersize = max(0.1,aw.float2float(toFloat(settings.value("ETbackmarkersize",self.qmc.ETbackmarkersize))))
-                
-                self.qmc.XTbacklinestyle = s2a(toString(settings.value("XTbacklinestyle",self.qmc.XTbacklinestyle)))
-                self.qmc.XTbackdrawstyle = s2a(toString(settings.value("XTbackdrawstyle",self.qmc.XTbackdrawstyle)))
-                if self.qmc.XTbackdrawstyle == '-':
-                    self.qmc.XTbackdrawstyle = self.qmc.drawstyle_default
-                self.qmc.XTbacklinewidth = max(0.1,aw.float2float(toFloat(settings.value("XTbacklinewidth",self.qmc.XTbacklinewidth))))
-                self.qmc.XTbackmarker = s2a(toString(settings.value("XTbackmarker",self.qmc.XTbackmarker)))
-                self.qmc.XTbackmarkersize = max(0.1,aw.float2float(toFloat(settings.value("XTbackmarkersize",self.qmc.XTbackmarkersize))))
-                self.qmc.YTbacklinestyle = s2a(toString(settings.value("YTbacklinestyle",self.qmc.XTbacklinestyle)))
-                self.qmc.YTbackdrawstyle = s2a(toString(settings.value("YTbackdrawstyle",self.qmc.YTbackdrawstyle)))
-                if self.qmc.YTbackdrawstyle == '-':
-                    self.qmc.YTbackdrawstyle = self.qmc.drawstyle_default
-                self.qmc.YTbacklinewidth = max(0.1,aw.float2float(toFloat(settings.value("YTbacklinewidth",self.qmc.YTbacklinewidth))))
-                self.qmc.YTbackmarker = s2a(toString(settings.value("YTbackmarker",self.qmc.YTbackmarker)))
-                self.qmc.YTbackmarkersize = max(0.1,aw.float2float(toFloat(settings.value("YTbackmarkersize",self.qmc.YTbackmarkersize))))
-                self.qmc.extralinestyles1 = list(map(str,list(toStringList(settings.value("extralinestyles1",self.qmc.extralinestyles1)))))
-                self.qmc.extralinestyles2 = list(map(str,list(toStringList(settings.value("extralinestyles2",self.qmc.extralinestyles2)))))
-                self.qmc.extradrawstyles1 = list(map(str,list(toStringList(settings.value("extradrawstyles1",self.qmc.extradrawstyles1)))))
-                self.qmc.extradrawstyles1 = [self.qmc.drawstyle_default if s=='-' else s for s in self.qmc.extradrawstyles1]
-                self.qmc.extradrawstyles2 = list(map(str,list(toStringList(settings.value("extradrawstyles2",self.qmc.extradrawstyles2)))))
-                self.qmc.extradrawstyles2 = [self.qmc.drawstyle_default if s=='-' else s for s in self.qmc.extradrawstyles2]
-                self.qmc.extralinewidths1 = [max(0.1,aw.float2float(toFloat(x))) for x in toList(settings.value("extralinewidths1",self.qmc.extralinewidths1))]
-                self.qmc.extralinewidths2 = [max(0.1,aw.float2float(toFloat(x))) for x in toList(settings.value("extralinewidths2",self.qmc.extralinewidths2))]
-                self.qmc.extramarkers1 = list(map(str,list(toStringList(settings.value("extramarkers1",self.qmc.extramarkers1)))))
-                self.qmc.extramarkers2 = list(map(str,list(toStringList(settings.value("extramarkers2",self.qmc.extramarkers2)))))
-                self.qmc.extramarkersizes1 = [max(0.1,aw.float2float(toFloat(x))) for x in toList(settings.value("extramarkersizes1",self.qmc.extramarkersizes1))]
-                self.qmc.extramarkersizes2 = [max(0.1,aw.float2float(toFloat(x))) for x in toList(settings.value("extramarkersizes2",self.qmc.extramarkersizes2))]
-                self.qmc.BTBdeltalinestyle = s2a(toString(settings.value("BTBdeltalinestyle",self.qmc.BTBdeltalinestyle)))
-                self.qmc.BTBdeltadrawstyle = s2a(toString(settings.value("BTBdeltadrawstyle",self.qmc.BTBdeltadrawstyle)))
-
-                self.qmc.BTBdeltalinewidth = max(0.1,aw.float2float(toFloat(settings.value("BTBdeltalinewidth",self.qmc.BTBdeltalinewidth))))
-                self.qmc.BTBdeltamarker = s2a(toString(settings.value("BTBdeltamarker",self.qmc.BTBdeltamarker)))
-                self.qmc.BTBdeltamarkersize = max(0.1,aw.float2float(toFloat(settings.value("BTBdeltamarkersize",self.qmc.BTBdeltamarkersize))))
-                self.qmc.ETBdeltalinestyle = s2a(toString(settings.value("ETBdeltalinestyle",self.qmc.ETBdeltalinestyle)))
-                self.qmc.ETBdeltadrawstyle = s2a(toString(settings.value("ETBdeltadrawstyle",self.qmc.ETBdeltadrawstyle)))
-
-                self.qmc.ETBdeltalinewidth = max(0.1,aw.float2float(toFloat(settings.value("ETBdeltalinewidth",self.qmc.ETBdeltalinewidth))))
-                self.qmc.ETBdeltamarker = s2a(toString(settings.value("ETBdeltamarker",self.qmc.ETBdeltamarker)))
-                self.qmc.ETBdeltamarkersize = max(0.1,aw.float2float(toFloat(settings.value("ETBdeltamarkersize",self.qmc.ETBdeltamarkersize))))
-
-            settings.endGroup()
-
 
             # Extra com ports
             settings.beginGroup("ExtraComm")
@@ -29666,7 +29557,7 @@ class ApplicationWindow(QMainWindow):
             _log.exception(e)
             res = False
             _, _, exc_tb = sys.exc_info()
-            QMessageBox.information(aw,QApplication.translate("Error Message", "Error"),QApplication.translate("Error Message", "Exception:") + "  settingsLoad()  @line " + str(getattr(exc_tb, 'tb_lineno', '?')))
+            QMessageBox.information(aw,QApplication.translate("Error Message", "Error",None),QApplication.translate("Error Message", "Exception:",None) + "  settingsLoad()  @line " + str(getattr(exc_tb, 'tb_lineno', '?')))
 
 #--------------------------------
         try:
@@ -29735,7 +29626,7 @@ class ApplicationWindow(QMainWindow):
             _log.exception(e)
             res = False
             _, _, exc_tb = sys.exc_info()
-            QMessageBox.information(self,QApplication.translate("Error Message", "Error"),QApplication.translate("Error Message", "Exception:") + " settingsLoad()  @line " + str(getattr(exc_tb, 'tb_lineno', '?')))
+            QMessageBox.information(self,QApplication.translate("Error Message", "Error",None),QApplication.translate("Error Message", "Exception:",None) + " settingsLoad()  @line " + str(getattr(exc_tb, 'tb_lineno', '?')))
         return res
 
     def startWebLCDs(self,force=False):
@@ -29764,7 +29655,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " startWebLCDs() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " startWebLCDs() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             self.stopWebLCDs()
             self.WebLCDs = False
             return False
@@ -29997,7 +29888,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            self.qmc.adderror((QApplication.translate("Error Message","Exception:") + " fetchCurveStyles() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " fetchCurveStyles() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     #Saves the settings when closing application. See the oppposite settingsLoad()
     def closeEvent(self,event):
@@ -30176,10 +30067,10 @@ class ApplicationWindow(QMainWindow):
             settings.setValue("minieventsflag",self.minieventsflag)
             settings.setValue("eventsGraphflag",self.qmc.eventsGraphflag)
             # we only store etype names if they have been modified by the user to allow automatic translations otherwise
-            if ((self.qmc.etypes[0] != QApplication.translate("ComboBox", "Air")) or
-                (self.qmc.etypes[1] != QApplication.translate("ComboBox", "Drum")) or
-                (self.qmc.etypes[2] != QApplication.translate("ComboBox", "Damper")) or
-                (self.qmc.etypes[3] != QApplication.translate("ComboBox", "Burner"))):
+            if ((self.qmc.etypes[0] != QApplication.translate("ComboBox", "Air",None)) or
+                (self.qmc.etypes[1] != QApplication.translate("ComboBox", "Drum",None)) or
+                (self.qmc.etypes[2] != QApplication.translate("ComboBox", "Damper",None)) or
+                (self.qmc.etypes[3] != QApplication.translate("ComboBox", "Burner",None))):
                 settings.setValue("etypes",self.qmc.etypes)
             else:
                 settings.remove("etypes")
@@ -30864,7 +30755,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            QMessageBox.information(aw,QApplication.translate("Error Message", "Error",None),QApplication.translate("Error Message", "Exception:") + " closeEvent()  @line " + str(getattr(exc_tb, 'tb_lineno', '?')))
+            QMessageBox.information(aw,QApplication.translate("Error Message", "Error",None),QApplication.translate("Error Message", "Exception:",None) + " closeEvent()  @line " + str(getattr(exc_tb, 'tb_lineno', '?')))
 
     def closeEventSettings_theme(self, filename=None):
         try:
@@ -30906,7 +30797,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            QMessageBox.information(aw,QApplication.translate("Error Message", "Error",None),QApplication.translate("Error Message", "Exception:") + " closeEventSettings_theme()  @line " + str(getattr(exc_tb, 'tb_lineno', '?')))
+            QMessageBox.information(aw,QApplication.translate("Error Message", "Error",None),QApplication.translate("Error Message", "Exception:",None) + " closeEventSettings_theme()  @line " + str(getattr(exc_tb, 'tb_lineno', '?')))
 
     def updateExtraLCDvisibility(self):
         n = len(self.qmc.extradevices)
@@ -31327,20 +31218,20 @@ class ApplicationWindow(QMainWindow):
                     c += 1
 
                 html = libstring.Template(HTML_REPORT_TEMPLATE).safe_substitute(
-                    title = QApplication.translate("HTML Report Template", "Roast Batches"),
+                    title = QApplication.translate("HTML Report Template", "Roast Batches", None),
                     entries = entries,
                     total_in = ('{0:.2f}'.format(total_in) if unit in ["Kg","lb", "oz"] else '{0:.0f}'.format(total_in)),
                     total_out = ('{0:.2f}'.format(total_out) if unit in ["Kg","lb", "oz"] else '{0:.0f}'.format(total_out)),
                     total_loss = '{0:.1f}'.format(aw.weight_loss(total_in,total_out)),
                     resources = str(getResourcePath()),
-                    batch = QApplication.translate("HTML Report Template", "Batch"),
-                    time = QApplication.translate("HTML Report Template", "Date"),
-                    profile = QApplication.translate("Label", "Title"),
-                    beans = QApplication.translate("HTML Report Template", "Beans"),
-                    weightin = QApplication.translate("HTML Report Template", "In"),
-                    weightout = QApplication.translate("HTML Report Template", "Out"),
-                    loss = QApplication.translate("HTML Report Template", "Loss"),
-                    sum = QApplication.translate("HTML Report Template", "SUM"),
+                    batch = QApplication.translate("HTML Report Template", "Batch", None),
+                    time = QApplication.translate("HTML Report Template", "Date", None),
+                    profile = QApplication.translate("Label", "Title", None),
+                    beans = QApplication.translate("HTML Report Template", "Beans", None),
+                    weightin = QApplication.translate("HTML Report Template", "In", None),
+                    weightout = QApplication.translate("HTML Report Template", "Out", None),
+                    loss = QApplication.translate("HTML Report Template", "Loss", None),
+                    sum = QApplication.translate("HTML Report Template", "SUM", None),
                     unit = unit.lower()
                 )
 
@@ -31362,14 +31253,14 @@ class ApplicationWindow(QMainWindow):
                     QDesktopServices.openUrl(QUrl(full_path, QUrl.ParsingMode.TolerantMode))
 
                 except IOError as e:
-                    aw.qmc.adderror((QApplication.translate("Error Message", "IO Error:") + " productionReport() {0}").format(str(e)))
+                    aw.qmc.adderror((QApplication.translate("Error Message", "IO Error:",None) + " productionReport() {0}").format(str(e)))
                 finally:
                     if f:
                         f.close()
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " productionReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " productionReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     @pyqtSlot()
     @pyqtSlot(bool)
@@ -31383,7 +31274,7 @@ class ApplicationWindow(QMainWindow):
             try:
                 rect_extents = aw.qmc.stats_summary_rect.get_bbox()
             except Exception: # pylint: disable=broad-except
-                aw.sendmessage(QApplication.translate("Message","No statistics found"))
+                aw.sendmessage(QApplication.translate("Message","No statistics found", None))
                 return
             # 2. convert those to display coordinates
             rect_extents_display = aw.qmc.ax.transData.transform(rect_extents)
@@ -31398,17 +31289,17 @@ class ApplicationWindow(QMainWindow):
                 ext = "*.png"
             else:
                 ext = "*.pdf"
-            filename = self.ArtisanSaveFileDialog(msg=QApplication.translate("Message", "Save Statistics"), ext=ext)
+            filename = self.ArtisanSaveFileDialog(msg=QApplication.translate("Message", "Save Statistics",None), ext=ext)
             if filename:
                 aw.qmc.fig.set_tight_layout(False)
                 aw.qmc.fig.savefig(filename,bbox_inches=rect_bbox_inches,pad_inches=0)
                 aw.qmc.fig.set_tight_layout(aw.qmc.tight_layout_params)
-                aw.sendmessage(QApplication.translate("Message","Statistics Saved"))
+                aw.sendmessage(QApplication.translate("Message","Statistics Saved",None))
 
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " saveStatistics() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " saveStatistics() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     @pyqtSlot()
     @pyqtSlot(bool)
@@ -31482,28 +31373,28 @@ class ApplicationWindow(QMainWindow):
                     from openpyxl.styles import Font, Fill  # @UnusedImport # pylint: disable=unused-import
                     wb = Workbook()
                     ws = wb.active # wb.create_sheet()
-                    ws.title = QApplication.translate("HTML Report Template", "Production Report")
+                    ws.title = QApplication.translate("HTML Report Template", "Production Report",None)
 
                     bf = Font(bold=True)
                     unit = aw.qmc.weight[2]
 
                     # write header
-                    ws['A1'] = QApplication.translate("HTML Report Template", "Batch")
+                    ws['A1'] = QApplication.translate("HTML Report Template", "Batch",None)
                     ws['A1'].font = bf
-                    ws['B1'] = QApplication.translate("HTML Report Template", "Time")
+                    ws['B1'] = QApplication.translate("HTML Report Template", "Time",None)
                     ws['B1'].font = bf
                     ws.column_dimensions['B'].width = 18
-                    ws['C1'] = QApplication.translate("HTML Report Template", "Profile")
+                    ws['C1'] = QApplication.translate("HTML Report Template", "Profile",None)
                     ws['C1'].font = bf
                     ws.column_dimensions['C'].width = 25
-                    ws['D1'] = QApplication.translate("HTML Report Template", "Beans")
+                    ws['D1'] = QApplication.translate("HTML Report Template", "Beans",None)
                     ws['D1'].font = bf
                     ws.column_dimensions['D'].width = 25
-                    ws['E1'] = QApplication.translate("HTML Report Template", "In") + " (" + str(unit.lower()) + ")"
+                    ws['E1'] = QApplication.translate("HTML Report Template", "In",None) + " (" + str(unit.lower()) + ")"
                     ws['E1'].font = bf
-                    ws['F1'] = QApplication.translate("HTML Report Template", "Out") + " (" + str(unit.lower()) + ")"
+                    ws['F1'] = QApplication.translate("HTML Report Template", "Out",None) + " (" + str(unit.lower()) + ")"
                     ws['F1'].font = bf
-                    ws['G1'] = QApplication.translate("HTML Report Template", "Loss")
+                    ws['G1'] = QApplication.translate("HTML Report Template", "Loss",None)
                     ws['G1'].font = bf
 
                     def avgFormat(c,r1,r2):
@@ -31539,7 +31430,7 @@ class ApplicationWindow(QMainWindow):
                             _log.exception(e)
                     # write trailer
                     if c > 1:
-                        ws['A{0}'.format(c+1)] = QApplication.translate("HTML Report Template", "SUM")
+                        ws['A{0}'.format(c+1)] = QApplication.translate("HTML Report Template", "SUM", None)
                         ws['A{0}'.format(c+1)].font = bf
                         ws['E{0}'.format(c+1)] = "=SUM(E2:E{0})".format(c)
                         ws['E{0}'.format(c+1)].font = bf
@@ -31551,11 +31442,11 @@ class ApplicationWindow(QMainWindow):
                         ws['G{0}'.format(c+1)].font = bf
                         ws['G{0}'.format(c+1)].number_format = '0.0%'
                     wb.save(filename)
-                    aw.sendmessage(QApplication.translate("Message","Excel Production Report exported to {0}").format(filename))
+                    aw.sendmessage(QApplication.translate("Message","Excel Production Report exported to {0}", None).format(filename))
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
                     _, _, exc_tb = sys.exc_info()
-                    aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " productionExcelReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                    aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " productionExcelReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     # extracts the following from a give profile dict in a new dict:
     #  . "temp_unit": string (temperature unit, F or C)
@@ -31716,126 +31607,123 @@ class ApplicationWindow(QMainWindow):
         ]
         ranking_data_fields = [
             #fld,                   source,  typ,        test0,    units,   name
-            ["id",                  "prod",  "text",     "false",  "",      QApplication.translate('HTML Report Template','Batch')                ],
-            ["datetime",            "prod",  "date",     "false",  "",      QApplication.translate('HTML Report Template','Time')                 ],
-            ["title",               "prod",  "text",     "false",  "60",    QApplication.translate('HTML Report Template','Profile')              ],
-            ["weightin",            "comp",  "float1",   "false",  "weight",QApplication.translate('HTML Report Template','Weight In')            ],
-            ["CHARGE_BT",           "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','CHARGE BT')            ],
-            ["FCs_time",            "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','FCs Time')             ],
-            ["FCs_BT",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','FCs BT')               ],
-            ["DROP_time",           "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','DROP Time')            ],
-            ["DROP_BT",             "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','DROP BT')              ],
-            ["DRY_percent",         "rank",  "percent",  "false",  "",      QApplication.translate('HTML Report Template','Dry Percent')          ],
-            ["MAI_percent",         "rank",  "percent",  "false",  "",      QApplication.translate('HTML Report Template','MAI Percent')          ],
-            ["DEV_percent",         "rank",  "percent",  "false",  "",      QApplication.translate('HTML Report Template','Dev Percent')          ],
-            ["AUC",                 "comp",  "int",      "false",  "",      QApplication.translate('HTML Report Template','AUC')                  ],
-            ["weight_loss",         "comp",  "percent",  "false",  "",      QApplication.translate('HTML Report Template','Weight Loss')          ],
-            ["color",               "rank",  "text2int", "false",  "",      QApplication.translate('HTML Report Template','Color')                ],
-            ["cupping",             "rank",  "text2int", "false",  "",      QApplication.translate('HTML Report Template','Cupping')              ],
-            ["roastertype",         "prof",  "text",     "false",  "",      QApplication.translate('HTML Report Template','Roaster')              ],
-            ["roastersize",         "prof",  "float1",   "true",   "",      QApplication.translate('HTML Report Template','Capacity')             ],
-            ["operator",            "prof",  "text",     "false",  "",      QApplication.translate('HTML Report Template','Operator')             ],
-            ["organization",        "prof",  "text",     "false",  "",      QApplication.translate('HTML Report Template','Organization')         ],
-            ["drumspeed",           "prof",  "text2int", "true" ,  "",      QApplication.translate('HTML Report Template','Drum Speed')           ],
-            ["whole_color",         "prof",  "int",      "true" ,  "",      QApplication.translate('HTML Report Template','Whole Color')          ], 
-            ["ground_color",        "prof",  "int",      "true" ,  "",      QApplication.translate('HTML Report Template','Ground Color')         ],
-            ["color_system",        "prof",  "text",     "false",  "",      QApplication.translate('HTML Report Template','Color System')         ],
-            ["beansize_min",        "prof",  "text2int", "true" ,  "",      QApplication.translate('HTML Report Template','Screen Min')           ],
-            ["beansize_max",        "prof",  "text2int", "true" ,  "",      QApplication.translate('HTML Report Template','Screen Max')           ],
-            ["greens_temp",         "prof",  "float1",   "true" ,  "temp",  QApplication.translate('HTML Report Template','Bean Temp')            ],
-            ["CHARGE_ET",           "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','CHARGE ET')            ],
-            ["CHARGE_BT",           "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','CHARGE BT')            ],
-            ["TP_time",             "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','TP Time')              ],
-            ["TP_ET",               "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','TP ET')                ],
-            ["TP_BT",               "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','TP BT')                ],
-            ["DRY_time",            "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','DRY Time')             ],
-            ["DRY_ET",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','DRY ET')               ],
-            ["DRY_BT",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','DRY BT')               ],
-            ["FCs_time",            "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','FCs Time')             ],
-            ["FCs_ET",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','FCs ET')               ],
-            ["FCs_BT",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','FCs BT')               ],
-            ["FCe_time",            "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','FCe Time')             ],
-            ["FCe_ET",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','FCe ET')               ],
-            ["FCe_BT",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','FCe BT')               ],
-            ["SCs_time",            "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','SCs Time')             ],  
-            ["SCs_ET",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','SCs ET')               ],
-            ["SCs_BT",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','SCs BT')               ],
-            ["SCe_time",            "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','SCe Time')             ],
-            ["SCe_ET",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','SCe ET')               ],
-            ["SCe_BT",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','SCe BT')               ],
-            ["DROP_time",           "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','DROP Time')            ],
-            ["DROP_ET",             "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','DROP ET')              ],
-            ["DROP_BT",             "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','DROP BT')              ],
-            ["COOL_time",           "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','COOL Time')            ],
-            ["COOL_ET",             "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','COOL ET')              ],
-            ["COOL_BT",             "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','COOL BT')              ],
-            ["totaltime",           "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','Total Time')           ],
-            ["dryphasetime",        "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','Dry Phase Time')       ],
-            ["midphasetime",        "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','Mid Phase Time')       ],
-            ["finishphasetime",     "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','Finish Phase Time')    ],
-            ["dry_phase_ror",       "comp",  "float1",   "false",  "ror",   QApplication.translate('HTML Report Template','Dry Phase RoR')        ],
-            ["mid_phase_ror",       "comp",  "float1",   "false",  "ror",   QApplication.translate('HTML Report Template','Mid Phase RoR')        ],
-            ["finish_phase_ror",    "comp",  "float1",   "false",  "ror",   QApplication.translate('HTML Report Template','Finish Phase RoR')     ],
-            ["dry_phase_delta_temp", "comp",  "float1",   "false",  "tmep", QApplication.translate('HTML Report Template','Dry Phase Delta BT')   ],            
-            ["mid_phase_delta_temp", "comp",  "float1",   "false",  "temp", QApplication.translate('HTML Report Template','Mid Phase Delta BT')   ],
-            ["finish_phase_delta_temp", "comp",  "float1",   "false",  "temp", QApplication.translate('HTML Report Template','Finish Phase Delta BT') ],
-            ["dsd['computed']['finish_phase_ror'] * (dsd['computed']['finishphasetime'] / 60)", "eval", "float1", "false", "temp", QApplication.translate('HTML Report Template','Finish Phase Rise')],
-            ["total_ror",           "comp",  "float1",   "false",  "ror",   QApplication.translate('HTML Report Template','Total RoR')            ],
-            ["fcs_ror",             "comp",  "float1",   "false",  "ror",   QApplication.translate('HTML Report Template','FCs RoR')              ],
-            ["MET",                 "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','MET')                  ],
-            ["AUC",                 "comp",  "int",      "false",  "",      QApplication.translate('HTML Report Template','AUC')                  ],
-            ["(dsd['computed']['AUCbegin'] if ('AUCbegin' in dsd['computed'] and 'AUCfromeventflag' in dsd['computed'] and dsd['computed']['AUCfromeventflag']) else '')", "eval", "text", "false", "", QApplication.translate('HTML Report Template','AUC Begin')  ],
-            ["AUCbase",             "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','AUC Base')             ],
-            ["dry_phase_AUC",       "comp",  "int",      "false",  "",      QApplication.translate('HTML Report Template','Dry Phase AUC')        ],
-            ["mid_phase_AUC",       "comp",  "int",      "false",  "",      QApplication.translate('HTML Report Template','Mid Phase AUC')        ],
-            ["finish_phase_AUC",    "comp",  "int",      "false",  "",      QApplication.translate('HTML Report Template','Finish Phase AUC')     ],
-            ["weightin",            "comp",  "float1",   "false",  "weight",QApplication.translate('HTML Report Template','Weight In')            ],
-            ["weightout",           "comp",  "float1",   "false",  "weight",QApplication.translate('HTML Report Template','Weight Out')           ],
-            ["weight_loss",         "comp",  "percent",  "false",  "",      QApplication.translate('HTML Report Template','Weight Loss')          ],
-            ["volumein",            "comp",  "float1",   "false",  "volume",QApplication.translate('HTML Report Template','Volume In')            ],
-            ["volumeout",           "comp",  "float1",   "false",  "volume",QApplication.translate('HTML Report Template','Volume Out')           ],
-            ["volume_gain",         "comp",  "percent",  "false",  "",      QApplication.translate('HTML Report Template','Volume Gain')          ],
-            ["green_density",       "comp",  "float1",   "false",  "(g/l)", QApplication.translate('HTML Report Template','Green Density')        ],
-            ["roasted_density",     "comp",  "float1",   "false",  "(g/l)", QApplication.translate('HTML Report Template','Roasted Density')      ],
-            ["moisture_greens",     "comp",  "percent",  "false",  "",      QApplication.translate('HTML Report Template','Moisture Greens')      ],
-            ["moisture_roasted",    "comp",  "percent",  "false",  "",      QApplication.translate('HTML Report Template','Moisture Roasted')     ],
-            ["moisture_loss",       "comp",  "percent",  "false",  "",      QApplication.translate('HTML Report Template','Moisture Loss')        ],
-            ["organic_loss",        "comp",  "percent",  "false",  "",      QApplication.translate('HTML Report Template','Organic Loss')         ],
-            ["ambient_humidity",    "comp",  "float1",   "false",  "",      QApplication.translate('HTML Report Template','Ambient Humidity')     ],
-            ["ambient_pressure",    "comp",  "float1",   "false",  "",      QApplication.translate('HTML Report Template','Ambient Pressure')     ],
-            ["ambient_temperature", "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','Ambient Temperature')  ],
-            ["beans",               "prof",  "text",     "false",  "90",    QApplication.translate('HTML Report Template','Beans')                ],
-            ["roastingnotes",       "prof",  "text",     "false",  "90",    QApplication.translate('HTML Report Template','Roasting Notes')       ],
-            ["cuppingnotes",        "prof",  "text",     "false",  "90",    QApplication.translate('HTML Report Template','Cupping Notes')        ],
-            ["heavyFC",             "prof",  "bool",     "false",  "",      QApplication.translate('HTML Report Template','Heavy FC')             ],
-            ["lowFC",               "prof",  "bool",     "false",  "",      QApplication.translate('HTML Report Template','Low FC')               ],
-            ["lightCut",            "prof",  "bool",     "false",  "",      QApplication.translate('HTML Report Template','Light Cut')            ],
-            ["darkCut",             "prof",  "bool",     "false",  "",      QApplication.translate('HTML Report Template','Dark Cut')             ],
-            ["drops",               "prof",  "bool",     "false",  "",      QApplication.translate('HTML Report Template','Drops')                ],
-            ["oily",                "prof",  "bool",     "false",  "",      QApplication.translate('HTML Report Template','Oily')                 ],
-            ["uneven",              "prof",  "bool",     "false",  "",      QApplication.translate('HTML Report Template','Uneven')               ],
-            ["tipping",             "prof",  "bool",     "false",  "",      QApplication.translate('HTML Report Template','Tipping')              ],
-            ["scorching",           "prof",  "bool",     "false",  "",      QApplication.translate('HTML Report Template','Scorching')            ],
-            ["divots",              "prof",  "bool",     "false",  "",      QApplication.translate('HTML Report Template','Divots')               ],
-            ["mode",                "prof",  "text",     "false",  "",      QApplication.translate('HTML Report Template','Mode')                 ],
-            ["BTU_batch",           "comp",  "float1",   "false",  "(BTU)", QApplication.translate('HTML Report Template','BTU Batch')            ],
-            ["BTU_batch_per_green_kg","comp","float1",   "false",  "(BTU)", QApplication.translate('HTML Report Template','BTU Batch per green kg')],
-            ["CO2_batch",           "comp",  "float1",   "false",  "(g)",   QApplication.translate('HTML Report Template','CO2 Batch').replace("CO2","CO₂")            ],
-            ["BTU_preheat",         "comp",  "float1",   "false",  "(BTU)", QApplication.translate('HTML Report Template','BTU Preheat')          ],
-            ["CO2_preheat",         "comp",  "float1",   "false",  "(g)",   QApplication.translate('HTML Report Template','CO2 Preheat').replace("CO2","CO₂")          ],
-            ["BTU_bbp",             "comp",  "float1",   "false",  "(BTU)", QApplication.translate('HTML Report Template','BTU BBP')              ],
-            ["CO2_bbp",             "comp",  "float1",   "false",  "(g)",   QApplication.translate('HTML Report Template','CO2 BBP').replace("CO2","CO₂")              ],
-            ["BTU_cooling",         "comp",  "float1",   "false",  "(BTU)", QApplication.translate('HTML Report Template','BTU Cooling')          ],
-            ["CO2_cooling",         "comp",  "float1",   "false",  "(g)",   QApplication.translate('HTML Report Template','CO2 Cooling').replace("CO2","CO₂")          ],
-            ["BTU_roast",           "comp",  "float1",   "false",  "(BTU)", QApplication.translate('HTML Report Template','BTU Roast')            ],
-            ["BTU_roast_per_green_kg","comp","float1",   "false",  "(BTU)", QApplication.translate('HTML Report Template','BTU Roast per green kg')],
-            ["CO2_roast",           "comp",  "float1",   "false",  "(g)",   QApplication.translate('HTML Report Template','CO2 Roast').replace("CO2","CO₂")            ],
-            ["CO2_batch_per_green_kg","comp","float1",   "false",  "(g)",   QApplication.translate('HTML Report Template','CO2 Batch per green kg').replace("CO2","CO₂")],
-            ["BTU_LPG",             "comp",  "float1",   "false",  "(BTU)", QApplication.translate('HTML Report Template','BTU LPG')              ],
-            ["BTU_NG",              "comp",  "float1",   "false",  "(BTU)", QApplication.translate('HTML Report Template','BTU NG')               ],
-            ["BTU_ELEC",            "comp",  "float1",   "false",  "(BTU)", QApplication.translate('HTML Report Template','BTU ELEC')             ],
-            ["KWH_batch_per_green_kg","comp","float1",   "false",  "(kWh/kg)", QApplication.translate('HTML Report Template','Efficiency Batch')  ],
-            ["KWH_roast_per_green_kg","comp","float1",   "false",  "(kWh/kg)", QApplication.translate('HTML Report Template','Efficiency Roast')  ],
+            ["id",                  "prod",  "text",     "false",  "",      QApplication.translate('HTML Report Template','Batch',None)                ],
+            ["datetime",            "prod",  "date",     "false",  "",      QApplication.translate('HTML Report Template','Time',None)                 ],
+            ["title",               "prod",  "text",     "false",  "60",    QApplication.translate('HTML Report Template','Profile',None)              ],
+            ["weightin",            "comp",  "float1",   "false",  "weight",QApplication.translate('HTML Report Template','Weight In',None)            ],
+            ["CHARGE_BT",           "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','CHARGE BT',None)            ],
+            ["FCs_time",            "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','FCs Time',None)             ],
+            ["FCs_BT",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','FCs BT',None)               ],
+            ["DROP_time",           "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','DROP Time',None)            ],
+            ["DROP_BT",             "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','DROP BT',None)              ],
+            ["DRY_percent",         "rank",  "percent",  "false",  "",      QApplication.translate('HTML Report Template','Dry Percent',None)          ],
+            ["MAI_percent",         "rank",  "percent",  "false",  "",      QApplication.translate('HTML Report Template','MAI Percent',None)          ],
+            ["DEV_percent",         "rank",  "percent",  "false",  "",      QApplication.translate('HTML Report Template','Dev Percent',None)          ],
+            ["AUC",                 "comp",  "int",      "false",  "",      QApplication.translate('HTML Report Template','AUC',None)                  ],
+            ["weight_loss",         "comp",  "percent",  "false",  "",      QApplication.translate('HTML Report Template','Weight Loss',None)          ],
+            ["color",               "rank",  "text2int", "false",  "",      QApplication.translate('HTML Report Template','Color',None)                ],
+            ["cupping",             "rank",  "text2int", "false",  "",      QApplication.translate('HTML Report Template','Cupping',None)              ],
+            ["roastertype",         "prof",  "text",     "false",  "",      QApplication.translate('HTML Report Template','Roaster',None)              ],
+            ["roastersize",         "prof",  "float1",   "true",   "",      QApplication.translate('HTML Report Template','Capacity',None)             ],
+            ["operator",            "prof",  "text",     "false",  "",      QApplication.translate('HTML Report Template','Operator',None)             ],
+            ["organization",        "prof",  "text",     "false",  "",      QApplication.translate('HTML Report Template','Organization',None)         ],
+            ["drumspeed",           "prof",  "text2int", "true" ,  "",      QApplication.translate('HTML Report Template','Drum Speed',None)           ],
+            ["whole_color",         "prof",  "int",      "true" ,  "",      QApplication.translate('HTML Report Template','Whole Color',None)          ], 
+            ["ground_color",        "prof",  "int",      "true" ,  "",      QApplication.translate('HTML Report Template','Ground Color',None)         ],
+            ["color_system",        "prof",  "text",     "false",  "",      QApplication.translate('HTML Report Template','Color System',None)         ],
+            ["beansize_min",        "prof",  "text2int", "true" ,  "",      QApplication.translate('HTML Report Template','Screen Min',None)           ],
+            ["beansize_max",        "prof",  "text2int", "true" ,  "",      QApplication.translate('HTML Report Template','Screen Max',None)           ],
+            ["greens_temp",         "prof",  "float1",   "true" ,  "temp",  QApplication.translate('HTML Report Template','Bean Temp',None)            ],
+            ["CHARGE_ET",           "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','CHARGE ET',None)            ],
+            ["CHARGE_BT",           "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','CHARGE BT',None)            ],
+            ["TP_time",             "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','TP Time',None)              ],
+            ["TP_ET",               "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','TP ET',None)                ],
+            ["TP_BT",               "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','TP BT',None)                ],
+            ["DRY_time",            "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','DRY Time',None)             ],
+            ["DRY_ET",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','DRY ET',None)               ],
+            ["DRY_BT",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','DRY BT',None)               ],
+            ["FCs_time",            "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','FCs Time',None)             ],
+            ["FCs_ET",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','FCs ET',None)               ],
+            ["FCs_BT",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','FCs BT',None)               ],
+            ["FCe_time",            "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','FCe Time',None)             ],
+            ["FCe_ET",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','FCe ET',None)               ],
+            ["FCe_BT",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','FCe BT',None)               ],
+            ["SCs_time",            "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','SCs Time',None)             ],  
+            ["SCs_ET",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','SCs ET',None)               ],
+            ["SCs_BT",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','SCs BT',None)               ],
+            ["SCe_time",            "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','SCe Time',None)             ],
+            ["SCe_ET",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','SCe ET',None)               ],
+            ["SCe_BT",              "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','SCe BT',None)               ],
+            ["DROP_time",           "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','DROP Time',None)            ],
+            ["DROP_ET",             "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','DROP ET',None)              ],
+            ["DROP_BT",             "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','DROP BT',None)              ],
+            ["COOL_time",           "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','COOL Time',None)            ],
+            ["COOL_ET",             "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','COOL ET',None)              ],
+            ["COOL_BT",             "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','COOL BT',None)              ],
+            ["totaltime",           "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','Total Time',None)           ],
+            ["dryphasetime",        "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','Dry Phase Time',None)       ],
+            ["midphasetime",        "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','Mid Phase Time',None)       ],
+            ["finishphasetime",     "comp",  "time",     "false",  "",      QApplication.translate('HTML Report Template','Finish Phase Time',None)    ],
+            ["dry_phase_ror",       "comp",  "float1",   "false",  "ror",   QApplication.translate('HTML Report Template','Dry Phase RoR',None)        ],
+            ["mid_phase_ror",       "comp",  "float1",   "false",  "ror",   QApplication.translate('HTML Report Template','Mid Phase RoR',None)        ],
+            ["finish_phase_ror",    "comp",  "float1",   "false",  "ror",   QApplication.translate('HTML Report Template','Finish Phase RoR',None)     ],
+            ["dsd['computed']['finish_phase_ror'] * (dsd['computed']['finishphasetime'] / 60)", "eval", "float1", "false", "temp", QApplication.translate('HTML Report Template','Finish Phase Rise',None)],
+            ["total_ror",           "comp",  "float1",   "false",  "ror",   QApplication.translate('HTML Report Template','Total RoR',None)            ],
+            ["fcs_ror",             "comp",  "float1",   "false",  "ror",   QApplication.translate('HTML Report Template','FCs RoR',None)              ],
+            ["MET",                 "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','MET',None)                  ],
+            ["AUC",                 "comp",  "int",      "false",  "",      QApplication.translate('HTML Report Template','AUC',None)                  ],
+            ["(dsd['computed']['AUCbegin'] if ('AUCbegin' in dsd['computed'] and 'AUCfromeventflag' in dsd['computed'] and dsd['computed']['AUCfromeventflag']) else '')", "eval", "text", "false", "", QApplication.translate('HTML Report Template','AUC Begin',None)  ],
+            ["AUCbase",             "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','AUC Base',None)             ],
+            ["dry_phase_AUC",       "comp",  "int",      "false",  "",      QApplication.translate('HTML Report Template','Dry Phase AUC',None)        ],
+            ["mid_phase_AUC",       "comp",  "int",      "false",  "",      QApplication.translate('HTML Report Template','Mid Phase AUC',None)        ],
+            ["finish_phase_AUC",    "comp",  "int",      "false",  "",      QApplication.translate('HTML Report Template','Finish Phase AUC',None)     ],
+            ["weightin",            "comp",  "float1",   "false",  "weight",QApplication.translate('HTML Report Template','Weight In',None)            ],
+            ["weightout",           "comp",  "float1",   "false",  "weight",QApplication.translate('HTML Report Template','Weight Out',None)           ],
+            ["weight_loss",         "comp",  "percent",  "false",  "",      QApplication.translate('HTML Report Template','Weight Loss',None)          ],
+            ["volumein",            "comp",  "float1",   "false",  "volume",QApplication.translate('HTML Report Template','Volume In',None)            ],
+            ["volumeout",           "comp",  "float1",   "false",  "volume",QApplication.translate('HTML Report Template','Volume Out',None)           ],
+            ["volume_gain",         "comp",  "percent",  "false",  "",      QApplication.translate('HTML Report Template','Volume Gain',None)          ],
+            ["green_density",       "comp",  "float1",   "false",  "(g/l)", QApplication.translate('HTML Report Template','Green Density',None)        ],
+            ["roasted_density",     "comp",  "float1",   "false",  "(g/l)", QApplication.translate('HTML Report Template','Roasted Density',None)      ],
+            ["moisture_greens",     "comp",  "percent",  "false",  "",      QApplication.translate('HTML Report Template','Moisture Greens',None)      ],
+            ["moisture_roasted",    "comp",  "percent",  "false",  "",      QApplication.translate('HTML Report Template','Moisture Roasted',None)     ],
+            ["moisture_loss",       "comp",  "percent",  "false",  "",      QApplication.translate('HTML Report Template','Moisture Loss',None)        ],
+            ["organic_loss",        "comp",  "percent",  "false",  "",      QApplication.translate('HTML Report Template','Organic Loss',None)         ],
+            ["ambient_humidity",    "comp",  "float1",   "false",  "",      QApplication.translate('HTML Report Template','Ambient Humidity',None)     ],
+            ["ambient_pressure",    "comp",  "float1",   "false",  "",      QApplication.translate('HTML Report Template','Ambient Pressure',None)     ],
+            ["ambient_temperature", "comp",  "float1",   "false",  "temp",  QApplication.translate('HTML Report Template','Ambient Temperature',None)  ],
+            ["beans",               "prof",  "text",     "false",  "90",    QApplication.translate('HTML Report Template','Beans',None)                ],
+            ["roastingnotes",       "prof",  "text",     "false",  "90",    QApplication.translate('HTML Report Template','Roasting Notes',None)       ],
+            ["cuppingnotes",        "prof",  "text",     "false",  "90",    QApplication.translate('HTML Report Template','Cupping Notes',None)        ],
+            ["heavyFC",             "prof",  "bool",     "false",  "",      QApplication.translate('HTML Report Template','Heavy FC',None)             ],
+            ["lowFC",               "prof",  "bool",     "false",  "",      QApplication.translate('HTML Report Template','Low FC',None)               ],
+            ["lightCut",            "prof",  "bool",     "false",  "",      QApplication.translate('HTML Report Template','Light Cut',None)            ],
+            ["darkCut",             "prof",  "bool",     "false",  "",      QApplication.translate('HTML Report Template','Dark Cut',None)             ],
+            ["drops",               "prof",  "bool",     "false",  "",      QApplication.translate('HTML Report Template','Drops',None)                ],
+            ["oily",                "prof",  "bool",     "false",  "",      QApplication.translate('HTML Report Template','Oily',None)                 ],
+            ["uneven",              "prof",  "bool",     "false",  "",      QApplication.translate('HTML Report Template','Uneven',None)               ],
+            ["tipping",             "prof",  "bool",     "false",  "",      QApplication.translate('HTML Report Template','Tipping',None)              ],
+            ["scorching",           "prof",  "bool",     "false",  "",      QApplication.translate('HTML Report Template','Scorching',None)            ],
+            ["divots",              "prof",  "bool",     "false",  "",      QApplication.translate('HTML Report Template','Divots',None)               ],
+            ["mode",                "prof",  "text",     "false",  "",      QApplication.translate('HTML Report Template','Mode',None)                 ],
+            ["BTU_batch",           "comp",  "float1",   "false",  "(BTU)", QApplication.translate('HTML Report Template','BTU Batch',None)            ],
+            ["BTU_batch_per_green_kg","comp","float1",   "false",  "(BTU)", QApplication.translate('HTML Report Template','BTU Batch per green kg',None)],
+            ["CO2_batch",           "comp",  "float1",   "false",  "(g)",   QApplication.translate('HTML Report Template','CO2 Batch',None).replace("CO2","CO₂")            ],
+            ["BTU_preheat",         "comp",  "float1",   "false",  "(BTU)", QApplication.translate('HTML Report Template','BTU Preheat',None)          ],
+            ["CO2_preheat",         "comp",  "float1",   "false",  "(g)",   QApplication.translate('HTML Report Template','CO2 Preheat',None).replace("CO2","CO₂")          ],
+            ["BTU_bbp",             "comp",  "float1",   "false",  "(BTU)", QApplication.translate('HTML Report Template','BTU BBP',None)              ],
+            ["CO2_bbp",             "comp",  "float1",   "false",  "(g)",   QApplication.translate('HTML Report Template','CO2 BBP',None).replace("CO2","CO₂")              ],
+            ["BTU_cooling",         "comp",  "float1",   "false",  "(BTU)", QApplication.translate('HTML Report Template','BTU Cooling',None)          ],
+            ["CO2_cooling",         "comp",  "float1",   "false",  "(g)",   QApplication.translate('HTML Report Template','CO2 Cooling',None).replace("CO2","CO₂")          ],
+            ["BTU_roast",           "comp",  "float1",   "false",  "(BTU)", QApplication.translate('HTML Report Template','BTU Roast',None)            ],
+            ["BTU_roast_per_green_kg","comp","float1",   "false",  "(BTU)", QApplication.translate('HTML Report Template','BTU Roast per green kg',None)],
+            ["CO2_roast",           "comp",  "float1",   "false",  "(g)",   QApplication.translate('HTML Report Template','CO2 Roast',None).replace("CO2","CO₂")            ],
+            ["CO2_batch_per_green_kg","comp","float1",   "false",  "(g)",   QApplication.translate('HTML Report Template','CO2 Batch per green kg',None).replace("CO2","CO₂")],
+            ["BTU_LPG",             "comp",  "float1",   "false",  "(BTU)", QApplication.translate('HTML Report Template','BTU LPG',None)              ],
+            ["BTU_NG",              "comp",  "float1",   "false",  "(BTU)", QApplication.translate('HTML Report Template','BTU NG',None)               ],
+            ["BTU_ELEC",            "comp",  "float1",   "false",  "(BTU)", QApplication.translate('HTML Report Template','BTU ELEC',None)             ],
+            ["KWH_batch_per_green_kg","comp","float1",   "false",  "(kWh/kg)", QApplication.translate('HTML Report Template','Efficiency Batch',None)  ],
+            ["KWH_roast_per_green_kg","comp","float1",   "false",  "(kWh/kg)", QApplication.translate('HTML Report Template','Efficiency Roast',None)  ],
         ]
         return ranking_data_fields, field_index
 
@@ -31942,7 +31830,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " extendedRankingData2List() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " extendedRankingData2List() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
             return []
 
     @staticmethod
@@ -32130,7 +32018,7 @@ class ApplicationWindow(QMainWindow):
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
                         _, _, exc_tb = sys.exc_info()
-                        aw.qmc.adderror((QApplication.translate("Error Message","Exception (probably due to an empty profile):") + " rankingReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                        aw.qmc.adderror((QApplication.translate("Error Message","Exception (probably due to an empty profile):",None) + " rankingReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
                         continue
                     i = aw.convertWeight(pd["weight"][0],aw.qmc.weight_units.index(pd["weight"][2]),aw.qmc.weight_units.index(aw.qmc.weight[2]))
                     #o = aw.convertWeight(pd["weight"][1],aw.qmc.weight_units.index(pd["weight"][2]),aw.qmc.weight_units.index(aw.qmc.weight[2]))
@@ -32219,7 +32107,7 @@ class ApplicationWindow(QMainWindow):
                                 pd["batchprefix"] = label
                                 label_chr_nr = label_chr_nr + 1
                             # surpress default description
-#                            if pd["title"] == QApplication.translate("Scope Title", "Roaster Scope"):
+#                            if pd["title"] == QApplication.translate("Scope Title", "Roaster Scope",None):
 #                                pd["title"] = ""
 
                             entries += self.rankingData2htmlentry(pd,rd, cl) + "\n"
@@ -32287,7 +32175,7 @@ class ApplicationWindow(QMainWindow):
                         except Exception as e: # pylint: disable=broad-except
                             _log.exception(e)
                             _, _, exc_tb = sys.exc_info()
-                            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " rankingReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " rankingReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
                 # draw BT curves on top of all others
                 for i in range(len(timex_list)):
@@ -32309,8 +32197,8 @@ class ApplicationWindow(QMainWindow):
                 prop.set_size("x-small")
 
                 if len(profiles) > max_profiles:
-                    QMessageBox.information(aw,QApplication.translate("Message", "Ranking Report"),
-                                              QApplication.translate("Message", "Ranking graphs are only generated up to {0} profiles").format(str(max_profiles)))
+                    QMessageBox.information(aw,QApplication.translate("Message", "Ranking Report",None),
+                                              QApplication.translate("Message", "Ranking graphs are only generated up to {0} profiles",None).format(str(max_profiles)))
                 else:
                     try:
 
@@ -32419,7 +32307,7 @@ class ApplicationWindow(QMainWindow):
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
                         _, _, exc_tb = sys.exc_info()
-                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " rankingReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " rankingReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
                 try:
                     # Create a roast phase visualization graph
@@ -32497,7 +32385,7 @@ class ApplicationWindow(QMainWindow):
                         except Exception as e: # pylint: disable=broad-except
                             _log.exception(e)
                             _, _, exc_tb = sys.exc_info()
-                            aw.qmc.adderror((QApplication.translate("Error Message","Exception (probably due to an empty profile):") + " rankingReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                            aw.qmc.adderror((QApplication.translate("Error Message","Exception (probably due to an empty profile):",None) + " rankingReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
                             i += 1   #avoid a blank line
                             continue
                         pd = self.profileProductionData(p)
@@ -32524,7 +32412,7 @@ class ApplicationWindow(QMainWindow):
                             ax.text( n + rd["DRY_percent"] + rd["MAI_percent"] + rd["DEV_percent"] + g + 1, i*(barheight + barspacer) + textoffset, stringfromseconds(rd["DROP_time"]), ha='left', color=fontcolor, fontproperties=prop)
                         elif "DEV_percent" in rd:   # has FCs but no Dry event
                             cl = cl[0],'white',cl[3]
-                            missingDryevent = QApplication.translate("Message", "Profile missing Dry event")
+                            missingDryevent = QApplication.translate("Message", "Profile missing Dry event",None)
                             ax.broken_barh( [ (0, m),
                                               (n, 100 - rd["DEV_percent"]),
                                               (n+ 100 - rd["DEV_percent"], rd["DEV_percent"]),
@@ -32539,7 +32427,7 @@ class ApplicationWindow(QMainWindow):
                         else:    # no useful events
                             drop_time= rd.get("DROP_time", 0)
                             cl = cl[0],'white'
-                            missingPhaseevents = QApplication.translate("Message", "Profile missing phase events")
+                            missingPhaseevents = QApplication.translate("Message", "Profile missing phase events",None)
                             ax.broken_barh( [ (0, m),
                                               (n, 100),
                                               (n+ 100 + g, m*(0 if max_drop_time == 0 else drop_time/max_drop_time))
@@ -32565,7 +32453,7 @@ class ApplicationWindow(QMainWindow):
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
                     _, _, exc_tb = sys.exc_info()
-                    aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " rankingReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                    aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " rankingReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
                 try:
                     # redraw original graph
@@ -32580,12 +32468,12 @@ class ApplicationWindow(QMainWindow):
                 weight_fmt = ('{0:.2f}' if aw.qmc.weight[2] in ["Kg", "lb", "oz"] else '{0:.0f}')
                 html = libstring.Template(HTML_REPORT_TEMPLATE).safe_substitute(
                     resources = str(getResourcePath()),
-                    title = QApplication.translate("HTML Report Template", "Roast Ranking"),
-                    time = QApplication.translate("HTML Report Template", "Date"),
-                    profile = QApplication.translate("Label", "Title"),
-                    weightin = QApplication.translate("HTML Report Template", "In"),
-                    weightloss = QApplication.translate("HTML Report Template", "Loss"),
-                    colorHeader = QApplication.translate("HTML Report Template", "Color"),
+                    title = QApplication.translate("HTML Report Template", "Roast Ranking", None),
+                    time = QApplication.translate("HTML Report Template", "Date", None),
+                    profile = QApplication.translate("Label", "Title", None),
+                    weightin = QApplication.translate("HTML Report Template", "In", None),
+                    weightloss = QApplication.translate("HTML Report Template", "Loss", None),
+                    colorHeader = QApplication.translate("HTML Report Template", "Color", None),
                     weight_unit = aw.qmc.weight[2].lower(),
                     temp_unit = aw.qmc.mode,
                     entries = entries,
@@ -32624,7 +32512,7 @@ class ApplicationWindow(QMainWindow):
                     QDesktopServices.openUrl(QUrl(full_path, QUrl.ParsingMode.TolerantMode))
 
                 except IOError as e:
-                    aw.qmc.adderror((QApplication.translate("Error Message", "IO Error:") + " rankingReport() {0}").format(str(e)))
+                    aw.qmc.adderror((QApplication.translate("Error Message", "IO Error:",None) + " rankingReport() {0}").format(str(e)))
 
     @pyqtSlot()
     @pyqtSlot(bool)
@@ -32639,7 +32527,7 @@ class ApplicationWindow(QMainWindow):
                     try:
                         outfile = open(filename, 'w',newline="", encoding='utf-8') # pylint: disable=consider-using-with
                     except IOError as x:
-                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " Err [{0}] Can not write to file, perhaps it is open in an application or is write protected?").format(x.errno))
+                        aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " Err [{0}] Can not write to file, perhaps it is open in an application or is write protected?").format(x.errno))
                         QApplication.beep()
                         return
                     writer = csv.writer(outfile,delimiter='\t',quotechar='"')
@@ -32661,10 +32549,10 @@ class ApplicationWindow(QMainWindow):
                         except Exception as e: # pylint: disable=broad-except
                             _, _, exc_tb = sys.exc_info()
 #                            traceback.print_exc(file=sys.stdout)
-                            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " rankingCSVReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " rankingCSVReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
                     # close file
                     outfile.close()
-                    aw.sendmessage(QApplication.translate("Message","CSV Ranking Report exported to {0}").format(filename))
+                    aw.sendmessage(QApplication.translate("Message","CSV Ranking Report exported to {0}", None).format(filename))
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
 
@@ -32684,7 +32572,7 @@ class ApplicationWindow(QMainWindow):
                     from openpyxl.styles import Font, Fill, Alignment # @UnusedImport # pylint: disable=unused-import
                     wb = Workbook()
                     ws = wb.active # wb.create_sheet()
-                    ws.title = QApplication.translate("HTML Report Template", "Ranking Report")
+                    ws.title = QApplication.translate("HTML Report Template", "Ranking Report",None)
                     bf = Font(name='Calibri',size='11',bold=True)
                     ws.font = Font(name='Calibri',size='11')
 
@@ -32817,7 +32705,7 @@ class ApplicationWindow(QMainWindow):
                         except Exception as e: # pylint: disable=broad-except
                             _log.exception(e)
                             _, _, exc_tb = sys.exc_info()
-                            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " rankingExcelReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " rankingExcelReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
                     # write trailer
                     if c > 1:
@@ -32825,7 +32713,7 @@ class ApplicationWindow(QMainWindow):
                             rng = "{0}{1}:{0}{2}".format(c,s,e)
                             return '=IF(SUMPRODUCT(--(' + rng + '<>""))=0,"",AVERAGE(' + rng + '))'
 
-                        ws['A{0}'.format(c+1)] = QApplication.translate("HTML Report Template", "AVG")
+                        ws['A{0}'.format(c+1)] = QApplication.translate("HTML Report Template", "AVG", None)
                         ws['A{0}'.format(c+1)].font = bf
                         cnum = col_
                         for i in range(len(ranking_data_fields)):
@@ -32879,15 +32767,15 @@ class ApplicationWindow(QMainWindow):
 
                     # close file
                     wb.save(filename)
-                    aw.sendmessage(QApplication.translate("Message","Excel Ranking Report exported to {0}").format(filename))
+                    aw.sendmessage(QApplication.translate("Message","Excel Ranking Report exported to {0}", None).format(filename))
                 except IOError as x:
                     _log.exception(x)
-                    aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " Err [{0}] Can not write to file, perhaps it is open in an application or is write protected?").format(x.errno))
+                    aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " Err [{0}] Can not write to file, perhaps it is open in an application or is write protected?").format(x.errno))
                     QApplication.beep()
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
                     _, _, exc_tb = sys.exc_info()
-                    aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " rankingExcelReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                    aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " rankingExcelReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
 
     @pyqtSlot()
@@ -32959,16 +32847,10 @@ class ApplicationWindow(QMainWindow):
                 met = "%.0f"%cp["MET"] + "&deg;" + self.qmc.mode
             ror = "--"
             if "total_ror" in cp:
-                ror = "%d%s%s%s"%(cp["total_ror"],uchr(176),aw.qmc.mode,QApplication.translate("Label", "/m"))
-            try:
-                if  self.qmc.density[0] != 0.0 and self.qmc.density_roasted[0] != 0.0:
-                    percent = -1 * aw.weight_loss(self.qmc.density[0], self.qmc.density_roasted[0])
-                    density = self.volume_weight2html(self.qmc.density[0],self.qmc.density_roasted[0],"g/l",percent)
-                elif "set_density" in cp:
-                    density = "%.1fg/l (set)"%cp["set_density"]
-                else:
-                    density = "--"
-            except Exception: # pylint: disable=broad-except
+                ror = "%d%s%s%s"%(cp["total_ror"],uchr(176),aw.qmc.mode,QApplication.translate("Label", "/m",None))
+            if "set_density" in cp:
+                density = "%.1fg/l (set)"%cp["set_density"]
+            else:
                 density = "--"
             if  self.qmc.weight[0] != 0.0 and self.qmc.weight[1] != 0.0:
                 weight = self.volume_weight2html(self.qmc.weight[0],self.qmc.weight[1],self.qmc.weight[2],cp["weight_loss"])
@@ -32978,6 +32860,16 @@ class ApplicationWindow(QMainWindow):
                 volume = self.volume_weight2html(self.qmc.volume[0],self.qmc.volume[1],self.qmc.volume[2],cp["volume_gain"])
             else:
                 volume = "--"
+#            if self.qmc.volume[0] != 0.0 and self.qmc.volume[1] != 0.0 and self.qmc.weight[0] != 0.0 and self.qmc.weight[1] != 0.0:
+#                degree = str(self.roast_degree(cp["weight_loss"]))
+#                if "set_density" in cp:
+#                    if "green_density" in cp and "roasted_density" in cp:
+#                        density = "%.1fg/l (%s)<br>%.1fg/l (%s)"%(cp["green_density"],QApplication.translate("Label","greens"),cp["roasted_density"],QApplication.translate("Label","roasted"))
+#                elif "green_density" in cp and "roasted_density" in cp:
+#                    density = "%.1fg/l (%s)<br>%.1fg/l (%s)"%(cp["green_density"],QApplication.translate("Label","greens"),cp["roasted_density"],QApplication.translate("Label","roasted"))
+#            else:
+#                degree = "--"
+
             moisture = ""
             if "moisture_greens" in cp:
                 moisture = "%d%%"%cp["moisture_greens"]
@@ -33065,86 +32957,85 @@ class ApplicationWindow(QMainWindow):
             html = libstring.Template(HTML_REPORT_TEMPLATE).safe_substitute(
                 title=title_html,
                 titlecolor=QColor(aw.qmc.palette["title"]).name(),
-                doc=QApplication.translate("HTML Report Template", "Roasting Report"),
-                datatime_label=QApplication.translate("HTML Report Template", "Date:"),
+                doc=QApplication.translate("HTML Report Template", "Roasting Report", None),
+                datatime_label=QApplication.translate("HTML Report Template", "Date:", None),
                 datetime=datetime_html,
-                beans_label=QApplication.translate("HTML Report Template", "Beans:"),
+                beans_label=QApplication.translate("HTML Report Template", "Beans:", None),
                 beans=beans_html,
-                weight_label=QApplication.translate("HTML Report Template", "Weight:"),
+                weight_label=QApplication.translate("HTML Report Template", "Weight:", None),
                 weight=weight,
-#                degree_label=QApplication.translate("HTML Report Template", "Degree:"),
+#                degree_label=QApplication.translate("HTML Report Template", "Degree:", None),
 #                degree=degree,
-                volume_label=QApplication.translate("HTML Report Template", "Volume:"),
+                volume_label=QApplication.translate("HTML Report Template", "Volume:", None),
                 volume=volume,
-                roaster_label=QApplication.translate("HTML Report Template", "Roaster:"),
+                roaster_label=QApplication.translate("HTML Report Template", "Roaster:", None),
                 roaster=str(htmllib.escape(self.qmc.roastertype)),
-                operator_label=QApplication.translate("HTML Report Template", "Operator:"),
+                operator_label=QApplication.translate("HTML Report Template", "Operator:", None),
                 operator=str(htmllib.escape(self.qmc.operator)),
-                organization_label=QApplication.translate("HTML Report Template", "Organization:"),
+                organization_label=QApplication.translate("HTML Report Template", "Organization:", None),
                 organization=str(htmllib.escape(self.qmc.organization)),
-                cup_label=QApplication.translate("HTML Report Template", "Cupping:"),
+                cup_label=QApplication.translate("HTML Report Template", "Cupping:", None),
                 cup=str(aw.float2float(self.cuppingSum(self.qmc.flavors))),
-                color_label=QApplication.translate("HTML Report Template", "Color:"),
+                color_label=QApplication.translate("HTML Report Template", "Color:", None),
                 color=color,
-                energy_label=QApplication.translate("HTML Report Template", "Energy:"),
+                energy_label=QApplication.translate("HTML Report Template", "Energy:", None),
                 energy=energy,
-                CO2_label=QApplication.translate("HTML Report Template", "CO2:").replace("CO2","CO₂"),
+                CO2_label=QApplication.translate("HTML Report Template", "CO2:", None).replace("CO2","CO₂"),
                 CO2=CO2,
-                charge_label=QApplication.translate("HTML Report Template", "CHARGE:"),
+                charge_label=QApplication.translate("HTML Report Template", "CHARGE:", None),
                 charge=charge,
-                size_label=QApplication.translate("HTML Report Template", "Size:"),
-                size="--" if (aw.qmc.beansize_max == 0 and aw.qmc.beansize_min == 0) else (str(round(int(aw.qmc.beansize_min))) if aw.qmc.beansize_min != 0 else ""
-                    ) + ("/" if (aw.qmc.beansize_max != 0 and aw.qmc.beansize_min != 0) else "") + (str(round(int(aw.qmc.beansize_max))) if (aw.qmc.beansize_max != 0) else ""),
-                density_label=QApplication.translate("HTML Report Template", "Density:"),
+                size_label=QApplication.translate("HTML Report Template", "Size:", None),
+                size="--" if aw.qmc.beansize_max == 0.0 else str(aw.qmc.beansize_max) + "mm",
+                density_label=QApplication.translate("HTML Report Template", "Density:", None),
                 density=density,
-                moisture_label=QApplication.translate("HTML Report Template", "Moisture:"),
+                moisture_label=QApplication.translate("HTML Report Template", "Moisture:", None),
                 moisture=moisture,
-                humidity_label=QApplication.translate("HTML Report Template", "Ambient:"),
+                humidity_label=QApplication.translate("HTML Report Template", "Ambient:", None),
                 humidity=humidity,
-                TP_label=QApplication.translate("HTML Report Template", "TP:"),
+                TP_label=QApplication.translate("HTML Report Template", "TP:", None),
                 TP=self.event2html(cp,"TP_time","TP_BT"),
-                DRY_label=QApplication.translate("HTML Report Template", "DRY:"),
+                DRY_label=QApplication.translate("HTML Report Template", "DRY:", None),
                 DRY=self.event2html(cp,"DRY_time","DRY_BT"),
-                FCs_label=QApplication.translate("HTML Report Template", "FCs:"),
+                FCs_label=QApplication.translate("HTML Report Template", "FCs:", None),
                 FCs=self.event2html(cp,"FCs_time","FCs_BT"),
-                FCe_label=QApplication.translate("HTML Report Template", "FCe:"),
+                FCe_label=QApplication.translate("HTML Report Template", "FCe:", None),
                 FCe=self.event2html(cp,"FCe_time","FCe_BT"),
-                SCs_label=QApplication.translate("HTML Report Template", "SCs:"),
+                SCs_label=QApplication.translate("HTML Report Template", "SCs:", None),
                 SCs=self.event2html(cp,"SCs_time","SCs_BT"),
-                SCe_label=QApplication.translate("HTML Report Template", "SCe:"),
+                SCe_label=QApplication.translate("HTML Report Template", "SCe:", None),
                 SCe=self.event2html(cp,"SCe_time","SCe_BT"),
-                drop_label=QApplication.translate("HTML Report Template", "DROP:"),
+                drop_label=QApplication.translate("HTML Report Template", "DROP:", None),
                 drop=self.event2html(cp,"DROP_time","DROP_BT"),
-                cool_label=QApplication.translate("HTML Report Template", "COOL:"),
+                cool_label=QApplication.translate("HTML Report Template", "COOL:", None),
                 cool=self.event2html(cp,"COOL_time",None,"DROP_time"),
-                met_label=QApplication.translate("HTML Report Template", "MET:"),
+                met_label=QApplication.translate("HTML Report Template", "MET:", None),
                 met=met,
-                cm_label=QApplication.translate("HTML Report Template", "CM:"),
+                cm_label=QApplication.translate("HTML Report Template", "CM:", None),
                 cm_tuple=cm_tuple,
-                dry_phase_label=QApplication.translate("HTML Report Template", "Drying:"),
+                dry_phase_label=QApplication.translate("HTML Report Template", "Drying:", None),
                 dry_phase=dryphase,
-                mid_phase_label=QApplication.translate("HTML Report Template", "Maillard:"),
+                mid_phase_label=QApplication.translate("HTML Report Template", "Maillard:", None),
                 mid_phase=midphase,
-                finish_phase_label=QApplication.translate("HTML Report Template", "Finishing:"),
+                finish_phase_label=QApplication.translate("HTML Report Template", "Finishing:", None),
                 finish_phase=finishphase,
-                cool_phase_label=QApplication.translate("HTML Report Template", "Cooling:"),
+                cool_phase_label=QApplication.translate("HTML Report Template", "Cooling:", None),
                 cool_phase=coolphase,
-                background_label=QApplication.translate("HTML Report Template", "Background:"),
+                background_label=QApplication.translate("HTML Report Template", "Background:", None),
                 background=background_html,
-                alarms_label=QApplication.translate("HTML Report Template", "Alarms:"),
+                alarms_label=QApplication.translate("HTML Report Template", "Alarms:", None),
                 alarms=alarms,
-                ror_label=QApplication.translate("HTML Report Template", "RoR:"),
+                ror_label=QApplication.translate("HTML Report Template", "RoR:", None),
                 ror= ror,
-                etbta_label=QApplication.translate("HTML Report Template", "AUC:"),
+                etbta_label=QApplication.translate("HTML Report Template", "AUC:", None),
                 etbta=etbta,
-                roasting_notes_label=(QApplication.translate("HTML Report Template", "Roasting Notes") if self.qmc.roastingnotes != "" else ""),
+                roasting_notes_label=(QApplication.translate("HTML Report Template", "Roasting Notes", None) if self.qmc.roastingnotes != "" else ""),
                 roasting_notes=self.note2html(self.qmc.roastingnotes),
                 roast_attributes=self.roastattributes(),
                 graph_image=graph_image,
                 flavor_image=flavor_image,
-                specialevents_label=QApplication.translate("HTML Report Template", "Events"),
+                specialevents_label=QApplication.translate("HTML Report Template", "Events", None),
                 specialevents=self.specialevents2html(),
-                cupping_notes_label=(QApplication.translate("HTML Report Template", "Cupping Notes") if self.qmc.cuppingnotes != "" else ""),
+                cupping_notes_label=(QApplication.translate("HTML Report Template", "Cupping Notes", None) if self.qmc.cuppingnotes != "" else ""),
                 cupping_notes=self.note2html(self.qmc.cuppingnotes))
             f = None
             try:
@@ -33164,7 +33055,7 @@ class ApplicationWindow(QMainWindow):
 
             except IOError as e:
                 _log.exception(e)
-                aw.qmc.adderror((QApplication.translate("Error Message", "IO Error:") + " htmlReport() {0}").format(str(e)))
+                aw.qmc.adderror((QApplication.translate("Error Message", "IO Error:",None) + " htmlReport() {0}").format(str(e)))
             finally:
                 if f:
                     f.close()
@@ -33175,32 +33066,32 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " htmlReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " htmlReport() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     # returns a string with all the activated roast attributes
     @staticmethod
     def roastattributes():
         res = []
         if aw.qmc.heavyFC_flag:
-            res.append(QApplication.translate("CheckBox","Heavy FC"))
+            res.append(QApplication.translate("CheckBox","Heavy FC", None))
         if aw.qmc.lowFC_flag:
-            res.append(QApplication.translate("CheckBox","Low FC"))
+            res.append(QApplication.translate("CheckBox","Low FC", None))
         if aw.qmc.lightCut_flag:
-            res.append(QApplication.translate("CheckBox","Light Cut"))
+            res.append(QApplication.translate("CheckBox","Light Cut", None))
         if aw.qmc.darkCut_flag:
-            res.append(QApplication.translate("CheckBox","Dark Cut"))
+            res.append(QApplication.translate("CheckBox","Dark Cut", None))
         if aw.qmc.drops_flag:
-            res.append(QApplication.translate("CheckBox","Drops"))
+            res.append(QApplication.translate("CheckBox","Drops", None))
         if aw.qmc.oily_flag:
-            res.append(QApplication.translate("CheckBox","Oily"))
+            res.append(QApplication.translate("CheckBox","Oily", None))
         if aw.qmc.uneven_flag:
-            res.append(QApplication.translate("CheckBox","Uneven"))
+            res.append(QApplication.translate("CheckBox","Uneven", None))
         if aw.qmc.tipping_flag:
-            res.append(QApplication.translate("CheckBox","Tipping"))
+            res.append(QApplication.translate("CheckBox","Tipping", None))
         if aw.qmc.scorching_flag:
-            res.append(QApplication.translate("CheckBox","Scorching"))
+            res.append(QApplication.translate("CheckBox","Scorching", None))
         if aw.qmc.divots_flag:
-            res.append(QApplication.translate("CheckBox","Divots"))
+            res.append(QApplication.translate("CheckBox","Divots", None))
         if len(res) > 0:
             return "\n<center><pre>" + ', '.join(res) + "</pre></center>"
         return ""
@@ -33233,28 +33124,48 @@ class ApplicationWindow(QMainWindow):
                     dryphase = "%s (%d%%)"%(stringfromseconds(cp["dryphasetime"]),int(round(dryphasetime*100./totaltime)))
                     if "dry_phase_ror" in cp:
                         dryphase += "<br>%.1f%s%s/min"%(cp["dry_phase_ror"],uchr(176),aw.qmc.mode)
-                    if "dry_phase_delta_temp" in cp:
-                        dryphase += "<br>%.1f%s%s"%(cp["dry_phase_delta_temp"],uchr(176),aw.qmc.mode)
+                    if "dry_phase_AUC" in cp:
+                        dryphase += "<br>%dC*min"%(cp["dry_phase_AUC"])
+                        if ("AUCbegin" in cp and cp["AUCbegin"] != '' and "AUCbase" in cp):
+                            dryphase += " [%s,%d]"%(cp["AUCbegin"],round(cp["AUCbase"]))
+                        elif ("AUCbase" in cp):
+                            dryphase += " [%d]"%(round(cp["AUCbase"]))
+#                    if "dryphaseeval" in cp:
+#                        dryphase += "<br>" + decodeLocal(cp["dryphaseeval"])
                 #midphase
                 if "midphasetime" in cp:
                     midphasetime = cp["midphasetime"]
                     midphase = "%s (%d%%)"%(stringfromseconds(cp["midphasetime"]),int(round(midphasetime*100./totaltime)))
                     if "mid_phase_ror" in cp:
                         midphase += "<br>%.1f%s%s/min"%(cp["mid_phase_ror"],uchr(176),aw.qmc.mode)
-                    if "mid_phase_delta_temp" in cp:
-                        midphase += "<br>%.1f%s%s"%(cp["mid_phase_delta_temp"],uchr(176),aw.qmc.mode)
+                    if "mid_phase_AUC" in cp:
+                        midphase += "<br>%dC*min"%(cp["mid_phase_AUC"])
+                        if ("AUCbegin" in cp and cp["AUCbegin"] != '' and "AUCbase" in cp):
+                            midphase += " [%s,%d]"%(cp["AUCbegin"],round(cp["AUCbase"]))
+                        elif ("AUCbase" in cp):
+                            midphase += " [%d]"%(round(cp["AUCbase"]))
+#                    if "midphaseeval" in cp:
+#                        midphase += "<br>" + decodeLocal(cp["midphaseeval"])
                 #finishphase
                 if "finishphasetime" in cp:
                     finishphasetime = cp["finishphasetime"]
                     finishphase = "%s (%d%%)"%(stringfromseconds(cp["finishphasetime"]),int(round(finishphasetime*100./totaltime)))
                     if "finish_phase_ror" in cp:
                         finishphase += "<br>%.1f%s%s/min"%(cp["finish_phase_ror"],uchr(176),aw.qmc.mode)
-                    if "finish_phase_delta_temp" in cp:
-                        finishphase += "<br>%.1f%s%s"%(cp["finish_phase_delta_temp"],uchr(176),aw.qmc.mode)
+                    if "finish_phase_AUC" in cp:
+                        finishphase += "<br>%dC*min"%(cp["finish_phase_AUC"])
+                        if ("AUCbegin" in cp and cp["AUCbegin"] != '' and "AUCbase" in cp):
+                            finishphase += " [%s,%d]"%(cp["AUCbegin"],round(cp["AUCbase"]))
+                        elif ("AUCbase" in cp):
+                            finishphase += " [%d]"%(round(cp["AUCbase"]))
+#                    if "finishphaseeval" in cp:
+#                        finishphase += "<br>" + decodeLocal(cp["finishphaseeval"])
                 #coolphase
                 if "coolphasetime" in cp:
                     coolphasetime = cp["coolphasetime"]
                     coolphase = "%s (%d%%)"%(stringfromseconds(cp["coolphasetime"]),int(round(coolphasetime*100./totaltime)))
+#                    if "coolphaseeval" in cp:
+#                        coolphase += "<br>" + decodeLocal(cp["coolphaseeval"])
         return dryphase, midphase, finishphase, coolphase
 
     def event2html(self,cp,time_key,BT_key=None,prev_time_key=None):
@@ -33686,7 +33597,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " ts() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " ts() {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
         return int(round(delta/60.)), int(round(ET/60.)), int(round(BT/60.)), AUCbegin_idx
 
     #Find rate of change of each phase. TP_index (by aw.findTP()) is the index of the TP and dryEndIndex that of the end of drying (by aw.findDryEnd())
@@ -33807,7 +33718,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
         box.about(self,
-                QApplication.translate("About", "About"),
+                QApplication.translate("About", "About",None),
                 """<h2>{0} {1}{16} ({2})</h2>
                 <p>
                 <small>Python {3}, Qt {4}, PyQt {5}, Matplotlib {6}, NumPy {7}, SciPy {8}, pymodbus {13}{17}</small>
@@ -33826,12 +33737,12 @@ class ApplicationWindow(QMainWindow):
                 mpl.__version__,
                 numpy.__version__,
                 SCIPY_VERSION_STR,
-                QApplication.translate("About", "Core Developers"),
+                QApplication.translate("About", "Core Developers",None),
                 coredevelopers,
-                QApplication.translate("About", "Contributors"),
+                QApplication.translate("About", "Contributors",None),
                 contributors,
                 PYMODBUS_VERSION_STR,
-                QApplication.translate("About", "License"),
+                QApplication.translate("About", "License",None),
                 '<a href="http://www.gnu.org/copyleft/gpl.html">GNU Public Licence (GPLv3.0)</a>',
                 build,
                 otherlibs,
@@ -33856,25 +33767,25 @@ class ApplicationWindow(QMainWindow):
             tag_name = r.json()['tag_name']
             latest = re.search(r"[\d\.]+",tag_name).group(0)
             if latest > __version__:
-                update_str = QApplication.translate("About", "A new release is available.")
+                update_str = QApplication.translate("About", "A new release is available.",None)
                 update_str += '<br/><a href="https://github.com/artisan-roaster-scope/artisan/blob/master/wiki/ReleaseHistory.md">'
-                update_str +=  QApplication.translate("About", "Show Change list")
+                update_str +=  QApplication.translate("About", "Show Change list",None)
                 update_str += '<br/><a href="https://github.com/artisan-roaster-scope/artisan/releases/tag/' + str(tag_name) + '">'
-                update_str +=  QApplication.translate("About", "Download Release") + ' ' + str(tag_name)
+                update_str +=  QApplication.translate("About", "Download Release",None) + ' ' + str(tag_name)
             elif latest == __version__ :
-                update_str = QApplication.translate("About", "You are using the latest release.")
+                update_str = QApplication.translate("About", "You are using the latest release.",None)
             elif latest < __version__:
-                update_str = QApplication.translate("About", "You are using a beta continuous build.")
-                update_str += '<br/><br/>' + QApplication.translate("About", "You will see a notice here once a new official release is available.")
+                update_str = QApplication.translate("About", "You are using a beta continuous build.",None)
+                update_str += '<br/><br/>' + QApplication.translate("About", "You will see a notice here once a new official release is available.",None)
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " checkUpdate() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
-            update_str = QApplication.translate("About", "There was a problem retrieving the latest version information.  Please check your Internet connection, try again later, or check manually.")
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " checkUpdate() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            update_str = QApplication.translate("About", "There was a problem retrieving the latest version information.  Please check your Internet connection, try again later, or check manually.",None)
 
         box = QMessageBox(self)
         box.about(self,
-                QApplication.translate("About", "Update status"),
+                QApplication.translate("About", "Update status",None),
                 """<p>{0}</p>{1}""".format(update_str, update_url))
 
     def applicationscreenshot(self):
@@ -34071,7 +33982,7 @@ class ApplicationWindow(QMainWindow):
         res = releaseHottopControl()
         if res:
             if self.HottopControlActive:
-                aw.sendmessage(QApplication.translate("Message","Hottop control turned off"))
+                aw.sendmessage(QApplication.translate("Message","Hottop control turned off", None))
             self.HottopControlActive = False
             aw.buttonCONTROL.setStyleSheet(aw.pushbuttonstyles["PID"])
 
@@ -34084,11 +33995,11 @@ class ApplicationWindow(QMainWindow):
                 setHottop(drum_motor=True)
                 aw.buttonCONTROL.setStyleSheet(aw.pushbuttonstyles["PIDactive"])
                 if not self.HottopControlActive:
-                    aw.sendmessage(QApplication.translate("Message","Hottop control turned on"))
+                    aw.sendmessage(QApplication.translate("Message","Hottop control turned on", None))
                 self.HottopControlActive = True
         else:
-            QMessageBox.warning(aw,QApplication.translate("Message", "Warning"),QApplication.translate("Message",
-                "To control a Hottop you need to activate the super user mode via a right click on the timer LCD first!"))
+            QMessageBox.warning(aw,QApplication.translate("Message", "Warning",None),QApplication.translate("Message",
+                "To control a Hottop you need to activate the super user mode via a right click on the timer LCD first!",None))
 
     @pyqtSlot(bool)
     def PIDcontrol(self,_=False):
@@ -34101,12 +34012,12 @@ class ApplicationWindow(QMainWindow):
                     (aw.ser.controlETpid[0] == 1 and aw.ser.controlETpid[0] == 0):
                     # standby is off (=0), turn it on (=1)
                     aw.fujipid.setONOFFstandby(1)
-                    aw.sendmessage(QApplication.translate("Message","PID Standby ON"))
+                    aw.sendmessage(QApplication.translate("Message","PID Standby ON", None))
                 elif (aw.ser.controlETpid[0] == 0 and aw.fujipid.PXR["runstandby"][0] == 1) or \
                     (aw.ser.controlETpid[0] == 1 and aw.ser.controlETpid[0] == 1):
                     # standby is on (=1), turn it off (=0)
                     aw.fujipid.setONOFFstandby(0)
-                    aw.sendmessage(QApplication.translate("Message","PID Standby OFF"))
+                    aw.sendmessage(QApplication.translate("Message","PID Standby OFF", None))
             else:
                 if self.ser.controlETpid[0] == 0:
                     dialog = PXG4pidDlgControl(self,self)
@@ -34218,7 +34129,7 @@ class ApplicationWindow(QMainWindow):
                         for widget in QApplication.topLevelWidgets():
                             if isinstance(widget, ApplicationWindow):
                                 widget.updateRecentSettingActions()
-                        self.sendmessage(QApplication.translate("Message","Settings loaded {0}".format(aw.strippedName(filename))))
+                        self.sendmessage(QApplication.translate("Message","Settings loaded {0}".format(aw.strippedName(filename)), None))
                     else:
                         # remove file from the recent file list
                         settings = QSettings()
@@ -34245,11 +34156,11 @@ class ApplicationWindow(QMainWindow):
                         if isinstance(widget, ApplicationWindow):
                             widget.updateRecentSettingActions()
             else:
-                self.sendmessage(QApplication.translate("Message","Cancelled"))
+                self.sendmessage(QApplication.translate("Message","Cancelled", None))
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " loadSettings() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " loadSettings() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     def updateRecentSettingActions(self):
         settings = QSettings()
@@ -34287,19 +34198,19 @@ class ApplicationWindow(QMainWindow):
                 for widget in QApplication.topLevelWidgets():
                     if isinstance(widget, ApplicationWindow):
                         widget.updateRecentSettingActions()
-                self.sendmessage(QApplication.translate("Message","Settings not found"))
+                self.sendmessage(QApplication.translate("Message","Settings not found", None))
 
     @pyqtSlot()
     @pyqtSlot(bool)
     def saveSettings(self,_=False):
         path = QDir()
         path.setPath(self.getDefaultPath())
-        fname = path.absoluteFilePath(QApplication.translate("Message","artisan-settings"))
-        filename = self.ArtisanSaveFileDialog(msg=QApplication.translate("Message", "Save Settings"), path=fname, ext="*.aset")
+        fname = path.absoluteFilePath(QApplication.translate("Message","artisan-settings", None))
+        filename = self.ArtisanSaveFileDialog(msg=QApplication.translate("Message", "Save Settings",None), path=fname, ext="*.aset")
         if filename:
             aw.settingspath = filename
             aw.closeEventSettings(filename)
-            self.sendmessage(QApplication.translate("Message","Settings saved"))
+            self.sendmessage(QApplication.translate("Message","Settings saved", None))
             # update recentSettings menu
             settings = QSettings()
             files = toStringList(settings.value('recentSettingList'))
@@ -34314,7 +34225,7 @@ class ApplicationWindow(QMainWindow):
                 if isinstance(widget, ApplicationWindow):
                     widget.updateRecentSettingActions()
         else:
-            self.sendmessage(QApplication.translate("Message","Cancelled"))
+            self.sendmessage(QApplication.translate("Message","Cancelled", None))
 
     def updateRecentThemeActions(self):
         settings = QSettings()
@@ -34353,18 +34264,18 @@ class ApplicationWindow(QMainWindow):
                 for widget in QApplication.topLevelWidgets():
                     if isinstance(widget, ApplicationWindow):
                         widget.updateRecentThemeActions()
-                self.sendmessage(QApplication.translate("Message","Settings not found"))
+                self.sendmessage(QApplication.translate("Message","Settings not found", None))
 
     @pyqtSlot(bool)
     def saveSettings_theme(self,_=False):
         path = QDir()
         path.setPath(self.getDefaultPath())
         path.setPath(os.path.join(getResourcePath(),"Themes","User"))
-        fname = path.absoluteFilePath(QApplication.translate("Message","artisan-theme"))
-        filename = self.ArtisanSaveFileDialog(msg=QApplication.translate("Message", "Save Theme"), path=fname, ext="*.athm")
+        fname = path.absoluteFilePath(QApplication.translate("Message","artisan-theme", None))
+        filename = self.ArtisanSaveFileDialog(msg=QApplication.translate("Message", "Save Theme",None), path=fname, ext="*.athm")
         if filename:
             aw.closeEventSettings_theme(filename)
-            self.sendmessage(QApplication.translate("Message","Theme saved"))
+            self.sendmessage(QApplication.translate("Message","Theme saved", None))
             # update recentTheme menu
             settings = QSettings()
             files = toStringList(settings.value('recentThemeList'))
@@ -34381,7 +34292,7 @@ class ApplicationWindow(QMainWindow):
             self.themeMenu.clear()
             self.populateThemeMenu()
         else:
-            self.sendmessage(QApplication.translate("Message","Cancelled"))
+            self.sendmessage(QApplication.translate("Message","Cancelled", None))
 
     @pyqtSlot(bool)
     def loadSettings_theme_Slot(self,_=False):
@@ -34392,16 +34303,16 @@ class ApplicationWindow(QMainWindow):
             if fn:
                 filename = fn
             else:
-                filename = self.ArtisanOpenFileDialog(msg=QApplication.translate("Message","Load Theme"),ext="*.athm")
+                filename = self.ArtisanOpenFileDialog(msg=QApplication.translate("Message","Load Theme",None),ext="*.athm")
             if filename:
-                string = QApplication.translate("Message", "Load theme {0}?").format(os.path.basename(filename))
-                reply = QMessageBox.question(aw,QApplication.translate("Message", "Adjust Theme Related Settings"),string,
+                string = QApplication.translate("Message", "Load theme {0}?",None).format(os.path.basename(filename))
+                reply = QMessageBox.question(aw,QApplication.translate("Message", "Adjust Theme Related Settings",None),string,
                     QMessageBox.StandardButton.Yes|QMessageBox.StandardButton.Cancel)
                 if reply == QMessageBox.StandardButton.Cancel:
                     return
                 try:
                     res = aw.settingsLoad(filename,theme=True)
-                    self.sendmessage(QApplication.translate("Message","Loaded theme {0}").format(filename))
+                    self.sendmessage(QApplication.translate("Message","Loaded theme {0}", None).format(filename))
                     if reset:
                         aw.qmc.reset(soundOn=False)
                     if res and remember:
@@ -34418,7 +34329,7 @@ class ApplicationWindow(QMainWindow):
                         for widget in QApplication.topLevelWidgets():
                             if isinstance(widget, ApplicationWindow):
                                 widget.updateRecentThemeActions()
-                                self.sendmessage(QApplication.translate("Message","Theme loaded"))
+                                self.sendmessage(QApplication.translate("Message","Theme loaded", None))
                         self.themeMenu.clear()
                         self.populateThemeMenu()
                     else:
@@ -34451,11 +34362,11 @@ class ApplicationWindow(QMainWindow):
                     self.themeMenu.clear()
                     self.populateThemeMenu()
             else:
-                self.sendmessage(QApplication.translate("Message","Cancelled"))
+                self.sendmessage(QApplication.translate("Message","Cancelled", None))
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " loadSettings_theme() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " loadSettings_theme() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
 
     @pyqtSlot()
@@ -34706,8 +34617,8 @@ class ApplicationWindow(QMainWindow):
             dialog = AlarmDlg(self,self,self.AlarmDlg_activeTab)
             dialog.show()
         else:
-            QMessageBox.information(aw,QApplication.translate("Message", "Alarm Config"),
-                                    QApplication.translate("Message", "Alarms are not available for device None"))
+            QMessageBox.information(aw,QApplication.translate("Message", "Alarm Config",None),
+                                    QApplication.translate("Message", "Alarms are not available for device None",None))
 
     def switchLanguageFlag(self,loc,value):
         try:
@@ -34724,8 +34635,8 @@ class ApplicationWindow(QMainWindow):
 
     def changelocale(self,languagelocale):
         if self.locale_str != languagelocale:
-            string = QApplication.translate("Message","Switching the language needs a restart. Restart now?")
-            reply = QMessageBox.warning(aw,QApplication.translate("Message","Restart"),string,
+            string = QApplication.translate("Message","Switching the language needs a restart. Restart now?", None)
+            reply = QMessageBox.warning(aw,QApplication.translate("Message","Restart", None),string,
                               QMessageBox.StandardButton.Cancel | QMessageBox.StandardButton.Yes)
             if reply == QMessageBox.StandardButton.Yes:
                 # switch old flag off
@@ -34758,11 +34669,29 @@ class ApplicationWindow(QMainWindow):
             return 0.
         return 100. * ((float(roasted) - float(green)) / float(green))
 
+#    # from RoastMagazine (corrected by substracting 1% based on experience)
+#    # http://www.roastmagazine.com/resources/Roasting101_Articles/Roast_SeptOct05_LightRoasting.pdf
+#    def roast_degree(self,percent):
+#        if percent < 13.5:
+#            return ""
+#        elif percent < 14.5:
+#            return QApplication.translate("Label", "City",None)
+#        elif percent < 15.5:
+#            return QApplication.translate("Label", "City+",None)
+#        elif percent < 16.5:
+#            return QApplication.translate("Label", "Full City",None)
+#        elif percent < 17.5:
+#            return QApplication.translate("Label", "Full City+",None)
+#        elif percent < 18.5:
+#            return QApplication.translate("Label", "Light French",None)
+#        else:
+#            return QApplication.translate("Label", "French",None)
+
     @pyqtSlot()
     @pyqtSlot(bool)
     def importK202(self,_=False):
         try:
-            filename = self.ArtisanOpenFileDialog(msg=QApplication.translate("Message","Import K202 CSV"))
+            filename = self.ArtisanOpenFileDialog(msg=QApplication.translate("Message","Import K202 CSV",None))
             if len(filename) == 0:
                 return
             if self.qmc.reset():
@@ -34812,22 +34741,22 @@ class ApplicationWindow(QMainWindow):
                     self.qmc.temp2 = tmp
                 self.qmc.endofx = self.qmc.timex[-1]
                 aw.autoAdjustAxis()
-                self.sendmessage(QApplication.translate("Message","K202 file loaded successfully"))
+                self.sendmessage(QApplication.translate("Message","K202 file loaded successfully", None))
                 self.qmc.redraw()
         except IOError as ex:
-            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:") + " importK202(): {0}").format(str(ex)))
+            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:", None) + " importK202(): {0}").format(str(ex)))
         except ValueError as ex:
-            aw.qmc.adderror((QApplication.translate("Error Message","Value Error:") + " importK202(): {0}").format(str(ex)))
+            aw.qmc.adderror((QApplication.translate("Error Message","Value Error:", None) + " importK202(): {0}").format(str(ex)))
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " importK202() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " importK202() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     @pyqtSlot()
     @pyqtSlot(bool)
     def importK204(self,_=False):
         try:
-            filename = self.ArtisanOpenFileDialog(msg=QApplication.translate("Message","Import K204 CSV"))
+            filename = self.ArtisanOpenFileDialog(msg=QApplication.translate("Message","Import K204 CSV",None))
             if len(filename) == 0:
                 return
             if self.qmc.reset():
@@ -34891,16 +34820,16 @@ class ApplicationWindow(QMainWindow):
                     self.qmc.temp2 = tmp
                 self.qmc.endofx = self.qmc.timex[-1]
                 aw.autoAdjustAxis()
-                self.sendmessage(QApplication.translate("Message","K204 file loaded successfully"))
+                self.sendmessage(QApplication.translate("Message","K204 file loaded successfully", None))
                 self.qmc.redraw()
         except IOError as ex:
-            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:") + " importK204(): {0}").format(str(ex)))
+            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:", None) + " importK204(): {0}").format(str(ex)))
         except ValueError as ex:
-            aw.qmc.adderror((QApplication.translate("Error Message","Value Error:") + " importK204(): {0}").format(str(ex)))
+            aw.qmc.adderror((QApplication.translate("Error Message","Value Error:", None) + " importK204(): {0}").format(str(ex)))
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " importK204() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " importK204() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     # normalize xml tags and attributs to lower case
     def normalize_tags(self,root):
@@ -34924,7 +34853,7 @@ class ApplicationWindow(QMainWindow):
                 import xml.etree.cElementTree as ET
             except ImportError:
                 import xml.etree.ElementTree as ET
-            filename = self.ArtisanOpenFileDialog(msg=QApplication.translate("Message","Import Probat Recipe"))
+            filename = self.ArtisanOpenFileDialog(msg=QApplication.translate("Message","Import Probat Recipe", None))
             if len(filename) == 0:
                 return
             if self.qmc.reset():
@@ -35085,24 +35014,24 @@ class ApplicationWindow(QMainWindow):
 
                 aw.autoAdjustAxis()
 
-                self.sendmessage(QApplication.translate("Message","Probat Pilot data imported successfully"))
+                self.sendmessage(QApplication.translate("Message","Probat Pilot data imported successfully", None))
                 self.qmc.redraw()
                 aw.qmc.fileDirtySignal.emit()
         except IOError as ex:
-            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:") + " importPilot(): {0}").format(str(ex)))
+            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:", None) + " importPilot(): {0}").format(str(ex)))
         except ValueError as ex:
-            aw.qmc.adderror((QApplication.translate("Error Message","Value Error:") + " importPilot(): {0}").format(str(ex)))
+            aw.qmc.adderror((QApplication.translate("Error Message","Value Error:", None) + " importPilot(): {0}").format(str(ex)))
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.sendmessage(QApplication.translate("Message","Import Probat Pilot failed"))
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " importPilot() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.sendmessage(QApplication.translate("Message","Import Probat Pilot failed", None))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " importPilot() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     @pyqtSlot()
     @pyqtSlot(bool)
     def importBullet(self,_=False):
         try:
-            self.importExternal(extractProfileRoasTime,QApplication.translate("Message","Import Aillio RoasTime"),"*.json")
+            self.importExternal(extractProfileRoasTime,QApplication.translate("Message","Import Aillio RoasTime", None),"*.json")
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
 
@@ -35110,7 +35039,7 @@ class ApplicationWindow(QMainWindow):
     @pyqtSlot(bool)
     def importBulletURL(self,_=False):
         try:
-            self.importExternalURL(extractProfileRoastWorld,QApplication.translate("Message","Import Aillio Roast.World URL"))
+            self.importExternalURL(extractProfileRoastWorld,QApplication.translate("Message","Import Aillio Roast.World URL", None))
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
     
@@ -35147,16 +35076,16 @@ class ApplicationWindow(QMainWindow):
                 self.qmc.l_event_flags_dict = {}
                 #Plot everything
                 self.qmc.redraw()
-                message = QApplication.translate("Message","{0} imported").format(url.toString())
+                message = QApplication.translate("Message","{0} imported", None).format(url.toString())
                 self.sendmessage(message)
             else:
-                message = QApplication.translate("Message","an error occured on importing {0}").format(url.toString())
+                message = QApplication.translate("Message","an error occured on importing {0}", None).format(url.toString())
                 self.sendmessage(message)
 
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " {1} {0}").format(str(ex),message),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " {1} {0}").format(str(ex),message),getattr(exc_tb, 'tb_lineno', '?'))
 
     def importExternal(self,extractor,message,extension):
         try:
@@ -35181,58 +35110,58 @@ class ApplicationWindow(QMainWindow):
                 self.qmc.l_event_flags_dict = {}
                 #Plot everything
                 self.qmc.redraw()
-                message = QApplication.translate("Message","{0} imported").format(filename)
+                message = QApplication.translate("Message","{0} imported", None).format(filename)
                 self.sendmessage(message)
 
         except IOError as ex:
-            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:") + " {1}: {0}").format(str(ex),message))
+            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:", None) + " {1}: {0}").format(str(ex),message))
         except ValueError as ex:
-            aw.qmc.adderror((QApplication.translate("Error Message","Value Error:") + " {1}: {0}").format(str(ex),message))
+            aw.qmc.adderror((QApplication.translate("Error Message","Value Error:", None) + " {1}: {0}").format(str(ex),message))
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " {1} {0}").format(str(ex),message),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " {1} {0}").format(str(ex),message),getattr(exc_tb, 'tb_lineno', '?'))
 
     @pyqtSlot()
     @pyqtSlot(bool)
     def importCropster(self,_=False):
-        self.importExternal(extractProfileCropsterXLS,QApplication.translate("Message","Import Cropster XLS"),"*.xls")
+        self.importExternal(extractProfileCropsterXLS,QApplication.translate("Message","Import Cropster XLS", None),"*.xls")
         
     @pyqtSlot()
     @pyqtSlot(bool)
     def importRoastLog(self,_=False):
-        self.importExternalURL(extractProfileRoastLog,QApplication.translate("Message","Import RoastLog URL"))
+        self.importExternalURL(extractProfileRoastLog,QApplication.translate("Message","Import RoastLog URL", None))
         
     @pyqtSlot()
     @pyqtSlot(bool)
     def importRoastPATH(self,_=False):
-        self.importExternalURL(extractProfileRoastPathHTML,QApplication.translate("Message","Import RoastPATH URL"))
+        self.importExternalURL(extractProfileRoastPathHTML,QApplication.translate("Message","Import RoastPATH URL", None))
 
     @pyqtSlot()
     @pyqtSlot(bool)
     def importGiesen(self,_=False):
-        self.importExternal(extractProfileGiesenCSV,QApplication.translate("Message","Import Giesen CSV"),"*.csv")
+        self.importExternal(extractProfileGiesenCSV,QApplication.translate("Message","Import Giesen CSV", None),"*.csv")
         
     @pyqtSlot()
     @pyqtSlot(bool)
     def importPetroncini(self,_=False):
-        self.importExternal(extractProfilePetronciniCSV,QApplication.translate("Message","Import Petroncini CSV"),"*.csv")
+        self.importExternal(extractProfilePetronciniCSV,QApplication.translate("Message","Import Petroncini CSV", None),"*.csv")
 
     @pyqtSlot()
     @pyqtSlot(bool)
     def importIkawa(self,_=False):
-        self.importExternal(extractProfileIkawaCSV,QApplication.translate("Message","Import IKAWA CSV"),"*.csv")
+        self.importExternal(extractProfileIkawaCSV,QApplication.translate("Message","Import IKAWA CSV", None),"*.csv")
 
     @pyqtSlot()
     @pyqtSlot(bool)
     def importRubase(self,_=False):
-        self.importExternal(extractProfileRubaseCSV,QApplication.translate("Message","Import Rubase CSV"),"*.csv")
+        self.importExternal(extractProfileRubaseCSV,QApplication.translate("Message","Import Rubase CSV", None),"*.csv")
 
     @pyqtSlot()
     @pyqtSlot(bool)
     def importHH506RA(self,_=False):
         try:
-            filename = self.ArtisanOpenFileDialog(msg=QApplication.translate("Message","Import HH506RA CSV"))
+            filename = self.ArtisanOpenFileDialog(msg=QApplication.translate("Message","Import HH506RA CSV", None))
             if len(filename) == 0:
                 return
             if self.qmc.reset():
@@ -35281,16 +35210,16 @@ class ApplicationWindow(QMainWindow):
                     self.qmc.temp2 = tmp
                 self.qmc.endofx = self.qmc.timex[-1]
                 aw.autoAdjustAxis()
-                self.sendmessage(QApplication.translate("Message","HH506RA file loaded successfully"))
+                self.sendmessage(QApplication.translate("Message","HH506RA file loaded successfully", None))
                 self.qmc.redraw()
         except IOError as ex:
-            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:") + " importHH506RA(): {0}").format(str(ex)))
+            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:", None) + " importHH506RA(): {0}").format(str(ex)))
         except ValueError as ex:
-            aw.qmc.adderror((QApplication.translate("Error Message","Value Error:") + " importHH506RA(): {0}").format(str(ex)))
+            aw.qmc.adderror((QApplication.translate("Error Message","Value Error:", None) + " importHH506RA(): {0}").format(str(ex)))
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " importHH506RA() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " importHH506RA() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
     @pyqtSlot()
     @pyqtSlot(bool)
@@ -35368,7 +35297,7 @@ class ApplicationWindow(QMainWindow):
             elif filetype == "BMP":
                 fileext = ".bmp"
             if fname == "" or fname is None:
-                filename = self.ArtisanSaveFileDialog(msg=QApplication.translate("Message","Save Graph as") + " " + filetype,ext="*"+fileext)
+                filename = self.ArtisanSaveFileDialog(msg=QApplication.translate("Message","Save Graph as", None) + " " + filetype,ext="*"+fileext)
             else:
                 filename = fname
             if filename:
@@ -35417,18 +35346,18 @@ class ApplicationWindow(QMainWindow):
                     else:
                         self.qmc.lazyredraw_on_resize_timer.start(2)
             
-                self.sendmessage(QApplication.translate("Message","{0}  size({1},{2}) saved").format(str(filename),str(res_x),str(res_y)))
+                self.sendmessage(QApplication.translate("Message","{0}  size({1},{2}) saved", None).format(str(filename),str(res_x),str(res_y)))
 
         except IOError as ex:
-            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:") + " resize() {0}").format(str(ex)))
+            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:", None) + " resize() {0}").format(str(ex)))
 
     def saveVectorGraph(self,extension="*.pdf",fname=""):
         try:
             if fname == "" or fname is None:
                 if extension == "*.pdf":
-                    filename = self.ArtisanSaveFileDialog(msg=QApplication.translate("Message","Save Graph as PDF"),ext=extension)
+                    filename = self.ArtisanSaveFileDialog(msg=QApplication.translate("Message","Save Graph as PDF", None),ext=extension)
                 else:
-                    filename = self.ArtisanSaveFileDialog(msg=QApplication.translate("Message","Save Graph as SVG"),ext=extension)
+                    filename = self.ArtisanSaveFileDialog(msg=QApplication.translate("Message","Save Graph as SVG", None),ext=extension)
             else:
                 filename = fname
             extension = extension.replace('*','')
@@ -35446,9 +35375,9 @@ class ApplicationWindow(QMainWindow):
                         ) # transparent=True is need to get the delta curves and legend drawn
                 aw.qmc.updateBackground() # that redraw is needed to avoid the "transparent flicker"
 
-                self.sendmessage(QApplication.translate("Message","{0} saved").format(str(filename)))
+                self.sendmessage(QApplication.translate("Message","{0} saved", None).format(str(filename)))
         except IOError as ex:
-            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:") + " saveVectorGraph() {0}").format(str(ex)))
+            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:", None) + " saveVectorGraph() {0}").format(str(ex)))
 
     #displays Dialog for the setting of the curves parameters (like RoR, Filters,..)
     @pyqtSlot()
@@ -35510,26 +35439,26 @@ class ApplicationWindow(QMainWindow):
                     self.qmc.wheelaspect = wheel["wheelaspect"]
                 else:
                     self.qmc.wheelaspect = 1.0
-                message =QApplication.translate("Message","Wheel {0} loaded").format(str(filename))
+                message =QApplication.translate("Message","Wheel {0} loaded", None).format(str(filename))
                 self.sendmessage(message)
             else:
-                message = QApplication.translate("Message","Invalid Wheel graph format")
+                message = QApplication.translate("Message","Invalid Wheel graph format", None)
                 self.sendmessage(message)
                 return
-#            message =QApplication.translate("Message","Wheel Graph openend succesfully")
+#            message =QApplication.translate("Message","Wheel Graph openend succesfully", None)
 #            self.sendmessage(message)
         except IOError as ex:
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:") + " loadWheel() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:", None) + " loadWheel() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             return
         except ValueError as ex:
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Value Error:") + " loadWheel() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Value Error:", None) + " loadWheel() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             return
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " loadWheel() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:", None) + " loadWheel() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             return
         finally:
             if f:
@@ -35686,14 +35615,14 @@ class ApplicationWindow(QMainWindow):
     def settooltip(self):
         for i in range(len(self.buttonlist)):
             try:
-                tip = QApplication.translate("Tooltip","<b>Label</b>= ") + self.extraeventslabels[i] + "<br>"
-                tip += QApplication.translate("Tooltip","<b>Description </b>= ") + self.extraeventsdescriptions[i] + "<br>"
-                tip += QApplication.translate("Tooltip","<b>Type </b>= ") + self.qmc.etypesf(self.extraeventstypes[i]) + "<br>"
+                tip = QApplication.translate("Tooltip","<b>Label</b>= ", None) + self.extraeventslabels[i] + "<br>"
+                tip += QApplication.translate("Tooltip","<b>Description </b>= ", None) + self.extraeventsdescriptions[i] + "<br>"
+                tip += QApplication.translate("Tooltip","<b>Type </b>= ", None) + self.qmc.etypesf(self.extraeventstypes[i]) + "<br>"
                 if self.extraeventstypes[i] != 4: # no tips for 4: no event type set
-                    tip += QApplication.translate("Tooltip","<b>Value </b>= ") + aw.qmc.eventsvalues(self.extraeventsvalues[i]) + "<br>"
+                    tip += QApplication.translate("Tooltip","<b>Value </b>= ", None) + aw.qmc.eventsvalues(self.extraeventsvalues[i]) + "<br>"
                     #+ str(int(round((self.extraeventsvalues[i]-1)*10.)))  + "<br>"
-                tip += QApplication.translate("Tooltip","<b>Documentation </b>= ") + self.extraeventsactionstrings[i] + "<br>"
-                tip += QApplication.translate("Tooltip","<b>Button# </b>= ") + str(i+1)
+                tip += QApplication.translate("Tooltip","<b>Documentation </b>= ", None) + self.extraeventsactionstrings[i] + "<br>"
+                tip += QApplication.translate("Tooltip","<b>Button# </b>= ", None) + str(i+1)
                 self.buttonlist[i].setToolTip(tip)
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
@@ -35759,7 +35688,7 @@ class ApplicationWindow(QMainWindow):
 
         self.buttonpalette[pindex] = copy[:]
         self.buttonpalettemaxlen[pindex] = self.buttonlistmaxlen
-        self.sendmessage(QApplication.translate("Message","Buttons copied to Palette #%i"%(pindex)))
+        self.sendmessage(QApplication.translate("Message","Buttons copied to Palette #%i"%(pindex), None))
 
     #restores a palette number to current buttons
     @pyqtSlot(int)
@@ -35860,9 +35789,9 @@ class ApplicationWindow(QMainWindow):
             self.realignbuttons()
             self.updateSlidersProperties()
             self.lastbuttonpressed = -1
-            self.sendmessage(QApplication.translate("Message","Palette #%i restored"%(pindex)))
+            self.sendmessage(QApplication.translate("Message","Palette #%i restored"%(pindex), None))
             return 1  #success
-        self.sendmessage(QApplication.translate("Message","Palette #%i empty"%(pindex)))
+        self.sendmessage(QApplication.translate("Message","Palette #%i empty"%(pindex), None))
         return 0  #failed
 
     def encodeTreeStrings(self,tree):
@@ -35886,13 +35815,13 @@ class ApplicationWindow(QMainWindow):
             palette[k] = self.encodeTreeStrings(pal[i])
         palette["maxlen"] = maxlen
         try:
-            filename = self.ArtisanSaveFileDialog(msg=QApplication.translate("Message","Save Palettes"),ext="*.apal")
+            filename = self.ArtisanSaveFileDialog(msg=QApplication.translate("Message","Save Palettes",None),ext="*.apal")
             if filename:
                 #write
                 self.serialize(filename,palette)
-                self.sendmessage(QApplication.translate("Message","Palettes saved"))
+                self.sendmessage(QApplication.translate("Message","Palettes saved",None))
         except IOError as ex:
-            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:") + " backuppaletteeventbuttons(): {0}").format(str(ex)))
+            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:",None) + " backuppaletteeventbuttons(): {0}").format(str(ex)))
             return
 
     def getPalettes(self,filename,pal):
@@ -35963,24 +35892,24 @@ class ApplicationWindow(QMainWindow):
                             nextpalette[25] = str(palette[k][25])               #  type unicode
 
                     pal[i] = nextpalette[:]
-                message =QApplication.translate("Message","Palettes loaded")
+                message =QApplication.translate("Message","Palettes loaded", None)
                 self.sendmessage(message)
                 return buttonpalettemaxlen
-            message = QApplication.translate("Message","Invalid palettes file format")
+            message = QApplication.translate("Message","Invalid palettes file format", None)
             self.sendmessage(message)
             return None
         except IOError as ex:
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:") + " loadPalettes() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:", None) + " loadPalettes() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             return None
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " loadPalettes() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:", None) + " loadPalettes() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             return None
 
     def restorepaletteeventbuttons(self,pal):
-        filename = self.ArtisanOpenFileDialog(msg=QApplication.translate("Message","Load Palettes"),path=self.profilepath)
+        filename = self.ArtisanOpenFileDialog(msg=QApplication.translate("Message","Load Palettes",None),path=self.profilepath)
         if filename:
             self.getPalettes(filename,pal)
 
@@ -36003,16 +35932,16 @@ class ApplicationWindow(QMainWindow):
                 aw.qmc.alarmsetlabel = alarms["alarmsetlabel"]
             except Exception: # pylint: disable=broad-except
                 aw.qmc.alarmsetlabel = ""
-            message =QApplication.translate("Message","Alarms loaded")
+            message =QApplication.translate("Message","Alarms loaded", None)
             self.sendmessage(message)
         except IOError as ex:
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:") + " loadAlarms() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","IO Error:", None) + " loadAlarms() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             return
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " loadAlarms() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message","Exception:", None) + " loadAlarms() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
             return
 
     @pyqtSlot()
@@ -36045,11 +35974,11 @@ class ApplicationWindow(QMainWindow):
         # exp == 0 -> ln(), 1 -> unused, 2 -> quadratic, 3 -> cubic, 4 -> bkgnd, -1 -> all of 0,2,and 3
         #check for any roast data
         if not self.qmc.timeindex[0] > -1:
-            self.sendmessage(QApplication.translate("Error Message", "Analyze: CHARGE event required, none found"))
+            self.sendmessage(QApplication.translate("Error Message", "Analyze: CHARGE event required, none found", None))
             return
         #check for finished roast
         if not self.qmc.timeindex[6]:
-            self.sendmessage(QApplication.translate("Error Message", "Analyze: DROP event required, none found"))
+            self.sendmessage(QApplication.translate("Error Message", "Analyze: DROP event required, none found", None))
             return
 
         #Save the background annotations setting and then disable
@@ -36061,7 +35990,7 @@ class ApplicationWindow(QMainWindow):
         self.curFile = None
 
         # initialize progress dialog
-        progress = QProgressDialog(QApplication.translate("Message", "Fitting curves..."), None, 0, 3, self)
+        progress = QProgressDialog(QApplication.translate("Message", "Fitting curves...",None), None, 0, 3, self)
         progress.setCancelButton(None)
         progress.setWindowModality(Qt.WindowModality.WindowModal)
         progress.setAutoClose(True)
@@ -36131,10 +36060,10 @@ class ApplicationWindow(QMainWindow):
             if exp == 4:
                 #check for finished background roast
                 if not aw.qmc.background:
-                    self.sendmessage(QApplication.translate("Error Message", "Analyze: no background profile data available"))
+                    self.sendmessage(QApplication.translate("Error Message", "Analyze: no background profile data available", None))
                     return
                 if not (self.qmc.timeindexB[0] > -1 and self.qmc.timeindexB[6]):
-                    self.sendmessage(QApplication.translate("Error Message", "Analyze: background profile requires CHARGE and DROP events"))
+                    self.sendmessage(QApplication.translate("Error Message", "Analyze: background profile requires CHARGE and DROP events", None))
                     return
 
                 # set curvefit_starttime to match analysis_starttime
@@ -36152,7 +36081,7 @@ class ApplicationWindow(QMainWindow):
             # background
             if exp == 4:
                 res = self.analysisGetResults(exp=4, curvefit_starttime=curvefit_starttime, curvefit_endtime=curvefit_endtime, analysis_starttime=analysis_starttime, analysis_endtime=analysis_endtime)
-                cfr["equ_background"] = QApplication.translate("Label","Bkgnd")
+                cfr["equ_background"] = QApplication.translate("Label","Bkgnd",None)
                 cfr["dbt_background"] = res["mse_BT"]
                 cfr["dbdbt_background"] = res["mse_deltaBT"]
                 cfr["r2_deltabt_background"] = res["r2_deltaBT"]
@@ -36201,18 +36130,18 @@ class ApplicationWindow(QMainWindow):
             # build the results table
             tbl = prettytable.PrettyTable()
             tbl.field_names = [" ",
-                               QApplication.translate("Label","MSE BT"),
-                               QApplication.translate("Label","RoR") +  " \u0394 " + QApplication.translate("Label","@FCs"),
-                               QApplication.translate("Label","Max+/Max- RoR") + " \u0394"]
+                               QApplication.translate("Label","MSE BT",None),
+                               QApplication.translate("Label","RoR",None) +  " \u0394 " + QApplication.translate("Label","@FCs",None),
+                               QApplication.translate("Label","Max+/Max- RoR",None) + " \u0394"]
             tbl.float_format = "5.2"
             if "equ_background" in cfr and "dbt_background" in cfr and 'ror_fcs_delta_background' in cfr and 'ror_maxmin_delta_background' in cfr:
-                tbl.add_row([QApplication.translate("Label","Bkgnd"), cfr["dbt_background"], cfr['ror_fcs_delta_background'], cfr['ror_maxmin_delta_background']])
+                tbl.add_row([QApplication.translate("Label","Bkgnd",None), cfr["dbt_background"], cfr['ror_fcs_delta_background'], cfr['ror_maxmin_delta_background']])
             if "equ_quadratic" in cfr and "dbt_quadratic" in cfr and 'ror_fcs_delta_quadratic' in cfr and 'ror_maxmin_delta_quadratic' in cfr:
-                tbl.add_row([QApplication.translate("Label","x") +"\u00b2", cfr["dbt_quadratic"], cfr['ror_fcs_delta_quadratic'], cfr['ror_maxmin_delta_quadratic']])
+                tbl.add_row([QApplication.translate("Label","x",None) +"\u00b2", cfr["dbt_quadratic"], cfr['ror_fcs_delta_quadratic'], cfr['ror_maxmin_delta_quadratic']])
             if "equ_cubic" in cfr and "dbt_cubic" in cfr and 'ror_fcs_delta_cubic' in cfr and 'ror_maxmin_delta_cubic' in cfr:
-                tbl.add_row([QApplication.translate("Label","x") + "\u00b3", cfr["dbt_cubic"], cfr['ror_fcs_delta_cubic'], cfr['ror_maxmin_delta_cubic']])
+                tbl.add_row([QApplication.translate("Label","x",None) + "\u00b3", cfr["dbt_cubic"], cfr['ror_fcs_delta_cubic'], cfr['ror_maxmin_delta_cubic']])
             if "equ_naturallog" in cfr and "dbt_naturallog" in cfr and 'ror_fcs_delta_naturallog' in cfr and 'ror_maxmin_delta_naturallog' in cfr:
-                tbl.add_row([QApplication.translate("Label","ln()"), cfr["dbt_naturallog"], cfr['ror_fcs_delta_naturallog'], cfr['ror_maxmin_delta_naturallog']])
+                tbl.add_row([QApplication.translate("Label","ln()",None), cfr["dbt_naturallog"], cfr['ror_fcs_delta_naturallog'], cfr['ror_maxmin_delta_naturallog']])
             resultstr = "Curve Fit Analysis\n"
             resultstr += tbl.get_string(sortby="MSE BT")
 
@@ -36221,7 +36150,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " analysisfitCurves(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " analysisfitCurves(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
         try:
             # convert back to Fahrenheit if the profile was converted to Celsius
@@ -36236,7 +36165,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " analysisfitCurves(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " analysisfitCurves(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
         progress.cancel()
         progress = None
@@ -36302,8 +36231,8 @@ class ApplicationWindow(QMainWindow):
 
             # show warning if the analysis starts earlier than curve fit
             if curvefit_starttime > analysis_starttime:
-                string = QApplication.translate("Message","Warning: The start of the analysis interval of interest is earlier than the start of curve fitting.\nCorrect this on the Config>Curves>Analyze tab.")
-                QMessageBox.warning(self,QApplication.translate("Message","Analysis earlier than Curve fit"),string)
+                string = QApplication.translate("Message","Warning: The start of the analysis interval of interest is earlier than the start of curve fitting.\nCorrect this on the Config>Curves>Analyze tab.", None)
+                QMessageBox.warning(self,QApplication.translate("Message","Analysis earlier than Curve fit", None),string)
 
             #reset the annotation location if the origin is out of the screen
             for dim in self.qmc.analysisresultsloc:
@@ -36360,7 +36289,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " analysisShowResults(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " analysisShowResults(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     def analysisGetResults(self,exp=2, curvefit_starttime=0, curvefit_endtime=0, analysis_starttime=0, analysis_endtime=0):
 
@@ -36441,7 +36370,7 @@ class ApplicationWindow(QMainWindow):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
-            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " analysisRecomputeDeltas(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " analysisRecomputeDeltas(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     def setbackgroundequ(self,foreground=False, EQU=None,recomputeAllDeltas=False):
         if EQU is None:
@@ -36456,8 +36385,8 @@ class ApplicationWindow(QMainWindow):
                 error = "P2: \n-%s\n\n[%s]"%(incompatiblevars[i],EQU[1])
 
         if error:
-            string = QApplication.translate("Message","Incompatible variables found in %s"%error)
-            QMessageBox.warning(self,QApplication.translate("Message","Assignment problem"),string,
+            string = QApplication.translate("Message","Incompatible variables found in %s"%error, None)
+            QMessageBox.warning(self,QApplication.translate("Message","Assignment problem", None),string,
                                 QMessageBox.StandardButton.Discard)
 
         else:
@@ -36494,7 +36423,7 @@ class ApplicationWindow(QMainWindow):
                             aw.qmc.extratemp1[x] = [-1]*len(x_range)
                             aw.qmc.extratemp2[x] = [-1]*len(x_range)
                             aw.qmc.extratimex[x] = x_range[:]
-                        aw.sendmessage(QApplication.translate("Message","Y1 = [%s] ; Y2 = [%s]"%(EQU[0],EQU[1])))
+                        aw.sendmessage(QApplication.translate("Message","Y1 = [%s] ; Y2 = [%s]"%(EQU[0],EQU[1]), None))
 
                     else:
                         aw.qmc.timeB = x_range[:]
@@ -36520,12 +36449,12 @@ class ApplicationWindow(QMainWindow):
                         aw.qmc.background = True
                         aw.qmc.backgroundprofile = True
                         aw.qmc.redraw(recomputeAllDeltas=recomputeAllDeltas)
-                        aw.sendmessage(QApplication.translate("Message","B1 = [%s] ; B2 = [%s]"%(EQU[0],EQU[1])))
+                        aw.sendmessage(QApplication.translate("Message","B1 = [%s] ; B2 = [%s]"%(EQU[0],EQU[1]), None))
 
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
                 _, _, exc_tb = sys.exc_info()
-                aw.qmc.adderror((QApplication.translate("Error Message", "Exception:") + " setbackgroundequ(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+                aw.qmc.adderror((QApplication.translate("Error Message", "Exception:",None) + " setbackgroundequ(): {0}").format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     @pyqtSlot()
     @pyqtSlot(bool)
@@ -36564,7 +36493,7 @@ class ApplicationWindow(QMainWindow):
             self.qmc.timeclock.setBase(1000)
             aw.buttonONOFF.setStyleSheet(aw.pushbuttonstyles["OFF"])
             aw.buttonSTARTSTOP.setStyleSheet(aw.pushbuttonstyles["STOP"])
-            self.sendmessage(QApplication.translate("Message","Simulator stopped"))
+            self.sendmessage(QApplication.translate("Message","Simulator stopped", None))
         else:
             try:
                 if aw.curFile is None:
@@ -36593,9 +36522,9 @@ class ApplicationWindow(QMainWindow):
                         self.simulatorpath = filename
                         aw.buttonONOFF.setStyleSheet(aw.pushbuttonstyles_simulator["OFF"])
                         aw.buttonSTARTSTOP.setStyleSheet(aw.pushbuttonstyles_simulator["STOP"])
-                        self.sendmessage(QApplication.translate("Message","Simulator started @{}x").format(speed))
+                        self.sendmessage(QApplication.translate("Message","Simulator started @{}x", None).format(speed))
                     else:
-                        self.sendmessage(QApplication.translate("Message","Invalid artisan format"))
+                        self.sendmessage(QApplication.translate("Message","Invalid artisan format", None))
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
             self.simulatorAction.setChecked(bool(self.simulator))

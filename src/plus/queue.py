@@ -321,7 +321,8 @@ def addRoast(roast_record=None):
                 config.app_window.sendmessage(
                     QApplication.translate(
                         "Plus",
-                        "Queuing roast for upload to artisan.plus"
+                        "Queuing roast for upload to artisan.plus",
+                        None,
                     )
                 )  # @UndefinedVariable
                 if roast_record is not None:
