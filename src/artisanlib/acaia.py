@@ -18,7 +18,6 @@
 
 import logging
 from typing import Final
-from artisanlib.ble import BLE_CHAR_TYPE
 
 
 _log: Final = logging.getLogger(__name__)
@@ -26,28 +25,13 @@ _log: Final = logging.getLogger(__name__)
 
 class AcaiaBLE():
 
-    # Acaia Pearl, Lunar:
-    DEVICE_NAME_PEARL = "PROCHBT"
-    DEVICE_NAME_LUNAR = "ACAIA"
+    # Acaia Pearl, Lunar uses this UUID
     SERVICE_UUID_LEGACY = "00001820-0000-1000-8000-00805f9b34fb"
-    CHAR_UUID_LEGACY = ("00002a80-0000-1000-8000-00805f9b34fb", BLE_CHAR_TYPE.BLE_CHAR_NOTIFY_WRITE)
-    DEVICE_NAMES_LEGACY = ["PROCHBT001"]
+    CHAR_UUID_LEGACY =    "00002a80-0000-1000-8000-00805f9b34fb"
     
-    # Acaia Pearl (2021):
-    DEVICE_NAME_PEARL2021 = "PEARL-"
-    SERVICE_UUID = "49535343-FE7D-4AE5-8FA9-9FAFD205E455"
-    CHAR_UUID = ("49535343-1E4D-4BD9-BA61-23C647249616", BLE_CHAR_TYPE.BLE_CHAR_NOTIFY)
-    CHAR_UUID_WRITE = ("49535343-8841-43F4-A8D4-ECBE34729BB3", BLE_CHAR_TYPE.BLE_CHAR_WRITE)
-
-    # Acaia Pearl S:
-    DEVICE_NAME_PEARLS = "PEARLS"
-    
-    # Acaia Lunar (2021):
-    DEVICE_NAME_LUNAR2021 = "LUNAR-"
-    
-    # Others:
-    DEVICE_NAME_OTHERS = "ACAIA"
-    
+    # Acaia Pearl (2021) uses this UUID
+    SERVICE_UUID_CURRENT = "49535343-FE7D-4AE5-8FA9-9FAFD205E455"
+    CHAR_UUID_CURRENT =    "49535343-1E4D-4BD9-BA61-23C647249616" # should this rather contain or end with "ecbe34729bb3"??
     
     HEADER1      = 0xef
     HEADER2      = 0xdd
@@ -274,12 +258,12 @@ class AcaiaBLE():
         # if value is fresh and reading is stable
         if value != self.weight: # and stable:
             self.weight = value
-#            _log.debug("new weight: %s", self.weight)
+            _log.debug("new weight: %s", self.weight)
         
         return self.EVENT_WEIGHT_LEN
     
     def parseBatteryEvent(self,payload):
-#        _log.debug("parseBatteryEvent(_)")
+        _log.debug("parseBatteryEvent(_)")
         if len(payload) < self.EVENT_BATTERY_LEN:
             return -1
         b = payload[0]

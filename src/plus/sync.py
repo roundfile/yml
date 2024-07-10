@@ -55,7 +55,7 @@ def getSyncName():
     if config.account_nr is None or config.account_nr == 0:
         fn = config.sync_cache
     else:
-        fn = f"{config.sync_cache}{config.account_nr}"
+        fn = config.sync_cache + str(config.account_nr)
     return fn
 
 
@@ -63,7 +63,7 @@ def getSyncName():
 def getSyncPath(lock: bool = False):
     fn = getSyncName()
     if lock:
-        fn = f"{fn}_lock"
+        fn = fn + "_lock"
     return getDirectory(fn, share=True)
 
 
@@ -287,6 +287,7 @@ def clearSyncRecordHash():
 # if provided, roast_record is assumed to be a full roast record
 # as provided by roast.getRoast()
 def syncRecordUpdated(roast_record=None):
+    global cached_sync_record_hash  # pylint: disable=global-statement
     try:
         _log.debug("syncRecordUpdated(%s)", roast_record)
         sync_record_semaphore.acquire(1)
@@ -307,6 +308,7 @@ def syncRecordUpdated(roast_record=None):
 # the result is the roast_record with all unchanged attributes, which do not
 # need to synced on updates, removed
 def diffCachedSyncRecord(roast_record):
+    global cached_sync_record  # pylint: disable=global-statement
     try:
         _log.debug("diffCachedSyncRecord()")
         sync_record_semaphore.acquire(1)
@@ -385,6 +387,7 @@ def setApplidedServerUpdatesModifiedAt(modified_at):
 
 def getApplidedServerUpdatesModifiedAt():
     # pylint: disable=global-statement
+    global applied_server_updates_modified_at
     try:
         _log.debug("getApplidedServerUpdatesModifiedAt()")
         applied_server_updates_modified_at_semaphore.acquire(1)
@@ -401,6 +404,7 @@ def getApplidedServerUpdatesModifiedAt():
 # variables directly
 # if the contained UUID
 def applyServerUpdates(data):
+    global cached_sync_record  # pylint: disable=global-statement
     dirty = False
     title_changed = False
     try:
@@ -618,15 +622,15 @@ def applyServerUpdates(data):
     except Exception as e:  # pylint: disable=broad-except
         _log.exception(e)
     finally:
-        if aw is not None and title_changed:
+        if title_changed:
             aw.setTitleSignal.emit(
                 aw.qmc.title, True
             )  # we force an updatebackground to ensure proper repainting
-        if aw is not None and dirty:
+        if dirty:
             aw.qmc.fileDirty()
             aw.sendmessageSignal.emit(
                 QApplication.translate(
-                    "Plus", "Updated data received from artisan.plus"
+                    "Plus", "Updated data received from artisan.plus", None
                 ),
                 True,
                 None,
@@ -662,8 +666,10 @@ def fetchServerUpdate(uuid: str, file=None):
             file_last_modified = None
 
         if file_last_modified is not None:
-            last_modified = f"?modified_at={(round(file_last_modified * 1000)):.0f}"
-        res = connection.getData(f"{config.roast_url}/{uuid}{last_modified}")
+            last_modified = "?modified_at=" + str(
+                int(round(file_last_modified * 1000))
+            )
+        res = connection.getData(config.roast_url + "/" + uuid + last_modified)
         status = res.status_code
         _log.debug("fetchServerUpdate() -> status: %s", status)
         _log.debug("fetchServerUpdate() -> data: %s", res)

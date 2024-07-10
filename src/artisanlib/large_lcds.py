@@ -29,10 +29,6 @@ except Exception:
     from PyQt5.QtWidgets import (QApplication, QFrame, QWidget, QLCDNumber, QHBoxLayout, QVBoxLayout) # @UnusedImport @Reimport  @UnresolvedImport
 
 class LargeLCDs(ArtisanDialog):
-
-    __slots__ = ['lcds1', 'lcds2', 'lcds1styles', 'lcds2styles', 'lcds1labelsUpper', 'lcds2labelsUpper', 'lcds1labelsLower', 'lcds2labelsLower', 
-        'lcds1frames', 'lcds2frames', 'visibleFrames', 'tight', 'layoutNr', 'swaplcds']
-    
     def __init__(self, parent = None, aw = None):
         super().__init__(parent, aw)
         # it is assumed that both lists of lcds (lcd1 & lcd2) have the same length
@@ -327,9 +323,6 @@ class LargeLCDs(ArtisanDialog):
             self.hideAllEmptyLabels()
 
 class LargeMainLCDs(LargeLCDs):
-
-    __slots__ = ['lcd0']
-    
     def __init__(self, parent = None, aw = None):
         self.lcd0 = None # Timer
         # we add the ET lcd to the lcd1 list and the BT lcds to the lcd2 list (same for styles, labels and frames
@@ -340,7 +333,7 @@ class LargeMainLCDs(LargeLCDs):
         else:
             self.resize(200,100)
         self.chooseLayout(self.width(),self.height())
-        self.setWindowTitle(QApplication.translate("Menu", "Main LCDs"))
+        self.setWindowTitle(QApplication.translate("Menu", "Main LCDs", None))
     
     def updateVisiblitiesETBT(self):
         self.updateVisibilities([self.aw.qmc.ETlcd],[self.aw.qmc.BTlcd])
@@ -480,7 +473,6 @@ class LargeMainLCDs(LargeLCDs):
         self.aw.lcdsAction.setChecked(False)
 
 class LargeDeltaLCDs(LargeLCDs):
-    
     def __init__(self, parent = None, aw = None):
         super().__init__(parent, aw)
         settings = QSettings()
@@ -488,7 +480,7 @@ class LargeDeltaLCDs(LargeLCDs):
             self.restoreGeometry(settings.value("DeltaLCDGeometry"))
         else:
             self.resize(100,200)
-        self.setWindowTitle(QApplication.translate("Menu", "Delta LCDs"))
+        self.setWindowTitle(QApplication.translate("Menu", "Delta LCDs", None))
         self.chooseLayout(self.width(),self.height())
     
     def makeLCDs(self):
@@ -535,13 +527,13 @@ class LargePIDLCDs(LargeLCDs):
             self.restoreGeometry(settings.value("PIDLCDGeometry"))
         else:
             self.resize(100,200)
-        self.setWindowTitle(QApplication.translate("Menu", "PID LCDs"))
+        self.setWindowTitle(QApplication.translate("Menu", "PID LCDs", None))
         self.chooseLayout(self.width(),self.height())
     
     def makeLCDs(self):
         self.lcds1styles = ["sv"]
         self.lcds1 = [self.makeLCD(self.lcds1styles[0])] # PID SV
-        label1Upper = self.makeLabel("<b>" + QApplication.translate("Label", "PID SV") + "</b> ")
+        label1Upper = self.makeLabel("<b>" + QApplication.translate("Label", "PID SV",None) + "</b> ")
         label1Lower = self.makeLabel(" ")
         self.lcds1labelsUpper = [label1Upper]
         self.lcds1labelsLower = [label1Lower]
@@ -549,7 +541,7 @@ class LargePIDLCDs(LargeLCDs):
         #
         self.lcds2styles = ["sv"]
         self.lcds2 = [self.makeLCD(self.lcds2styles[0])] # PID %
-        label2Upper = self.makeLabel("<b>" + QApplication.translate("Label", "PID %") + "</b> ")
+        label2Upper = self.makeLabel("<b>" + QApplication.translate("Label", "PID %",None) + "</b> ")
         label2Lower = self.makeLabel(" ")
         self.lcds2labelsUpper = [label2Upper]
         self.lcds2labelsLower = [label2Lower]
@@ -582,7 +574,7 @@ class LargeExtraLCDs(LargeLCDs):
         else:
             self.resize(100,200)
         self.chooseLayout(self.width(),self.height())
-        self.setWindowTitle(QApplication.translate("Menu", "Extra LCDs"))
+        self.setWindowTitle(QApplication.translate("Menu", "Extra LCDs", None))
     
     def makeLCDs(self):
         self.lcds1 = []
@@ -655,9 +647,6 @@ class LargeExtraLCDs(LargeLCDs):
         self.aw.extralcdsAction.setChecked(False)
 
 class LargePhasesLCDs(LargeLCDs):
-
-    __slots__ = ['labels', 'values1', 'values2']
-    
     def __init__(self, parent = None, aw = None):
         self.labels = [" ", " ", " ", self.formatLabel("AUC")] # formated labels
         self.values1 = [" "]*2
@@ -669,7 +658,7 @@ class LargePhasesLCDs(LargeLCDs):
         else:
             self.resize(100,200)
         self.chooseLayout(self.width(),self.height())
-        self.setWindowTitle(QApplication.translate("Menu", "Phases LCDs"))
+        self.setWindowTitle(QApplication.translate("Menu", "Phases LCDs", None))
     
     @staticmethod
     def formatLabel(l):

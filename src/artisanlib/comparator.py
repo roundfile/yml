@@ -56,13 +56,6 @@ except Exception:
 _log: Final = logging.getLogger(__name__)
 
 class RoastProfile():
-    __slots__ = ['aw', 'visible', 'aligned', 'active', 'color', 'gray', 'label', 'title', 'curve_visibilities', 'event_visibility', 'zorder',
-        'zorder_offsets', 'alpha', 'alpha_dim_factor', 'timeoffset', 'max_DeltaET', 'max_DeltaBT', 'startTimeIdx', 'endTimeIdx', 'min_time', 'max_time',
-        'UUID', 'filepath', 'timeindex', 'timex', 'temp1', 'temp2', 'E1', 'E2', 'E3', 'E4', 'stemp1', 'stemp2', 'delta1', 'delta2', 'events1',
-        'events2', 'events_timex', 'l_temp1', 'l_temp2', 'l_delta1', 'l_delta2', 'l_mainEvents1', 'l_mainEvents2', 'l_events1', 'l_events2',
-        'l_events3', 'l_events4', 'ambientTemp', 'metadata', 'specialevents', 'specialeventstype', 'specialeventsvalue', 'TP']
-    
-    # NOTE: filepath/filename can also be a URL string
     def __init__(self, aw, profile, filepath, color):
         self.aw = aw
         # state:
@@ -169,8 +162,8 @@ class RoastProfile():
                         self.timeindex[i] = self.aw.qmc.timearray2index(self.timex,times[i])
                     else:
                         self.timeindex[i] = 0
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+            except Exception: # pylint: disable=broad-except
+                pass
             ###########      END OLD PROFILE FORMAT
             
         # temperature conversion
@@ -366,8 +359,8 @@ class RoastProfile():
                             self.E3.append((etime,evalue))
                         elif etype == 3:
                             self.E4.append((etime,evalue))
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                except Exception: # pylint: disable=broad-except
+                    pass
             # add a last event at DROP/END to extend the lines to the end of roast
             end = (self.timex[-1] if self.timeindex[6] == 0 else self.timex[self.timeindex[6]])
             if self.E1: 
@@ -559,7 +552,7 @@ class RoastProfile():
                 linewidth=self.aw.qmc.BTlinewidth,linestyle=self.aw.qmc.BTlinestyle,drawstyle=self.aw.qmc.BTdrawstyle,
                 alpha=(self.alpha[0] if self.active else self.alpha[0]*self.alpha_dim_factor),
                 color=(self.color if self.active else self.gray),
-                label="{} {}".format(self.label,self.aw.arabicReshape(QApplication.translate("Label", "BT"))))
+                label="{} {}".format(self.label,self.aw.arabicReshape(QApplication.translate("Label", "BT", None))))
 
     def drawET(self):
         if self.timex is not None and self.stemp1 is not None:
@@ -568,7 +561,7 @@ class RoastProfile():
                 linewidth=self.aw.qmc.ETlinewidth,linestyle=self.aw.qmc.ETlinestyle,drawstyle=self.aw.qmc.ETdrawstyle,
                 alpha=(self.alpha[1] if self.active else self.alpha[1]*self.alpha_dim_factor),
                 color=(self.color if self.active else self.gray),
-                label="{} {}".format(self.label,self.aw.arabicReshape(QApplication.translate("Label", "ET"))))
+                label="{} {}".format(self.label,self.aw.arabicReshape(QApplication.translate("Label", "ET", None))))
 
     def drawDeltaBT(self):
         if self.timex is not None and self.delta2 is not None:
@@ -580,7 +573,7 @@ class RoastProfile():
                 alpha=(self.alpha[2] if self.active else self.alpha[2]*self.alpha_dim_factor),
 #                clip_path=self.l_delta2_clipping,clip_on=True,
                 color=(self.color if self.active else self.gray),
-                label="{} {}".format(self.label,self.aw.arabicReshape(deltaLabelUTF8 + QApplication.translate("Label", "BT"))))
+                label="{} {}".format(self.label,self.aw.arabicReshape(deltaLabelUTF8 + QApplication.translate("Label", "BT", None))))
 
     def drawDeltaET(self):
         if self.timex is not None and self.delta1 is not None:
@@ -592,7 +585,7 @@ class RoastProfile():
                 alpha=(self.alpha[3] if self.active else self.alpha[3]*self.alpha_dim_factor),
 #                clip_path=self.l_delta1_clipping,clip_on=True,
                 color=(self.color if self.active else self.gray),
-                label="{} {}".format(self.label,self.aw.arabicReshape(deltaLabelUTF8 + QApplication.translate("Label", "ET"))))
+                label="{} {}".format(self.label,self.aw.arabicReshape(deltaLabelUTF8 + QApplication.translate("Label", "ET", None))))
 
     def drawMainEvents1(self):
         if self.events_timex is not None and self.events1 is not None:
@@ -606,7 +599,7 @@ class RoastProfile():
 #                picker=5, # deprecated in MPL 3.3.x
                 picker=True,
                 pickradius=5,
-                label="{} {}".format(self.label,self.aw.arabicReshape(QApplication.translate("Label", "Events"))))
+                label="{} {}".format(self.label,self.aw.arabicReshape(QApplication.translate("Label", "Events", None))))
             if self.aw.qmc.graphstyle == 1:
                 self.l_mainEvents1.set_sketch_params(1,700,12)
     
@@ -622,7 +615,7 @@ class RoastProfile():
 #                picker=5, # deprecated in MPL 3.3.x
                 picker=True,
                 pickradius=5,
-                label="{} {}".format(self.label,self.aw.arabicReshape(QApplication.translate("Label", "Events"))))
+                label="{} {}".format(self.label,self.aw.arabicReshape(QApplication.translate("Label", "Events", None))))
             if self.aw.qmc.graphstyle == 1:
                 self.l_mainEvents2.set_sketch_params(4,800,20)
     
@@ -682,11 +675,6 @@ class CompareTableWidget(QTableWidget):
         return []
 
 class roastCompareDlg(ArtisanDialog):
-
-    __slots__ = [ 'foreground', 'background', 'maxentries', 'basecolors', 'profiles', 'label_number', 'l_align', 'legend', 'legendloc_pos', 'addButton',
-        'deleteButton', 'alignnames', 'alignComboBox', 'etypes', 'eventsComboBox', 'cb', 'model', 'button_7_org_state_hidden', 'button_1_org_state_hidden',
-        'button_2_org_state_hidden', 'button_10_org_state_hidden', 'pick_handler_id' ]
-    
     def __init__(self, parent = None, aw = None, foreground = None, background = None):
         super().__init__(parent, aw)
         
@@ -697,7 +685,7 @@ class roastCompareDlg(ArtisanDialog):
         
         self.foreground = foreground
         self.background = background
-        self.setWindowTitle(QApplication.translate("Form Caption","Comparator"))
+        self.setWindowTitle(QApplication.translate("Form Caption","Comparator",None))
         self.maxentries = 10 # maxium number of profiles to be compared
         self.basecolors = list(cm.tab10(numpy.linspace(0,1,10)))  # @UndefinedVariable # pylint: disable=maybe-no-member
         self.profiles = []
@@ -711,23 +699,23 @@ class roastCompareDlg(ArtisanDialog):
         self.profileTable = CompareTableWidget()
         self.createProfileTable()
         # buttons
-        self.addButton = QPushButton(QApplication.translate("Button","Add"))
+        self.addButton = QPushButton(QApplication.translate("Button","Add",None))
         self.addButton.clicked.connect(self.add)
         self.addButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.deleteButton = QPushButton(QApplication.translate("Button","Delete"))
+        self.deleteButton = QPushButton(QApplication.translate("Button","Delete",None))
         self.deleteButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.deleteButton.clicked.connect(self.delete)
         # configurations
-        alignLabel = QLabel(QApplication.translate("Label","Align"))
+        alignLabel = QLabel(QApplication.translate("Label","Align",None))
         self.alignnames = [
-            QApplication.translate("Label","CHARGE"),
-            QApplication.translate("Label","TP"),
-            QApplication.translate("Label","DRY"),
-            QApplication.translate("Label","FCs"),
-            QApplication.translate("Label","FCe"),
-            QApplication.translate("Label","SCs"),
-            QApplication.translate("Label","SCe"),
-            QApplication.translate("Label","DROP"),
+            QApplication.translate("Label","CHARGE", None),
+            QApplication.translate("Label","TP", None),
+            QApplication.translate("Label","DRY", None),
+            QApplication.translate("Label","FCs", None),
+            QApplication.translate("Label","FCe", None),
+            QApplication.translate("Label","SCs", None),
+            QApplication.translate("Label","SCe", None),
+            QApplication.translate("Label","DROP", None),
             ]
         self.alignComboBox = MyQComboBox()
         self.alignComboBox.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -748,20 +736,20 @@ class roastCompareDlg(ArtisanDialog):
         self.cb = CheckComboBox(placeholderText="")
         self.cb.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.model = self.cb.model()
-        self.cb.addItem(QApplication.translate("Label","ET"))
+        self.cb.addItem(QApplication.translate("Label","ET",None))
         self.model.item(0).setCheckable(True)
         self.cb.setItemCheckState(0,(Qt.CheckState.Checked if self.aw.qmc.compareET else Qt.CheckState.Unchecked))
-        self.cb.addItem(QApplication.translate("Label","BT"))
+        self.cb.addItem(QApplication.translate("Label","BT",None))
         self.model.item(1).setCheckable(True)
         self.cb.setItemCheckState(1,(Qt.CheckState.Checked if self.aw.qmc.compareBT else Qt.CheckState.Unchecked))
-        self.cb.addItem(deltaLabelUTF8 + QApplication.translate("Label","ET"))
+        self.cb.addItem(deltaLabelUTF8 + QApplication.translate("Label","ET",None))
         self.model.item(2).setCheckable(True)
         self.cb.setItemCheckState(2,(Qt.CheckState.Checked if self.aw.qmc.compareDeltaET else Qt.CheckState.Unchecked))
-        self.cb.addItem(deltaLabelUTF8 + QApplication.translate("Label","BT"))
+        self.cb.addItem(deltaLabelUTF8 + QApplication.translate("Label","BT",None))
         self.model.item(3).setCheckable(True)
         self.cb.setItemCheckState(3,(Qt.CheckState.Checked if self.aw.qmc.compareDeltaBT else Qt.CheckState.Unchecked))
         self.cb.insertSeparator(4)
-        self.cb.addItem(QApplication.translate("CheckBox","Events"))
+        self.cb.addItem(QApplication.translate("CheckBox","Events",None))
         self.model.item(5).setCheckable(True)
         self.cb.setItemCheckState(5,(Qt.CheckState.Checked if self.aw.qmc.compareMainEvents else Qt.CheckState.Unchecked))
         self.cb.flagChanged.connect(self.flagChanged)
@@ -804,10 +792,11 @@ class roastCompareDlg(ArtisanDialog):
         
         self.redraw()
         
-        self.buttonRESET_org_state_hidden = self.aw.buttonRESET.isHidden() # RESET
-        self.buttonONOFF_org_state_hidden = self.aw.buttonONOFF.isHidden() # ON/OFF
-        self.buttonSTARTSTOP_org_state_hidden = self.aw.buttonSTARTSTOP.isHidden() # START/STOP
-        self.buttonCONTROL_org_state_hidden = self.aw.buttonCONTROL.isHidden() # CONTROL
+        self.button_7_org_state_hidden = self.aw.button_7.isHidden() # RESET
+        self.button_1_org_state_hidden = self.aw.button_1.isHidden() # ON/OFF
+        self.button_2_org_state_hidden = self.aw.button_2.isHidden() # START/STOP
+        self.button_10_org_state_hidden = self.aw.button_10.isHidden() # CONTROL
+        self.button_18_org_state_hidden = self.aw.button_18.isHidden() # HUD
         
         self.disableButtons()
         self.aw.disableEditMenus(compare=True)
@@ -840,20 +829,23 @@ class roastCompareDlg(ArtisanDialog):
                 self.addProfiles(res)
     
     def enableButtons(self):
-        if not self.buttonRESET_org_state_hidden:
-            self.aw.buttonRESET.show() # RESET
-        if not self.buttonONOFF_org_state_hidden:
-            self.aw.buttonONOFF.show() # ON/OFF
-        if not self.buttonSTARTSTOP_org_state_hidden:
-            self.aw.buttonSTARTSTOP.show() # START/STOP
-        if not self.buttonCONTROL_org_state_hidden:
-            self.aw.buttonCONTROL.show() # CONTROL
+        if not self.button_7_org_state_hidden:
+            self.aw.button_7.show() # RESET
+        if not self.button_1_org_state_hidden:
+            self.aw.button_1.show() # ON/OFF
+        if not self.button_2_org_state_hidden:
+            self.aw.button_2.show() # START/STOP
+        if not self.button_10_org_state_hidden:
+            self.aw.button_10.show() # CONTROL
+        if not self.button_18_org_state_hidden:
+            self.aw.button_18.show() # HUD
         
     def disableButtons(self):
-        self.aw.buttonRESET.hide() # RESET
-        self.aw.buttonONOFF.hide() # ON/OFF
-        self.aw.buttonSTARTSTOP.hide() # START/STOP
-        self.aw.buttonCONTROL.hide() # CONTROL
+        self.aw.button_7.hide() # RESET
+        self.aw.button_1.hide() # ON/OFF
+        self.aw.button_2.hide() # START/STOP
+        self.aw.button_10.hide() # CONTROL
+        self.aw.button_18.hide() # HUD
     
     ### DRAWING
     
@@ -913,7 +905,7 @@ class roastCompareDlg(ArtisanDialog):
         fontprop_large.set_size("large")
         
         self.aw.qmc.ax.set_ylabel(self.aw.qmc.mode,color=self.aw.qmc.palette["ylabel"],rotation=0,labelpad=10,fontproperties=fontprop_large)
-        self.aw.qmc.ax.set_xlabel(self.aw.arabicReshape(QApplication.translate("Label", "min")),color = self.aw.qmc.palette["xlabel"],fontproperties=fontprop_medium)
+        self.aw.qmc.ax.set_xlabel(self.aw.arabicReshape(QApplication.translate("Label", "min",None)),color = self.aw.qmc.palette["xlabel"],fontproperties=fontprop_medium)
 
         tick_dir = 'inout'
         self.aw.qmc.ax.tick_params(\
@@ -955,7 +947,7 @@ class roastCompareDlg(ArtisanDialog):
             labelbottom=False)   # labels along the bottom edge are on
 
         self.aw.qmc.ax.patch.set_visible(True)
-        self.aw.qmc.delta_ax.set_ylabel(self.aw.qmc.mode + self.aw.arabicReshape(QApplication.translate("Label", "/min")),color = self.aw.qmc.palette["ylabel"],fontproperties=fontprop_large)
+        self.aw.qmc.delta_ax.set_ylabel(self.aw.qmc.mode + self.aw.arabicReshape(QApplication.translate("Label", "/min", None)),color = self.aw.qmc.palette["ylabel"],fontproperties=fontprop_large)
         self.aw.qmc.delta_ax.set_ylim(self.aw.qmc.zlimit_min,self.aw.qmc.zlimit)
         if self.aw.qmc.zgrid > 0:
             self.aw.qmc.delta_ax.yaxis.set_major_locator(ticker.MultipleLocator(self.aw.qmc.zgrid))
@@ -1159,8 +1151,11 @@ class roastCompareDlg(ArtisanDialog):
                     if tooltip != "":
                         tooltip += "\n"
                     tooltip += profile.metadata["cuppingnotes"].strip()
-            except Exception as e: # pylint: disable=broad-except
-                _log.exception(e)
+            except Exception: # pylint: disable=broad-except
+#                import traceback
+#                import sys
+#                traceback.print_exc(file=sys.stdout)
+                pass
         return tooltip.strip()
     
     def createProfileTable(self):
@@ -1176,8 +1171,8 @@ class roastCompareDlg(ArtisanDialog):
             self.profileTable.verticalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
 #            self.profileTable.horizontalHeader().setVisible(False)
             self.profileTable.setHorizontalHeaderLabels(["",
-                                                         QApplication.translate("Label","ON"),
-                                                         QApplication.translate("Label","Title")])
+                                                         QApplication.translate("Label","ON",None),
+                                                         QApplication.translate("Label","Title",None)])
             self.profileTable.horizontalHeader().sectionClicked.connect(self.columnHeaderClicked)
             self.profileTable.setCornerButtonEnabled(True) # click in the left header corner selects all entries in the table
             self.profileTable.setSortingEnabled(False)
@@ -1203,9 +1198,8 @@ class roastCompareDlg(ArtisanDialog):
             self.profileTable.setAutoScroll(False) # disable scrolling to selected cell
 
         except Exception as ex: # pylint: disable=broad-except
-            _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
-            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:") + " createProfileTable() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+            self.aw.qmc.adderror((QApplication.translate("Error Message","Exception:",None) + " createProfileTable() {0}").format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
     
     ### SLOTS
     
@@ -1460,40 +1454,7 @@ class roastCompareDlg(ArtisanDialog):
     
     ### ADD/DELETE table items
     
-    def addProfile(self,filename,obj):
-        selected = [self.aw.findWidgetsRow(self.profileTable,si,2) for si in self.profileTable.selectedItems()]
-        active = not bool(selected)
-        # assign next color
-        rp = RoastProfile(self.aw,obj,filename,self.basecolors[0])
-        self.basecolors = self.basecolors[1:] # remove used color from list of available basecolors
-        # set default label number if no batch number is available
-        if rp.label == "":
-            self.label_number += 1
-            rp.label = str(self.label_number)
-        # set initially inactive if currently any another profile is selected
-        rp.setActive(active)
-        # add profile to the list
-        self.profiles.append(rp)
-        # add profile to the table
-        self.profileTable.setRowCount(len(self.profiles))
-        self.setProfileTableRow(len(self.profiles)-1)
-    
-    def addProfileFromURL(self,extractor,url):
-        _log.debug("addProfileFromURL(%s)", url)
-        try:
-            obj = extractor(url,self.aw)
-            if obj:
-                self.addProfile(url,obj)
-                self.updateAlignMenu()
-                self.realign()
-                self.updateZorders()
-                self.repaint()
-        except Exception as ex: # pylint: disable=broad-except
-            _log.exception(ex)
-    
-    # Internal function not to be called directly. Use addProfiles() which also handles the repainting!
-    def addProfileFromFile(self,filename):
-        _log.debug("addProfileFromFile(%s)", filename)
+    def addProfile(self,filename,active):
         try:
             if len(self.profiles) < self.maxentries and not any(filename == p.filepath for p in self.profiles):
                 f = QFile(filename)
@@ -1504,14 +1465,28 @@ class roastCompareDlg(ArtisanDialog):
                 if firstChar == "{":
                     f.close()
                     obj = self.aw.deserialize(filename)
-                    self.addProfile(filename,obj)
+                    # assign next color
+                    rp = RoastProfile(self.aw,obj,filename,self.basecolors[0])
+                    self.basecolors = self.basecolors[1:] # remove used color from list of available basecolors
+                    # set default label number if no batch number is available
+                    if rp.label == "":
+                        self.label_number += 1
+                        rp.label = str(self.label_number)
+                    # set initially inactive if currently any another profile is selected
+                    rp.setActive(active)
+                    # add profile to the list
+                    self.profiles.append(rp)
+                    # add profile to the table
+                    self.profileTable.setRowCount(len(self.profiles))
+                    self.setProfileTableRow(len(self.profiles)-1)
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
     
     def addProfiles(self,filenames):
         if filenames:
+            selected = [self.aw.findWidgetsRow(self.profileTable,si,2) for si in self.profileTable.selectedItems()]
             for filename in filenames:
-                self.addProfileFromFile(filename)
+                self.addProfile(filename,not bool(selected))
             self.updateAlignMenu()
             self.realign()
             self.updateZorders()

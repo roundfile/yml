@@ -44,13 +44,13 @@ class flavorDlg(ArtisanResizeablDialog):
         helpFlag = Qt.WindowType.WindowContextHelpButtonHint
         flags = flags & (~helpFlag)
         self.setWindowFlags(flags)
-        self.setWindowTitle(QApplication.translate("Form Caption","Cup Profile"))
+        self.setWindowTitle(QApplication.translate("Form Caption","Cup Profile",None))
         
         settings = QSettings()
         if settings.contains("FlavorProperties"):
             self.restoreGeometry(settings.value("FlavorProperties"))
             
-        defaultlabel = QLabel(QApplication.translate("Label","Default"))
+        defaultlabel = QLabel(QApplication.translate("Label","Default",None))
         self.defaultcombobox = QComboBox()
         self.defaultcombobox.addItems(["","Artisan","SCCA","CQI","SweetMarias","C","E","CoffeeGeek","Intelligentsia","IIAC","WCRC","*CUSTOM*"])
         self.defaultcombobox.setCurrentIndex(0)
@@ -65,13 +65,13 @@ class flavorDlg(ArtisanResizeablDialog):
         rightButton = QPushButton(">")
         rightButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         rightButton.clicked.connect(self.moveRight)
-        addButton = QPushButton(QApplication.translate("Button","Add"))
+        addButton = QPushButton(QApplication.translate("Button","Add",None))
         addButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         addButton.clicked.connect(self.addlabel)
-        delButton = QPushButton(QApplication.translate("Button","Del"))
+        delButton = QPushButton(QApplication.translate("Button","Del",None))
         delButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         delButton.clicked.connect(self.poplabel)
-        saveImgButton = QPushButton(QApplication.translate("Button","Save Image"))
+        saveImgButton = QPushButton(QApplication.translate("Button","Save Image",None))
         saveImgButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         saveImgButton.clicked.connect(self.aw.saveVectorGraph_PDF) # save as PDF (vector)
         
@@ -79,13 +79,13 @@ class flavorDlg(ArtisanResizeablDialog):
         self.dialogbuttons.accepted.connect(self.close)
         self.dialogbuttons.removeButton(self.dialogbuttons.button(QDialogButtonBox.StandardButton.Cancel))
         
-        self.backgroundCheck = QCheckBox(QApplication.translate("CheckBox","Background"))
+        self.backgroundCheck = QCheckBox(QApplication.translate("CheckBox","Background", None))
         if self.aw.qmc.flavorbackgroundflag:
             self.backgroundCheck.setChecked(True)
         self.backgroundCheck.clicked.connect(self.showbackground)
-        aspectlabel = QLabel(QApplication.translate("Label","Aspect Ratio"))
+        aspectlabel = QLabel(QApplication.translate("Label","Aspect Ratio",None))
         self.aspectSpinBox = QDoubleSpinBox()
-        self.aspectSpinBox.setToolTip(QApplication.translate("Tooltip","Aspect Ratio"))
+        self.aspectSpinBox.setToolTip(QApplication.translate("Tooltip","Aspect Ratio",None))
         self.aspectSpinBox.setRange(0.,2.)
         self.aspectSpinBox.setSingleStep(.1)
         self.aspectSpinBox.setValue(self.aw.qmc.flavoraspect)
@@ -147,8 +147,8 @@ class flavorDlg(ArtisanResizeablDialog):
         if nflavors:
             self.flavortable.setRowCount(nflavors)
             self.flavortable.setColumnCount(3)
-            self.flavortable.setHorizontalHeaderLabels([QApplication.translate("Table", "Label"),
-                                                        QApplication.translate("Table", "Value"),
+            self.flavortable.setHorizontalHeaderLabels([QApplication.translate("Table", "Label",None),
+                                                        QApplication.translate("Table", "Value",None),
                                                         ""])
             self.flavortable.setAlternatingRowColors(True)
             self.flavortable.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -180,12 +180,12 @@ class flavorDlg(ArtisanResizeablDialog):
     def showbackground(self,_):
         if self.backgroundCheck.isChecked():
             if not self.aw.qmc.background:
-                message = QApplication.translate("Message","Background profile not found")
+                message = QApplication.translate("Message","Background profile not found", None)
                 self.aw.sendmessage(message)
                 self.backgroundCheck.setChecked(False)
             else:
                 if len(self.aw.qmc.backgroundFlavors) != len(self.aw.qmc.flavors):
-                    message = QApplication.translate("Message","Background does not match number of labels")
+                    message = QApplication.translate("Message","Background does not match number of labels", None)
                     self.aw.sendmessage(message)
                     self.aw.qmc.flavorbackgroundflag = False
                     self.backgroundCheck.setChecked(False)

@@ -207,7 +207,8 @@ def connect(clear_on_failure: bool =False, interactive: bool = True) -> None:
                                         QApplication.translate(
                                             "Plus",
                                             ("Keyring error: Ensure that"
-                                             " gnome-keyring is installed.")
+                                             " gnome-keyring is installed."),
+                                            None,
                                         ),
                                         True,
                                         None,
@@ -217,7 +218,7 @@ def connect(clear_on_failure: bool =False, interactive: bool = True) -> None:
             if config.app_window.plus_account is None:  # @UndefinedVariable
                 if interactive:
                     config.app_window.sendmessageSignal.emit(
-                        QApplication.translate("Plus", "Login aborted"),
+                        QApplication.translate("Plus", "Login aborted", None),
                         True,
                         None,
                     )  # @UndefinedVariable
@@ -226,13 +227,15 @@ def connect(clear_on_failure: bool =False, interactive: bool = True) -> None:
                 if success:
                     config.connected = success
                     config.app_window.sendmessageSignal.emit(
-                        f'{config.app_window.plus_account} {QApplication.translate("Plus", "authentified")}',
+                        config.app_window.plus_account
+                        + " "
+                        + QApplication.translate("Plus", "authentified", None),
                         True,
                         None,
                     )  # @UndefinedVariable
                     config.app_window.sendmessageSignal.emit(
                         QApplication.translate(
-                            "Plus", "Connected to artisan.plus"
+                            "Plus", "Connected to artisan.plus", None
                         ),
                         True,
                         None,
@@ -251,20 +254,20 @@ def connect(clear_on_failure: bool =False, interactive: bool = True) -> None:
                         connection.clearCredentials()
                         config.app_window.sendmessageSignal.emit(
                             QApplication.translate(
-                                "Plus", "artisan.plus turned off"
+                                "Plus", "artisan.plus turned off", None
                             ),
                             True,
                             None,
                         )  # @UndefinedVariable
                     elif interactive:
                         message = QApplication.translate(
-                            "Plus", "Authentication failed"
+                            "Plus", "Authentication failed", None
                         )
                         if (
                             config.app_window.plus_account is not None
                         ):  # @UndefinedVariable
                             message = (
-                                f"{config.app_window.plus_account} {message}"
+                                config.app_window.plus_account + " " + message
                             )  # @UndefinedVariable
                         config.app_window.sendmessageSignal.emit(
                             message, True, None
@@ -277,7 +280,7 @@ def connect(clear_on_failure: bool =False, interactive: bool = True) -> None:
                 if interactive:
                     config.app_window.sendmessageSignal.emit(
                         QApplication.translate(
-                            "Plus", "artisan.plus turned off"
+                            "Plus", "artisan.plus turned off", None
                         ),
                         True,
                         None,
@@ -286,7 +289,7 @@ def connect(clear_on_failure: bool =False, interactive: bool = True) -> None:
                 if interactive:
                     config.app_window.sendmessageSignal.emit(
                         QApplication.translate(
-                            "Plus", "Couldn't connect to artisan.plus"
+                            "Plus", "Couldn't connect to artisan.plus", None
                         ),
                         True,
                         None,
@@ -302,11 +305,11 @@ def connect(clear_on_failure: bool =False, interactive: bool = True) -> None:
 
 # show a dialog to have the user confirm the disconnect action
 def disconnect_confirmed() -> bool:
-    string = QApplication.translate("Plus", "Disconnect artisan.plus?")
+    string = QApplication.translate("Plus", "Disconnect artisan.plus?", None)
     aw = config.app_window
     reply = QMessageBox.question(
         aw,
-        QApplication.translate("Plus", "Disconnect?"),
+        QApplication.translate("Plus", "Disconnect?", None),
         string,
         QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
     )
@@ -343,7 +346,7 @@ def disconnect(
             if remove_credentials:
                 config.app_window.sendmessageSignal.emit(
                     QApplication.translate(
-                        "Plus", "artisan.plus turned off"
+                        "Plus", "artisan.plus turned off", None
                     ),
                     True,
                     None,
@@ -351,7 +354,7 @@ def disconnect(
             else:
                 config.app_window.sendmessageSignal.emit(
                     QApplication.translate(
-                        "Plus", "artisan.plus disconnected"
+                        "Plus", "artisan.plus disconnected", None
                     ),
                     True,
                     None,

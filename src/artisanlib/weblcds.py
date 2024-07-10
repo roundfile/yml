@@ -106,7 +106,7 @@ def startWeb(p,resourcePath,nonesym,timec,timebg,btc,btbg,etc,etbg,showetflag,sh
     
     if process.is_alive():    
         # check successful start
-        url = f"http://127.0.0.1:{port}/status"
+        url = "http://127.0.0.1:" + str(port) + "/status"
         r = rget(url,timeout=2)
         
         return bool(r.status_code == 200)

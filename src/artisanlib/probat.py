@@ -1,5 +1,5 @@
-#!/usr/bin/env python3
-
+# -*- coding: utf-8 -*-
+#
 # ABOUT
 # Probat Middleware support for Artisan
 
@@ -7,7 +7,7 @@
 # This program or module is free software: you can redistribute it and/or
 # modify it under the terms of the GNU General Public License as published
 # by the Free Software Foundation, either version 2 of the License, or
-# version 3 of the License, or (at your option) any later versison. It is
+# version 3 of the License, or (at your option) any later version. It is
 # provided for educational purposes and is distributed in the hope that
 # it will be useful, but WITHOUT ANY WARRANTY; without even the implied
 # warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See
@@ -37,7 +37,8 @@ class ProbatMiddleware():
 
     # discover the Probat Middleware within the local area network via a broadcast message and
     # returns IP and port of its endpoint
-    def discover(self):
+    @staticmethod
+    def discover():
         s = socket(AF_INET, SOCK_DGRAM) #create UDP socket
         s.bind(('', 0))
         s.setsockopt(SOL_SOCKET, SO_BROADCAST, 1) #this is a broadcast socket
@@ -48,8 +49,9 @@ class ProbatMiddleware():
         port = data.decode('ascii')
         ip = addr[0]
         return ip, port
-        
-    def getHeaders(self):
+    
+    @staticmethod
+    def getHeaders():
         headers = {"user-agent": "Artisan"}
         headers["Accept-Encoding"] = "deflate, compress, gzip" # identity should not be in here!
         return headers
@@ -66,7 +68,7 @@ class ProbatMiddleware():
         if self.probat_middleware_endpoint is not None:
             try:
                 return sorted(self.getJSON(self.probat_middleware_endpoint + GET_ROASTERS), key=lambda x:x["id"])                
-            except Exception:
+            except Exception: # pylint: disable=broad-except
                 return []
         else:
             return []
@@ -101,8 +103,7 @@ class ProbatMiddleware():
     def getRoasterURL(self):
         if self.probat_middleware_endpoint is not None and self.isConnected():
             return self.probat_middleware_endpoint + GET_DATA.format(id=self.probat_middleware_ID)
-        else:
-            return None
+        return None
     
     def getRoasterName(self):
         return self.probat_middleware_name

@@ -8,8 +8,6 @@ import os
 import io
 import csv
 import re
-import logging
-from typing import Final
 
 try:
     #pylint: disable = E, W, R, C
@@ -21,9 +19,6 @@ except Exception:
     from PyQt5.QtWidgets import QApplication # @UnusedImport @Reimport  @UnresolvedImport
 
 from artisanlib.util import encodeLocal
-
-
-_log: Final = logging.getLogger(__name__)
 
 # returns a dict containing all profile information contained in the given IKAWA CSV file
 def extractProfileIkawaCSV(file,_):
@@ -131,13 +126,13 @@ def extractProfileIkawaCSV(file,_):
                             fan_event = True
                             v = v/10. + 1
                             specialeventsvalue.append(v)
-                            specialevents.append(i-1)
+                            specialevents.append(i)
                             specialeventstype.append(0)
                             specialeventsStrings.append("{}".format(fan) + "%")
                     else:
                         fan_last = None
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                except Exception: # pylint: disable=broad-except
+                    pass
             if "heater power (%)" in item or "heater" in item:
                 try:
                     if "heater power (%)" in item:
@@ -161,13 +156,13 @@ def extractProfileIkawaCSV(file,_):
                             heater_event = True
                             v = v/10. + 1
                             specialeventsvalue.append(v)
-                            specialevents.append(i-1)
+                            specialevents.append(i)
                             specialeventstype.append(3)
                             specialeventsStrings.append("{}".format(heater) + "%")
                     else:
                         heater_last = None
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                except Exception: # pylint: disable=broad-except
+                    pass
     
     res["mode"] = 'C'
             
@@ -194,10 +189,10 @@ def extractProfileIkawaCSV(file,_):
         res["specialeventsStrings"] = specialeventsStrings
         if heater_event or fan_event:
             # first set etypes to defaults
-            res["etypes"] = [QApplication.translate("ComboBox", "Air"),
-                             QApplication.translate("ComboBox", "Drum"),
-                             QApplication.translate("ComboBox", "Damper"),
-                             QApplication.translate("ComboBox", "Burner"),
+            res["etypes"] = [QApplication.translate("ComboBox", "Air",None),
+                             QApplication.translate("ComboBox", "Drum",None),
+                             QApplication.translate("ComboBox", "Damper",None),
+                             QApplication.translate("ComboBox", "Burner",None),
                              "--"]
             # update
             if fan_event:

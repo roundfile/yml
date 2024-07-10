@@ -62,9 +62,6 @@ worker_thread = None
 
 
 class Concur(threading.Thread):
-
-    __slots__ = [ 'daemon', 'paused', 'state' ]
-    
     def __init__(self):
         threading.Thread.__init__(self)
         self.daemon = (
@@ -85,6 +82,7 @@ class Concur(threading.Thread):
             config.app_window.updatePlusStatusSignal.emit()  # @UndefinedVariable
 
     def run(self):
+        global queue  # pylint: disable=global-statement
         _log.debug("run()")
         time.sleep(config.queue_start_delay)
         self.resume()  # unpause self
@@ -229,6 +227,7 @@ def start():
             "start(): queue not started in ArtisanViewer mode"
         )
     else:
+        global queue  # pylint: disable=global-statement
         global worker_thread  # pylint: disable=global-statement
         _log.info("start()")
         _log.debug("-> qsize: %s", queue.qsize())
@@ -290,6 +289,7 @@ def is_full_roast_record(r: Dict[str, Any]) -> bool:
 #      - amount
 #   an update only the roast_id
 def addRoast(roast_record=None):
+    global queue  # pylint: disable=global-statement
     try:
         _log.info("addRoast()")
         if config.app_window.plus_readonly:
@@ -321,7 +321,8 @@ def addRoast(roast_record=None):
                 config.app_window.sendmessage(
                     QApplication.translate(
                         "Plus",
-                        "Queuing roast for upload to artisan.plus"
+                        "Queuing roast for upload to artisan.plus",
+                        None,
                     )
                 )  # @UndefinedVariable
                 if roast_record is not None:
