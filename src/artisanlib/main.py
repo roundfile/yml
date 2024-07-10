@@ -22974,7 +22974,7 @@ class ApplicationWindow(QMainWindow):
                         env=my_env,
                         stdin=None,
                         # supress output:
-                        stdout=None #subprocess.DEVNULL, #causes voice.exe to fail?
+                        stdout=None, #subprocess.DEVNULL, #causes voice.exe to fail?
                         stderr=None #subprocess.STDOUT   #causes voice.exe to fail?
                         ) #.wait() # with this wait(), the script blocks the Artisan event loop
                 else:
