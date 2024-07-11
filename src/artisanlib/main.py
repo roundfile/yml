@@ -10261,7 +10261,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                         stdin=None,
                         # suppress output:
                         stdout=None, #subprocess.DEVNULL,
-                        stderr=None  #subprocess.STDOUT
+                        stderr=subprocess.STDOUT
                         ) #.wait() # with this wait(), the script blocks the Artisan event loop
                 else:
                     subprocess.Popen(os.path.expanduser(cmd_str), # pylint: disable=consider-using-with
