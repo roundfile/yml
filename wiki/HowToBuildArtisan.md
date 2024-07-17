@@ -3,6 +3,23 @@
 ____
 **Important: Artisan is licensed under [The GNU General Public License](https://www.gnu.org/licenses/gpl-3.0.html).  Copies of Artisan and derivative works are subject to this license.  Be sure to review the license to understand your legal obligations.  Please respect them.**
 ____
+### Contents
+
+[comment]: # (mdtoc.exe options: --max-level=4)
+<!-- TOC start (generated with https://github.com/derlin/bitdowntoc) -->
+
+- [Introduction](#introduction)
+- [What Happens](#what-happens)
+- [Step by Step](#step-by-step)
+   * [Setup Accounts  ](#setup-accounts)
+   * [Start a CI Build.](#start-a-ci-build)
+- [Appendix: Connecting to the build image  ](#appendix-connecting-to-the-build-image)
+   * [Sample Code - Windows Remote Desktop Access  ](#sample-code---windows-remote-desktop-access)
+   * [Sample Code - Linux or macOS SSH Access  ](#sample-code---linux-or-macos-ssh-access)
+   * [Sample Code - macOS VNC Access](#sample-code---macos-vnc-access)
+
+<!-- TOC end -->
+____
 
 ### Introduction
 
@@ -46,7 +63,7 @@ If you encounter this message on AppVeyor: *"There was an error while trying to 
 _____
 
 _____
-### **Appendix: Connecting to the build image**  
+### Appendix: Connecting to the build image  
 Though seldom necessary, it is possible to connect to the build image on AppVeyor during CI.  Before a connection can be made, environment variables must be added to the AppVeyor project's environment settings or directly in `.appveyor.yml` as described here for  [Windows RDP access](https://www.appveyor.com/docs/how-to/rdp-to-build-worker/), or [macOS/Linux SSH access](https://www.appveyor.com/docs/how-to/ssh-to-build-worker/) or [macOS VNC access](https://www.appveyor.com/docs/how-to/vnc-to-build-worker/).  
 
 You must watch the AppVeyor build log.  The IP and port information will be shown there when the connection is opened.  AppVeyor creates a file that needs to be deleted to allow the CI process to continue.  Total CI time is currently limited to 60 min.  The connection will close and the CI build terminated when time expires.

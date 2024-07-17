@@ -35,6 +35,7 @@ from artisanlib.util import getDirectory
 from plus import config, util, roast, connection, sync, controller
 import threading
 import time
+import datetime
 import logging
 from typing import Final, Any, List, Dict, Optional, TYPE_CHECKING  #for Python >= 3.9: can remove 'List' and 'Dict' since type hints can use the generic 'list' and 'dict'
 
@@ -103,14 +104,18 @@ class Worker(QObject): # pyright: ignore [reportGeneralTypeIssues] # Argument to
                     _log.debug(
                         '-> worker processing item: %s', item
                     )
-                    item_age = time.time()-util.ISO86012epoch(item['data']['modified_at'])
-                    if (config.queue_discard_after > 0 and 'data' in item and
-                            'modified_at' in item['data'] and item_age > config.queue_discard_after):
-                        # old item scheduled to be removed from the queue
+                    iters = 1 # by default, if no modified_at timestamp is given (no roast; maybe just a lock schedule message) thus we don't retry this
+                    if 'url' not in item:
+                        # items without an url are discarded
                         iters = 0
-                        _log.debug('-> expired item %s removed from queue (%s min)',item['data']['roast_id'],int(round(item_age/60)))
-                    else:
-                        iters = config.queue_retries + 1
+                    if 'data' in item and 'modified_at' in item['data']:
+                        item_age = time.time()-util.ISO86012epoch(item['data']['modified_at'])
+                        if (config.queue_discard_after > 0 and item_age > config.queue_discard_after):
+                            # old item scheduled to be removed from the queue
+                            iters = 0
+                            _log.debug('-> expired item %s removed from queue (%s min)',item['data']['roast_id'],int(round(item_age/60)))
+                        else:
+                            iters = config.queue_retries + 1
                     while iters > 0:
                         _log.debug(
                             '-> remaining iterations: %s', iters
@@ -131,6 +136,13 @@ class Worker(QObject): # pyright: ignore [reportGeneralTypeIssues] # Argument to
                                     item['url'], item['data'], item['verb']
                                 )
                                 r.raise_for_status()
+                                if config.app_window is not None:
+                                    config.app_window.sendmessage(
+                                        QApplication.translate(
+                                            'Plus',
+                                            'Roast successfully upload to {}'
+                                        ).format(config.app_name)
+                                    )  # @UndefinedVariable
                                 # successfully transmitted, we add/update the
                                 # roasts UUID sync-cache
                                 self.addSyncItem(item)
@@ -149,6 +161,24 @@ class Worker(QObject): # pyright: ignore [reportGeneralTypeIssues] # Argument to
                                         self.replySignal.emit(rlimit,rused,pu,notifications,machines)
                                 except Exception as e:  # pylint: disable=broad-except
                                     _log.exception(e)
+                            elif 'url' in item and item['url'].startswith(config.lock_schedule_url):
+                                # this is not be a roast record, but a lock schedule message to be send to the server
+                                controller.connect(
+                                    clear_on_failure=False, interactive=False
+                                )
+                                r = connection.sendData(
+                                    item['url'], item['data'], item['verb']
+                                )
+                                r.raise_for_status()
+# maybe to much noise, this message would be send on each START
+#                                if config.app_window is not None:
+#                                    config.app_window.sendmessage(
+#                                        QApplication.translate(
+#                                            'Plus',
+#                                            'Roast schedule of today locked on {}'
+#                                        ).format(config.app_name)
+#                                    )  # @UndefinedVariable
+
                             # partial sync updates for roasts not registered
                             # for syncing are ignored
                             iters = 0
@@ -390,5 +420,30 @@ def addRoast(roast_record:Optional[Dict[str, Any]] = None) -> None:
                 _log.debug(
                     '-> roast not queued as mandatory info missing'
                 )
+    except Exception as e:  # pylint: disable=broad-except
+        _log.exception(e)
+
+def sendLockSchedule() -> None:
+    try:
+        _log.debug('sendLockSchedule()')
+        if config.app_window is None:
+            _log.info('config.app_window is None')
+        elif config.app_window.plus_readonly:
+            _log.info(
+                '-> lockSchedule not queued as users'
+                 ' account access is readonly'
+            )
+        elif queue is None:
+            _log.info(
+                '-> lockSchedule not queued as queue'
+                 ' is not running'
+            )
+        else:
+            queue.put(
+                {'url': f'{config.lock_schedule_url}?today={datetime.datetime.now().astimezone().date()}', 'data': {}, 'verb': 'POST'},
+                # timeout=config.queue_put_timeout
+                # sql queue does not feature a timeout
+            )
+            _log.debug('-> lockSchedule queued up')
     except Exception as e:  # pylint: disable=broad-except
         _log.exception(e)

@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from plus.stock import Blend # noqa: F401  # pylint: disable=unused-import
     from PyQt6.QtWidgets import QLayout, QAbstractItemView, QCompleter # pylint: disable=unused-import
     from PyQt6.QtGui import QClipboard, QCloseEvent, QKeyEvent, QMouseEvent # pylint: disable=unused-import
-    from PyQt6.QtCore import QObject # pylint: disable=unused-import
+    from PyQt6.QtCore import QObject, QMetaObject # pylint: disable=unused-import
 
 
 # import artisan.plus modules
@@ -1280,7 +1280,6 @@ class editGraphDlg(ArtisanResizeablDialog):
             label_font = self.plus_selected_line.font()
             label_font.setPointSize(label_font.pointSize() -2)
             self.plus_selected_line.setFont(label_font)
-            self.populatePlusCoffeeBlendCombos()
             # layouting
             self.plus_coffees_combo.setMinimumContentsLength(15)
             self.plus_blends_combo.setMinimumContentsLength(10)
@@ -1558,6 +1557,8 @@ class editGraphDlg(ArtisanResizeablDialog):
         self.volume_percent()
         self.setLayout(totallayout)
 
+        self.populatePlusCoffeeBlendCombos()
+
         self.titleedit.setFocus()
 
         self.updateTemplateLine()
@@ -1577,14 +1578,17 @@ class editGraphDlg(ArtisanResizeablDialog):
         self.updateWeightLCD('')
 
 #PLUS
+        self.updateStockSignalConnection:Optional[QMetaObject.Connection] = None
+        self.stockWorker:Optional[plus.stock.Worker] = None
         try:
             if self.aw.plus_account is not None:
                 if plus.controller.is_connected():
-                    plus.stock.update()
+                    self.stockWorker= plus.stock.getWorker()
+                    if self.stockWorker is not None:
+                        self.updateStockSignalConnection = self.stockWorker.updatedSignal.connect(self.populatePlusCoffeeBlendCombos)
+                        QTimer.singleShot(10, plus.stock.update)
                 else: # we are in ON mode, but not connected, we connect which triggers a stock update if successful
                     plus.controller.connect(interactive=False)
-                if plus.controller.is_connected():
-                    QTimer.singleShot(1500, self.populatePlusCoffeeBlendCombos)
         except Exception as e:  # pylint: disable=broad-except
             _log.exception(e)
         if platform.system() != 'Windows':
@@ -1889,11 +1893,19 @@ class editGraphDlg(ArtisanResizeablDialog):
                         if len(self.plus_stores) == 1:
                             self.plus_default_store = plus.stock.getStoreId(self.plus_stores[0])
                         if len(self.plus_stores) < 2:
-                            self.plusStoreslabel.setVisible(False)
-                            self.plus_stores_combo.setVisible(False)
+                            #self.plusStoreslabel.setVisible(False)
+                            if self.plusStoreslabel.isVisible():
+                                self.plusStoreslabel.hide()
+                            #self.plus_stores_combo.setVisible(False)
+                            if self.plus_stores_combo.isVisible():
+                                self.plus_stores_combo.hide()
                         else:
-                            self.plusStoreslabel.setVisible(True)
-                            self.plus_stores_combo.setVisible(True)
+                            #self.plusStoreslabel.setVisible(True)
+                            if not self.plusStoreslabel.isVisible():
+                                self.plusStoreslabel.show()
+                            #self.plus_stores_combo.setVisible(True)
+                            if not self.plus_stores_combo.isVisible():
+                                self.plus_stores_combo.show()
                     except Exception as e:  # pylint: disable=broad-except
                         _log.exception(e)
                     self.plus_stores_combo.blockSignals(True)
@@ -2535,6 +2547,9 @@ class editGraphDlg(ArtisanResizeablDialog):
 #        self.aw.closeEventSettings() # save all app settings
         self.aw.editgraphdialog = None
         self.aw.updateScheduleSignal.emit()
+        if self.stockWorker is not None and self.updateStockSignalConnection is not None:
+            self.stockWorker.updatedSignal.disconnect(self.updateStockSignalConnection)
+
 
     # triggered via the cancel button
     @pyqtSlot()

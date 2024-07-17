@@ -28,19 +28,20 @@ import datetime
 import json
 import html
 import textwrap
+import platform
 import logging
 from uuid import UUID
 try:
-    from PyQt6.QtCore import (Qt, QMimeData, QSettings, pyqtSlot, pyqtSignal, QPoint, QPointF, QLocale, QDate, QDateTime, QSemaphore, QTimer) # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt6.QtCore import (QRect, Qt, QMimeData, QSettings, pyqtSlot, pyqtSignal, QPoint, QPointF, QLocale, QDate, QDateTime, QSemaphore, QTimer) # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtGui import (QDrag, QPixmap, QPainter, QTextLayout, QTextLine, QColor, QFontMetrics, QCursor, QAction) # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt6.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QFrame, QTabWidget,  # @UnusedImport @Reimport  @UnresolvedImport
-            QCheckBox, QGroupBox, QScrollArea, QSplitter, QLabel, QSizePolicy,  # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt6.QtWidgets import (QStackedWidget, QApplication, QWidget, QVBoxLayout, QHBoxLayout, QFrame, QTabWidget,  # @UnusedImport @Reimport  @UnresolvedImport
+            QCheckBox, QGroupBox, QScrollArea, QLabel, QSizePolicy,  # @UnusedImport @Reimport  @UnresolvedImport
             QGraphicsDropShadowEffect, QPlainTextEdit, QLineEdit, QMenu)  # @UnusedImport @Reimport  @UnresolvedImport
 except ImportError:
-    from PyQt5.QtCore import (Qt, QMimeData, QSettings, pyqtSlot, pyqtSignal, QPoint, QPointF, QLocale, QDate, QDateTime, QSemaphore, QTimer) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt5.QtCore import (QRect, Qt, QMimeData, QSettings, pyqtSlot, pyqtSignal, QPoint, QPointF, QLocale, QDate, QDateTime, QSemaphore, QTimer) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtGui import (QDrag, QPixmap, QPainter, QTextLayout, QTextLine, QColor, QFontMetrics, QCursor, QAction) # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout, QFrame, QTabWidget, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
-            QCheckBox, QGroupBox, QScrollArea, QSplitter, QLabel, QSizePolicy,  # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt5.QtWidgets import (QStackedWidget, QApplication, QWidget, QVBoxLayout, QHBoxLayout, QFrame, QTabWidget, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
+            QCheckBox, QGroupBox, QScrollArea, QLabel, QSizePolicy,  # @UnusedImport @Reimport  @UnresolvedImport
             QGraphicsDropShadowEffect, QPlainTextEdit, QLineEdit, QMenu)  # @UnusedImport @Reimport  @UnresolvedImport
 
 
@@ -65,9 +66,10 @@ import plus.stock
 import plus.config
 import plus.sync
 import plus.util
-from plus.util import datetime2epoch, epoch2datetime
+from plus.util import datetime2epoch, epoch2datetime, schedulerLink, epoch2ISO8601, ISO86012epoch, plusLink
 from plus.weight import Display, WeightManager, GreenWeightItem, RoastedWeightItem
-from artisanlib.widgets import ClickableQLabel, ClickableQLineEdit
+from artisanlib.widgets import ClickableQLabel, ClickableQLineEdit, Splitter
+from artisanlib.dialogs import ArtisanResizeablDialog
 from artisanlib.util import (convertWeight, weight_units, render_weight, comma2dot, float2floatWeightVolume, getDirectory)
 
 
@@ -143,8 +145,10 @@ tooltip_light_background_style: Final[str] = f'QToolTip {{ background: {light_gr
 tooltip_dull_dark_background_style: Final[str] = f'QToolTip {{ background: {dull_dark_grey}; padding: 5px; opacity: 240; }}'
 
 
+
 class CompletedItemDict(TypedDict):
     scheduleID:str         # the ID of the ScheduleItem this completed item belongs to
+    scheduleDate:str       # the date of the ScheduleItem this completed item belongs to
     roastUUID:str          # the UUID of this roast
     roastdate: float       # as epoch
     roastbatchnr: int      # set to zero if no batch number is assigned
@@ -213,6 +217,7 @@ class ScheduledItem(BaseModel):
 class CompletedItem(BaseModel):
     count: PositiveInt       # total count >0 of corresponding ScheduleItem
     scheduleID: str
+    scheduleDate: str
     sequence_id: PositiveInt # sequence id of this roast (sequence_id <= count)
     roastUUID: UUID4
     roastdate: datetime.datetime
@@ -241,17 +246,22 @@ class CompletedItem(BaseModel):
 
     @model_validator(mode='after') # pyright:ignore[reportArgumentType]
     def coffee_or_blend(self) -> 'CompletedItem':
+        if len(self.title) == 0:
+            raise ValueError('Title cannot be empty')
 # as CompletedItems are generated for ScheduledItems where store and one of blend/coffee needs to be set
 # the store_label and one of the blend_label/coffee_label should never be empty, but in case they are we
 # handle this without further ado
-#        if self.coffee_label is None and self.blend_label is None:
+        if self.coffee_label is None and self.blend_label is None:
 #            raise ValueError('Either coffee_label or blend_label must be specified')
-#        if self.coffee_label is not None and self.blend_label is not None:
+            _log.info('CompletedItem validation: Either coffee_label (%s) or blend_label (%s) must be specified (%s)', self.coffee_label, self.blend_label, self.scheduleID)
+        if self.coffee_label is not None and self.blend_label is not None:
 #            raise ValueError('Either coffee_label or blend_label must be specified, but not both')
-        if len(self.title) == 0:
-            raise ValueError('Title cannot be empty')
+            _log.info('CompletedItem validation: Either coffee_label (%s) or blend_label (%s) must be specified, but not both (%s)', self.coffee_label, self.blend_label, self.scheduleID)
+# you should not be able to complete more roasts than the items coount, but in case it happens we
+# handle this without further ado
         if self.sequence_id > self.count:
-            raise ValueError('sequence_id cannot be larger than total count of roasts per ScheduleItem')
+#            raise ValueError('sequence_id cannot be larger than total count of roasts per ScheduleItem')
+            _log.info('CompletedItem validation: sequence_id (%s) cannot be larger than total count (%s) of roasts per ScheduleItem (%s)', self.sequence_id, self.count, self.scheduleID)
         return self
 
     @field_serializer('roastdate', when_used='json')
@@ -380,17 +390,17 @@ def load_completed(plus_account_id:Optional[str]) -> None:
                     completed_roasts = completed_roasts_cache_data[plus_account_id]
                     today_completed = []
                     previously_completed = []
-                    today = datetime.datetime.now(tz=datetime.timezone.utc)
+                    today = datetime.datetime.now(datetime.timezone.utc)
                     for ci in completed_roasts:
                         if 'roastdate' in ci:
-                            if epoch2datetime(ci['roastdate']).date() == today.date():
+                            if epoch2datetime(ci['roastdate']).astimezone().date() == today.astimezone().date():
                                 today_completed.append(ci)
                             else:
                                 previously_completed.append(ci)
                     if len(previously_completed)>0:
                         previous_session_epoch:float = previously_completed[0].get('roastdate', datetime2epoch(today))
-                        previous_session_date = epoch2datetime(previous_session_epoch).date()
-                        previously_completed = [pc for pc in previously_completed if 'roastdate' in pc and epoch2datetime(pc['roastdate']).date() == previous_session_date]
+                        previous_session_date = epoch2datetime(previous_session_epoch).astimezone().date()
+                        previously_completed = [pc for pc in previously_completed if 'roastdate' in pc and epoch2datetime(pc['roastdate']).astimezone().date() == previous_session_date]
                     # we keep all roasts completed today as well as all from the previous roast session
                     completed_roasts_cache = today_completed + previously_completed
     except FileNotFoundError:
@@ -417,7 +427,6 @@ def get_all_completed() -> List[CompletedItemDict]:
 # add the given CompletedItemDict if it contains a roastUUID which does not occurs yet in the completed_roasts_cache
 # if there is already a completed roast with the given UUID, its content is replaced by the given CompletedItemDict
 def add_completed(plus_account_id:Optional[str], ci:CompletedItemDict) -> None:
-    _log.info('add_completed')
     if 'roastUUID' in ci:
         modified: bool = False
         try:
@@ -820,6 +829,7 @@ class StandardItem(QFrame): # pyright: ignore[reportGeneralTypeIssues] # Argumen
 
 
 class NoDragItem(StandardItem):
+    # now a datetime in UTC timezone
     def __init__(self, data:CompletedItem, aw:'ApplicationWindow', now:datetime.datetime) -> None:
         # Store data separately from display label, but use label for default.
         self.aw = aw
@@ -834,7 +844,7 @@ class NoDragItem(StandardItem):
 
         item_color = light_grey
         item_color_hover = light_grey_hover
-        if self.data.roastdate.date() == now.date():
+        if self.data.roastdate.astimezone().date() == now.astimezone().date():
             # item roasted today
             item_color = plus_alt_blue
             item_color_hover = plus_alt_blue_hover
@@ -868,22 +878,25 @@ class NoDragItem(StandardItem):
 
 
     def getRight(self) -> str:
-        days_diff = (self.now.date() - self.data.roastdate.date()).days
+        # the datetimes now and roastdate are in UTC, we need to compare the dates w.r.t. the local timezone thus we have to convert both via astimezone()
+        roastdate = self.data.roastdate
+        roastdate_date_local = roastdate.astimezone().date()
+        days_diff = (self.now.astimezone().date() - roastdate_date_local).days
         task_date_str = ''
         if days_diff == 0:
             # for time formatting we use the system locale
             locale = QLocale()
-            dt = QDateTime.fromSecsSinceEpoch(int(datetime2epoch(self.data.roastdate)))
+            dt = QDateTime.fromSecsSinceEpoch(int(datetime2epoch(roastdate)))
             task_date_str = locale.toString(dt.time(), QLocale.FormatType.ShortFormat)
         elif days_diff == 1:
             task_date_str = QApplication.translate('Plus', 'Yesterday').capitalize()
         elif days_diff < 7:
             # for date formatting we use the artisan-language locale
             locale = QLocale(self.locale_str)
-            task_date_str = locale.toString(QDate(self.data.roastdate.date().year, self.data.roastdate.date().month, self.data.roastdate.date().day), 'dddd').capitalize()
+            task_date_str = locale.toString(QDate(roastdate_date_local.year, roastdate_date_local.month, roastdate_date_local.day), 'dddd').capitalize()
         else:
             # date formatted according to the locale without the year
-            task_date_str = format_date(self.data.roastdate.date(), format='long', locale=self.locale_str).replace(format_date(self.data.roastdate.date(), 'Y', locale=self.locale_str),'').strip().rstrip(',')
+            task_date_str = format_date(roastdate_date_local, format='long', locale=self.locale_str).replace(format_date(roastdate_date_local, 'Y', locale=self.locale_str),'').strip().rstrip(',')
 
         weight = (f'{render_weight(self.data.weight, 1, self.weight_unit_idx)}  ' if self.data.measured else '')
 
@@ -900,6 +913,7 @@ class NoDragItem(StandardItem):
 
 
 class DragItem(StandardItem):
+    # today a date in local timezone
     def __init__(self, data:ScheduledItem, aw:'ApplicationWindow', today:datetime.date, user_id: Optional[str], machine: str) -> None:
         self.data:ScheduledItem = data
         self.aw = aw
@@ -924,6 +938,7 @@ class DragItem(StandardItem):
 
     # need to be called if prepared information changes
     def update_widget(self) -> None:
+        date_local = self.data.date
         task_date:str
         if self.days_diff == 0:
             task_date = QApplication.translate('Plus', 'Today')
@@ -931,10 +946,10 @@ class DragItem(StandardItem):
             task_date = QApplication.translate('Plus', 'Tomorrow')
         elif self.days_diff < 7:
             locale = QLocale(self.aw.locale_str)
-            task_date = locale.toString(QDate(self.data.date.year, self.data.date.month, self.data.date.day), 'dddd').capitalize()
+            task_date = locale.toString(QDate(date_local.year, date_local.month, date_local.day), 'dddd').capitalize()
         else:
             # date formatted according to the locale without the year
-            task_date = format_date(self.data.date, format='long', locale=self.aw.locale_str).replace(format_date(self.data.date, 'Y', locale=self.aw.locale_str),'').strip().rstrip(',')
+            task_date = format_date(date_local, format='long', locale=self.aw.locale_str).replace(format_date(date_local, 'Y', locale=self.aw.locale_str),'').strip().rstrip(',')
 
         user_nickname:Optional[str] = plus.connection.getNickname()
         task_operator = (QApplication.translate('Plus', 'by anybody') if self.data.user is None else
@@ -1276,16 +1291,15 @@ class DragWidget(BaseWidget):
     def get_item_data(self) -> List[ScheduledItem]:
         return [item.data for item in self.get_items()]
 
-
-class ScheduleWindow(QWidget): # pyright:ignore[reportGeneralTypeIssues]
+class ScheduleWindow(ArtisanResizeablDialog): # pyright:ignore[reportGeneralTypeIssues]
 
     register_completed_roast = pyqtSignal()
 
     def __init__(self, parent:'QWidget', aw:'ApplicationWindow', activeTab:int = 0) -> None:
         if aw.get_os()[0] == 'RPi':
-            super().__init__(None) # set the parent to None to make Schedule windows on RPi Bookworm non-modal (not blocking the main window)
+            super().__init__(None, aw) # set the parent to None to make Schedule windows on RPi Bookworm non-modal (not blocking the main window)
         else:
-            super().__init__(parent) # if parent is set to None, Schedule panels hide behind the main window in full screen mode on Windows!
+            super().__init__(parent, aw) # if parent is set to None, Schedule panels hide behind the main window in full screen mode on Windows!
 
         self.aw = aw # the Artisan application window
         self.activeTab:int = activeTab
@@ -1298,12 +1312,6 @@ class ScheduleWindow(QWidget): # pyright:ignore[reportGeneralTypeIssues]
 
         # holds the currently selected completed NoDragItem widget if any
         self.selected_completed_item:Optional[NoDragItem] = None
-
-        settings = QSettings()
-        if settings.contains('ScheduleGeometry'):
-            self.restoreGeometry(settings.value('ScheduleGeometry'))
-        else:
-            self.resize(250,300)
 
         # IMPORTANT NOTE: if dialog items have to be access after it has been closed, this Qt.WidgetAttribute.WA_DeleteOnClose attribute
         # has to be set to False explicitly in its initializer (like in comportDlg) to avoid the early GC and one might
@@ -1338,24 +1346,54 @@ class ScheduleWindow(QWidget): # pyright:ignore[reportGeneralTypeIssues]
         remaining_filter_layout.addWidget(self.day_filter)
         remaining_filter_layout.addWidget(self.user_filter)
         remaining_filter_layout.addWidget(self.machine_filter)
-        remaining_filter_group = QGroupBox('Filters')
-        remaining_filter_group.setLayout(remaining_filter_layout)
+        self.remaining_filter_group = QGroupBox(QApplication.translate('Plus', 'Filters'))
+        self.remaining_filter_group.setLayout(remaining_filter_layout)
 
-        remaining_scrollarea = QScrollArea()
-        remaining_scrollarea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        remaining_scrollarea.setWidgetResizable(True)
-        remaining_scrollarea.setWidget(remaining_widget)
-        remaining_scrollarea.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignTop)
-#        remaining_scrollarea.setFrameShadow(QFrame.Shadow.Sunken)
-#        remaining_scrollarea.setFrameShape(QFrame.Shape.Panel)
-        remaining_scrollarea.setMinimumWidth(remaining_widget.minimumSizeHint().width())
+        self.remaining_scrollarea = QScrollArea()
+        self.remaining_scrollarea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.remaining_scrollarea.setWidgetResizable(True)
+        self.remaining_scrollarea.setWidget(remaining_widget)
+        self.remaining_scrollarea.setAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignTop)
+#        self.remaining_scrollarea.setMinimumWidth(remaining_widget.minimumSizeHint().width())
 
-        remaining_filter_group.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+        self.remaining_filter_group.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
 
-        self.remaining_splitter = QSplitter(Qt.Orientation.Vertical)
-        self.remaining_splitter.addWidget(remaining_scrollarea)
-        self.remaining_splitter.addWidget(remaining_filter_group)
+        self.remaining_message = QLabel()
+        self.remaining_message.setTextFormat(Qt.TextFormat.RichText)
+        self.remaining_message.setWordWrap(True)
+        self.remaining_message.setTextInteractionFlags(Qt.TextInteractionFlag.LinksAccessibleByMouse)
+        self.remaining_message.setOpenExternalLinks(True)
+
+        remaining_message_layout = QVBoxLayout()
+        remaining_message_layout.addWidget(self.remaining_message)
+        remaining_message_layout.setContentsMargins(15, 15, 15, 15) # left, top, right, bottom
+
+        self.remaining_message_widget = QWidget()
+        self.remaining_message_widget.setLayout(remaining_message_layout)
+
+        self.stacked_remaining_widget = QStackedWidget()
+        self.stacked_remaining_widget.addWidget(self.remaining_scrollarea)
+        self.stacked_remaining_widget.addWidget(self.remaining_message_widget)
+
+        remaining_filter_layout2 =  QVBoxLayout()
+        remaining_filter_layout2.addSpacing(1) # ensures a minimum height to keep the handle movable
+        remaining_filter_layout2.addWidget(self.remaining_filter_group)
+        remaining_filter_layout2.setContentsMargins(2, 10, 2, 2) # left, top, right, bottom # NOTE: if top is reduced to 2, on macOS the spacing of the single filters gets too small
+        remaining_filter_group2 = QFrame()
+        remaining_filter_group2.setLayout(remaining_filter_layout2)
+        self.remaining_filter_group.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+        remaining_filter_group2.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+
+        self.remaining_splitter = Splitter(Qt.Orientation.Vertical)
+        self.remaining_splitter.addWidget(self.stacked_remaining_widget)
+        self.remaining_splitter.addWidget(remaining_filter_group2)
         self.remaining_splitter.setSizes([100,0])
+
+
+        if not self.aw.scheduler_completed_details_visible:
+            self.remaining_filter_group.hide()
+        self.remaining_splitter.splitterMoved.connect(self.remainingSplitterMoved)
+        self.filter_frame_hide = False
 
 #####
         self.nodrag_roasted = StandardWidget(self, orientation=Qt.Orientation.Vertical)
@@ -1488,24 +1526,51 @@ class ScheduleWindow(QWidget): # pyright:ignore[reportGeneralTypeIssues]
         self.completed_details_group.setLayout(completed_details_layout)
         self.completed_details_group.setEnabled(False)
 
+        self.completed_details_scrollarea = QScrollArea()
+        self.completed_details_scrollarea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.completed_details_scrollarea.setWidgetResizable(True)
+        self.completed_details_scrollarea.setWidget(self.completed_details_group)
+        self.completed_details_scrollarea.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
 
-        completed_details_scrollarea = QScrollArea()
-        completed_details_scrollarea.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        completed_details_scrollarea.setWidgetResizable(True)
-        completed_details_scrollarea.setWidget(self.completed_details_group)
-        completed_details_scrollarea.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+        completed_details_layout2 =  QVBoxLayout()
+        completed_details_layout2.addSpacing(1) # ensures a minimum height to keep the handle movable
+        completed_details_layout2.addWidget(self.completed_details_scrollarea)
+        completed_details_layout2.setSpacing(0)
+        completed_details_layout2.setContentsMargins(0, 0, 0, 0) # left, top, right, bottom
+        self.completed_frame = QFrame()
+        self.completed_frame.setLayout(completed_details_layout2)
+        self.completed_frame.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
 
-        self.completed_splitter = QSplitter(Qt.Orientation.Vertical)
+        self.completed_splitter = Splitter(Qt.Orientation.Vertical)
         self.completed_splitter.addWidget(completed_scrollarea)
-        self.completed_splitter.addWidget(completed_details_scrollarea)
+        self.completed_splitter.addWidget(self.completed_frame)
         self.completed_splitter.setSizes([100,0])
         self.completed_splitter_open_height: int = 0
+
+        if not self.aw.scheduler_filters_visible:
+            self.completed_details_scrollarea.hide()
+        self.completed_splitter.splitterMoved.connect(self.completedSplitterMoved)
+        self.completed_details_scrollarea_hide = False
+
+        completed_message = QLabel(f"{QApplication.translate('Plus', 'No completed roasts')}<br>")
+        completed_message.setWordWrap(True)
+
+        completed_message_layout = QVBoxLayout()
+        completed_message_layout.addWidget(completed_message)
+        completed_message_layout.setContentsMargins(15, 15, 15, 15) # left, top, right, bottom
+
+        self.completed_message_widget = QWidget()
+        self.completed_message_widget.setLayout(completed_message_layout)
+
+        self.completed_stacked_widget = QStackedWidget()
+        self.completed_stacked_widget.addWidget(self.completed_splitter)
+        self.completed_stacked_widget.addWidget(self.completed_message_widget)
 
 #####
 
         self.TabWidget = QTabWidget()
         self.TabWidget.addTab(self.remaining_splitter, QApplication.translate('Tab', 'To-Do'))
-        self.TabWidget.addTab(self.completed_splitter, QApplication.translate('Tab', 'Done'))
+        self.TabWidget.addTab(self.completed_stacked_widget, QApplication.translate('Tab', 'Completed'))
         self.TabWidget.setStyleSheet(tooltip_style)
 
         self.task_type = QLabel()
@@ -1535,24 +1600,75 @@ class ScheduleWindow(QWidget): # pyright:ignore[reportGeneralTypeIssues]
         self.task_frame.setLayout(task_layout)
         self.task_frame.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
 
-        self.main_splitter = QSplitter(Qt.Orientation.Vertical)
-        self.main_splitter.addWidget(self.task_frame)
+        task2_layout =  QVBoxLayout()
+        task2_layout.addSpacing(1) # ensures a minimum height to keep the handle movable
+        task2_layout.addWidget(self.task_frame)
+        task2_layout.setSpacing(0)
+        task2_layout.setContentsMargins(0, 0, 0, 0) # left, top, right, bottom
+        self.task2_frame = QFrame()
+        self.task2_frame.setLayout(task2_layout)
+        self.task2_frame.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
+
+        self.main_splitter = Splitter(Qt.Orientation.Vertical)
+        self.main_splitter.addWidget(self.task2_frame)
         self.main_splitter.addWidget(self.TabWidget)
         self.main_splitter.setSizes([0,100])
+        self.main_splitter.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Preferred)
 
-        layout = QVBoxLayout()
-        layout.addWidget(self.main_splitter)
-        layout.setContentsMargins(0, 0, 0, 0) # left, top, right, bottom
+        if not self.aw.scheduler_tasks_visible:
+            self.task_frame.hide()
+        self.main_splitter.splitterMoved.connect(self.mainSplitterMoved)
+        self.task_frame_hide = False # flag used by mainSplitterMoved()/hide_task_frame() to hide task frame again after closing the drawer
+
+
+        disconnected_widget = QLabel()
+        disconnected_widget.setTextFormat(Qt.TextFormat.RichText)
+        disconnected_widget.setText(QApplication.translate('Plus', 'Login to {} to receive your roast schedule').format(f'<a href="{plusLink()}">{plus.config.app_name}</a>'))
+        disconnected_widget.setWordWrap(True)
+        disconnected_widget.setTextInteractionFlags(Qt.TextInteractionFlag.TextBrowserInteraction)
+        disconnected_widget.linkActivated.connect(self.disconnected_link_handler)
+
+        disconnected_layout = QVBoxLayout()
+        disconnected_layout.addWidget(disconnected_widget)
+        disconnected_layout.setContentsMargins(15, 15, 15, 15) # left, top, right, bottom
+
+        self.message_widget = QWidget()
+        self.message_widget.setLayout(disconnected_layout)
+
+        self.stacked_widget = QStackedWidget()
+        self.stacked_widget.addWidget(self.main_splitter)
+        self.stacked_widget.addWidget(self.message_widget)
+
+        self.main_layout = QVBoxLayout()
+        self.main_layout.addWidget(self.stacked_widget)
+        self.main_layout.setContentsMargins(0, 0, 0, 0) # left, top, right, bottom
+
+#        self.setMinimumWidth(175)
+
+        self.setLayout(self.main_layout)
 
         settings = QSettings()
         if settings.contains('ScheduleRemainingSplitter'):
             self.remaining_splitter.restoreState(settings.value('ScheduleRemainingSplitter'))
+        if settings.contains('ScheduleMainSplitter'):
+            self.main_splitter.restoreState(settings.value('ScheduleMainSplitter'))
+        if settings.contains('ScheduleCompletedSplitter'):
+            self.completed_splitter.restoreState(settings.value('ScheduleCompletedSplitter'))
 
-        self.setLayout(layout)
+        # we want minimize and close buttons, but no maximize buttons
+        if not platform.system().startswith('Windows'):
+            windowFlags = self.windowFlags()
+            windowFlags |= Qt.WindowType.Tool
+            windowFlags |= Qt.WindowType.CustomizeWindowHint # needed to be able to customize the close/min/max controls (at least on macOS)
+            windowFlags |= Qt.WindowType.WindowMinimizeButtonHint
+            windowFlags |= Qt.WindowType.WindowCloseButtonHint # not needed on macOS, but maybe on Linux
+            #windowFlags |= Qt.WindowType.WindowMinMaxButtonsHint # not needed on macOS
+            #windowFlags &= ~Qt.WindowType.WindowMaximizeButtonHint # not needed on macOS as the CustomizeWindowHint is removing min/max controls already
+            self.setWindowFlags(windowFlags)
+        self.setWindowFlag(Qt.WindowType.WindowMaximizeButtonHint, False)
 
-        windowFlags = self.windowFlags()
-        windowFlags |= Qt.WindowType.Tool
-        self.setWindowFlags(windowFlags)
+        if platform.system() == 'Darwin':
+            self.setAttribute(Qt.WidgetAttribute.WA_MacAlwaysShowToolWindow) # show tool window even if app is in background (see https://bugreports.qt.io/browse/QTBUG-57581)
 
         self.setWindowTitle(QApplication.translate('Menu', 'Schedule'))
 
@@ -1583,8 +1699,83 @@ class ScheduleWindow(QWidget): # pyright:ignore[reportGeneralTypeIssues]
             # no tabswitch will be triggered, thus we need to "manually" set the next weight item
             self.set_next()
 
-        _log.info('Scheduler started')
+        settings = QSettings()
+        if settings.contains('ScheduleGeometry'):
+            self.restoreGeometry(settings.value('ScheduleGeometry'))
+        else:
+            self.resize(250,300)
 
+        self.aw.sendmessage(QApplication.translate('Message','Scheduler started'))
+
+    def hide_task_frame(self) -> None:
+        if self.task_frame_hide:
+            splitter_sizes = self.main_splitter.sizes()
+            if len(splitter_sizes)>0 and splitter_sizes[0] == 0:
+                self.task_frame.hide()
+            self.task_frame_hide = False
+
+    @pyqtSlot(int,int)
+    def mainSplitterMoved(self, _pos: int, index: int) -> None:
+        splitter_sizes = self.main_splitter.sizes()
+        if len(splitter_sizes)>1:
+            # hide upper splitter content to allow minimizing the window
+            if index == 1 and splitter_sizes[0] > 0 and not self.task_frame.isVisible() and not self.task_frame_hide:
+                self.setUpdatesEnabled(False)
+                self.task_frame.show()
+                self.main_splitter.setSizes([0, splitter_sizes[0]+splitter_sizes[1]])
+                self.setUpdatesEnabled(True)
+            elif index == 1 and splitter_sizes[0] == 0 and self.task_frame.isVisible():
+                if not self.task_frame_hide:
+                    self.task_frame_hide = True
+                    QTimer.singleShot(1000, self.hide_task_frame)
+
+    def hide_filter_frame(self) -> None:
+        if self.filter_frame_hide:
+            splitter_sizes = self.remaining_splitter.sizes()
+            if len(splitter_sizes)>0 and splitter_sizes[1] == 0:
+                self.remaining_filter_group.hide()
+            self.filter_frame_hide = False
+
+    @pyqtSlot(int,int)
+    def remainingSplitterMoved(self, _pos: int, index: int) -> None:
+        splitter_sizes = self.remaining_splitter.sizes()
+        if len(splitter_sizes)>1:
+            # hide lower splitter content to allow minimizing the window
+            if index == 1 and splitter_sizes[1] > 0 and not self.remaining_filter_group.isVisible() and not self.filter_frame_hide:
+                self.setUpdatesEnabled(False)
+                self.remaining_filter_group.show()
+                self.remaining_splitter.setSizes([splitter_sizes[0]+splitter_sizes[1], 0])
+                self.setUpdatesEnabled(True)
+            elif index == 1 and splitter_sizes[1] == 0 and self.remaining_filter_group.isVisible():
+                if not self.filter_frame_hide:
+                    self.filter_frame_hide = True
+                    QTimer.singleShot(1000, self.hide_filter_frame)
+
+    def hide_completed_frame(self) -> None:
+        if self.completed_details_scrollarea_hide:
+            splitter_sizes = self.completed_splitter.sizes()
+            if len(splitter_sizes)>0 and splitter_sizes[1] == 0:
+                self.completed_details_scrollarea.hide()
+            self.completed_details_scrollarea_hide = False
+
+    @pyqtSlot(int,int)
+    def completedSplitterMoved(self, _pos: int, index: int) -> None:
+        splitter_sizes = self.completed_splitter.sizes()
+        if len(splitter_sizes)>1:
+            # hide lower completed splitter content to allow minimizing the window
+            if index == 1 and splitter_sizes[1] > 0 and not self.completed_details_scrollarea.isVisible() and not self.completed_details_scrollarea_hide:
+                self.setUpdatesEnabled(False)
+                self.completed_details_scrollarea.show()
+                self.completed_splitter.setSizes([splitter_sizes[0]+splitter_sizes[1], 0])
+                self.setUpdatesEnabled(True)
+            elif index == 1 and splitter_sizes[1] == 0 and self.completed_details_scrollarea.isVisible():
+                if not self.completed_details_scrollarea_hide:
+                    self.completed_details_scrollarea_hide = True
+                    QTimer.singleShot(1000, self.hide_completed_frame)
+
+    @pyqtSlot(str)
+    def disconnected_link_handler(self, _link:str) -> None:
+        plus.controller.toggle(self.aw)
 
     def set_next(self) -> None:
         self.weight_manager.set_next(self.get_next_weight_item())
@@ -1606,7 +1797,6 @@ class ScheduleWindow(QWidget): # pyright:ignore[reportGeneralTypeIssues]
     @pyqtSlot()
     def setActiveTab(self) -> None:
         self.TabWidget.setCurrentIndex(self.activeTab)
-
 
     @pyqtSlot()
     def roasted_weight_selected(self) -> None:
@@ -1722,17 +1912,23 @@ class ScheduleWindow(QWidget): # pyright:ignore[reportGeneralTypeIssues]
         settings = QSettings()
         #save window geometry
         settings.setValue('ScheduleGeometry', self.saveGeometry())
-        #save splitter state
+        #save splitter states
         QSettings().setValue('ScheduleRemainingSplitter',self.remaining_splitter.saveState())
+        QSettings().setValue('ScheduleMainSplitter',self.main_splitter.saveState())
+        QSettings().setValue('ScheduleCompletedSplitter',self.completed_splitter.saveState())
+        self.aw.scheduler_tasks_visible = self.task_frame.isVisible()
+        self.aw.scheduler_completed_details_visible = self.completed_details_scrollarea.isVisible()
+        self.aw.scheduler_filters_visible = self.completed_details_scrollarea.isVisible()
         #free resources
         self.aw.schedule_window = None
         self.aw.scheduleFlag = False
         self.aw.scheduleAction.setChecked(False)
         self.aw.schedule_activeTab = self.TabWidget.currentIndex()
         if self.aw.qmc.timeindex[6] == 0:
-            # if DROP is not set we clear the ScheduleItem UUID
+            # if DROP is not set we clear the ScheduleItem UUID/Date
             self.aw.qmc.scheduleID = None
-        _log.info('Scheduler stopped')
+            self.aw.qmc.scheduleDate = None
+        self.aw.sendmessage(QApplication.translate('Message','Scheduler stopped'))
 
 
     # updates the current schedule items by joining its roast with those received as part of a stock update from the server
@@ -1804,18 +2000,10 @@ class ScheduleWindow(QWidget): # pyright:ignore[reportGeneralTypeIssues]
                 _log.error(e)
         return res
 
-#    def scheduledItemsfilter(self, today:datetime.date, item:ScheduledItem) -> bool:
-#        # if user filter is active only items not for a specific user or for the current user (if available) are listed
-#        # if machine filter is active only items not for a specific machine or for the current machine setup are listed in case a current machine is set
-#        return ((not self.aw.schedule_day_filter or item.date == today) and
-#                (not self.aw.schedule_user_filter or not bool(plus.connection.getNickname()) or item.user is None or item.user == self.aw.plus_user_id) and
-#                (self.aw.qmc.roastertype_setup.strip() == '' or not self.aw.schedule_machine_filter or item.machine is None or
-#                    (self.aw.qmc.roastertype_setup.strip() != '' and item.machine is not None and
-#                        item.machine.strip() == self.aw.qmc.roastertype_setup.strip())))
-
-    # sets the items values as properties of the current roast and links it back to this item
+    # sets the items values as properties of the current roast and links it back to this schedule item
     def set_roast_properties(self, item:ScheduledItem) -> None:
         self.aw.qmc.scheduleID = item.id
+        self.aw.qmc.scheduleDate = item.date.isoformat()
         self.aw.qmc.title = item.title
         if not self.aw.qmc.flagstart or self.aw.qmc.title_show_always:
             self.aw.qmc.setProfileTitle(self.aw.qmc.title)
@@ -2019,9 +2207,9 @@ class ScheduleWindow(QWidget): # pyright:ignore[reportGeneralTypeIssues]
             )
         return None
 
-    def updateRemainingItems(self) -> None:
+    # returns number of visible scheduled items
+    def updateRemainingItems(self) -> int:
         self.drag_remaining.clearItems()
-#        connected:bool = plus.controller.is_on()
         today:datetime.date = datetime.datetime.now(datetime.timezone.utc).astimezone().date()
         drag_items_first_label_max_width = 0
         drag_first_labels = []
@@ -2042,9 +2230,6 @@ class ScheduleWindow(QWidget): # pyright:ignore[reportGeneralTypeIssues]
             # connect the selection signal
             drag_item.selected.connect(self.remaining_items_selection_changed)
             drag_item.prepared.connect(self.prepared_items_changed)
-#            if not connected:
-#                # if not connected we don't draw any item
-#                drag_item.hide()
             # append item to list
             self.drag_remaining.add_item(drag_item)
         if selected_item is not None:
@@ -2092,6 +2277,7 @@ class ScheduleWindow(QWidget): # pyright:ignore[reportGeneralTypeIssues]
             self.TabWidget.setTabToolTip(0,'')
             # update app badge number
             self.setAppBadge(0)
+        return len(scheduled_items)
 
     @staticmethod
     def setAppBadge(number:int) -> None:
@@ -2298,7 +2484,7 @@ class ScheduleWindow(QWidget): # pyright:ignore[reportGeneralTypeIssues]
                         # something got edited, we have to send the changes back to the server
                         # first add essential metadata
                         changes['roast_id'] = self.selected_completed_item.data.roastUUID.hex
-                        changes['modified_at'] = plus.util.epoch2ISO8601(time.time())
+                        changes['modified_at'] = epoch2ISO8601(time.time())
                         try:
                             plus.controller.connect(clear_on_failure=False, interactive=False)
                             r = plus.connection.sendData(plus.config.roast_url, changes, 'POST')
@@ -2336,7 +2522,7 @@ class ScheduleWindow(QWidget): # pyright:ignore[reportGeneralTypeIssues]
                             # on changes, update loaded profile if saved earlier
                             if (updated and self.aw.curFile is not None and sender.data.roastUUID.hex == self.aw.qmc.roastUUID and
                                     self.aw.qmc.plus_file_last_modified is not None and 'modified_at' in profile_data and
-                                    plus.util.ISO86012epoch(profile_data['modified_at']) > self.aw.qmc.plus_file_last_modified):
+                                    ISO86012epoch(profile_data['modified_at']) > self.aw.qmc.plus_file_last_modified):
                                 plus.sync.applyServerUpdates(profile_data)
                                 # we update the loaded profile timestamp to avoid receiving the same update again
                                 self.aw.qmc.plus_file_last_modified = time.time()
@@ -2352,6 +2538,9 @@ class ScheduleWindow(QWidget): # pyright:ignore[reportGeneralTypeIssues]
                                 self.roasted_density.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
                                 self.roasted_moisture.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
                                 self.roasted_notes.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+                                if not self.completed_details_scrollarea.isVisible():
+                                    self.completed_details_scrollarea.show()
+                                    self.update()
                                 if splitter_sizes[1] == 0:
                                     if self.completed_splitter_open_height != 0:
                                         self.completed_splitter.setSizes([
@@ -2384,6 +2573,8 @@ class ScheduleWindow(QWidget): # pyright:ignore[reportGeneralTypeIssues]
                     self.roasted_density.setFocusPolicy(Qt.FocusPolicy.NoFocus)
                     self.roasted_moisture.setFocusPolicy(Qt.FocusPolicy.NoFocus)
                     self.roasted_notes.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                    if self.completed_details_scrollarea.isVisible():
+                        self.completed_details_scrollarea.hide()
             elif not self.aw.qmc.flagon:
                 # plus controller is not on and Artisan is OFF we first close a potentially pending edit section and then try to load that profile
                 if self.selected_completed_item is not None:
@@ -2402,6 +2593,8 @@ class ScheduleWindow(QWidget): # pyright:ignore[reportGeneralTypeIssues]
                     self.roasted_density.setFocusPolicy(Qt.FocusPolicy.NoFocus)
                     self.roasted_moisture.setFocusPolicy(Qt.FocusPolicy.NoFocus)
                     self.roasted_notes.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+                    if self.completed_details_scrollarea.isVisible():
+                        self.completed_details_scrollarea.hide()
                 # we try to load the clicked completed items profile if not yet loaded
                 sender_roastUUID = sender.data.roastUUID.hex
                 if sender_roastUUID != self.aw.qmc.roastUUID:
@@ -2414,7 +2607,7 @@ class ScheduleWindow(QWidget): # pyright:ignore[reportGeneralTypeIssues]
 
     def updateRoastedItems(self) -> None:
         self.nodrag_roasted.clearItems()
-        now:datetime.datetime = datetime.datetime.now(datetime.timezone.utc).astimezone()
+        now:datetime.datetime = datetime.datetime.now(datetime.timezone.utc)
         nodrag_items_first_label_max_width = 0
         nodrag_first_labels = []
         new_selected_completed_item:Optional[NoDragItem] = None
@@ -2440,13 +2633,13 @@ class ScheduleWindow(QWidget): # pyright:ignore[reportGeneralTypeIssues]
             self.selected_completed_item.select()
 
         # updates the tabs tooltip
-        today:datetime.date = datetime.datetime.now(datetime.timezone.utc).astimezone().date()
+        today:datetime.date = now.astimezone().date() # today in local timezone
         completed_items:List[CompletedItem] = self.completed_items
         if len(completed_items) > 0:
             todays_items = []
             earlier_items = []
             for ci in completed_items:
-                if ci.roastdate == today:
+                if ci.roastdate.astimezone().date() == today:
                     todays_items.append(ci)
                 else:
                     earlier_items.append(ci)
@@ -2561,50 +2754,56 @@ class ScheduleWindow(QWidget): # pyright:ignore[reportGeneralTypeIssues]
         # if there is a non-empty schedule with a selected item
         if self.selected_remaining_item is not None and self.aw.qmc.roastUUID is not None:
             _log.info('register completed roast %s', self.aw.qmc.roastUUID)
-            # register roastUUID in (local) currently selected ScheduleItem
-            # add roast to list of completed roasts
-            self.selected_remaining_item.data.roasts.add(UUID(self.aw.qmc.roastUUID, version=4))
-            # reduce number of prepared batches of the currently selected remaining item
-            take_prepared(self.aw.plus_account_id, self.selected_remaining_item.data)
-            # calculate weight estimate
-            weight_unit_idx:int = weight_units.index(self.aw.qmc.weight[2])
-            batchsize:float = convertWeight(self.aw.qmc.weight[0], weight_unit_idx, 1) # batchsize converted to kg
-            weight_estimate = self.weight_estimate(self.selected_remaining_item.data, batchsize) # in kg
+            try:
+                # register roastUUID in (local) currently selected ScheduleItem
+                # add roast to list of completed roasts
+                self.selected_remaining_item.data.roasts.add(UUID(self.aw.qmc.roastUUID, version=4))
+                # reduce number of prepared batches of the currently selected remaining item
+                take_prepared(self.aw.plus_account_id, self.selected_remaining_item.data)
+                # calculate weight estimate
+                weight_unit_idx:int = weight_units.index(self.aw.qmc.weight[2])
+                batchsize:float = convertWeight(self.aw.qmc.weight[0], weight_unit_idx, 1) # batchsize converted to kg
+                weight_estimate = self.weight_estimate(self.selected_remaining_item.data, batchsize) # in kg
 
-            measured:bool
+                measured:bool
 
-            if self.aw.qmc.weight[1] == 0:
-                # roasted weight not set
-                measured = False
-                self.aw.qmc.weight = (self.aw.qmc.weight[0], convertWeight(weight_estimate, 1, weight_unit_idx), self.aw.qmc.weight[2])
-                weight = weight_estimate
-            else:
-                measured = True
-                weight = convertWeight(self.aw.qmc.weight[1], weight_unit_idx, 1)    # resulting weight converted to kg
+                if self.aw.qmc.weight[1] == 0:
+                    # roasted weight not set
+                    measured = False
+                    self.aw.qmc.weight = (self.aw.qmc.weight[0], convertWeight(weight_estimate, 1, weight_unit_idx), self.aw.qmc.weight[2])
+                    weight = weight_estimate
+                else:
+                    measured = True
+                    weight = convertWeight(self.aw.qmc.weight[1], weight_unit_idx, 1)    # resulting weight converted to kg
 
-            completed_item:CompletedItemDict = {
-                'scheduleID': self.selected_remaining_item.data.id,
-                'count': self.selected_remaining_item.data.count,
-                'sequence_id': len(self.selected_remaining_item.data.roasts),
-                'roastUUID': self.aw.qmc.roastUUID,
-                'roastdate': self.aw.qmc.roastdate.toSecsSinceEpoch(),
-                'title': self.aw.qmc.title,
-                'roastbatchnr' : self.aw.qmc.roastbatchnr,
-                'roastbatchprefix': self.aw.qmc.roastbatchprefix,
-                'coffee_label': self.aw.qmc.plus_coffee_label,
-                'blend_label': self.aw.qmc.plus_blend_label,
-                'store_label': self.aw.qmc.plus_store_label,
-                'batchsize': batchsize,
-                'weight': weight,
-                'weight_estimate': weight_estimate,
-                'measured': measured,
-                'color': self.aw.qmc.ground_color,
-                'moisture': self.aw.qmc.moisture_roasted,
-                'density': self.aw.qmc.density_roasted[0],
-                'roastingnotes': self.aw.qmc.roastingnotes
-            }
-            add_completed(self.aw.plus_account_id, completed_item)
-            # update schedule, removing completed items and selecting the next one
+                completed_item:CompletedItemDict = {
+                    'scheduleID': self.selected_remaining_item.data.id,
+                    'scheduleDate': self.selected_remaining_item.data.date.isoformat(),
+                    'count': self.selected_remaining_item.data.count,
+                    'sequence_id': len(self.selected_remaining_item.data.roasts),
+                    'roastUUID': self.aw.qmc.roastUUID,
+                    'roastdate': self.aw.qmc.roastdate.toSecsSinceEpoch(),
+                    'title': self.aw.qmc.title,
+                    'roastbatchnr' : self.aw.qmc.roastbatchnr,
+                    'roastbatchprefix': self.aw.qmc.roastbatchprefix,
+                    'coffee_label': self.aw.qmc.plus_coffee_label,
+                    'blend_label': self.aw.qmc.plus_blend_label,
+                    'store_label': self.aw.qmc.plus_store_label,
+                    'batchsize': batchsize,
+                    'weight': weight,
+                    'weight_estimate': weight_estimate,
+                    'measured': measured,
+                    'color': self.aw.qmc.ground_color,
+                    'moisture': self.aw.qmc.moisture_roasted,
+                    'density': self.aw.qmc.density_roasted[0],
+                    'roastingnotes': self.aw.qmc.roastingnotes
+                }
+                add_completed(self.aw.plus_account_id, completed_item)
+                # update schedule, removing completed items and selecting the next one
+
+                # we catch potential validation errors for CompletedItemDict here to ensure that the updateScheduleWindow() is always correctly called
+            except Exception as e:   # pylint: disable=broad-except
+                _log.error(e)
             self.updateScheduleWindow()
 
     def update_styles(self) -> None:
@@ -2634,23 +2833,47 @@ class ScheduleWindow(QWidget): # pyright:ignore[reportGeneralTypeIssues]
         self.update_styles()
         # load completed roasts cache
         load_completed(self.aw.plus_account_id)
-        # if the currently loaded profile is among the completed_items, its corresponding entry in that completed list is updated with the
+        # if the currently loaded profile is among the completed_items, its corresponding entry in that completed list is updated with the information
         # from the current loaded profile as properties might have been changed via the RoastProperties dialog
         if self.aw.qmc.roastUUID is not None:
             completed_item:Optional[CompletedItem] = next((ci for ci in self.completed_items if ci.roastUUID.hex == self.aw.qmc.roastUUID), None)
             if completed_item is not None:
                 self.updates_completed_from_roast_properties(completed_item)
-        # update scheduled and completed items
-        self.updateScheduledItems()                                 # updates the current schedule items from received stock data
-        load_prepared(self.aw.plus_account_id, self.scheduled_items)   # load the prepared items cache and update according to the valid schedule items
-        self.completed_items = self.getCompletedItems()             # updates completed items from cache
-        self.updateFilters()                                        # update filter widget (user and machine)
-        self.updateRemainingItems()                                 # redraw To-Do's widget
-        self.updateRoastedItems()                                   # redraw Completed widget
-        # the weight unit might have changed, we update its label
-        self.roasted_weight_suffix.setText(self.aw.qmc.weight[2].lower())
-        # update next weight item
-        self.set_next()
+        if self.aw.plus_account is None:
+            self.stacked_widget.setCurrentWidget(self.message_widget)
+        else:
+            self.stacked_widget.setCurrentWidget(self.main_splitter)
+            # update scheduled and completed items
+            self.updateScheduledItems()                                 # updates the current schedule items from received stock data
+            load_prepared(self.aw.plus_account_id, self.scheduled_items)# load the prepared items cache and update according to the valid schedule items
+            self.completed_items = self.getCompletedItems()             # updates completed items from cache
+            self.updateFilters()                                        # update filter widget (user and machine)
+
+            # show empty message if there are no scheduled items or the schedule items scrolling widget if there are
+            if self.scheduled_items == []:
+                self.remaining_message.setText(QApplication.translate('Plus', 'Schedule empty!{}Plan your schedule on {}').format('<BR><BR>', f'<a href="{schedulerLink()}">{plus.config.app_name}</a><br>'))
+                self.stacked_remaining_widget.setCurrentWidget(self.remaining_message_widget)
+                self.setAppBadge(0)
+            else:
+                displayed_scheduled_items = self.updateRemainingItems() # redraw To-Do's widget
+                if displayed_scheduled_items > 0:
+                    self.stacked_remaining_widget.setCurrentWidget(self.remaining_scrollarea)
+                else:
+                    self.remaining_message.setText(f"{QApplication.translate('Plus', 'Nothing scheduled for you today!{}Deactivate filters to see all items.').format('<BR><BR>')}<br>")
+                    self.stacked_remaining_widget.setCurrentWidget(self.remaining_message_widget)
+
+
+            # show empty message if there are no completed items or the completed splitter widget if there are
+            if not self.completed_items:
+                self.completed_stacked_widget.setCurrentWidget(self.completed_message_widget)
+            else:
+                self.updateRoastedItems()                               # redraw Completed widget
+                self.completed_stacked_widget.setCurrentWidget(self.completed_splitter)
+
+            # the weight unit might have changed, we update its label
+            self.roasted_weight_suffix.setText(self.aw.qmc.weight[2].lower())
+            # update next weight item
+            self.set_next()
 
 
 

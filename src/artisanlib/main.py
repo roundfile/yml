@@ -114,7 +114,7 @@ try:
                              QSizePolicy, QVBoxLayout, QHBoxLayout, QPushButton, # @Reimport @UnresolvedImport @UnusedImport
                              QLCDNumber, QSpinBox, QComboBox, # @Reimport @UnresolvedImport @UnusedImport
                              QSlider, # @Reimport @UnresolvedImport @UnusedImport
-                             QColorDialog, QFrame, QSplitter, QScrollArea, QProgressDialog, # @Reimport @UnresolvedImport @UnusedImport
+                             QColorDialog, QFrame, QScrollArea, QProgressDialog, # @Reimport @UnresolvedImport @UnusedImport
                              QStyleFactory, QMenu, QLayout) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt6.QtGui import (QScreen, QPageLayout, QAction, QImageReader, QWindow, # @Reimport @UnresolvedImport @UnusedImport
                                 QKeySequence, QShortcut, # @Reimport @UnresolvedImport @UnusedImport
@@ -140,7 +140,7 @@ except ImportError:
                              QSizePolicy, QVBoxLayout, QHBoxLayout, QPushButton, # @Reimport @UnresolvedImport @UnusedImport
                              QLCDNumber, QSpinBox, QComboBox, # @Reimport @UnresolvedImport @UnusedImport
                              QSlider, # @Reimport @UnresolvedImport @UnusedImport
-                             QColorDialog, QFrame, QSplitter, QScrollArea, QProgressDialog, # @Reimport @UnresolvedImport @UnusedImport
+                             QColorDialog, QFrame, QScrollArea, QProgressDialog, # @Reimport @UnresolvedImport @UnusedImport
                              QStyleFactory, QMenu, QLayout, QShortcut) # @Reimport @UnresolvedImport @UnusedImport
     from PyQt5.QtGui import (QScreen, QPageLayout, QImageReader, QWindow,  # type: ignore # @Reimport @UnresolvedImport @UnusedImport
                                 QKeySequence, # @Reimport @UnresolvedImport @UnusedImport
@@ -328,7 +328,7 @@ class Artisan(QtSingleApplication):
         try:
             aw:Optional[ApplicationWindow] = self.activationWindow()
             if aw is not None and not sip.isdeleted(aw): # sip not supported on older PyQt versions (eg. RPi)
-                if state == Qt.ApplicationState.ApplicationActive and self.sentToBackground is not None:
+                if state == Qt.ApplicationState.ApplicationActive and self.sentToBackground is not None and aw.editgraphdialog is None:
                     #app raised
 #                    _log.debug('app put to foreground')
                     try:
@@ -345,7 +345,8 @@ class Artisan(QtSingleApplication):
                         _log.exception(e)
                     self.sentToBackground = None
 
-                elif state == Qt.ApplicationState.ApplicationInactive:
+                #elif state == Qt.ApplicationState.ApplicationInactive:
+                else:
                     # focus released
                     self.sentToBackground = libtime.time() # keep the timestamp on sending the app with the main window to background
         except Exception as e: # pylint: disable=broad-except
@@ -717,7 +718,7 @@ from artisanlib.pid_dialogs import (PXRpidDlgControl, PXG4pidDlgControl,
     PID_DlgControl, DTApidDlgControl)
 from artisanlib.pid_control import FujiPID, PIDcontrol, DtaPID
 from artisanlib.widgets import (MyQLCDNumber, EventPushButton, MajorEventPushButton,
-    AnimatedMajorEventPushButton, MinorEventPushButton, AuxEventPushButton, ClickableLCDFrame)
+    AnimatedMajorEventPushButton, MinorEventPushButton, AuxEventPushButton, ClickableLCDFrame, Splitter)
 
 from artisanlib.notifications import Notification, NotificationManager, NotificationType
 from artisanlib.canvas import tgraphcanvas
@@ -1452,7 +1453,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         'RoastMenu', 'ConfMenu', 'ToolkitMenu', 'viewMenu', 'helpMenu', 'newRoastMenu', 'fileLoadAction', 'openRecentMenu', 'importMenu',
         'fileSaveAction', 'fileSaveCopyAsAction', 'exportMenu', 'convMenu', 'saveGraphMenu', 'reportMenu', 'htmlAction', 'productionMenu',
         'productionWebAction', 'productionCsvAction', 'productionExcelAction', 'rankingMenu', 'rankingWebAction', 'rankingCsvAction', 'rankingExcelAction',
-        'savestatisticsAction', 'printAction', 'quitAction', 'cutAction', 'copyAction', 'pasteAction', 'editGraphAction', 'backgroundAction',
+        'saveStatisticsMenu', 'printAction', 'quitAction', 'cutAction', 'copyAction', 'pasteAction', 'editGraphAction', 'backgroundAction',
         'flavorAction', 'switchAction', 'switchETBTAction', 'machineMenu', 'deviceAction', 'commportAction', 'calibrateDelayAction', 'curvesAction',
         'eventsAction', 'alarmAction', 'phasesGraphAction', 'StatisticsAction', 'WindowconfigAction', 'colorsAction', 'themeMenu', 'autosaveAction',
         'batchAction', 'temperatureConfMenu', 'FahrenheitAction', 'CelsiusAction', 'languageMenu', 'analyzeMenu', 'fitIdealautoAction',
@@ -1485,8 +1486,9 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         'rankingPDFAction', 'roastReportMenu', 'roastReportPDFAction', 'saveAsThemeAction', 'sliderGrp12', 'sliderGrp34', 'sliderGrpBox1x', 'sliderGrpBox2x', 'sliderGrpBox3x', 'sliderGrpBox4x',
         'small_button_min_width_str', 'standard_button_min_width_px', 'tiny_button_min_width_str', 'recording_version', 'recording_revision', 'recording_build',
         'lastIOResult', 'lastArtisanResult', 'max_palettes', 'palette_entries', 'eventsliders', 'defaultSettings', 'zoomInShortcut', 'zoomOutShortcut',
-        'schedule_day_filter', 'schedule_user_filter', 'schedule_machine_filter' ]
-
+        'summarystatstypes','summarystatsvisibility','summarystatsfontsize','bbp_total_time','bbp_bottom_temp','bbp_begin_to_bottom_time','bbp_bottom_to_charge_time',
+        'bbp_begin_to_bottom_ror', 'bbp_bottom_to_charge_ror', 'bbp_time_added_from_prev', 'bbp_begin', 'bbp_endroast_epoch_msec', 'bbp_endevents',
+        'bbp_dropevents', 'bbp_dropbt', 'bbp_dropet', 'bbp_drop_to_end', 'schedule_day_filter', 'schedule_user_filter', 'schedule_machine_filter']
 
 
     def __init__(self, parent:Optional[QWidget] = None, *, locale:str, WebEngineSupport:bool, artisanviewerFirstStart:bool) -> None:
@@ -1577,6 +1579,9 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         self.schedule_day_filter:bool = True
         self.schedule_user_filter:bool = True
         self.schedule_machine_filter:bool = True
+        self.scheduler_tasks_visible:bool = False # scheduler tasks pane visible?
+        self.scheduler_completed_details_visible:bool = False # scheduler completed items details pane visible?
+        self.scheduler_filters_visible:bool = False # scheduler filter pane visible?
 
         # large LCDs
         self.largeLCDs_dialog:Optional[LargeMainLCDs] = None
@@ -1605,6 +1610,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         self.DeviceAssignmentDlg_activeTab:int = 0
         self.AlarmDlg_activeTab:int = 0
         self.schedule_activeTab:int = 0
+        self.StatisticsDlg_activeTab:int = 0
 
         #flag to reset Qsettings
         self.resetqsettings:int = 0
@@ -1859,6 +1865,29 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         self.lastdigitizedtemp:List[Optional[float]] = [None,None,None,None] # last digitized temp value per quantifier
 
         self.readingslcdsflags: List[int] = [0,1,1] # readings LCD visibility per state OFF, ON, START
+
+        #SummaryStatistics
+        self.summarystatstypes_default:List[int] = [1,2,3,4,5,0,6,7,8,9,10,0,11,12,13,14,15,16,17]
+        self.summarystatstypes:List[int] = self.summarystatstypes_default.copy()
+        self.summarystats_startup:bool = True
+        self.summarystatsfontsize:int = 2
+
+        # BBP Metrics
+        self.bbp_total_time: float = -1
+        self.bbp_bottom_temp: float = -1
+        self.bbp_begin_to_bottom_time: float = -1
+        self.bbp_bottom_to_charge_time: float = -1
+        self.bbp_begin_to_bottom_ror: float = -1
+        self.bbp_bottom_to_charge_ror: float = -1
+        # BBP Data
+        self.bbp_time_added_from_prev: float = 0
+        self.bbp_begin: str = "Start"  #Start|DROP
+        self.bbp_endroast_epoch_msec: int = 0
+        self.bbp_endevents: List[List[Optional[float]]] = []
+        self.bbp_dropevents: List[List[Optional[float]]] = []
+        self.bbp_dropbt: float = 0
+        self.bbp_dropet: float = 0
+        self.bbp_drop_to_end: float = 0
 
         #watermark image
         self.logoimgalpha: float = 2.0
@@ -2242,9 +2271,14 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     self.rankingExcelAction.triggered.connect(self.rankingExcelReport)
                     self.rankingMenu.addAction(self.rankingExcelAction)
 
-            self.savestatisticsAction:QAction = QAction(QApplication.translate('Menu', 'Save Statistics...'), self)
-            self.savestatisticsAction.triggered.connect(self.saveStatistics)
-            self.fileMenu.addAction(self.savestatisticsAction)
+            self.saveStatisticsMenu: Optional[QMenu] = self.fileMenu.addMenu(QApplication.translate('Menu', 'Save Statistics'))
+            if self.saveStatisticsMenu is not None:
+                savestatisticsIMGAction = QAction(QApplication.translate('Menu', 'Image...'), self)
+                savestatisticsIMGAction.triggered.connect(self.saveStatistics_IMG)
+                self.saveStatisticsMenu.addAction(savestatisticsIMGAction)
+                savestatisticsTXTAction = QAction(QApplication.translate('Menu', 'Text...'),self)
+                savestatisticsTXTAction.triggered.connect(self.saveStatistics_TXT)
+                self.saveStatisticsMenu.addAction(savestatisticsTXTAction)
 
             self.fileMenu.addSeparator()
 
@@ -2523,6 +2557,9 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             calculatorAction.triggered.connect(self.calculator)
             self.ToolkitMenu.addAction(calculatorAction)
 
+        self.redrawAction = QAction(QApplication.translate('Menu', 'Redraw'), self)
+        self.redrawAction.triggered.connect(self.qmc.redraw_menu_slot)
+        self.ToolkitMenu.addAction(self.redrawAction)  #type: ignore[union-attr]
 
         # VIEW menu
 
@@ -3752,7 +3789,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         self.scroller.setFrameShape(QFrame.Shape.NoFrame)
         self.scroller.setVisible(False)
 
-        self.splitter: QSplitter = QSplitter(Qt.Orientation.Vertical)
+        self.splitter: Splitter = Splitter(Qt.Orientation.Vertical)
         self.splitter.addWidget(self.qmc)
         self.splitter.addWidget(self.scroller)
         self.splitter.setSizes([100,0])
@@ -3762,7 +3799,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         if settings.contains('MainSplitter') and QApplication.queryKeyboardModifiers() != Qt.KeyboardModifier.AltModifier:
             self.splitter.restoreState(settings.value('MainSplitter'))
 
-        self.splitter.setHandleWidth(7)
+        self.splitter.setHandleWidth(10)
         #self.splitter.setStyleSheet("QSplitter::handle:vertical {background: lightGray; border-bottom: 1px solid grey; border-top: 1px solid grey;}")
         #self.splitter.setStyleSheet("QSplitter::handle:vertical {background: lightGray; border-bottom: 1px solid lightGray; border-top: 1px solid lightGray;}")
         #self.splitter.setStyleSheet("QSplitter::handle:vertical {background: lightGray; border-bottom: 0px; border-top: 0px;}")
@@ -4108,6 +4145,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         self.zoomOutShortcut.activated.connect(self.zoomOut)
 
 
+    # today is expected to be w.r.t. local timezone
     def scheduledItemsfilter(self, today:datetime.date, item:plus.schedule.ScheduledItem) -> bool:
         # if user filter is active only items not for a specific user or for the current user (if available) are listed
         # if machine filter is active only items not for a specific machine or for the current machine setup are listed in case a current machine is set
@@ -10260,8 +10298,12 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                         env=my_env,
                         stdin=None,
                         # suppress output:
-                        stdout=subprocess.DEVNULL,
-                        stderr=None  #subprocess.STDOUT
+                        # In commit d153f2 these redirects were changed from None to subprocess.DEVNULL and subprocess.STDOUT.
+                        #   The motivation for this change is lost. This form has worked for years, across many applications,
+                        #   with no reported problems. Recently one application, voice.exe, was reported as not operating.
+                        #   Reverting the redirects to None resolves that specific issue, and ought to work with other applications.
+                        stdout=None, #subprocess.DEVNULL,
+                        stderr=None #subprocess.STDOUT
                         ) #.wait() # with this wait(), the script blocks the Artisan event loop
                 else:
                     subprocess.Popen(os.path.expanduser(cmd_str), # pylint: disable=consider-using-with
@@ -10953,8 +10995,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         self.buttonsAction.setEnabled(True)
         self.slidersAction.setEnabled(True)
 
-        if self.qmc.statssummary:
-            self.savestatisticsAction.setEnabled(True)
+        if self.qmc.statssummary and self.saveStatisticsMenu is not None:
+            self.saveStatisticsMenu.setEnabled(True)
         self.displayonlymenus()
 
     def disableEditMenus(self, designer:bool = False, wheel:bool = False, compare:bool = False, sampling:bool = False) -> None:
@@ -10994,7 +11036,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.rankingMenu.setEnabled(False)
         if not compare and not sampling:
             self.printAction.setEnabled(False)
-        self.savestatisticsAction.setEnabled(False)
+        if self.saveStatisticsMenu is not None:
+            self.saveStatisticsMenu.setEnabled(False)
         # EDIT menu
         # ROAST menu
         if compare or wheel:
@@ -11688,7 +11731,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 #        validFilenameChars = f'-_.() {libstring.ascii_letters}{libstring.digits}'
 #        return ''.join(c for c in decodeLocal(cleanedFilename) if c in validFilenameChars)
 
-    def removeDisallowedFilenameChars(self,filename:str) -> str:
+    @staticmethod
+    def removeDisallowedFilenameChars(filename:str) -> str:
         invalidFilenameChars = r'[<>:"/\\|?*]'
         return re.sub(invalidFilenameChars, '', filename)
 
@@ -12425,6 +12469,14 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 
 
                 #Plot everything
+
+                # For statsSummary() to calculate auto geometries correctly, updateBackground() must have run once
+                if self.qmc.statssummary and self.summarystats_startup and self.qmc.autotimex:
+                    # allow only once, at startup
+                    self.summarystats_startup = False
+                    self.qmc.redraw(False)
+
+
                 self.qmc.redraw()
                 self.updatePhasesLCDs()
                 message = QApplication.translate('Message','{0}  loaded ').format(filename)
@@ -12578,6 +12630,33 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.qmc.betweenbatch_after_preheat = profile['betweenbatch_after_preheat']
         if 'electricEnergyMix' in profile:
             self.qmc.electricEnergyMix = profile['electricEnergyMix']
+
+    #TODO remove try/except??  # pylint: disable=fixme
+    def loadBbpFromProfile(self, profile:'ProfileData') -> None:
+        try:
+            if 'bbp_begin' in profile:
+                self.bbp_begin = profile['bbp_begin']
+            if 'bbp_time_added_from_prev' in profile:
+                self.bbp_time_added_from_prev = profile['bbp_time_added_from_prev']
+            if 'bbp_endroast_epoch_msec' in profile:
+                self.bbp_endroast_epoch_msec = profile['bbp_endroast_epoch_msec']
+            if 'bbp_endevents' in profile:
+                l = len(profile['bbp_endevents'])
+                self.bbp_endevents = profile['bbp_endevents'][:l]
+            if 'bbp_dropevents' in profile:
+                l = len(profile['bbp_dropevents'])
+                self.bbp_dropevents = profile['bbp_dropevents'][:l]
+            if 'bbp_dropbt' in profile:
+                self.bbp_dropbt = profile['bbp_dropbt']
+            if 'bbp_dropet' in profile:
+                self.bbp_dropet = profile['bbp_dropet']
+            if 'bbp_drop_to_end' in profile:
+                self.bbp_drop_to_end = profile['bbp_drop_to_end']
+        except Exception as ex: # pylint: disable=broad-except
+            _log.exception(ex)
+            _a, _b, exc_tb = sys.exc_info()
+            self.qmc.adderror((QApplication.translate('Error Message','Exception:') + ' loadBbpFromProfile() {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+
 
     # returns True if data got updated, False otherwise
     def updateSymbolicETBT(self) -> bool:
@@ -14846,6 +14925,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 self.qmc.scheduleID = decodeLocal(profile['scheduleID'])
             else:
                 self.qmc.scheduleID = None
+            if 'scheduleDate' in profile:
+                self.qmc.scheduleDate = decodeLocal(profile['scheduleDate'])
+            else:
+                self.qmc.scheduleDate = None
             if 'roastbatchnr' in profile:
                 try:
                     self.qmc.roastbatchnr = int(profile['roastbatchnr'])
@@ -15031,6 +15114,9 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 
             # Energy
             self.loadEnergyFromProfile(profile)
+
+            # BBP
+            self.loadBbpFromProfile(profile)
 
             if 'timeindex' in profile:
                 self.qmc.timeindex = [max(0,v) if i>0 else max(-1,v) for i,v in enumerate(profile['timeindex'])]
@@ -15238,10 +15324,108 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 )
             else:
                 output = 'Metrics not available: profile is zero length.'
+
+            # Find some BBP data
+            if ( ( self.qmc.timex[self.qmc.timeindex[0]] > 0 ) and ( self.qmc.timex[self.qmc.timeindex[0]] - self.qmc.timex[0] >= 60 ) ):  #greater than 1 minute
+                try:
+                    # fake the events
+                    bbp_timeindex = [0, 0, self.qmc.timeindex[0], 0, 0, 0, self.qmc.timeindex[0], 0]
+                    bbp_tpidx = self.findTPint(bbp_timeindex, self.qmc.timex, self.qmc.temp2)
+                    if bbp_tpidx > 0:
+                        bbp_bottom_temp = self.qmc.temp2[bbp_tpidx]
+                        bbp_total_time = stringfromseconds(self.qmc.timex[self.qmc.timeindex[0]] - self.qmc.timex[0])
+                        bbp_begin_to_bottom_time = stringfromseconds(self.qmc.timex[bbp_tpidx] - self.qmc.timex[0])
+                        bbp_bottom_to_charge_time = stringfromseconds(self.qmc.timex[self.qmc.timeindex[0]] - self.qmc.timex[bbp_tpidx])
+                        bbp_begin_to_bottom_ror = 60 * (bbp_bottom_temp - self.qmc.temp2[0]) / (self.qmc.timex[bbp_tpidx] - self.qmc.timex[0])
+                        bbp_bottom_to_charge_ror = 60 * (self.qmc.temp2[self.qmc.timeindex[0]] - bbp_bottom_temp) / (self.qmc.timex[self.qmc.timeindex[0]] - self.qmc.timex[bbp_tpidx])
+                        #Bottom temp@170 - 3min 58sec from drop to bottom temp
+                        #Charge temp: 190°C - 25sec from bottom temp to charge
+                        output += (
+                            f'\n\n  BBP Metrics'
+                            f'\n  Bottom temp: {bbp_bottom_temp:.2f}{self.qmc.mode} - {bbp_begin_to_bottom_time} from DROP@{self.qmc.temp2[0]:.2f}{self.qmc.mode} to bottom temp'
+                            f'\n  Charge temp: {self.qmc.temp2[self.qmc.timeindex[0]]:.2f} - {bbp_bottom_to_charge_time} from bottom to CHARGE'
+                            f'\n  BBP Low Temp: {bbp_bottom_temp:.2f} {self.qmc.mode}'
+                            f'\n  BBP Time Start to Bottom Temp: {bbp_begin_to_bottom_time} at RoR: {bbp_begin_to_bottom_ror:.2f} {self.qmc.mode}/min'
+                            f'\n  BBP RoR Start to Bottom Temp: {bbp_begin_to_bottom_time} at RoR: {bbp_bottom_to_charge_ror:.2f} {self.qmc.mode}/min'
+                            f'\n  BBP Time Bottom Temp to CHARGE: {bbp_bottom_to_charge_time}'
+                            f'\n  BBP Total Time: {bbp_total_time}'
+                            f'\n  '
+                        )
+                    else:
+                        output += '\n\n  No BBP TP found - Metrics Not Available\n'
+                except Exception as e: # pylint: disable=broad-except
+                    _log.exception(e)
+                    _, _, exc_tb = sys.exc_info()
+                    self.qmc.adderror((QApplication.translate('Error Message', 'Error:') + ' profilequality() {0}').format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+            else:
+                output += '\n\n  No BBP - Metrics Not Available\n'
+
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             output = 'Metrics not available: exception'
         return output
+
+    def resetBBPMetrics(self) -> None:
+        self.bbp_drop_bt = -1
+        self.bbp_drop_et = -1
+        self.bbp_total_time = -1
+        self.bbp_bottom_temp = -1
+        self.bbp_begin_to_bottom_time = -1
+        self.bbp_bottom_to_charge_time = -1
+        self.bbp_begin_to_bottom_ror = -1
+        self.bbp_bottom_to_charge_ror = -1
+        self.bbp_time_added_from_prev = 0
+        self.bbp_begin = "Start"
+        self.bbp_endroast_epoch_msec = 0
+        self.bbp_endevents = []
+        self.bbp_dropevents = []
+        self.bbp_drop_to_end = 0
+
+
+    #TODO Decide where else to display BBP metrics # pylint: disable=fixme
+    # bbpCache holds data from the previous roast.  Set in cacheforBbp() which is called from OffRecorder()
+    # Needs to be called from somewhere betw CHARGE and OFF
+    def calcBBPMetrics(self,checkCache:bool=False) -> None:
+        try:
+            #TODO revisit these preset times  # pylint: disable=fixme
+            maxAllowedTime_fromPrevEnd_toStart = 60 #seconds, max gap time between roast recordings
+            minBbpTime = 90 #seconds, the minimum amount of time recorded in the current roast before CHARGE
+            # is there data from a prev roast?
+            if self.qmc.bbpCache and checkCache:
+                _log.debug('bbpCache exists')
+                bbpGap = self.qmc.roastepoch - (self.qmc.bbpCache['end_roastepoch_msec']/1000)
+                # did the prev roast end shortly before this roast began?  If not clear bbpCache
+                if bbpGap < maxAllowedTime_fromPrevEnd_toStart:
+                    self.bbp_time_added_from_prev = bbpGap + self.qmc.bbpCache['drop_to_end']
+                    self.bbp_begin = "DROP"
+                    self.bbp_dropbt = self.qmc.bbpCache['drop_bt']
+                    self.bbp_dropet = self.qmc.bbpCache['drop_et']
+                    self.bbp_endroast_epoch_msec = self.qmc.bbpCache['end_roastepoch_msec']
+                    self.bbp_endevents = self.qmc.bbpCache['end_events']
+                    self.bbp_dropevents = self.qmc.bbpCache['drop_events']
+                    self.bbp_drop_to_end = self.qmc.bbpCache['drop_to_end']
+                else:
+                    self.qmc.bbpCache = {}  # make empty to use as easy test later, "if self.qmc.bbpCache:"
+                    _log.debug('clearing bbpCache')
+            # now calculate all the bbp data
+            # does the current profile have the minimum time for bbp?
+            if (len(self.qmc.timeindex) > 0) and (self.qmc.timex[self.qmc.timeindex[0]] > 0) and (self.qmc.timex[self.qmc.timeindex[0]] - self.qmc.timex[0] >= minBbpTime):
+                self.bbp_total_time = self.qmc.timex[self.qmc.timeindex[0]] - self.qmc.timex[0] + self.bbp_time_added_from_prev
+                # fake the events to use with findTPint
+                bbp_timeindex = [0, 0, self.qmc.timeindex[0], 0, 0, 0, self.qmc.timeindex[0], 0]
+                bbp_tpidx = self.findTPint(bbp_timeindex, self.qmc.timex, self.qmc.temp2)
+                if bbp_tpidx > 0:
+                    self.bbp_bottom_temp = self.qmc.temp2[bbp_tpidx]
+                    self.bbp_begin_to_bottom_time = self.qmc.timex[bbp_tpidx] - self.qmc.timex[0] + self.bbp_time_added_from_prev
+                    self.bbp_bottom_to_charge_time = self.qmc.timex[self.qmc.timeindex[0]] - self.qmc.timex[bbp_tpidx]
+                    self.bbp_begin_to_bottom_ror = 60 * (self.bbp_bottom_temp - self.qmc.temp2[0]) / (self.qmc.timex[bbp_tpidx] - self.qmc.timex[0] + self.bbp_time_added_from_prev)
+                    self.bbp_bottom_to_charge_ror = 60 * (self.qmc.temp2[self.qmc.timeindex[0]] - self.bbp_bottom_temp) / (self.qmc.timex[self.qmc.timeindex[0]] - self.qmc.timex[bbp_tpidx])
+            #TODO now deal with the special events from the previous roast  # pylint: disable=fixme
+
+        except Exception as e: # pylint: disable=broad-except
+            _log.exception(e)
+            _, _, exc_tb = sys.exc_info()
+            self.qmc.adderror((QApplication.translate('Error Message', 'Error:') + ' calcBBP() {0}').format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
 
     # returns data that is computed by Artisan out of raw profile data using some formulas
@@ -15520,7 +15704,19 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 computedProfile['KWH_batch_per_green_kg'] = float2float(energymetrics['KWH_batch_per_green_kg'],1)
             if 'KWH_roast_per_green_kg' in energymetrics:
                 computedProfile['KWH_roast_per_green_kg'] = float2float(energymetrics['KWH_roast_per_green_kg'],1)
-
+        except Exception as ex: # pylint: disable=broad-except
+            _log.exception(ex)
+            _, _, exc_tb = sys.exc_info()
+            self.qmc.adderror((QApplication.translate('Error Message', 'Exception:') + ' computedProfileInformation() {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+        ######### BBP Metrics #########
+        try:
+            self.calcBBPMetrics()
+            computedProfile['bbp_total_time'] = float2float(self.bbp_total_time,1)
+            computedProfile['bbp_bottom_temp'] = float2float(self.bbp_bottom_temp,2)
+            computedProfile['bbp_begin_to_bottom_time'] = float2float(self.bbp_begin_to_bottom_time,1)
+            computedProfile['bbp_bottom_to_charge_time'] = float2float(self.bbp_bottom_to_charge_time,1)
+            computedProfile['bbp_begin_to_bottom_ror'] = float2float(self.bbp_begin_to_bottom_ror,2)
+            computedProfile['bbp_bottom_to_charge_ror'] = float2float(self.bbp_bottom_to_charge_ror,2)
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
@@ -15624,6 +15820,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             profile['roastUUID'] = self.qmc.roastUUID
             if self.qmc.scheduleID is not None:
                 profile['scheduleID'] = self.qmc.scheduleID
+            if self.qmc.scheduleDate is not None:
+                profile['scheduleDate'] = self.qmc.scheduleDate
 #            profile['beansize'] = str(self.qmc.beansize) # legacy; not stored any longer
             profile['beansize_min'] = str(self.qmc.beansize_min) # int in str (legacy profiles may contain floats in str)
             profile['beansize_max'] = str(self.qmc.beansize_max) # int in str (legacy profiles may contain floats in str)
@@ -15757,6 +15955,21 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 profile['coolingenergies'] = self.qmc.coolingenergies
                 profile['betweenbatch_after_preheat'] = self.qmc.betweenbatch_after_preheat
                 profile['electricEnergyMix'] = self.qmc.electricEnergyMix
+            except Exception as ex: # pylint: disable=broad-except
+                _log.exception(ex)
+                _, _, exc_tb = sys.exc_info()
+                self.qmc.adderror((QApplication.translate('Error Message', 'Exception:') + ' getProfile(): {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
+
+            # BBP data
+            try:
+                profile['bbp_begin'] = self.bbp_begin
+                profile['bbp_time_added_from_prev'] = float2float(self.bbp_time_added_from_prev,2)
+                profile['bbp_endroast_epoch_msec'] = self.bbp_endroast_epoch_msec
+                profile['bbp_endevents'] = self.bbp_endevents
+                profile['bbp_dropevents'] = self.bbp_dropevents
+                profile['bbp_dropbt'] = float2float(self.bbp_dropbt,2)
+                profile['bbp_dropet'] = float2float(self.bbp_dropet,2)
+                profile['bbp_drop_to_end'] = float2float(self.bbp_drop_to_end)
             except Exception as ex: # pylint: disable=broad-except
                 _log.exception(ex)
                 _, _, exc_tb = sys.exc_info()
@@ -16322,7 +16535,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
     @staticmethod
     def clearWindowGeometry(settings:QSettings) -> None:
         for s in ['Geometry', 'BlendGeometry','RoastGeometry','FlavorProperties','CalculatorGeometry','EventsGeometry', 'CompareGeometry',
-                'BackgroundGeometry','ScheduleGeometry','LCDGeometry','DeltaLCDGeometry','ExtraLCDGeometry','PhasesLCDGeometry','AlarmsGeometry',
+                'BackgroundGeometry','ScheduleGeometry','ScheduleRemainingSplitter', 'ScheduleMainSplitter', 'ScheduleCompletedSplitter', 'LCDGeometry','DeltaLCDGeometry','ExtraLCDGeometry','PhasesLCDGeometry','AlarmsGeometry',
                 'DeviceAssignmentGeometry','PortsGeometry','TransformatorPosition', 'CurvesPosition', 'StatisticsPosition',
                 'AxisPosition','PhasesPosition', 'BatchPosition', 'SamplingPosition', 'autosaveGeometry', 'PIDPosition',
                 'DesignerPosition','PIDLCDGeometry','ScaleLCDGeometry', 'MainSplitter']:
@@ -17594,9 +17807,11 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.schedule_day_filter =toBool(settings.value('ScheduleDayFilter',self.schedule_day_filter))
             self.schedule_user_filter = toBool(settings.value('ScheduleUserFilter',self.schedule_user_filter))
             self.schedule_machine_filter = toBool(settings.value('ScheduleMachineFilter',self.schedule_machine_filter))
-
             self.scheduled_items_uuids = list(toStringList(settings.value('scheduled_items',self.scheduled_items_uuids)))
             self.scheduleFlag = toBool(settings.value('Schedule',self.scheduleFlag))
+            self.scheduler_tasks_visible = toBool(settings.value('SchedulerTasks',self.scheduler_tasks_visible))
+            self.scheduler_completed_details_visible = toBool(settings.value('SchedulerCompletedDetails',self.scheduler_completed_details_visible))
+            self.scheduler_filters_visible = toBool(settings.value('SchedulerFilter',self.scheduler_filters_visible))
             if self.scheduleFlag:
                 try:
                     self.schedule()
@@ -17693,12 +17908,16 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.qmc.showmet = bool(toBool(settings.value('showmet',self.qmc.showmet)))
             if settings.contains('statssummary'):
                 self.qmc.statssummary = bool(toBool(settings.value('statssummary')))
-                if self.qmc.statssummary:
-                    self.savestatisticsAction.setEnabled(True)
-                else:
-                    self.savestatisticsAction.setEnabled(False)
+            if self.qmc.statssummary is not None and self.qmc.statssummary and self.saveStatisticsMenu is not None:
+                self.saveStatisticsMenu.setEnabled(True)
+            elif self.saveStatisticsMenu is not None:
+                self.saveStatisticsMenu.setEnabled(False)
             self.qmc.statsmaxchrperline = int(settings.value('statsmaxchrperline', self.qmc.statsmaxchrperline))
             self.qmc.showtimeguide = bool(toBool(settings.value('showtimeguide',self.qmc.showtimeguide)))
+            if settings.contains('summarystatstypes'):
+                self.summarystatstypes = [toInt(x) for x in toList(settings.value('summarystatstypes',self.summarystatstypes))]
+            if settings.contains('summarystatsfontsize'):
+                self.summarystatsfontsize = toInt(settings.value('summarystatsfontsize', int(self.summarystatsfontsize)))
             settings.endGroup()
 #--- END GROUP ExtrasMoreInfo
 
@@ -18376,6 +18595,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.settingsSetValue(settings, default_settings, 'curvefitoffset',self.qmc.curvefitoffset, read_defaults)
             self.settingsSetValue(settings, default_settings, 'segmentsamplesthreshold',self.qmc.segmentsamplesthreshold, read_defaults)
             self.settingsSetValue(settings, default_settings, 'segmentdeltathreshold',self.qmc.segmentdeltathreshold, read_defaults)
+
             #projection
             self.settingsSetValue(settings, default_settings, 'ETprojectFlag',self.qmc.ETprojectFlag, read_defaults)
             self.settingsSetValue(settings, default_settings, 'BTprojectFlag',self.qmc.BTprojectFlag, read_defaults)
@@ -19062,6 +19282,9 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.settingsSetValue(settings, default_settings, 'ScheduleMachineFilter',self.schedule_machine_filter, read_defaults)
             self.settingsSetValue(settings, default_settings, 'Schedule',self.scheduleFlag, read_defaults)
             self.settingsSetValue(settings, default_settings, 'scheduled_items',self.scheduled_items_uuids, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'SchedulerTasks',self.scheduler_tasks_visible, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'SchedulerCompletedDetails',self.scheduler_completed_details_visible, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'SchedulerFilter',self.scheduler_filters_visible, read_defaults)
             self.settingsSetValue(settings, default_settings, 'LargeLCDs',self.LargeLCDsFlag, read_defaults)
             self.settingsSetValue(settings, default_settings, 'LargeDeltaLCDs',self.LargeDeltaLCDsFlag, read_defaults)
             self.settingsSetValue(settings, default_settings, 'LargePIDLCDs',self.LargePIDLCDsFlag, read_defaults)
@@ -19170,6 +19393,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.settingsSetValue(settings, default_settings, 'statssummary',self.qmc.statssummary, read_defaults)
             self.settingsSetValue(settings, default_settings, 'statsmaxchrperline', self.qmc.statsmaxchrperline, read_defaults)
             self.settingsSetValue(settings, default_settings, 'showtimeguide',self.qmc.showtimeguide, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'summarystatstypes',self.summarystatstypes, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'summarystatsfontsize',self.summarystatsfontsize, read_defaults)
             settings.endGroup()
 #--- END GROUP ExtrasMoreInfo
 
@@ -19794,7 +20019,26 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 
     @pyqtSlot()
     @pyqtSlot(bool)
-    def saveStatistics(self, _:bool = False) -> None:
+    def saveStatistics_TXT(self, _:bool = False) -> None:
+        if self.qmc.ax is None:
+            return
+#TODO need to fix for right to left languages! # pylint: disable=fixme
+        try:
+            filename = self.ArtisanSaveFileDialog(msg=QApplication.translate('Message', 'Save Statistics'), ext='*.txt')
+            if filename:
+                statstr = cast(str,self.qmc.statsSummary(txt=True))
+                with open(filename, 'w', encoding='utf8') as file:
+                    file.write(statstr)
+                self.sendmessage(QApplication.translate('Message','Statistics Saved'))
+
+        except Exception as e: # pylint: disable=broad-except
+            _log.exception(e)
+            _a, _b, exc_tb = sys.exc_info()
+            self.qmc.adderror((QApplication.translate('Error Message','Exception:') + ' saveStatistics() {0}').format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
+
+    @pyqtSlot()
+    @pyqtSlot(bool)
+    def saveStatistics_IMG(self, _:bool = False) -> None:
         if self.qmc.ax is None:
             return
         try:
@@ -19820,7 +20064,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             # 5. fig.save
             # MPL 3.1.1 does not properly handle saving pdf on Windows when figure dpi not 72.  Maybe fixed in a future version.
             # ref: https://github.com/matplotlib/matplotlib/issues/15497#issuecomment-548072609
-            ext = '*.png' if platform.system() == 'Windows' else '*.pdf'
+            # ext = '*.png' if platform.system() == 'Windows' else '*.pdf'
+            # appears to work properly for this usage when checked with MPL 3.8.4
+            # Use png for legacy Windows, pdf for all others. Test PyQt version for legacy even though the mpl version is the problem.
+            ext = '*.png' if platform.system() == 'Windows' and 'PyQt5' in sys.modules else '*.pdf'
             filename = self.ArtisanSaveFileDialog(msg=QApplication.translate('Message', 'Save Statistics'), ext=ext)
             if filename:
                 self.qmc.fig.set_layout_engine('none')
@@ -20135,7 +20382,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
     def rankingdataDef() -> Tuple[List[List[str]], List[str]]:
         field_index:List[str] = [
             'fld',     #field name as used in source list or an eval string
-            'src',     #data source from where to pull fld [prof,comp,rank,prod,eval,]
+            'src',     #data source from where to pull fld [prof,comp,rank,prod,eval,self,]
             'typ',     #content type [text,int,float1,float2,float4,text2float1,text2float2,text2int,percent,time,bool,]
             'test0',   #test for a zero value and substitute an empty string
             'units',   #conversion units [temp,weight,volume,ror,] or maxlen when typ=="text"
@@ -20263,6 +20510,15 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             ['BTU_ELEC',            'comp',  'float1',   'false',  '(BTU)', QApplication.translate('HTML Report Template','BTU ELEC')             ],
             ['KWH_batch_per_green_kg','comp','float1',   'false',  '(kWh/kg)', QApplication.translate('HTML Report Template','Efficiency Batch')  ],
             ['KWH_roast_per_green_kg','comp','float1',   'false',  '(kWh/kg)', QApplication.translate('HTML Report Template','Efficiency Roast')  ],
+            ['bbp_begin'            ,'prof', 'text',     'false',  '',      QApplication.translate('HTML Report Template','BBP Begin')            ],
+            ['bbp_total_time'        ,'comp','float1',   'false',  'sec',   QApplication.translate('HTML Report Template','BBP Total Time')       ],
+            ['bbp_bottom_temp'       ,'comp','float2',   'false',  'temp',  QApplication.translate('HTML Report Template','BBP Bottom Temp')      ],
+            ['bbp_begin_to_bottom_time','comp', 'float1','false',  'sec',   QApplication.translate('HTML Report Template','BBP Begin to Bottom Time')],
+            ['bbp_bottom_to_charge_time','comp','float1','false',  'sec',   QApplication.translate('HTML Report Template','BBP Bottom to CHARGE Time')],
+            ['bbp_begin_to_bottom_ror','comp',  'float2','false',  'ror',   QApplication.translate('HTML Report Template','BBP Begin to Bottom RoR')],
+            ['bbp_bottom_to_charge_ror','comp', 'float2','false',  'ror',   QApplication.translate('HTML Report Template','BBP Bottom to CHARGE RoR')],
+            # add new fields above, file name should always be the last field
+            ['curFile',             'self',  'text',     'false',  '',      QApplication.translate('HTML Report Template','File Name')  ],
         ]
         return ranking_data_fields, field_index
 
@@ -21203,7 +21459,12 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                                     elif src == 'prod' and fld in pd:
                                         res_fld = pd[fld] # type:ignore[literal-required]
                                     elif src == 'eval':
-                                        res_fld = eval(fld) # pylint: disable=eval-used
+                                        try:
+                                            res_fld = eval(fld) # pylint: disable=eval-used
+                                        except Exception:
+                                            res_fld = -1
+                                    elif src == 'self':
+                                        res_fld = getattr(self,f'{fld}')
                                     else:
                                         continue
 
@@ -21476,7 +21737,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 charge = '--'
             dryphase, midphase, finishphase, coolphase = self.phases2html(cp)
             etbta = '--'
-            #Dave new way of presenting AUC
+
             if ('AUC' in cp and cp['AUC'] != 0):
                 etbta = f"{cp['AUC']:.0f}C*min"
                 if ('AUCbegin' in cp and cp['AUCbegin'] != '' and 'AUCbase' in cp):
@@ -22793,7 +23054,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
     @pyqtSlot(bool)
     def showstatistics(self, _:bool = False) -> None:
         from artisanlib.statistics import StatisticsDlg
-        dialog = StatisticsDlg(self,self)
+        dialog = StatisticsDlg(self,self,self.StatisticsDlg_activeTab)
         dialog.show()
 
     @pyqtSlot()
@@ -25742,6 +26003,10 @@ def main() -> None:
             if appWindow.lastLoadedProfile:
                 try:
                     appWindow.loadFile(appWindow.lastLoadedProfile)
+                    if appWindow.curFile is None:
+                        # load failed
+                        appWindow.lastLoadedProfile = ''
+                        appWindow.qmc.reset(redraw=False, soundOn=False)
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
             elif appWindow.logofilename != '':  #ensure background image aspect ratio is calculated
@@ -25749,16 +26014,24 @@ def main() -> None:
             if appWindow.lastLoadedBackground and appWindow.lastLoadedBackground != '' and not appWindow.curFile:
                 try:
                     appWindow.loadbackground(appWindow.lastLoadedBackground)
-                    appWindow.qmc.background = not appWindow.qmc.hideBgafterprofileload
-                    if not appWindow.lastLoadedProfile and not(appWindow.logofilename != '' and appWindow.logoimgflag):
-                        # this extra redraw is not needed if a watermark is loaded as it is triggered by the resize-redraw mechanism
-                        appWindow.qmc.timealign(redraw=False)
-                        appWindow.autoAdjustAxis(background=appWindow.qmc.background and (not len(appWindow.qmc.timex) > 3))
-                        appWindow.qmc.redraw()
+                    if appWindow.qmc.backgroundpath:
+                        appWindow.qmc.background = not appWindow.qmc.hideBgafterprofileload
+                        if not appWindow.lastLoadedProfile and not(appWindow.logofilename != '' and appWindow.logoimgflag):
+                            # this extra redraw is not needed if a watermark is loaded as it is triggered by the resize-redraw mechanism
+                            appWindow.qmc.timealign(redraw=False)
+                            appWindow.autoAdjustAxis(background=appWindow.qmc.background and (not len(appWindow.qmc.timex) > 3))
+                            appWindow.qmc.redraw()
+                        else:
+                            appWindow.qmc.timealign(redraw=True,recompute=True)
                     else:
-                        appWindow.qmc.timealign(redraw=True,recompute=True)
+                        appWindow.lastLoadedProfile = ''
+                        appWindow.qmc.background = False
+                        appWindow.qmc.backgroundprofile = None
+                        appWindow.qmc.backgroundprofile_moved_x = 0
+                        appWindow.qmc.backgroundprofile_moved_y = 0
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
+                    appWindow.lastLoadedProfile = ''
                     appWindow.qmc.background = False
                     appWindow.qmc.backgroundprofile = None
                     appWindow.qmc.backgroundprofile_moved_x = 0
