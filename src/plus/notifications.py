@@ -28,8 +28,8 @@ except Exception: # pylint: disable=broad-except
     #pylint: disable = E, W, R, C
     from PyQt5.QtCore import QSemaphore, QTimer, pyqtSlot # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
-from typing import List, Dict, Any
-from typing import Final  # Python <=3.7
+from typing import Final, List, Dict, Any
+
 
 import logging
 
@@ -54,7 +54,7 @@ def updateNotifications(notifications: int, machines:List[str]) -> None:
             # we fetch notifications if notifications are enabled within the Artisan settings, there are some unqualified notifications, or
             # our machine name is in the list of machines indicating that there is a qualified notification for us
             if aw.notificationsflag and (notifications>0 or aw.qmc.roastertype_setup in machines):
-                # should happen with less delay (0.7s) then the stock.update() (2.5s) triggered controller.connect() to avoid duplicate fetching on startup
+                # should happen with less delay (0.7s) then the stock.update() (2s) triggered controller.connect() to avoid duplicate fetching on startup
                 QTimer.singleShot(700, retrieveNotifications)
     except Exception as e: # pylint: disable=broad-except
         _log.exception(e)

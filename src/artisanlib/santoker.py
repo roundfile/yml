@@ -16,9 +16,8 @@
 # Marko Luther, 2023
 
 import logging
-from pymodbus.utilities import computeCRC
-from typing import Optional, Callable, TYPE_CHECKING
-from typing import Final  # Python <=3.7
+from pymodbus.message.rtu import MessageRTU
+from typing import Final, Optional, Callable, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from artisanlib.types import SerialSettings # pylint: disable=unused-import
@@ -185,7 +184,7 @@ class Santoker(AsyncComm):
         value = int.from_bytes(data, 'big')
         # compute and check the CRC over the code header, length and data
         crc = await stream.readexactly(2)
-        if self._verify_crc and int.from_bytes(crc, 'big') != computeCRC(self.CODE_HEADER + data_len + data):
+        if self._verify_crc and int.from_bytes(crc, 'big') != MessageRTU.compute_CRC(self.CODE_HEADER + data_len + data):
             _log.debug('CRC error')
             return
         # check tail
@@ -203,7 +202,7 @@ class Santoker(AsyncComm):
     def create_msg(self, target:bytes, value: int) -> bytes:
         data_len = 3
         data = self.CODE_HEADER + data_len.to_bytes(1, 'big') + value.to_bytes(data_len, 'big')
-        crc: bytes = computeCRC(data).to_bytes(2, 'big')
+        crc: bytes = MessageRTU.compute_CRC(data).to_bytes(2, 'big')
         return self.HEADER + target + data + crc + self.TAIL
 
     def send_msg(self, target:bytes, value: int) -> None:
@@ -214,7 +213,7 @@ class Santoker(AsyncComm):
 
 
 
-def main():
+def main() -> None:
     import time
     santoker = Santoker(host = '10.10.100.254', port = 20001)
     santoker.start()

@@ -6,10 +6,10 @@ from pathlib import Path
 import time as libtime
 import csv
 import logging
-from typing import List, Optional, TYPE_CHECKING
-from typing import Final  # Python <=3.7
+from typing import Final, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from artisanlib.main import ApplicationWindow # pylint: disable=unused-import
     from artisanlib.types import ProfileData # pylint: disable=unused-import
 
 try:
@@ -19,26 +19,12 @@ except ImportError:
     from PyQt5.QtWidgets import QApplication # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtCore import QDateTime, Qt # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
-from artisanlib.util import fill_gaps, fromFtoCstrict, RoRfromFtoCstrict, encodeLocal
+from artisanlib.util import replace_duplicates, fromFtoCstrict, RoRfromFtoCstrict, encodeLocal
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
 
-def replace_duplicates(data):
-    lv = -1
-    data_core = []
-    for v in data:
-        if v == lv:
-            data_core.append(-1)
-        else:
-            data_core.append(v)
-            lv = v
-    # reconstruct first and last reading
-    if len(data)>0:
-        data_core[-1] = data[-1]
-    return fill_gaps(data_core, interpolate_max=100)
-
 # returns a dict containing all profile information contained in the given IKAWA CSV file
-def extractProfileLoringCSV(file,aw):
+def extractProfileLoringCSV(file:str, aw:'ApplicationWindow') -> 'ProfileData':
     res:ProfileData = {} # the interpreted data set
 
     with open(file, newline='',encoding='utf-8') as csvFile:

@@ -120,7 +120,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>2.8.5</string>
+	<string>2.10.5</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -131,11 +131,12 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>Artisan 2.8.5</string>
+	<string>Artisan 2.10.5</string>
 	<key>LSApplicationCategoryType</key>
 	<string>public.app-category.productivity</string>
 	<key>LSArchitecturePriority</key>
 	<array>
+		<string>arm64</string>
 		<string>x86_64</string>
 	</array>
 	<key>LSHasLocalizedDisplayName</key>

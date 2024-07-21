@@ -16,13 +16,15 @@
 # Marko Luther, 2023
 
 import platform
+import logging
 
 from artisanlib.util import deltaLabelUTF8, deltaLabelPrefix, stringfromseconds
 from artisanlib.dialogs import ArtisanResizeablDialog
-from typing import Optional, TYPE_CHECKING
+from typing import Final, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
+    from PyQt6.QtGui import QCloseEvent, QKeyEvent # pylint: disable=unused-import
 
 try:
     from PyQt6.QtCore import (Qt, pyqtSlot, QSettings, QTimer) # @UnusedImport @Reimport  @UnresolvedImport
@@ -34,12 +36,10 @@ except ImportError:
     from PyQt5.QtCore import (Qt, pyqtSlot, QSettings, QTimer) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtGui import QColor, QKeySequence # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QApplication, QCheckBox, QGridLayout, QHBoxLayout, QVBoxLayout, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
-                                 QLabel, QLineEdit,QPushButton, QComboBox, QDialogButtonBox, QHeaderView, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
-                                 QSpinBox, QTableWidget, QTableWidgetItem, QTabWidget, QWidget, QGroupBox) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
+                                 QLabel, QLineEdit,QPushButton, QComboBox, QDialogButtonBox, QHeaderView, # @UnusedImport @Reimport  @UnresolvedImport
+                                 QSpinBox, QTableWidget, QTableWidgetItem, QTabWidget, QWidget, QGroupBox) # @UnusedImport @Reimport  @UnresolvedImport
 
 
-import logging
-from typing import Final  # Python <=3.7
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
 
@@ -164,7 +164,6 @@ class backgroundDlg(ArtisanResizeablDialog):
         #table for showing events
         self.eventtable = QTableWidget()
         self.eventtable.setTabKeyNavigation(True)
-        self.createEventTable()
         self.copyeventTableButton = QPushButton(QApplication.translate('Button', 'Copy Table'))
         self.copyeventTableButton.setToolTip(QApplication.translate('Tooltip','Copy table to clipboard, OPTION or ALT click for tabular text'))
         self.copyeventTableButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -175,7 +174,6 @@ class backgroundDlg(ArtisanResizeablDialog):
         #table for showing data
         self.datatable = QTableWidget()
         self.datatable.setTabKeyNavigation(True)
-        self.createDataTable()
         self.copydataTableButton = QPushButton(QApplication.translate('Button', 'Copy Table'))
         self.copydataTableButton.setToolTip(QApplication.translate('Tooltip','Copy table to clipboard, OPTION or ALT click for tabular text'))
         self.copydataTableButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -444,26 +442,41 @@ class backgroundDlg(ArtisanResizeablDialog):
         mainLayout.setContentsMargins(5, 10, 5, 5) # left, top, right, bottom
         self.setLayout(mainLayout)
         if platform.system() != 'Windows':
-            ok_button = self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok)
+            ok_button: Optional[QPushButton] = self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok)
             if ok_button is not None:
                 ok_button.setFocus()
+        else:
+            self.TabWidget.setFocus()
+
+        self.TabWidget.currentChanged.connect(self.tabSwitched)
 
         # we set the active tab with a QTimer after the tabbar has been rendered once, as otherwise
-        # some tabs are not rendered at all on Winwos using Qt v6.5.1 (https://bugreports.qt.io/projects/QTBUG/issues/QTBUG-114204?filter=allissues)
+        # some tabs are not rendered at all on Windows using Qt v6.5.1 (https://bugreports.qt.io/projects/QTBUG/issues/QTBUG-114204?filter=allissues)
         QTimer.singleShot(50, self.setActiveTab)
+
+    @pyqtSlot(int)
+    def tabSwitched(self, i:int) -> None:
+        if i == 1:
+            self.createEventTable()
+        elif i == 2:
+            self.createDataTable()
 
     @pyqtSlot()
     def setActiveTab(self) -> None:
+        if self.activeTab == 1:
+            self.createEventTable()
+        elif self.activeTab == 2:
+            self.createDataTable()
         self.TabWidget.setCurrentIndex(self.activeTab)
 
     @pyqtSlot(bool)
-    def timealign(self,_):
+    def timealign(self, _:bool = False) -> None:
         self.aw.qmc.timealign()
         self.aw.autoAdjustAxis()
 
     #keyboard presses. There must not be widgets (pushbuttons, comboboxes, etc) in focus in order to work
-    def keyPressEvent(self,event):
-        if event.matches(QKeySequence.StandardKey.Copy):
+    def keyPressEvent(self, event: Optional['QKeyEvent']) -> None:
+        if event is not None and event.matches(QKeySequence.StandardKey.Copy):
             if self.TabWidget.currentIndex() == 2: # datatable
                 self.aw.copy_cells_to_clipboard(self.datatable)
                 self.aw.sendmessage(QApplication.translate('Message','Data table copied to clipboard'))
@@ -471,13 +484,16 @@ class backgroundDlg(ArtisanResizeablDialog):
             super().keyPressEvent(event)
 
     @pyqtSlot()
-    def accept(self):
+    def accept(self) -> None:
         self.aw.qmc.backgroundmovespeed = self.speedSpinBox.value()
         self.aw.qmc.backgroundKeyboardControlFlag = bool(self.keyboardControlflag.isChecked())
+        if self.aw.qmc.backgroundPlaybackEvents:
+            # turn on again after background load to ignore already passed events
+            self.aw.qmc.turn_playback_event_ON()
         self.close()
 
     @pyqtSlot('QCloseEvent')
-    def closeEvent(self,_):
+    def closeEvent(self, _:Optional['QCloseEvent'] = None) -> None:
         settings = QSettings()
         #save window geometry
         settings.setValue('BackgroundGeometry',self.saveGeometry())
@@ -494,13 +510,13 @@ class backgroundDlg(ArtisanResizeablDialog):
 #                return 0
 
     @pyqtSlot(int)
-    def setplaybackevent(self,_):
+    def setplaybackevent(self, _:int) -> None:
         s = None
         if self.backgroundPlaybackEvents.isChecked():
-            self.aw.qmc.backgroundPlaybackEvents = True
+            self.aw.qmc.turn_playback_event_ON()
             msg = QApplication.translate('Message','Playback Events set ON')
         else:
-            self.aw.qmc.backgroundPlaybackEvents = False
+            self.aw.qmc.turn_playback_event_OFF()
             msg = QApplication.translate('StatusBar','Playback Events set OFF')
             s = "background-color:'transparent';"
         self.aw.sendmessage(msg, style=s)
@@ -517,7 +533,7 @@ class backgroundDlg(ArtisanResizeablDialog):
             widget.setEnabled(self.aw.qmc.backgroundPlaybackEvents)
 
     @pyqtSlot(int)
-    def setplaybackaideventtypeenabled(self,_):
+    def setplaybackaideventtypeenabled(self, _:int) -> None:
         for i, widget in enumerate([
                 self.backgroundPlaybackAid0,
                 self.backgroundPlaybackAid1,
@@ -526,7 +542,7 @@ class backgroundDlg(ArtisanResizeablDialog):
             self.aw.qmc.specialeventplaybackaid[i] = widget.isChecked()
 
     @pyqtSlot(int)
-    def setplaybackeventtypeenabled(self,_):
+    def setplaybackeventtypeenabled(self, _:int) -> None:
         for i, widget in enumerate([
                 self.backgroundPlaybackEvent0,
                 self.backgroundPlaybackEvent1,
@@ -535,7 +551,7 @@ class backgroundDlg(ArtisanResizeablDialog):
             self.aw.qmc.specialeventplayback[i] = widget.isChecked()
 
     @pyqtSlot(int)
-    def setplaybackdrop(self,_):
+    def setplaybackdrop(self, _:int) -> None:
         s = None
         if self.backgroundPlaybackDROP.isChecked():
             self.aw.qmc.backgroundPlaybackDROP = True
@@ -547,14 +563,14 @@ class backgroundDlg(ArtisanResizeablDialog):
         self.aw.sendmessage(msg, style=s)
 
     @pyqtSlot(int)
-    def setreproduceBeep(self,_):
+    def setreproduceBeep(self, _:int) -> None:
         if self.backgroundReproduceBeep.isChecked():
             self.aw.qmc.backgroundReproduceBeep = True
         else:
             self.aw.qmc.backgroundReproduceBeep = False
 
     @pyqtSlot(int)
-    def setreproduce(self,_):
+    def setreproduce(self, _:int) -> None:
         self.aw.qmc.detectBackgroundEventTime = self.etimeSpinBox.value()
         s = None
         if self.backgroundReproduce.isChecked():
@@ -581,14 +597,14 @@ class backgroundDlg(ArtisanResizeablDialog):
         self.etimeunit.setEnabled(self.aw.qmc.backgroundReproduce)
 
     @pyqtSlot(int)
-    def optclearbgbeforeprofileload(self,_):
+    def optclearbgbeforeprofileload(self, _:int) -> None:
         if self.clearBgbeforeprofileload.isChecked():
             self.aw.qmc.clearBgbeforeprofileload = True
         else:
             self.aw.qmc.clearBgbeforeprofileload = False
 
     @pyqtSlot(int)
-    def opthideBgafterprofileload(self,_):
+    def opthideBgafterprofileload(self, _:int) -> None:
         if self.hideBgafterprofileload.isChecked():
             self.aw.qmc.hideBgafterprofileload = True
         else:
@@ -639,7 +655,7 @@ class backgroundDlg(ArtisanResizeablDialog):
 #        self.aw.qmc.redraw(recomputeAllDeltas=False)
 
     @pyqtSlot(bool)
-    def delete(self,_):
+    def delete(self, _:bool = False) -> None:
         self.pathedit.setText('')
 # we should not overwrite the users app settings here, right:
 # but we have to deactivate the show flag
@@ -649,42 +665,38 @@ class backgroundDlg(ArtisanResizeablDialog):
         self.xtcurveComboBox.blockSignals(True)
         self.xtcurveComboBox.clear()
         self.aw.deleteBackground()
-        self.eventtable.clear()
-        self.createEventTable()
-        self.createDataTable()
         self.aw.qmc.resetlinecountcaches()
         self.xtcurveComboBox.blockSignals(False)
         self.aw.qmc.redraw(recomputeAllDeltas=False)
 
     @pyqtSlot(bool)
-    def moveUp(self,_):
+    def moveUp(self, _:bool = False) -> None:
         self.upButton.setDisabled(True)
-        self.move('up')
+        self.move_background('up')
         self.upButton.setDisabled(False)
     @pyqtSlot(bool)
-    def moveDown(self,_):
+    def moveDown(self,_:bool = False) -> None:
         self.downButton.setDisabled(True)
-        self.move('down')
+        self.move_background('down')
         self.downButton.setDisabled(False)
     @pyqtSlot(bool)
-    def moveLeft(self,_):
+    def moveLeft(self,_:bool = False) -> None:
         self.leftButton.setDisabled(True)
-        self.move('left')
+        self.move_background('left')
         self.leftButton.setDisabled(False)
     @pyqtSlot(bool)
-    def moveRight(self,_):
+    def moveRight(self,_:bool = False) -> None:
         self.rightButton.setDisabled(True)
-        self.move('right')
+        self.move_background('right')
         self.rightButton.setDisabled(False)
 
-    def move(self,m):
+    def move_background(self, m:str) -> None:
         step = self.speedSpinBox.value()
-        self.aw.qmc.movebackground(m,step)
-        self.createEventTable()
-        self.createDataTable()
-        self.aw.qmc.redraw(recomputeAllDeltas=False)
+        self.aw.qmc.movebackground(m, step)
+        self.aw.qmc.redraw(recomputeAllDeltas=False, re_smooth_foreground=False,
+            re_smooth_background=False)
 
-    def readChecks(self):
+    def readChecks(self) -> None:
         self.aw.qmc.background = bool(self.backgroundCheck.isChecked())
         self.aw.qmc.backgroundDetails = bool(self.backgroundDetails.isChecked())
         self.aw.qmc.backgroundeventsflag = bool(self.backgroundeventsflag.isChecked())
@@ -696,27 +708,25 @@ class backgroundDlg(ArtisanResizeablDialog):
         self.aw.qmc.redraw(recomputeAllDeltas=True)
 
     @pyqtSlot(int)
-    def changeAlignEventidx(self,i):
+    def changeAlignEventidx(self, i:int) -> None:
         self.aw.qmc.alignEvent = i
 
     @pyqtSlot(int)
-    def changeReplayTypeidx(self,i):
+    def changeReplayTypeidx(self, i:int) -> None:
         self.aw.qmc.replayType = i
 
     @pyqtSlot(int)
-    def changeXTcurveidx(self,i):
+    def changeXTcurveidx(self, i:int) -> None:
         self.aw.qmc.xtcurveidx = i
-        self.createDataTable()
-        self.aw.qmc.redraw(recomputeAllDeltas=False,smooth=True)
+        self.aw.qmc.redraw(recomputeAllDeltas=False)
 
     @pyqtSlot(int)
-    def changeYTcurveidx(self,i):
+    def changeYTcurveidx(self, i:int) -> None:
         self.aw.qmc.ytcurveidx = i
-        self.createDataTable()
-        self.aw.qmc.redraw(recomputeAllDeltas=False,smooth=True)
+        self.aw.qmc.redraw(recomputeAllDeltas=False)
 
     @pyqtSlot(bool)
-    def load(self,_):
+    def load(self, _:bool = False) -> None:
         self.filename = self.aw.ArtisanOpenFileDialog(msg=QApplication.translate('Message','Load Background'),ext_alt='.alog')
         if len(self.filename) == 0:
             return
@@ -748,10 +758,8 @@ class backgroundDlg(ArtisanResizeablDialog):
         self.backgroundCheck.setChecked(True)
         self.aw.qmc.timealign(redraw=False)
         self.readChecks()
-        self.createEventTable()
-        self.createDataTable()
 
-    def createEventTable(self):
+    def createEventTable(self) -> None:
         ndata = len(self.aw.qmc.backgroundEvents)
 
         # self.eventtable.clear() # this crashes Ubuntu 16.04
@@ -781,20 +789,20 @@ class backgroundDlg(ArtisanResizeablDialog):
             start = 0
         for i in range(ndata):
             timez = QTableWidgetItem(stringfromseconds(self.aw.qmc.timeB[self.aw.qmc.backgroundEvents[i]]-start))
-            timez.setTextAlignment(Qt.AlignmentFlag.AlignRight + Qt.AlignmentFlag.AlignVCenter)
+            timez.setTextAlignment(Qt.AlignmentFlag.AlignCenter | Qt.AlignmentFlag.AlignVCenter)
 
             fmtstr = '%.1f' if self.aw.qmc.LCDdecimalplaces else '%.0f'
 
             etline = QTableWidgetItem(fmtstr%(self.aw.qmc.temp1B[self.aw.qmc.backgroundEvents[i]]) + self.aw.qmc.mode)
-            etline.setTextAlignment(Qt.AlignmentFlag.AlignRight + Qt.AlignmentFlag.AlignVCenter)
+            etline.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
             btline = QTableWidgetItem(fmtstr%(self.aw.qmc.temp2B[self.aw.qmc.backgroundEvents[i]]) + self.aw.qmc.mode)
-            btline.setTextAlignment(Qt.AlignmentFlag.AlignRight + Qt.AlignmentFlag.AlignVCenter)
+            btline.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
             description = QTableWidgetItem(self.aw.qmc.backgroundEStrings[i])
             etype = QTableWidgetItem(self.aw.qmc.Betypesf(self.aw.qmc.backgroundEtypes[i]))
             evalue = QTableWidgetItem(self.aw.qmc.eventsvalues(self.aw.qmc.backgroundEvalues[i]))
-            evalue.setTextAlignment(Qt.AlignmentFlag.AlignRight + Qt.AlignmentFlag.AlignVCenter)
+            evalue.setTextAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             #add widgets to the table
             self.eventtable.setItem(i,0,timez)
             self.eventtable.setItem(i,1,etline)
@@ -802,21 +810,23 @@ class backgroundDlg(ArtisanResizeablDialog):
             self.eventtable.setItem(i,3,description)
             self.eventtable.setItem(i,4,etype)
             self.eventtable.setItem(i,5,evalue)
-        # improve width of Time column
-        self.eventtable.setColumnWidth(1,175)
         header: Optional[QHeaderView] = self.eventtable.horizontalHeader()
         if header is not None:
+            #header.setStretchLastSection(True)
             header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
             header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
             header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
             header.setSectionResizeMode(3, QHeaderView.ResizeMode.Stretch)
-            header.setSectionResizeMode(4, QHeaderView.ResizeMode.Fixed)
+            header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
             header.setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)
-        self.eventtable.resizeColumnsToContents()
+        # set width of temp / time columns
+        self.eventtable.setColumnWidth(0,60)
         self.eventtable.setColumnWidth(1,65)
         self.eventtable.setColumnWidth(2,65)
+        self.eventtable.setColumnWidth(5,55)
 
-    def createDataTable(self):
+
+    def createDataTable(self) -> None:
         try:
             #### lock shared resources #####
             self.aw.qmc.profileDataSemaphore.acquire(1)
@@ -862,7 +872,6 @@ class backgroundDlg(ArtisanResizeablDialog):
                     else:
                         headers.append(self.aw.qmc.extraname2B[n4])
 
-            headers.append('') # dummy column that stretches
             self.datatable.setColumnCount(len(headers))
             self.datatable.setHorizontalHeaderLabels(headers)
             self.datatable.setAlternatingRowColors(True)
@@ -942,17 +951,17 @@ class backgroundDlg(ArtisanResizeablDialog):
 
                 if xtcurve and n3 is not None and len(self.aw.qmc.temp1BX[n3]) > i: # an XT column is available, fill it with data
                     if self.aw.qmc.xtcurveidx % 2:
-                        XT = QTableWidgetItem(f'{self.aw.qmc.temp1BX[n3][i]}:.0f')
+                        XT = QTableWidgetItem(f'{self.aw.qmc.temp1BX[n3][i]:.0f}')
                     else:
-                        XT = QTableWidgetItem(f'{self.aw.qmc.temp2BX[n3][i]}:.0f')
+                        XT = QTableWidgetItem(f'{self.aw.qmc.temp2BX[n3][i]:.0f}')
                     XT.setTextAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignVCenter)
                     self.datatable.setItem(i,5,XT)
 
                 if ytcurve and n4 is not None and len(self.aw.qmc.temp1BX[n4]) > i: # an YT column is available, fill it with data
                     if self.aw.qmc.ytcurveidx % 2:
-                        YT = QTableWidgetItem(f'{self.aw.qmc.temp1BX[n4][i]}:.0f')
+                        YT = QTableWidgetItem(f'{self.aw.qmc.temp1BX[n4][i]:.0f}')
                     else:
-                        YT = QTableWidgetItem(f'{self.aw.qmc.temp2BX[n4][i]}:.0f')
+                        YT = QTableWidgetItem(f'{self.aw.qmc.temp2BX[n4][i]:.0f}')
                     YT.setTextAlignment(Qt.AlignmentFlag.AlignRight|Qt.AlignmentFlag.AlignVCenter)
                     if xtcurve:
                         self.datatable.setItem(i,6,YT)
@@ -961,33 +970,23 @@ class backgroundDlg(ArtisanResizeablDialog):
 
             header: Optional[QHeaderView] = self.datatable.horizontalHeader()
             if header is not None:
-                header.setSectionResizeMode(0, QHeaderView.ResizeMode.Fixed)
-                header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
-                header.setSectionResizeMode(2, QHeaderView.ResizeMode.Fixed)
-                header.setSectionResizeMode(3, QHeaderView.ResizeMode.Fixed)
-                header.setSectionResizeMode(4, QHeaderView.ResizeMode.Fixed)
-                if (xtcurve and not ytcurve) or (ytcurve and not xtcurve):
-                    header.setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)
-                    header.setSectionResizeMode(6, QHeaderView.ResizeMode.Stretch)
-                elif xtcurve and ytcurve:
-                    header.setSectionResizeMode(5, QHeaderView.ResizeMode.Fixed)
-                    header.setSectionResizeMode(6, QHeaderView.ResizeMode.Fixed)
-                    header.setSectionResizeMode(7, QHeaderView.ResizeMode.Stretch)
-                else:
-                    header.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
-            self.datatable.resizeColumnsToContents()
+                self.datatable.resizeColumnsToContents()
+                for i in range(1, len(headers)):
+                    header.setSectionResizeMode(i, QHeaderView.ResizeMode.Fixed)
+                    header.resizeSection(i, max(header.sectionSize(i) + 5, 65))
+
         finally:
             if self.aw.qmc.profileDataSemaphore.available() < 1:
                 self.aw.qmc.profileDataSemaphore.release(1)
 
     @pyqtSlot(bool)
-    def copyDataTabletoClipboard(self,_=False):
+    def copyDataTabletoClipboard(self, _:bool = False) -> None:
         self.datatable.selectAll()
         self.aw.copy_cells_to_clipboard(self.datatable,adjustment=7)
         self.datatable.clearSelection()
         self.aw.sendmessage(QApplication.translate('Message','Data table copied to clipboard'))
 
     @pyqtSlot(bool)
-    def copyEventTabletoClipboard(self,_=False):
+    def copyEventTabletoClipboard(self, _:bool = False) -> None:
         self.aw.copy_cells_to_clipboard(self.eventtable,adjustment=0)
         self.aw.sendmessage(QApplication.translate('Message','Event table copied to clipboard'))

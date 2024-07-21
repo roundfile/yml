@@ -29,13 +29,12 @@
 import time as libtime
 import numpy
 import logging
-from typing import Union, List, Dict, Optional, TYPE_CHECKING
-from typing import Final  # Python <=3.7
+from typing import Final, Union, List, Dict, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # pylint: disable=unused-import
 
-from artisanlib.util import decs2string, fromCtoFstrict, fromFtoCstrict, hex2int, str2cmd, stringfromseconds, cmd2str
+from artisanlib.util import decs2string, fromCtoFstrict, fromFtoCstrict, hex2int, str2cmd, stringfromseconds, cmd2str, float2float
 
 try:
     from PyQt6.QtCore import pyqtSlot # @UnusedImport @Reimport  @UnresolvedImport
@@ -285,7 +284,7 @@ class FujiPID:
                 self.PXF[k] = [self.PXF[k][0]+1000]
 
     #writes new values for p - i - d
-    def setpidPXG(self,k,newPvalue,newIvalue,newDvalue):
+    def setpidPXG(self, k:int, newPvalue:float, newIvalue:float, newDvalue:float) -> None:
         if k is not None and k > 0:
             #send command to the right sv
             pkey = 'p' + str(k)
@@ -330,7 +329,7 @@ class FujiPID:
                 self.aw.qmc.adderror(message)
 
     #writes new values for p - i - d
-    def setpidPXF(self,k,newPvalue,newIvalue,newDvalue):
+    def setpidPXF(self, k:int, newPvalue:float, newIvalue:float, newDvalue:float) -> None:
         if k is not None and k > 0:
             #send command to the right sv
             pkey = 'p' + str(k)
@@ -401,27 +400,33 @@ class FujiPID:
                 self.aw.fujipid.PXF['rampsoakmode'][0] = currentmode
         return currentmode
 
-    def getCurrentPIDnumberPXG(self):
+    def getCurrentPIDnumberPXG(self) -> int:
+        N:int = -1
         if self.aw.ser.useModbusPort:
             reg = self.aw.modbus.address2register(self.aw.fujipid.PXG4['selectedpid'][1],3)
-            N = self.aw.modbus.readSingleRegister(self.aw.ser.controlETpid[1],reg,3)
+            Nr = self.aw.modbus.readSingleRegister(self.aw.ser.controlETpid[1],reg,3)
+            if Nr is None:
+                N = -1
         else:
             command = self.aw.fujipid.message2send(self.aw.ser.controlETpid[1],3,int(self.aw.fujipid.PXG4['selectedpid'][1]),1)
             N = self.aw.fujipid.readoneword(command)
         libtime.sleep(0.035)
         return N
 
-    def getCurrentPIDnumberPXF(self):
+    def getCurrentPIDnumberPXF(self) -> int:
+        N:int = -1
         if self.aw.ser.useModbusPort:
             reg = self.aw.modbus.address2register(self.aw.fujipid.PXF['selectedpid'][1],3)
-            N = self.aw.modbus.readSingleRegister(self.aw.ser.controlETpid[1],reg,3)
+            Nr = self.aw.modbus.readSingleRegister(self.aw.ser.controlETpid[1],reg,3)
+            if Nr is None:
+                N = -1
         else:
             command = self.aw.fujipid.message2send(self.aw.ser.controlETpid[1],3,int(self.aw.fujipid.PXF['selectedpid'][1]),1)
             N = self.aw.fujipid.readoneword(command)
         libtime.sleep(0.035)
         return N
 
-    def setpidPXR(self,var,v):
+    def setpidPXR(self, var:str, v:float) -> None:
         r = b''
         if var == 'p':
             p = int(v*10)
@@ -465,7 +470,7 @@ class FujiPID:
             self.aw.sendmessage(message)
             self.aw.qmc.adderror(message)
 
-    def calcSV(self,tx):
+    def calcSV(self, tx:float) -> Optional[float]:
         if self.aw.qmc.background:
             # Follow Background mode
             if self.aw.qmc.swapETBT: # we observe the BT
@@ -483,7 +488,7 @@ class FujiPID:
     #This function reads read-only memory (with 3xxxx memory we need function=4)
     #both PXR3 and PXG4 use the same memory location 31001 (3xxxx = read only)
     # pidType: 0=PXG, 1=PXR, 2=None, 3=DTA, 4=PXF (here we support only 0, 1 and 4 for now)
-    def gettemperature(self, pidType, stationNo):
+    def gettemperature(self, pidType:int, stationNo:int) -> Optional[int]:
         reg: int
         if pidType == 0:
             reg = int(self.PXG4['pv?'][1])
@@ -500,10 +505,10 @@ class FujiPID:
         return self.readoneword(self.message2send(stationNo,4,reg,1))
 
     # activates the SV slider
-    def activateONOFFsliderSV(self,flag):
+    def activateONOFFsliderSV(self, flag:bool) -> None:
         self.aw.pidcontrol.activateSVSlider(flag)
 
-    def readcurrentsv(self):
+    def readcurrentsv(self) -> float:
         val:float = -0.1
         if self.aw.ser.useModbusPort:
             reg:Optional[int] = None
@@ -538,7 +543,7 @@ class FujiPID:
         return -1
 
     # returns Fuji duty signal in the range 0-100 or -1
-    def readdutycycle(self):
+    def readdutycycle(self) -> float:
         v = None
         if self.aw.ser.useModbusPort:
             reg = None
@@ -605,7 +610,7 @@ class FujiPID:
         return currentmode
 
     # returns True on success and Fails otherwise
-    def setrampsoakmode(self,mode):
+    def setrampsoakmode(self, mode:int) -> bool:
         register: int
         if self.aw.ser.controlETpid[0] == 0: #Fuji PXG
             register = int(self.PXG4['rampsoakpattern'][1])
@@ -614,7 +619,7 @@ class FujiPID:
         elif self.aw.ser.controlETpid[0] == 4: #Fuji PXF
             register = int(self.PXF['rampsoakpattern'][1])
         else:
-            return 0
+            return False
         if self.aw.ser.useModbusPort:
             reg = self.aw.modbus.address2register(register,3)
             self.aw.modbus.writeSingleRegister(self.aw.ser.controlETpid[1],reg,mode)
@@ -636,7 +641,7 @@ class FujiPID:
     #flag =0 OFF, flag = 1 ON, flag = 2 hold
     #A ramp soak pattern defines a whole profile. They have a minimum of 4 segments.
     # returns True on success, False otherwise
-    def setrampsoak(self,flag):
+    def setrampsoak(self, flag:int) -> bool:
         register:Optional[int] = None
         if self.aw.ser.controlETpid[0] == 0: #Fuji PXG
             register = int(self.PXG4['rampsoak'][1])
@@ -676,7 +681,7 @@ class FujiPID:
         return False
 
     # returns True on success, False otherwise
-    def setONOFFstandby(self,flag):
+    def setONOFFstandby(self, flag:int) -> bool:
         _log.debug('setONOFFstandby(%s)',flag)
         #flag = 0 standby OFF, flag = 1 standby ON (pid off)
         #standby ON (pid off) will reset: rampsoak modes/autotuning/self tuning
@@ -689,7 +694,7 @@ class FujiPID:
         elif self.aw.ser.controlETpid[0] == 4:
             register = int(self.aw.fujipid.PXF['runstandby'][1])
         else:
-            return 0
+            return False
         r = None
         command = None
         if self.aw.ser.useModbusPort:
@@ -711,17 +716,17 @@ class FujiPID:
         self.aw.qmc.adderror(mssg)
         return False
 
-    def getONOFFstandby(self):
+    def getONOFFstandby(self) -> Optional[int]:
         if self.aw.ser.controlETpid[0] == 0:
-            return self.aw.fujipid.PXG4['runstandby'][0]
+            return int(self.aw.fujipid.PXG4['runstandby'][0])
         if self.aw.ser.controlETpid[0] == 1:
-            return self.aw.fujipid.PXR['runstandby'][0]
+            return int(self.aw.fujipid.PXR['runstandby'][0])
         if self.aw.ser.controlETpid[0] == 4:
-            return self.aw.fujipid.PXF['runstandby'][0]
+            return int(self.aw.fujipid.PXF['runstandby'][0])
         return None
 
     #sets a new sv value (if silent=False, no output nor event recording is done, if move is True the SV slider is moved)
-    def setsv(self,value,silent=False,move=True):
+    def setsv(self, value:float, silent:bool = False, move:bool = True) -> None:
         command = b''
         #Fuji PXG / PXF
         if self.aw.ser.controlETpid[0] in {0, 4}:  # Fuji PXG or PXF
@@ -760,7 +765,7 @@ class FujiPID:
             if self.aw.ser.useModbusPort or (r is not None and r == command):
                 if not silent:
                     # [Not sure the following will translate or even format properly... Need testing!]
-                    message = QApplication.translate('Message','PXG/PXF sv#{0} set to {1}').format(reg_dict['selectsv'][0],'%.1f' % float(value)) # pylint: disable=consider-using-f-string
+                    message = QApplication.translate('Message','PXG/PXF sv#{0} set to {1}').format(reg_dict['selectsv'][0],'%.1f' % float(value)) # pylint: disable=consider-using-f-string # noqa: UP031
                     self.aw.sendmessage(message)
                     reg_dict[svkey][0] = value
                     #record command as an Event
@@ -789,7 +794,7 @@ class FujiPID:
             if self.aw.ser.useModbusPort or (r is not None and r == command):
                 if not silent:
                     # [Not sure the following will translate or even format properly... Need testing!]
-                    message = QApplication.translate('Message','PXR sv set to {0}').format('%.1f' % float(value)) # pylint: disable=consider-using-f-string
+                    message = QApplication.translate('Message','PXR sv set to {0}').format('%.1f' % float(value)) # pylint: disable=consider-using-f-string # noqa: UP031
                     self.aw.fujipid.PXR['sv0'][0] = value
                     self.aw.sendmessage(message)
                     #record command as an Event
@@ -802,7 +807,7 @@ class FujiPID:
                 self.aw.qmc.adderror(QApplication.translate('Error Message','Exception:') + ' setPXRsv()')
 
     #used to set up or down SV by diff degrees from current sv setting; if move is True the SV slider is moved
-    def adjustsv(self,diff,move=True):
+    def adjustsv(self, diff:float, move:bool = True) -> None:
         currentsv = self.readcurrentsv()
         if currentsv != -1:
             newsv = int((currentsv + diff)*10.)          #multiply by 10 because we use a decimal point
@@ -875,7 +880,7 @@ class FujiPID:
             self.aw.sendmessage(QApplication.translate('Message','Unable to set new sv'))
 
     #format of the input string Command: COMMAND::VALUE1::VALUE2::VALUE3::ETC
-    def replay(self,CommandString):
+    def replay(self, CommandString:str) -> None:
         parts = CommandString.split('::')
         command = parts[0]
         values = parts[1:]
@@ -887,7 +892,7 @@ class FujiPID:
 
     #example of command string with four segments (minimum for Fuji PIDs)
     # SETRS::270.0::3::0::SETRS::300.0::3::0::SETRS::350.0::3::0::SETRS::400.0::3::0
-    def replaysetrs(self,CommandString):
+    def replaysetrs(self, CommandString:str) -> None:
         segments =CommandString.split('SETRS')
         if len(segments[0]) == 0:
             segments = segments[1:]          #remove first empty [""] list [[""],[etc]]
@@ -952,7 +957,7 @@ class FujiPID:
         #start ramp soak ON
         self.setrampsoak(1)
 
-    def getsegment(self, idn):
+    def getsegment(self, idn:int) -> int:
         if self.aw.ser.controlETpid[0] == 0:
             reg_dict = self.PXG4
         elif self.aw.ser.controlETpid[0] == 1:
@@ -960,7 +965,7 @@ class FujiPID:
         elif self.aw.ser.controlETpid[0] == 4:
             reg_dict = self.PXF
         else:
-            return
+            return -1
         svkey = 'segment' + str(idn) + 'sv'
         register = int(reg_dict[svkey][1])
         if self.aw.ser.useModbusPort:
@@ -970,7 +975,7 @@ class FujiPID:
             svcommand = self.aw.fujipid.message2send(self.aw.ser.controlETpid[1],3,register,1)
             sv = self.aw.fujipid.readoneword(svcommand)
         if sv is None or sv == -1:
-            return
+            return -1
         reg_dict[svkey][0] = sv/10.              #divide by 10 because the decimal point is not sent by the PID
 
         rampkey = 'segment' + str(idn) + 'ramp'
@@ -983,7 +988,7 @@ class FujiPID:
             ramp = self.aw.fujipid.readoneword(rampcommand)
 
         if ramp is None or ramp == -1:
-            return
+            return -1
         reg_dict[rampkey][0] = ramp
 
         soakkey = 'segment' + str(idn) + 'soak'
@@ -995,13 +1000,14 @@ class FujiPID:
             soakcommand = self.aw.fujipid.message2send(self.aw.ser.controlETpid[1],3,register,1)
             soak = self.aw.fujipid.readoneword(soakcommand)
         if soak is None or soak == -1:
-            return
+            return -1
         reg_dict[soakkey][0] = soak
+        return 0
 
 
     #idn = id number, sv = float set value, ramp = ramp value, soak = soak value
     #used in replaysetrs()
-    def setsegment(self,idn,sv,ramp,soak):
+    def setsegment(self, idn:int, sv:float, ramp:float, soak:float) -> None:
         svkey = 'segment' + str(idn) + 'sv'
         rampkey = 'segment' + str(idn) + 'ramp'
         soakkey = 'segment' + str(idn) + 'soak'
@@ -1025,12 +1031,12 @@ class FujiPID:
         else:
             if self.aw.ser.controlETpid[0] == 0:
                 svcommand = self.message2send(self.aw.ser.controlETpid[1],6,int(self.PXG4[svkey][1]),int(sv*10))
-                rampcommand = self.message2send(self.aw.ser.controlETpid[1],6,int(self.PXG4[rampkey][1]),ramp)
-                soakcommand = self.message2send(self.aw.ser.controlETpid[1],6,int(self.PXG4[soakkey][1]),soak)
+                rampcommand = self.message2send(self.aw.ser.controlETpid[1],6,int(self.PXG4[rampkey][1]),int(round(ramp)))
+                soakcommand = self.message2send(self.aw.ser.controlETpid[1],6,int(self.PXG4[soakkey][1]),int(round(soak)))
             elif self.aw.ser.controlETpid[0] == 1:
                 svcommand = self.message2send(self.aw.ser.controlETpid[1],6,int(self.PXR[svkey][1]),int(sv*10))
-                rampcommand = self.message2send(self.aw.ser.controlETpid[1],6,int(self.PXR[rampkey][1]),ramp)
-                soakcommand = self.message2send(self.aw.ser.controlETpid[1],6,int(self.PXR[soakkey][1]),soak)
+                rampcommand = self.message2send(self.aw.ser.controlETpid[1],6,int(self.PXR[rampkey][1]),int(round(ramp)))
+                soakcommand = self.message2send(self.aw.ser.controlETpid[1],6,int(self.PXR[soakkey][1]),int(round(soak)))
             else:
                 return
             r1 = self.aw.ser.sendFUJIcommand(svcommand,8)
@@ -1083,7 +1089,7 @@ class FujiPID:
         return datastring + part5
 
     #input string command. Output integer (not binary string); used for example to read temperature or to obtain the value of a variable
-    def readoneword(self,command):
+    def readoneword(self, command:bytes) -> int:
         #takes an already formatted command to read 1 word data and returns the response from the pid
         #SEND command and RECEIVE 7 bytes back
         r = self.aw.ser.sendFUJIcommand(command,7)
@@ -1097,7 +1103,7 @@ class FujiPID:
 
     #FUJICRC16 function calculates the CRC16 of the data. It expects a binary string as input and returns an int
     @staticmethod
-    def fujiCrc16(string):
+    def fujiCrc16(string:bytes) -> int:
         crc16tab = (0x0000,
                     0xC0C1, 0xC181, 0x0140, 0xC301, 0x03C0, 0x0280, 0xC241, 0xC601, 0x06C0, 0x0780, 0xC741, 0x0500, 0xC5C1, 0xC481, 0x0440,
                     0xCC01, 0x0CC0, 0x0D80, 0xCD41, 0x0F00, 0xCFC1, 0xCE81, 0x0E40, 0x0A00, 0xCAC1, 0xCB81, 0x0B40, 0xC901, 0x09C0, 0x0880,
@@ -1128,19 +1134,21 @@ class FujiPID:
 ###################################################################################
 
 class PIDcontrol:
-    __slots__ = [ 'aw', 'pidActive', 'sv', 'pidOnCHARGE', 'createEvents', 'loadRampSoakFromProfile', 'loadRampSoakFromBackground', 'svLen', 'svLabel',
+    __slots__ = [ 'aw', 'pidActive', 'sv', 'pidOnCHARGE', 'loadpidfrombackground', 'createEvents', 'loadRampSoakFromProfile', 'loadRampSoakFromBackground', 'svLen', 'svLabel',
             'svValues', 'svRamps', 'svSoaks', 'svActions', 'svBeeps', 'svDescriptions','svTriggeredAlarms', 'RSLen', 'RS_svLabels', 'RS_svValues', 'RS_svRamps', 'RS_svSoaks',
             'RS_svActions', 'RS_svBeeps', 'RS_svDescriptions', 'svSlider', 'svButtons', 'svMode', 'svLookahead', 'dutySteps', 'svSliderMin', 'svSliderMax', 'svValue',
             'dutyMin', 'dutyMax', 'pidKp', 'pidKi', 'pidKd', 'pOnE', 'pidSource', 'pidCycle', 'pidPositiveTarget', 'pidNegativeTarget', 'invertControl',
             'sv_smoothing_factor', 'sv_decay_weights', 'previous_svs', 'time_pidON', 'current_ramp_segment',  'current_soak_segment', 'ramp_soak_engaged',
-            'RS_total_time', 'slider_force_move' ]
+            'RS_total_time', 'slider_force_move', 'positiveTargetRangeLimit', 'positiveTargetMin', 'positiveTargetMax', 'negativeTargetRangeLimit',
+            'negativeTargetMin', 'negativeTargetMax', 'derivative_filter']
 
     def __init__(self, aw:'ApplicationWindow') -> None:
-        self.aw:'ApplicationWindow' = aw
+        self.aw:ApplicationWindow = aw
         self.pidActive:bool = False
         self.sv:Optional[float] = None # the last sv send to the Arduino
         #
         self.pidOnCHARGE:bool = False
+        self.loadpidfrombackground = False # if True, p-i-d parameters pidKp, pidKi, pidKd, pidSource, pOnE and svLookahead are set from the background profile
         self.createEvents:bool = False
         self.loadRampSoakFromProfile:bool = False
         self.loadRampSoakFromBackground:bool = False
@@ -1168,12 +1176,19 @@ class PIDcontrol:
         self.svButtons:bool = False
         self.svMode:int = 0 # 0: manual, 1: Ramp/Soak, 2: Follow (background profile)
         self.svLookahead:int = 0
-        self.dutySteps:int = 1
         self.svSliderMin:int = 0
         self.svSliderMax:int = 230
         self.svValue:float = 180 # the value in the setSV textinput box of the PID dialog
+        self.dutySteps:int = 1
         self.dutyMin:int = -100
         self.dutyMax:int = 100
+        self.positiveTargetRangeLimit:bool = False # if True the duty is mapped to the target slider subrange [positiveTargetMin, positiveTargetMax]
+        self.positiveTargetMin:int = 0
+        self.positiveTargetMax:int = 100
+        self.negativeTargetRangeLimit:bool = False # if True the duty is mapped to the target slider subrange [negativeTargetMin, negativeTargetMax]
+        self.negativeTargetMin:int = 0
+        self.negativeTargetMax:int = 100
+        self.derivative_filter:int = 0 # 0: off, 1: on
         self.pidKp:float = 15.0
         self.pidKi:float = 0.01
         self.pidKd:float = 20.0
@@ -1230,19 +1245,31 @@ class PIDcontrol:
     # v is from [-min,max]
     def setEnergy(self, v:float) -> None:
         try:
-            if self.aw.pidcontrol.pidPositiveTarget:
-                slidernr = self.aw.pidcontrol.pidPositiveTarget - 1
-                vp = min(100,max(0,int(round(abs(100 - v) if self.aw.pidcontrol.invertControl else v))))
+            # if invertControl we invert min/max to max/min
+            vx = float(numpy.interp(v,[self.dutyMin,self.dutyMax],[self.dutyMax,self.dutyMin]) if self.invertControl else v)
+            if self.pidPositiveTarget:
+                slidernr = self.pidPositiveTarget - 1
                 # we need to map the duty [0%,100%] to the [slidermin,slidermax] range
-                heat = int(round(float(numpy.interp(vp,[0,100],[self.aw.eventslidermin[slidernr],self.aw.eventslidermax[slidernr]]))))
+                # NOTE: numpy.interp(v, [min_in,max_in], [min_out, max_out]) never results in values outside of [min_out, max_out]
+                slider_min = self.aw.eventslidermin[slidernr]
+                slider_max = self.aw.eventslidermax[slidernr]
+                # assumption: if self.positiveTargetRangeLimit then slider_min < self.positiveTargetMin < self.positiveTargetMax < slider_max
+                heat_min = (max(self.positiveTargetMin, slider_min) if self.positiveTargetRangeLimit else slider_min)
+                heat_max = (min(self.positiveTargetMax, slider_max) if self.positiveTargetRangeLimit else slider_max)
+                heat = int(round(float(numpy.interp(vx,[0,100],[heat_min,heat_max]))))
                 heat = self.aw.applySliderStepSize(slidernr, heat) # quantify by slider step size
                 self.aw.addEventSignal.emit(heat,slidernr,self.createEvents,True,self.slider_force_move)
                 self.aw.qmc.slider_force_move = False
-            if self.aw.pidcontrol.pidNegativeTarget:
-                slidernr = self.aw.pidcontrol.pidNegativeTarget - 1
-                vn = min(0,max(-100,int(round(0 - v if self.aw.pidcontrol.invertControl else v))))
+            if self.pidNegativeTarget:
+                slidernr = self.pidNegativeTarget - 1
                 # we need to map the duty [0%,-100%] to the [slidermin,slidermax] range
-                cool = int(round(float(numpy.interp(vn,[-100,0],[self.aw.eventslidermax[slidernr],self.aw.eventslidermin[slidernr]]))))
+                # NOTE: numpy.interp(v, [min_in,max_in], [min_out, max_out]) never results in values outside of [min_out, max_out]
+                slider_min = self.aw.eventslidermin[slidernr]
+                slider_max = self.aw.eventslidermax[slidernr]
+                # assumption: if self.positiveTargetRangeLimit then slider_min < self.positiveTargetMin < self.positiveTargetMax < slider_max
+                cool_min = (max(self.negativeTargetMin, slider_min) if self.negativeTargetRangeLimit else slider_min)
+                cool_max = (min(self.negativeTargetMax, slider_max) if self.negativeTargetRangeLimit else slider_max)
+                cool = int(round(float(numpy.interp(vx,[-100,0],[cool_max,cool_min]))))
                 cool = self.aw.applySliderStepSize(slidernr, cool) # quantify by slider step size
                 self.aw.addEventSignal.emit(cool,slidernr,self.createEvents,True,self.slider_force_move)
                 self.slider_force_move = False
@@ -1252,9 +1279,9 @@ class PIDcontrol:
     def conv2celsius(self) -> None:
         try:
             self.aw.qmc.rampSoakSemaphore.acquire(1)
-            self.svValue = int(round(fromFtoCstrict(self.svValue)))
-            self.svSliderMin = int(round(fromFtoCstrict(self.svSliderMin)))
-            self.svSliderMax = int(round(fromFtoCstrict(self.svSliderMax)))
+            self.svValue = (0 if self.svValue == 0 else max(0, int(round(fromFtoCstrict(self.svValue)))))
+            self.svSliderMin = (0 if self.svSliderMin == 0 else max(0, min(999, int(round(fromFtoCstrict(self.svSliderMin))))))
+            self.svSliderMax = (0 if self.svSliderMax == 0 else max(0, min(999, int(round(fromFtoCstrict(self.svSliderMax))))))
             # establish ne limits on sliders
             self.aw.sliderSV.setMinimum(self.svSliderMin)
             self.aw.sliderSV.setMaximum(self.svSliderMax)
@@ -1278,9 +1305,9 @@ class PIDcontrol:
     def conv2fahrenheit(self) -> None:
         try:
             self.aw.qmc.rampSoakSemaphore.acquire(1)
-            self.svValue = fromCtoFstrict(self.svValue)
-            self.svSliderMin = int(round(fromCtoFstrict(self.svSliderMin)))
-            self.svSliderMax = int(round(fromCtoFstrict(self.svSliderMax)))
+            self.svValue = (0 if self.svValue == 0 else max(0, fromCtoFstrict(self.svValue)))
+            self.svSliderMin = (0 if self.svSliderMin == 0 else max(0, min(999, int(round(fromCtoFstrict(self.svSliderMin))))))
+            self.svSliderMax = (0 if self.svSliderMax == 0 else max(0, min(999, int(round(fromCtoFstrict(self.svSliderMax))))))
             # establish ne limits on sliders
             self.aw.sliderSV.setMinimum(int(round(self.svSliderMin)))
             self.aw.sliderSV.setMaximum(int(round(self.svSliderMax)))
@@ -1326,16 +1353,17 @@ class PIDcontrol:
 
     # the internal software PID should be configured on ON, but not be activated yet to warm it up
     def confSoftwarePID(self) -> None:
-        if self.aw.pidcontrol.externalPIDControl() not in [1, 2, 4] and not(self.aw.qmc.device == 19 and self.aw.qmc.PIDbuttonflag) and self.aw.qmc.Controlbuttonflag:
+        if self.externalPIDControl() not in [1, 2, 4] and not(self.aw.qmc.device == 19 and self.aw.qmc.PIDbuttonflag) and self.aw.qmc.Controlbuttonflag:
             # software PID
             self.aw.qmc.pid.setPID(self.pidKp,self.pidKi,self.pidKd,self.pOnE)
-            self.aw.qmc.pid.setLimits((-100 if self.aw.pidcontrol.pidNegativeTarget else 0),(100 if self.aw.pidcontrol.pidPositiveTarget else 0))
-            self.aw.qmc.pid.setDutySteps(self.aw.pidcontrol.dutySteps)
-            self.aw.qmc.pid.setDutyMin(self.aw.pidcontrol.dutyMin)
-            self.aw.qmc.pid.setDutyMax(self.aw.pidcontrol.dutyMax)
-            self.aw.qmc.pid.setControl(self.aw.pidcontrol.setEnergy)
-            if self.aw.pidcontrol.svMode == 0:
-                self.aw.pidcontrol.setSV(self.aw.sliderSV.value())
+            self.aw.qmc.pid.setLimits((-100 if self.pidNegativeTarget else 0),(100 if self.pidPositiveTarget else 0))
+            self.aw.qmc.pid.setDutySteps(self.dutySteps)
+            self.aw.qmc.pid.setDutyMin(self.dutyMin)
+            self.aw.qmc.pid.setDutyMax(self.dutyMax)
+            self.aw.qmc.pid.setControl(self.setEnergy)
+            self.aw.qmc.pid.setDerivativeFilterLevel(self.derivative_filter)
+            if self.svMode == 0:
+                self.setSV(self.aw.sliderSV.value())
 
     # if send_command is False, the pidOn command is not forwarded to the external PID (TC4, Kaleido, ..)
     def pidOn(self, send_command:bool = True) -> None:
@@ -1347,24 +1375,24 @@ class PIDcontrol:
             self.slider_force_move = True
             # TC4 hardware PID
             # MODBUS hardware PID
-            if (self.aw.pidcontrol.externalPIDControl() == 1 and self.aw.modbus.PID_ON_action and self.aw.modbus.PID_ON_action != ''):
+            if (self.externalPIDControl() == 1 and self.aw.modbus.PID_ON_action and self.aw.modbus.PID_ON_action != ''):
                 self.aw.eventaction(4,self.aw.modbus.PID_ON_action)
                 self.pidActive = True
                 self.aw.buttonCONTROL.setStyleSheet(self.aw.pushbuttonstyles['PIDactive'])
             # S7 hardware PID
-            elif (self.aw.pidcontrol.externalPIDControl() == 2 and self.aw.s7.PID_ON_action and self.aw.s7.PID_ON_action != ''):
+            elif (self.externalPIDControl() == 2 and self.aw.s7.PID_ON_action and self.aw.s7.PID_ON_action != ''):
                 self.aw.eventaction(15,self.aw.s7.PID_ON_action)
                 self.pidActive = True
                 self.aw.buttonCONTROL.setStyleSheet(self.aw.pushbuttonstyles['PIDactive'])
             elif self.aw.qmc.device == 19 and self.aw.qmc.PIDbuttonflag: # ArduinoTC4 firmware PID
                 if send_command and self.aw.ser.ArduinoIsInitialized:
-                    self.confPID(self.pidKp,self.pidKi,self.pidKd,self.pidSource,self.pidCycle,self.aw.pidcontrol.pOnE) # first configure PID according to the actual settings
+                    self.confPID(self.pidKp,self.pidKi,self.pidKd,self.pidSource,self.pidCycle,self.pOnE) # first configure PID according to the actual settings
                     try:
                         #### lock shared resources #####
                         self.aw.ser.COMsemaphore.acquire(1)
                         if self.aw.ser.SP.is_open:
-                            duty_min = min(100,max(0,self.aw.pidcontrol.dutyMin))
-                            duty_max = min(100,max(0,self.aw.pidcontrol.dutyMax))
+                            duty_min = min(100,max(0,self.dutyMin))
+                            duty_max = min(100,max(0,self.dutyMax))
                             self.aw.ser.SP.write(str2cmd('PID;LIMIT;' + str(duty_min) + ';' + str(duty_max) + '\n'))
                             self.aw.ser.SP.write(str2cmd('PID;ON\n'))
                             self.pidActive = True
@@ -1383,13 +1411,14 @@ class PIDcontrol:
             elif self.aw.qmc.Controlbuttonflag:
                 # software PID
                 self.aw.qmc.pid.setPID(self.pidKp,self.pidKi,self.pidKd,self.pOnE)
-                self.aw.qmc.pid.setLimits((-100 if self.aw.pidcontrol.pidNegativeTarget else 0),(100 if self.aw.pidcontrol.pidPositiveTarget else 0))
-                self.aw.qmc.pid.setDutySteps(self.aw.pidcontrol.dutySteps)
-                self.aw.qmc.pid.setDutyMin(self.aw.pidcontrol.dutyMin)
-                self.aw.qmc.pid.setDutyMax(self.aw.pidcontrol.dutyMax)
-                self.aw.qmc.pid.setControl(self.aw.pidcontrol.setEnergy)
-                if self.aw.pidcontrol.svMode == 0:
-                    self.aw.pidcontrol.setSV(self.aw.sliderSV.value())
+                self.aw.qmc.pid.setLimits((-100 if self.pidNegativeTarget else 0),(100 if self.pidPositiveTarget else 0))
+                self.aw.qmc.pid.setDutySteps(self.dutySteps)
+                self.aw.qmc.pid.setDutyMin(self.dutyMin)
+                self.aw.qmc.pid.setDutyMax(self.dutyMax)
+                self.aw.qmc.pid.setControl(self.setEnergy)
+                self.aw.qmc.pid.setDerivativeFilterLevel(self.derivative_filter)
+                if self.svMode == 0:
+                    self.setSV(self.aw.sliderSV.value())
                 self.pidActive = True
                 self.aw.qmc.pid.on()
                 self.aw.buttonCONTROL.setStyleSheet(self.aw.pushbuttonstyles['PIDactive'])
@@ -1404,13 +1433,13 @@ class PIDcontrol:
         if self.aw.qmc.flagon and not self.aw.qmc.flagstart:
             self.aw.qmc.setLCDtime(0)
         # MODBUS hardware PID
-        if (self.aw.pidcontrol.externalPIDControl() == 1 and self.aw.modbus.PID_OFF_action and self.aw.modbus.PID_OFF_action != ''):
+        if (self.externalPIDControl() == 1 and self.aw.modbus.PID_OFF_action and self.aw.modbus.PID_OFF_action != ''):
             self.aw.eventaction(4,self.aw.modbus.PID_OFF_action)
             if not self.aw.HottopControlActive:
                 self.aw.buttonCONTROL.setStyleSheet(self.aw.pushbuttonstyles['PID'])
             self.pidActive = False
         # S7 hardware PID
-        elif (self.aw.pidcontrol.externalPIDControl() == 2 and self.aw.s7.PID_OFF_action and self.aw.s7.PID_OFF_action != ''):
+        elif (self.externalPIDControl() == 2 and self.aw.s7.PID_OFF_action and self.aw.s7.PID_OFF_action != ''):
             self.aw.eventaction(15,self.aw.s7.PID_OFF_action)
             if not self.aw.HottopControlActive:
                 self.aw.buttonCONTROL.setStyleSheet(self.aw.pushbuttonstyles['PID'])
@@ -1531,7 +1560,7 @@ class PIDcontrol:
             return self.svRampSoak(tx - self.time_pidON)
         if self.svMode == 2 and self.aw.qmc.background:
             # Follow Background mode
-            if self.aw.qmc.device == 19 and self.aw.pidcontrol.externalPIDControl(): # in case we run TC4 with the PIDfirmware
+            if self.aw.qmc.device == 19 and self.externalPIDControl(): # in case we run TC4 with the PIDfirmware
                 if int(self.aw.ser.arduinoETChannel) == self.pidSource: # we observe the ET
                     followCurveNr = 2
                 elif int(self.aw.ser.arduinoBTChannel) == self.pidSource: # we observe the BT
@@ -1545,11 +1574,11 @@ class PIDcontrol:
             #  1: BT, 2: ET, 3: as 0xT1, 4: as 0xT2, 5: as 1xT1, ...
 
             if self.aw.qmc.timeindex[6] > 0: # after DROP, the SV configured in the dialog is returned (min/maxed)
-                return max(self.aw.pidcontrol.svSliderMin, min(self.aw.pidcontrol.svSliderMax, self.aw.pidcontrol.svValue))
+                return max(self.svSliderMin, min(self.svSliderMax, self.svValue))
             if self.aw.qmc.timeindex[0] < 0: # before CHARGE, the CHARGE temp of the background profile is returned
                 if self.aw.qmc.timeindexB[0] < 0:
                     # no CHARGE in background, return manual SV
-                    return max(self.aw.pidcontrol.svSliderMin,(min(self.aw.pidcontrol.svSliderMax,self.aw.pidcontrol.svValue)))
+                    return max(float(self.svSliderMin),(min(float(self.svSliderMax),self.svValue)))
                 # if background contains a CHARGE event
                 if followCurveNr == 1: # we observe the BT
                     res = self.aw.qmc.backgroundBTat(self.aw.qmc.timeB[self.aw.qmc.timeindexB[0]]) # approximated background
@@ -1580,31 +1609,31 @@ class PIDcontrol:
         return None
 
     def setDutySteps(self, dutySteps:int) -> None:
-        if self.aw.qmc.Controlbuttonflag and not self.aw.pidcontrol.externalPIDControl():
+        if self.aw.qmc.Controlbuttonflag and not self.externalPIDControl():
             self.aw.qmc.pid.setDutySteps(dutySteps)
 
 
     def setSV(self, sv:float, move:bool = True, init:bool = False) -> None:
 #        if not move:
 #            self.aw.sendmessage(QApplication.translate("Message","SV set to %s"%sv))
-        if self.aw.pidcontrol.externalPIDControl() == 1:
+        if self.externalPIDControl() == 1:
             # MODBUS PID and Control ticked
             self.sv = max(0,sv)
             if move:
                 self.aw.moveSVslider(sv,setValue=True)
             self.aw.modbus.setTarget(sv)
             self.sv = sv # remember last sv
-        elif self.aw.pidcontrol.externalPIDControl() == 2:
+        elif self.externalPIDControl() == 2:
             # S7 PID and Control ticked
             self.sv = max(0,sv)
             if move:
                 self.aw.moveSVslider(sv,setValue=True)
             self.aw.s7.setTarget(sv,self.aw.s7.SVmultiplier)
             self.sv = sv # remember last sv
-        elif self.aw.qmc.device == 19 and self.aw.pidcontrol.externalPIDControl():
+        elif self.aw.qmc.device == 19 and self.externalPIDControl():
             # ArduinoTC4 firmware PID
             if self.aw.ser.ArduinoIsInitialized:
-                sv = max(0,self.aw.float2float(sv,2))
+                sv = max(0,float2float(sv,2))
                 if self.sv != sv: # nothing to do (avoid loops via moveslider!)
                     if move:
                         self.aw.moveSVslider(sv,setValue=True) # only move the slider
@@ -1622,13 +1651,13 @@ class PIDcontrol:
                             self.aw.ser.COMsemaphore.release(1)
         elif self.externalPIDControl() == 4 and self.aw.kaleido is not None:
             # Kaleido PID
-            if move and self.aw.pidcontrol.svSlider:
+            if move and self.svSlider:
                 self.aw.moveSVslider(sv,setValue=True)
             self.aw.kaleido.setSV(sv)
             self.sv = sv # remember last sv
         elif self.aw.qmc.Controlbuttonflag:
             # in all other cases if the "Control" flag is ticked: software PID
-            if move and self.aw.pidcontrol.svSlider:
+            if move and self.svSlider:
                 self.aw.moveSVslider(sv,setValue=True)
             self.aw.qmc.pid.setTarget(sv,init=init)
             self.sv = sv # remember last sv
@@ -1675,10 +1704,10 @@ class PIDcontrol:
             self.aw.sliderSV.setMinimum(self.svSliderMin)
             self.aw.sliderSV.setMaximum(self.svSliderMax)
             # we set the SV slider/lcd to the last SV issues or the minimum
-            if self.aw.pidcontrol.sv is not None:
-                sv = self.aw.pidcontrol.sv
+            if self.sv is not None:
+                sv = self.sv
             else:
-                sv = min(self.svSliderMax, max(self.svSliderMin, self.aw.pidcontrol.svValue))
+                sv = min(self.svSliderMax, max(self.svSliderMin, self.svValue))
             sv = int(round(sv))
             self.aw.updateSVSliderLCD(sv)
             self.aw.sliderSV.setValue(sv)
@@ -1720,19 +1749,19 @@ class PIDcontrol:
 
     # send conf to connected PID
     def confPID(self, kp:float, ki:float, kd:float, source:Optional[int] = None, cycle:Optional[int] = None, pOnE:bool = True) -> None:
-        if self.aw.pidcontrol.externalPIDControl() == 1: # MODBUS (external) Control active
+        if self.externalPIDControl() == 1: # MODBUS (external) Control active
             self.aw.modbus.setPID(kp,ki,kd)
             self.pidKp = kp
             self.pidKi = ki
             self.pidKd = kd
             self.aw.sendmessage(QApplication.translate('Message','p-i-d values updated'))
-        elif self.aw.pidcontrol.externalPIDControl() == 2: # S7 (external) Control active
+        elif self.externalPIDControl() == 2: # S7 (external) Control active
             self.aw.s7.setPID(kp,ki,kd,self.aw.s7.PIDmultiplier)
             self.pidKp = kp
             self.pidKi = ki
             self.pidKd = kd
             self.aw.sendmessage(QApplication.translate('Message','p-i-d values updated'))
-        elif self.aw.qmc.device == 19 and self.aw.pidcontrol.externalPIDControl(): # ArduinoTC4 firmware PID
+        elif self.aw.qmc.device == 19 and self.externalPIDControl(): # ArduinoTC4 firmware PID
             self.pidKp = kp
             self.pidKi = ki
             self.pidKd = kd
@@ -1766,7 +1795,7 @@ class PIDcontrol:
             self.pidKi = ki
             self.pidKd = kd
             self.pOnE = pOnE
-            self.aw.qmc.pid.setLimits((-100 if self.aw.pidcontrol.pidNegativeTarget else 0),(100 if self.aw.pidcontrol.pidPositiveTarget else 0))
+            self.aw.qmc.pid.setLimits((-100 if self.pidNegativeTarget else 0),(100 if self.pidPositiveTarget else 0))
             if source is not None and source>0:
                 self.pidSource = source
             self.aw.sendmessage(QApplication.translate('Message','p-i-d values updated'))
@@ -1782,7 +1811,7 @@ class DtaPID:
 
         #refer to Delta instruction manual for more information
         #dictionary "KEY": [VALUE,ASCII_MEMORY_ADDRESS]  note: address contains hex alpha characters
-        self.dtamem={
+        self.dtamem:Dict[str,List[Union[int,float,str]]]={
                   'pv': [0,'4700'],             # process value (temperature reading)
                   'sv': [100.0,'4701'],         # set point
                   'p': [5,'4708'],              # p value 0-9999
@@ -1803,7 +1832,7 @@ class DtaPID:
                                                 # 7 EEPROM error
                   }
     #command  string = ID (ADR)+ FUNCTION (CMD) + ADDRESS + NDATA + LRC_CHK
-    def writeDTE(self,value,DTAaddress):
+    def writeDTE(self, value:str, DTAaddress:str) -> None:
         newsv = hex(int(abs(float(str(value)))))[2:].upper()
         slaveID = self.aw.ser.controlETpid[1]
         if self.aw.ser.controlETpid[0] != 2: # control pid is not a DTA PID
@@ -1811,7 +1840,7 @@ class DtaPID:
         command = self.aw.dtapid.message2send(slaveID,6,str(DTAaddress),newsv)
         self.aw.ser.sendDTAcommand(command)
 
-    def message2send(self,unitID,FUNCTION,ADDRESS, NDATA):
+    def message2send(self, unitID:int, FUNCTION:int, ADDRESS:str, NDATA:Union[int,str]) -> str:
         #compose command
         string_unitID = str(unitID).zfill(2)
         string_FUNCTION = str(FUNCTION).zfill(2)
@@ -1822,10 +1851,10 @@ class DtaPID:
         return ':' + cmd + checksum + '\r\n'
 
     @staticmethod
-    def DTACalcChecksum(string):
-        def tobin(x, count=8):
+    def DTACalcChecksum(string:str) -> int:
+        def tobin(x:int, count:int=8) -> str:
             return ''.join([str((x>>y)&1) for y in range(count-1, -1, -1)])
-        def twoscomp(num_str):
+        def twoscomp(num_str:str) -> str:
             return tobin(-int(num_str,2),len(num_str))
         length = len(string)
         # start at index 1 because of heading ':' cmd

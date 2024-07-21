@@ -5,7 +5,7 @@ try:
 except Exception: # pylint: disable=broad-except
     from PyQt5.QtWidgets import QApplication # type: ignore # @Reimport @UnresolvedImport @UnusedImport
 
-def content():
+def content() -> str:
     strlist = []
     helpstr = ''  # noqa: F841 #@UnusedVariable # pylint: disable=unused-variable
     newline = '\n'  # noqa: F841 #@UnusedVariable  # pylint: disable=unused-variable
@@ -76,7 +76,7 @@ def content():
     tbl_Labels.add_row(['\\M',QApplication.translate('HelpDlg','MANUAL (translated, respecting button state)')])
     tbl_Labels.add_row(['\\i',QApplication.translate('HelpDlg','STIRRER')])
     tbl_Labels.add_row(['\\f',QApplication.translate('HelpDlg','FILL')])
-    tbl_Labels.add_row(['\\r',QApplication.translate('HelpDlg','RELEASE')])
+    tbl_Labels.add_row(['\\R',QApplication.translate('HelpDlg','RELEASE')])
     tbl_Labels.add_row(['\\h',QApplication.translate('HelpDlg','HEATING')])
     tbl_Labels.add_row(['\\l',QApplication.translate('HelpDlg','COOLING')])
     strlist.append(tbl_Labels.get_html_string(attributes={'width':'100%','border':'1','padding':'1','border-collapse':'collapse'}))
@@ -85,7 +85,7 @@ def content():
     strlist.append('</b>')
     tbl_Commandstop = prettytable.PrettyTable()
     tbl_Commandstop.header = False
-    tbl_Commandstop.add_row([QApplication.translate('HelpDlg','Note: "{}" can be used as a placeholder, it will be substituted by the current button value plus the offset for \u00B1 event types.  If a placeholder occurs several times in a description/command, all those occurrences are replaced by the value.\n')+newline+QApplication.translate('HelpDlg','Note: The placeholders {ET}, {BT}, {time}, {ETB}, {BTB} will be substituted by the current ET, BT, time, ET background, BT background value in Serial/CallProgram/MODBUS/S7/WebSocket commands\n')+newline+QApplication.translate('HelpDlg','Note: commands can be sequenced, separated by semicolons like in “<cmd1>;<cmd2>;<cmd3>”\n')+newline+QApplication.translate('HelpDlg','Note: in PHIDGET commands, the optional parameter <sn> has the form <hub_serial>[:<hub_port>] allows to refer to a specific Phidget HUB by given its serial number, and optionally specifying the port number the addressed module is connected to.\n')+newline+QApplication.translate('HelpDlg','Note: in YOCTOPUCE commands, the optional parameter <sn> holds either the modules serial number or its name')])
+    tbl_Commandstop.add_row([QApplication.translate('HelpDlg','Note: "{}" can be used as a placeholder, it will be substituted by the current button value plus the offset for \u00B1 event types.  If a placeholder occurs several times in a description/command, all those occurrences are replaced by the value.\n')+newline+QApplication.translate('HelpDlg','Note: The placeholders {ET}, {BT}, {time}, {ETB}, {BTB}, and {WEIGHTin} will be substituted by the current ET, BT, time, ET background, BT background value and batch size (in g) in Serial/Artisan/CallProgram/MODBUS/S7/WebSocket commands\n')+newline+QApplication.translate('HelpDlg','Note: Commands can be sequenced, separated by semicolons like in “<cmd1>;<cmd2>;<cmd3>”\n')+newline+QApplication.translate('HelpDlg','Note: All characters given as documentation to a Serial Command action are sent as one string to the connected device. If the device can interpret this string as separate commands separated by semicolon this is fine. Otherwise you can use a Multiple Event referencing a number of event buttons (using a comma separated list of event button numbers as documentation string) where each of the referenced event buttons issues one of the commands via a corresponding Serial Command action. Those event buttons can be hidden thus having the same effect as if the Serial Command allowed a sequence of commands.\n')+newline+QApplication.translate('HelpDlg','Note: In PHIDGET commands, the optional parameter <sn> has the form <hub_serial>[:<hub_port>] allows to refer to a specific Phidget HUB by given its serial number, and optionally specifying the port number the addressed module is connected to.\n')+newline+QApplication.translate('HelpDlg','Note: In YOCTOPUCE commands, the optional parameter <sn> holds either the modules serial number or its name')])
     strlist.append(tbl_Commandstop.get_html_string(attributes={'width':'100%','border':'1','padding':'1','border-collapse':'collapse'}))
     tbl_Commands = prettytable.PrettyTable()
     tbl_Commands.field_names = [QApplication.translate('HelpDlg','Action'),QApplication.translate('HelpDlg','Command'),QApplication.translate('HelpDlg','Description')]
@@ -198,9 +198,10 @@ def content():
     tbl_Commands.add_row(['&#160;','notify(<title>,[<msg>])',QApplication.translate('HelpDlg','sends notification with title <title> and optional message <msg>')])
     tbl_Commands.add_row(['&#160;','setCanvasColor(<color>)',QApplication.translate('HelpDlg','sets canvas color to the RGB-hex <color> like #27f1d3')])
     tbl_Commands.add_row(['&#160;','resetCanvasColor',QApplication.translate('HelpDlg','resets canvas color')])
-    tbl_Commands.add_row(['&#160;','button(i,b)',QApplication.translate('HelpDlg','sets button i to pressed if value b is yes, true, t, or 1, otherwise to normal')])
+    tbl_Commands.add_row(['&#160;','button(i,b)',QApplication.translate('HelpDlg','sets button i to pressed if value of b is yes, true, t, or 1, otherwise to normal')])
     tbl_Commands.add_row(['&#160;','button(<name>|<bool>)',QApplication.translate('HelpDlg','activates button <name> from { START, CHARGE, DRY, FCs, FCe, SCs, SCe, DROP, COOL, OFF } ; sets calling button to “pressed” if argument is 1 or True')])
     tbl_Commands.add_row(['&#160;','button()',QApplication.translate('HelpDlg','toggles the state of the button')])
+    tbl_Commands.add_row(['&#160;','visible(i,b)',QApplication.translate('HelpDlg','sets button i to visible if value of b is yes, true, t, or 1, otherwise to hidden')])
     tbl_Commands.add_row(['&#160;','palette(<p>)',QApplication.translate('HelpDlg','activates palette <p> with <p> either a number 0-9 or a palette label')])
     tbl_Commands.add_row(['&#160;','playbackmode(<int>)',QApplication.translate('HelpDlg','sets playback mode to 0: off, 1: time, 2: BT, 3: ET')])
     tbl_Commands.add_row(['&#160;','openProperties',QApplication.translate('HelpDlg','opens the Roast Properties dialog')])

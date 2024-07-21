@@ -23,17 +23,17 @@ import sys
 import platform
 import numpy
 import logging
-from typing import List, Optional, Union, TYPE_CHECKING
-from typing import Final  # Python <=3.7
+from typing import Final, List, Sequence, Tuple, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
+    from PyQt6.QtGui import QCloseEvent # pylint: disable=unused-import
 
 from artisanlib.util import (deltaLabelBigPrefix, deltaLabelPrefix, deltaLabelUTF8,
-                             stringtoseconds, stringfromseconds, toFloat)
+                             stringtoseconds, stringfromseconds, toFloat, float2float)
 from artisanlib.dialogs import ArtisanDialog
 from artisanlib.widgets import MyQDoubleSpinBox
-from help import symbolic_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
+from help import symbolic_help # pyright:ignore [attr-defined] # pylint: disable=no-name-in-module
 
 try:
     from PyQt6.QtCore import (Qt, pyqtSlot, QSettings, QRegularExpression, QTimer) # @UnusedImport @Reimport  @UnresolvedImport
@@ -46,9 +46,9 @@ except ImportError:
     from PyQt5.QtCore import (Qt, pyqtSlot, QSettings, QRegularExpression, QTimer) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtGui import (QColor, QIntValidator, QRegularExpressionValidator, QPixmap) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QApplication, QWidget, QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
-                                 QPushButton, QSpinBox, QTabWidget, QComboBox, QDialogButtonBox, QGridLayout, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
-                                 QGroupBox, QLayout, QMessageBox, QRadioButton, QStyleFactory, QHeaderView, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
-                                 QTableWidget, QTableWidgetItem, QFrame) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
+                                 QPushButton, QSpinBox, QTabWidget, QComboBox, QDialogButtonBox, QGridLayout, # @UnusedImport @Reimport  @UnresolvedImport
+                                 QGroupBox, QLayout, QMessageBox, QRadioButton, QStyleFactory, QHeaderView, # @UnusedImport @Reimport  @UnresolvedImport
+                                 QTableWidget, QTableWidgetItem, QFrame) # @UnusedImport @Reimport  @UnresolvedImport
 
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
@@ -109,11 +109,11 @@ class equDataDlg(ArtisanDialog):
 
         self.setLayout(dataplotterLayout)
 
-    def changeprecision(self):
+    def changeprecision(self) -> None:
         self.dataprecisionval = int(self.precisionSpinBox.value())-1
         self.createDataTable()
 
-    def createDataTable(self):
+    def createDataTable(self) -> None:
         try:
             self.datatable.clear()
             ndata = len(self.aw.qmc.timex)
@@ -242,7 +242,7 @@ class equDataDlg(ArtisanDialog):
             pass
 
     @pyqtSlot(bool)
-    def copyDataTabletoClipboard(self,_=False):
+    def copyDataTabletoClipboard(self,_:bool = False) -> None:
         import prettytable
         nrows = self.datatable.rowCount()
         ncols = self.datatable.columnCount() - 1 #there is a dummy column at the end on the right
@@ -307,9 +307,11 @@ class CurvesDlg(ArtisanDialog):
         self.org_DeltaBT = self.aw.qmc.DeltaBTflag
         self.org_DeltaETlcd = self.aw.qmc.DeltaETlcdflag
         self.org_DeltaBTlcd = self.aw.qmc.DeltaBTlcdflag
-        self.org_Projection = self.aw.qmc.projectFlag
+        self.org_ETProjection = self.aw.qmc.ETprojectFlag
+        self.org_BTProjection = self.aw.qmc.BTprojectFlag
         self.org_ProjectionDelta = self.aw.qmc.projectDeltaFlag
         self.org_patheffects = self.aw.qmc.patheffects
+        self.org_glow = self.aw.qmc.glow
         self.org_graphstyle = self.aw.qmc.graphstyle
         self.org_graphfont = self.aw.qmc.graphfont
         self.org_filterDropOuts = self.aw.qmc.filterDropOuts
@@ -327,7 +329,6 @@ class CurvesDlg(ArtisanDialog):
         self.org_deltaBTfilter = self.aw.qmc.deltaBTfilter
         self.org_deltaBTspan = self.aw.qmc.deltaBTspan
         self.org_deltaETspan = self.aw.qmc.deltaETspan
-        self.org_graphstyle = self.aw.qmc.graphstyle
         self.org_ETname = self.aw.ETname
         self.org_BTname = self.aw.BTname
         self.org_foregroundShowFullflag = self.aw.qmc.foregroundShowFullflag
@@ -404,6 +405,12 @@ class CurvesDlg(ArtisanDialog):
         self.ShowFull.stateChanged.connect(self.changeShowFullFilter)
         self.ShowFull.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
+        #interpolate drops
+        self.InterpolateDrops = QCheckBox(QApplication.translate('CheckBox', 'Interpolate Drops'))
+        self.InterpolateDrops.setChecked(self.aw.qmc.interpolateDropsflag)
+        self.InterpolateDrops.stateChanged.connect(self.changeInterpolageDrops)
+        self.InterpolateDrops.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+
         #dropspikes
         self.DropSpikes = QCheckBox(QApplication.translate('CheckBox', 'Drop Spikes'))
         self.DropSpikes.setChecked(self.aw.qmc.dropSpikes)
@@ -434,6 +441,8 @@ class CurvesDlg(ArtisanDialog):
         self.maxLimit.setValue(int(self.aw.qmc.filterDropOut_tmax))
         #show projection
         self.projectCheck = QCheckBox(QApplication.translate('CheckBox', 'Projection'))
+        self.ETprojectCheck = QCheckBox(f"{QApplication.translate('Label', 'ET', None)} {QApplication.translate('CheckBox', 'Projection')}")
+        self.BTprojectCheck = QCheckBox(f"{QApplication.translate('Label', 'BT', None)} {QApplication.translate('CheckBox', 'Projection')}")
         self.projectDeltaCheck = QCheckBox(deltaLabelUTF8 + QApplication.translate('CheckBox', 'Projection'))
         self.projectionmodeComboBox = QComboBox()
         self.projectionmodeComboBox.addItems([QApplication.translate('ComboBox','linear'),
@@ -442,12 +451,15 @@ class CurvesDlg(ArtisanDialog):
                                               ])
         self.projectionmodeComboBox.setCurrentIndex(self.aw.qmc.projectionmode)
         self.projectionmodeComboBox.currentIndexChanged.connect(self.changeProjectionMode)
-        self.projectCheck.setChecked(self.aw.qmc.projectFlag)
+        self.ETprojectCheck.setChecked(self.aw.qmc.ETprojectFlag)
+        self.BTprojectCheck.setChecked(self.aw.qmc.BTprojectFlag)
         self.projectDeltaCheck.setChecked(self.aw.qmc.projectDeltaFlag)
-        self.projectDeltaCheck.setEnabled(self.aw.qmc.projectFlag)
+        self.projectDeltaCheck.setEnabled(self.aw.qmc.ETprojectFlag or self.aw.qmc.BTprojectFlag)
+        self.projectionmodeComboBox.setEnabled(self.aw.qmc.ETprojectFlag or self.aw.qmc.BTprojectFlag)
         self.DeltaET.stateChanged.connect(self.changeDeltaET)         #toggle
         self.DeltaBT.stateChanged.connect(self.changeDeltaBT)         #toggle
-        self.projectCheck.stateChanged.connect(self.changeProjection) #toggle
+        self.ETprojectCheck.stateChanged.connect(self.changeETProjection) #toggle
+        self.BTprojectCheck.stateChanged.connect(self.changeBTProjection) #toggle
         self.projectDeltaCheck.stateChanged.connect(self.changeDeltaProjection) #toggle
 
         deltaSpanLabel = QLabel(QApplication.translate('Label', 'Delta Span'))
@@ -478,7 +490,8 @@ class CurvesDlg(ArtisanDialog):
         rorBoxLayout.addWidget(self.DeltaBT)
         rorBoxLayout.addWidget(DeltaBTlabel)
         rorBoxLayout.addStretch()
-        rorBoxLayout.addWidget(self.projectCheck)
+        rorBoxLayout.addWidget(self.ETprojectCheck)
+        rorBoxLayout.addWidget(self.BTprojectCheck)
         rorBoxLayout.addWidget(self.projectionmodeComboBox)
         rorBoxLayout.addSpacing(10)
         rorBoxLayout.addWidget(self.projectDeltaCheck)
@@ -594,6 +607,7 @@ class CurvesDlg(ArtisanDialog):
         # Render xGroup
         renderVBox = QVBoxLayout()
         renderVBox.addWidget(self.ShowFull)
+        renderVBox.addWidget(self.InterpolateDrops)
         renderGroupLayout = QGroupBox(QApplication.translate('GroupBox','Display Filter'))
         renderGroupLayout.setLayout(renderVBox)
 
@@ -682,7 +696,9 @@ class CurvesDlg(ArtisanDialog):
                                       'Source Han Sans HK',
                                       'Source Han Sans KR',
                                       'Source Han Sans JP',
-                                      'Dijkstra'])
+                                      'Dijkstra',
+                                      'xkcd Script',
+                                      'Comic Neue'])
         self.GraphFont.setCurrentIndex(self.aw.qmc.graphfont)
         self.GraphFont.currentIndexChanged.connect(self.changeGraphFont)
         graphLayout = QHBoxLayout()
@@ -978,7 +994,8 @@ class CurvesDlg(ArtisanDialog):
         self.polyfitdeg.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.polyfitdeg.setMinimumWidth(20)
         # build list of available curves
-        self.curves:List[Union[List[Optional[float]], List[float]]] = []
+#        self.curves:List[Union[List[Optional[float]], List[float]]] = []
+        self.curves:List[Sequence[Optional[float]]] = []
         self.curvenames:List[str] = []
         self.deltacurves:List[bool] = [] # list of flags. True if delta curve, False otherwise
         self.c1ComboBox = QComboBox()
@@ -1168,16 +1185,22 @@ class CurvesDlg(ArtisanDialog):
         self.soundCheck.setChecked(bool(self.aw.soundflag))
         self.soundCheck.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.soundCheck.stateChanged.connect(self.soundset) #toggle
+        self.glowCheck = QCheckBox(QApplication.translate('CheckBox', 'Glow'))
+        self.glowCheck.setChecked(bool(self.aw.qmc.glow))
+        self.glowCheck.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.glowCheck.stateChanged.connect(self.glowset) #toggle
         self.notifications = QCheckBox(QApplication.translate('CheckBox', 'Notifications'))
         self.notifications.setChecked(self.aw.notificationsflag)
         self.notifications.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         notifyLayout = QHBoxLayout()
         notifyLayout.addWidget(self.notifications)
+        notifyLayout.addSpacing(15)
+        notifyLayout.addWidget(self.soundCheck)
         notifyLayout.addStretch()
         appLayout1 = QHBoxLayout()
         appLayout1.addLayout(pathEffectsLayout)
         appLayout1.addStretch()
-        appLayout1.addWidget(self.soundCheck)
+        appLayout1.addWidget(self.glowCheck)
         appLayout1.addStretch()
         appLayout1.addWidget(self.styleComboBox)
         appLayout2 = QHBoxLayout()
@@ -1392,6 +1415,8 @@ class CurvesDlg(ArtisanDialog):
             ok_button: Optional[QPushButton] = self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok)
             if ok_button is not None:
                 ok_button.setFocus()
+        else:
+            self.TabWidget.setFocus()
 
         settings = QSettings()
         if settings.contains('CurvesPosition'):
@@ -1400,7 +1425,7 @@ class CurvesDlg(ArtisanDialog):
         Slayout.setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
 
         # we set the active tab with a QTimer after the tabbar has been rendered once, as otherwise
-        # some tabs are not rendered at all on Winwos using Qt v6.5.1 (https://bugreports.qt.io/projects/QTBUG/issues/QTBUG-114204?filter=allissues)
+        # some tabs are not rendered at all on Windows using Qt v6.5.1 (https://bugreports.qt.io/projects/QTBUG/issues/QTBUG-114204?filter=allissues)
         QTimer.singleShot(50, self.setActiveTab)
 
     @pyqtSlot()
@@ -1408,15 +1433,13 @@ class CurvesDlg(ArtisanDialog):
         self.TabWidget.setCurrentIndex(self.activeTab)
 
     @pyqtSlot(bool)
-    def fittoBackground(self, _:bool) -> None:
+    def fittoBackground(self, _:bool = False) -> None:
         if len(self.expresult.text()) > 0:
             self.aw.deleteBackground()
             self.setbackgroundequ1(mathequ=True)
             QApplication.processEvents()  #occasionally the fit curve remains showing.
             self.aw.qmc.redraw(recomputeAllDeltas=True)
             #self.updatetargets()  #accept and close dialog
-        else:
-            return
 
     @pyqtSlot(int)
     def changeAnalyzecombobox(self, i:int) -> None:
@@ -1447,7 +1470,7 @@ class CurvesDlg(ArtisanDialog):
 
     @pyqtSlot()
     def segmentdeltathresholdChanged(self) -> None:
-        self.aw.qmc.segmentdeltathreshold = self.aw.float2float(toFloat(self.segmentdeltathreshold.text()),4)
+        self.aw.qmc.segmentdeltathreshold = float2float(toFloat(self.segmentdeltathreshold.text()),4)
 
     @pyqtSlot()
     def curvefittimeoffsetChanged(self) -> None:
@@ -1479,13 +1502,13 @@ class CurvesDlg(ArtisanDialog):
 
     #watermark image
     @pyqtSlot(bool)
-    def logofileload(self, _:bool) -> None:
+    def logofileload(self, _:bool = False) -> None:
         self.aw.qmc.logoloadfile()
         self.logopathedit.setText(str(self.aw.logofilename))
         # note the logo is only visible after a full redraw
 
     @pyqtSlot(bool)
-    def logofiledelete(self, _:bool) -> None:
+    def logofiledelete(self, _:bool = False) -> None:
         self.logopathedit.setText('')
         self.aw.logofilename = ''
         self.aw.qmc.redraw(recomputeAllDeltas=False)
@@ -1544,7 +1567,7 @@ class CurvesDlg(ArtisanDialog):
         return f'http://{str(localIP)}:{str(self.aw.WebLCDsPort)}/artisan'
 
     @pyqtSlot(bool)
-    def toggleWebLCDs(self, b:bool) -> None:
+    def toggleWebLCDs(self, b:bool = False) -> None:
         if b:
             try:
                 res = self.aw.startWebLCDs()
@@ -1612,7 +1635,7 @@ class CurvesDlg(ArtisanDialog):
     def setcurvecolor8(self, _:bool = False) -> None:
         self.setcurvecolor(8)
 
-    def setcurvecolor(self, x):
+    def setcurvecolor(self, x:int) -> None:
         try:
             colorf = self.aw.colordialog(QColor(self.aw.qmc.plotcurvecolor[x]))
             if colorf.isValid():
@@ -1659,7 +1682,7 @@ class CurvesDlg(ArtisanDialog):
 
 
     @pyqtSlot(bool)
-    def setvdevice(self, _b:bool) -> None:
+    def setvdevice(self, _b:bool = False) -> None:
         # compute values
         if len(self.aw.qmc.timex) < 2: # empty profile
             # we use the background function to set it to ET/BT
@@ -1669,15 +1692,16 @@ class CurvesDlg(ArtisanDialog):
             EQU = [str(self.equedit1.text()),str(self.equedit2.text())]
             incompatiblevars:List[str] = ['P','F','$','#']
             error = ''
-            for i, _iv in enumerate(incompatiblevars):
-                if incompatiblevars[i] in EQU[0]:
-                    error = f'P1: \n-{incompatiblevars[i]}\n\n[{EQU[0]}]'
-                elif incompatiblevars[i] in EQU[1]:
-                    error = f'P2: \n-{incompatiblevars[i]}\n\n[{EQU[1]}]'
+            for iv in incompatiblevars:
+                if iv in EQU[0]:
+                    error = f'P1: \n-{iv}\n\n[{EQU[0]}]'
+                elif iv in EQU[1]:
+                    error = f'P2: \n-{iv}\n\n[{EQU[1]}]'
 
             if error:
                 string = QApplication.translate('Message','Incompatible variables found in %s')%error
-                QMessageBox.warning(self,QApplication.translate('Message','Assignment problem'),string)
+                QMessageBox.warning(None, #self, # only without super this one shows the native dialog on macOS under Qt 6.6.2 and later
+                    QApplication.translate('Message','Assignment problem'),string)
 
             else:
                 extratemp1:List[float] = []
@@ -1725,17 +1749,17 @@ class CurvesDlg(ArtisanDialog):
         equdataDlg.activateWindow()
 
     @pyqtSlot(bool)
-    def setbackgroundequ1_slot(self, _:bool) -> None:
+    def setbackgroundequ1_slot(self, _:bool = False) -> None:
         self.setbackgroundequ1()
 
-    def setbackgroundequ1(self,foreground=False, mathequ=False):
+    def setbackgroundequ1(self,foreground:bool = False, mathequ:bool = False) -> None:
         EQU = [str(self.equedit1.text()),str(self.equedit2.text())]
         if mathequ:
             EQU = ['',str(self.expresult.text())]
         self.aw.qmc.analysisresultsstr = ''
         self.aw.setbackgroundequ(foreground=foreground, EQU=EQU)
 
-    def updatePlotterleftlabels(self):
+    def updatePlotterleftlabels(self) -> None:
         if len(self.aw.qmc.plotterequationresults[0]):
             self.equc1label.setStyleSheet("background-color:'lightgrey';")
         else:
@@ -1776,7 +1800,7 @@ class CurvesDlg(ArtisanDialog):
 
     # format = annotate(text,time,temp,size)
     # eg annotation = 'annotate(H,03:00,200,10)'
-    def plotterannotation(self,annotation,cindex):
+    def plotterannotation(self, annotation:str, cindex:int) -> None:
         try:
             annotation = annotation.strip()
             if self.aw.qmc.ax is not None and len(annotation) > 20:
@@ -1819,7 +1843,7 @@ class CurvesDlg(ArtisanDialog):
             self.aw.qmc.adderror((QApplication.translate('Error Message', 'Exception:') + ' plotterb() syntax: {0}').format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     # TODO: maybe remove the plotterprogram feature completely as it can be dangerous due to the eval/exce  # pylint: disable=fixme
-    def plotterprogram(self, program):
+    def plotterprogram(self, program:str) -> None:
         try:
             #remove enclosing brackets {}
             program = program[1:len(program)-1]
@@ -1861,7 +1885,7 @@ class CurvesDlg(ArtisanDialog):
                     #commands
                     if len(eqs) > 10 and eqs[:9] == 'annotate(':
                         commentoutplot[e] = 1
-                        self.plotterannotation(eqs,e)
+                        self.plotterannotation(eqs, e)
                     if len(eqs) > 4 and eqs[:5] == 'beans':
                         commentoutplot[e] = 1
                         self.plotterb()
@@ -2036,7 +2060,7 @@ class CurvesDlg(ArtisanDialog):
             self.endEdit.blockSignals(False)
         self.polyfitcurveschanged(0)
 
-    def eventlist(self):
+    def eventlist(self) -> List[Tuple[str,int]]:
         events = []
         if self.aw.qmc.timeindex[0] > -1:
             events.append((QApplication.translate('Table', 'CHARGE'),self.aw.qmc.timeindex[0]))
@@ -2094,7 +2118,7 @@ class CurvesDlg(ArtisanDialog):
 
     @pyqtSlot()
     @pyqtSlot(int)
-    def polyfitcurveschanged(self,_:int = 0) -> None:
+    def polyfitcurveschanged(self, _:int = 0) -> None:
         self.polyfitdeg.blockSignals(True)
         self.polyfitdeg.setDisabled(True)
         self.startEdit.blockSignals(True)
@@ -2220,7 +2244,7 @@ class CurvesDlg(ArtisanDialog):
             self.redraw_enabled_math_curves()
 
     @pyqtSlot(int)
-    def soundset(self,_:int) -> None:
+    def soundset(self, _:int) -> None:
         if self.aw.soundflag == 0:
             self.aw.soundflag = 1
             self.aw.sendmessage(QApplication.translate('Message','Sound turned ON'))
@@ -2230,7 +2254,12 @@ class CurvesDlg(ArtisanDialog):
             self.aw.sendmessage(QApplication.translate('Message','Sound turned OFF'))
 
     @pyqtSlot(int)
-    def changeDeltaET(self,_:int = 0) -> None:
+    def glowset(self, _:int) -> None:
+        self.aw.qmc.glow = (self.aw.qmc.glow + 1) % 2
+        self.aw.qmc.redraw_keep_view(recomputeAllDeltas=False)
+
+    @pyqtSlot(int)
+    def changeDeltaET(self, _:int = 0) -> None:
         self.aw.qmc.DeltaETflag = not self.aw.qmc.DeltaETflag
         if self.aw.qmc.crossmarker:
             self.aw.qmc.togglecrosslines() # turn crossmarks off to adjust for new coordinate system
@@ -2259,18 +2288,20 @@ class CurvesDlg(ArtisanDialog):
             self.aw.setLCDsDigitCount(3)
 
     @pyqtSlot(int)
-    def changeDeltaBT(self,_:int = 0) -> None:
+    def changeDeltaBT(self, _:int = 0) -> None:
+        twoAxis_before = self.aw.qmc.twoAxisMode()
         self.aw.qmc.DeltaBTflag = not self.aw.qmc.DeltaBTflag
+        twoAxis_after = self.aw.qmc.twoAxisMode()
         if self.aw.qmc.crossmarker:
             self.aw.qmc.togglecrosslines() # turn crossmarks off to adjust for new coordinate system
-        self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True)
+        self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True, forceRenewAxis=twoAxis_before != twoAxis_after)
 
     @pyqtSlot(int)
-    def changeDeltaETlcd(self,_:int = 0) -> None:
+    def changeDeltaETlcd(self, _:int = 0) -> None:
         self.aw.qmc.DeltaETlcdflag = not self.aw.qmc.DeltaETlcdflag
 
     @pyqtSlot(int)
-    def changeDeltaBTlcd(self,_:int = 0) -> None:
+    def changeDeltaBTlcd(self, _:int = 0) -> None:
         self.aw.qmc.DeltaBTlcdflag = not self.aw.qmc.DeltaBTlcdflag
 
     @pyqtSlot()
@@ -2297,7 +2328,11 @@ class CurvesDlg(ArtisanDialog):
     @pyqtSlot(int)
     def changeGraphFont(self, n:int) -> None:
         self.aw.qmc.graphfont = n
-        self.aw.setFonts()
+        #self.aw.setFonts()
+        self.aw.setFonts(redraw=True)
+        # addl redraw only when not ON and Show Summary is enabled
+        if not self.aw.qmc.flagon and self.aw.qmc.statssummary:
+            self.aw.qmc.redraw(recomputeAllDeltas=True, re_smooth_background=True)  #note:for summary statistics there is still a slight shift seen on redraw() at accept.
 
     @pyqtSlot()
     def changeDeltaBTfilter(self) -> None:
@@ -2336,9 +2371,9 @@ class CurvesDlg(ArtisanDialog):
             self.aw.qmc.adderror((QApplication.translate('Error Message', 'Exception:') + 'changeDeltaETfilter(): {0}').format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     @pyqtSlot(int)
-    def changeOptimalSmoothingFlag(self,_:int = 0) -> None:
+    def changeOptimalSmoothingFlag(self, _:int = 0) -> None:
         self.aw.qmc.optimalSmoothing = not self.aw.qmc.optimalSmoothing
-        self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True, smooth=True)
+        self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True,re_smooth_foreground=True,re_smooth_background=True)
 
     @pyqtSlot(int)
     def changePolyFitFlagFlag(self, _:int = 0) -> None:
@@ -2348,17 +2383,22 @@ class CurvesDlg(ArtisanDialog):
         self.OptimalSmoothingFlag.setChecked(self.aw.qmc.optimalSmoothing)
         self.OptimalSmoothingFlag.setEnabled(self.aw.qmc.polyfitRoRcalc)
         self.OptimalSmoothingFlag.blockSignals(False)
-        self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True,smooth=True)
+        self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True,re_smooth_foreground=True)
 
     @pyqtSlot(int)
     def changeDropFilter(self, _:int = 0) -> None:
         self.aw.qmc.filterDropOuts = not self.aw.qmc.filterDropOuts
-        self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True,smooth=True)
+        self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True,re_smooth_foreground=True, re_smooth_background=True)
 
     @pyqtSlot(int)
     def changeShowFullFilter(self, _:int = 0) -> None:
         self.aw.qmc.foregroundShowFullflag = not self.aw.qmc.foregroundShowFullflag
-        self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True,smooth=True)
+        self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True,re_smooth_foreground=True)
+
+    @pyqtSlot(int)
+    def changeInterpolageDrops(self, _:int = 0) -> None:
+        self.aw.qmc.interpolateDropsflag = not self.aw.qmc.interpolateDropsflag
+        self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True,re_smooth_foreground=True)
 
     @pyqtSlot(int)
     def changeSpikeFilter(self,_:int = 0) -> None:
@@ -2383,7 +2423,7 @@ class CurvesDlg(ArtisanDialog):
             if v != self.aw.qmc.curvefilter:
                 self.Filter.setDisabled(True)
                 self.aw.qmc.curvefilter = v
-                self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True,smooth=True)
+                self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True,re_smooth_foreground=True, re_smooth_background=True)
                 self.Filter.setDisabled(False)
                 self.Filter.setFocus()
         except Exception as e: # pylint: disable=broad-except
@@ -2391,12 +2431,22 @@ class CurvesDlg(ArtisanDialog):
             self.aw.qmc.adderror((QApplication.translate('Error Message', 'Exception:') + ' changeFilter(): {0}').format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
     @pyqtSlot(int)
-    def changeProjection(self, _:int = 0) -> None:
-        self.aw.qmc.projectFlag = not self.aw.qmc.projectFlag
-        if not self.aw.qmc.projectFlag:
+    def changeETProjection(self, _:int = 0) -> None:
+        self.aw.qmc.ETprojectFlag = not self.aw.qmc.ETprojectFlag
+        if not self.aw.qmc.ETprojectFlag:
             #erase old projections
             self.aw.qmc.resetlines()
-        self.projectDeltaCheck.setEnabled(self.aw.qmc.projectFlag)
+        self.projectDeltaCheck.setEnabled(self.aw.qmc.ETprojectFlag or self.aw.qmc.BTprojectFlag)
+        self.projectionmodeComboBox.setEnabled(self.aw.qmc.ETprojectFlag or self.aw.qmc.BTprojectFlag)
+
+    @pyqtSlot(int)
+    def changeBTProjection(self, _:int = 0) -> None:
+        self.aw.qmc.BTprojectFlag = not self.aw.qmc.BTprojectFlag
+        if not self.aw.qmc.BTprojectFlag:
+            #erase old projections
+            self.aw.qmc.resetlines()
+        self.projectDeltaCheck.setEnabled(self.aw.qmc.ETprojectFlag or self.aw.qmc.BTprojectFlag)
+        self.projectionmodeComboBox.setEnabled(self.aw.qmc.ETprojectFlag or self.aw.qmc.BTprojectFlag)
 
     @pyqtSlot(int)
     def changeDeltaProjection(self, _:int = 0) -> None:
@@ -2427,7 +2477,7 @@ class CurvesDlg(ArtisanDialog):
         self.aw.closeHelpDialog(self.helpdialog)
 
     @pyqtSlot('QCloseEvent')
-    def closeEvent(self,_):
+    def closeEvent(self,_:Optional['QCloseEvent'] = None) -> None:
         self.close()
 
     #cancel button
@@ -2445,9 +2495,11 @@ class CurvesDlg(ArtisanDialog):
         self.aw.qmc.DeltaBTflag = self.org_DeltaBT
         self.aw.qmc.DeltaETlcdflag = self.org_DeltaETlcd
         self.aw.qmc.DeltaBTlcdflag = self.org_DeltaBTlcd
-        self.aw.qmc.projectFlag = self.org_Projection
+        self.aw.qmc.ETprojectFlag = self.org_ETProjection
+        self.aw.qmc.BTprojectFlag = self.org_BTProjection
         self.aw.qmc.projectDeltaFlag = self.org_ProjectionDelta
         self.aw.qmc.patheffects = self.org_patheffects
+        self.aw.qmc.glow = self.org_glow
         self.aw.qmc.graphstyle = self.org_graphstyle
         self.aw.qmc.graphfont = self.org_graphfont
         self.aw.qmc.filterDropOuts = self.org_filterDropOuts
@@ -2474,7 +2526,11 @@ class CurvesDlg(ArtisanDialog):
         self.aw.qmc.resetlinecountcaches()
         self.aw.qmc.resetlines()
         self.aw.qmc.updateDeltaSamples()
-        self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True)
+
+        if self.aw.qmc.statssummary and self.aw.qmc.autotimex:
+            self.aw.qmc.redraw(recomputeAllDeltas=True, re_smooth_background=True)
+        else:
+            self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True, re_smooth_background=True)
         self.aw.clearMessageLine() #clears plotter possible exceptions if Cancel
 
         self.reject()
@@ -2519,11 +2575,12 @@ class CurvesDlg(ArtisanDialog):
         self.aw.qmc.filterDropOuts = self.FilterSpikes.isChecked()
         self.aw.qmc.dropSpikes = self.DropSpikes.isChecked()
         self.aw.qmc.dropDuplicates = self.DropDuplicates.isChecked()
-        self.aw.qmc.dropDuplicatesLimit = self.DropDuplicatesLimit.value()
+        self.aw.qmc.dropDuplicatesLimit = float2float(self.DropDuplicatesLimit.value(),2)
         self.aw.qmc.minmaxLimits = self.MinMaxLimits.isChecked()
         self.aw.qmc.filterDropOut_tmin = int(self.minLimit.value())
         self.aw.qmc.filterDropOut_tmax = int(self.maxLimit.value())
         self.aw.qmc.foregroundShowFullflag = self.ShowFull.isChecked()
+        self.aw.qmc.interpolateDropsflag = self.InterpolateDrops.isChecked()
         self.aw.qmc.plotcurves[0] = str(self.equedit1.text())
         self.aw.qmc.plotcurves[1] = str(self.equedit2.text())
         self.aw.qmc.plotcurves[2] = str(self.equedit3.text())
@@ -2533,9 +2590,13 @@ class CurvesDlg(ArtisanDialog):
         self.aw.qmc.plotcurves[6] = str(self.equedit7.text())
         self.aw.qmc.plotcurves[7] = str(self.equedit8.text())
         self.aw.qmc.plotcurves[8] = str(self.equedit9.text())
-        self.aw.cacheCurveVisibilities()  #dave
+        self.aw.cacheCurveVisibilities()
         self.aw.qmc.resetlinecountcaches()
         self.aw.qmc.resetlines()
-        self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True)
+        if self.aw.qmc.statssummary and self.aw.qmc.autotimex:
+            self.aw.qmc.redraw(recomputeAllDeltas=True, re_smooth_background=True)
+        else:
+            self.aw.qmc.redraw_keep_view(recomputeAllDeltas=True, re_smooth_background=True)
+
 #        self.aw.closeEventSettings()
         self.accept()

@@ -8,12 +8,12 @@ import csv
 import re
 import time as libtime
 import logging
-from typing import List, Optional, TYPE_CHECKING
-from typing import Final  # Python <=3.7
+from typing import Final, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from artisanlib.main import ApplicationWindow # pylint: disable=unused-import
     from artisanlib.types import ProfileData # pylint: disable=unused-import
-from artisanlib.util import fill_gaps, encodeLocal
+from artisanlib.util import replace_duplicates, encodeLocal
 
 try:
     from PyQt6.QtCore import QDateTime, QDate, QTime, Qt # @UnusedImport @Reimport  @UnresolvedImport
@@ -25,22 +25,8 @@ except ImportError:
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
 
-def replace_duplicates(data):
-    lv = -1
-    data_core = []
-    for v in data:
-        if v == lv:
-            data_core.append(-1)
-        else:
-            data_core.append(v)
-            lv = v
-    # reconstruct first and last reading
-    if len(data)>0:
-        data_core[-1] = data[-1]
-    return fill_gaps(data_core, interpolate_max=100)
-
 # returns a dict containing all profile information contained in the given IKAWA CSV file
-def extractProfilePetronciniCSV(file,aw):
+def extractProfilePetronciniCSV(file:str, aw:'ApplicationWindow') -> 'ProfileData':
     res:ProfileData = {}
 
     res['samplinginterval'] = 1.0
@@ -179,7 +165,7 @@ def extractProfilePetronciniCSV(file,aw):
     res['extratemp1'] = [extra2]
     res['extramathexpression1'] = ['']
 
-    res['extraname2'] = ['']
+    res['extraname2'] = ['IT']
     if aw.qmc.dropDuplicates:
         res['extratemp2'] = [replace_duplicates(extra1)]
     else:

@@ -8,15 +8,15 @@ import requests
 from requests_file import FileAdapter # type: ignore # @UnresolvedImport
 import re
 import json
-from lxml import html # type: ignore
+from lxml import html
 import logging
-from typing import Optional, List, TYPE_CHECKING
-from typing_extensions import TypedDict  # Python <=3.7
-from typing import Final
+from typing import Final, TypedDict, Optional, List, TYPE_CHECKING
 
 
 if TYPE_CHECKING:
+    from artisanlib.main import ApplicationWindow # pylint: disable=unused-import
     from artisanlib.types import ProfileData # pylint: disable=unused-import
+    from PyQt6.QtCore import QUrl # pylint: disable=unused-import
 
 try:
     from PyQt6.QtCore import QDateTime, Qt # @UnusedImport @Reimport  @UnresolvedImport
@@ -54,7 +54,7 @@ class RoastPathData(TypedDict, total=False):
     drumData: List[RoastPathDataItem]
 
 # returns a dict containing all profile information contained in the given RoastPATH document pointed by the given QUrl
-def extractProfileRoastPathHTML(url,_):
+def extractProfileRoastPathHTML(url:'QUrl', _:'ApplicationWindow') -> Optional['ProfileData']:
     res:ProfileData = {} # the interpreted data set
     try:
         sess = requests.Session()
@@ -141,15 +141,15 @@ def extractProfileRoastPathHTML(url,_):
         if 'btData' in data and len(data['btData']) > 0 and 'Timestamp' in data['btData'][0]:
             # BT
             bt = data['btData']
-            baseTime = dateutil.parser.parse(bt[0]['Timestamp']).timestamp()
+            baseTime = (dateutil.parser.parse(bt[0]['Timestamp']).timestamp() if 'Timestamp' in bt[0] else -1)
             res['mode'] = 'C'
-            res['timex'] = [dateutil.parser.parse(d['Timestamp']).timestamp() - baseTime for d in bt]
-            res['temp2'] = [(d['StandardValue'] if d['StandardValue'] != 0 else -1) for d in bt] # we drop 0 values as -1 to have Artisan suppress them!
+            res['timex'] = [dateutil.parser.parse(d['Timestamp']).timestamp() - baseTime if 'Timestamp' in d else -1 for d in bt]
+            res['temp2'] = [(d['StandardValue'] if 'StandardValue' in d and d['StandardValue'] != 0 else -1) for d in bt] # we drop 0 values as -1 to have Artisan suppress them!
 
             # ET
             if 'etData' in data:
                 et = data['etData']
-                res['temp1'] = [(d['StandardValue'] if d['StandardValue'] != 0 else -1) for d in et]
+                res['temp1'] = [(d['StandardValue'] if 'StandardValue' in d and d['StandardValue'] != 0 else -1) for d in et]
                 temp2len = len(res['temp2'])
                 res['temp1'] = res['temp1'] + [-1]*(max(0,temp2len-len(res['temp1'])))  # extend if needed
                 res['temp1'] = res['temp1'][:temp2len] # truncate
@@ -282,9 +282,9 @@ def extractProfileRoastPathHTML(url,_):
                     res['extradrawstyles1'].append('default')
                     res['extradrawstyles2'].append('default')
                     at = data['atData']
-                    timex = [dateutil.parser.parse(d['Timestamp']).timestamp() - baseTime for d in at]
+                    timex = [dateutil.parser.parse(d['Timestamp']).timestamp() - baseTime if 'Timestamp' in d else 0 for d in at]
                     res['extratimex'].append(timex)
-                    res['extratemp1'].append([d['StandardValue'] for d in at])
+                    res['extratemp1'].append([d.get('StandardValue', -1) for d in at])
                     res['extratemp2'].append([-1]*len(timex))
 
                 # BT RoR
@@ -315,9 +315,9 @@ def extractProfileRoastPathHTML(url,_):
                     res['extradrawstyles1'].append('default')
                     res['extradrawstyles2'].append('default')
                     ror = data['rorData']
-                    timex = [dateutil.parser.parse(d['Timestamp']).timestamp() - baseTime for d in ror]
+                    timex = [dateutil.parser.parse(d['Timestamp']).timestamp() - baseTime if 'Tiestamp' in d else 0 for d in ror]
                     res['extratimex'].append(timex)
-                    res['extratemp1'].append([d['StandardValue'] for d in ror])
+                    res['extratemp1'].append([d.get('StandardValue', -1) for d in ror])
                     res['extratemp2'].append([-1]*len(timex))
 
     except Exception as e: # pylint: disable=broad-except

@@ -29,6 +29,8 @@ except ImportError:
 class QtSingleApplication(QApplication): # pyright: ignore [reportGeneralTypeIssues] # Argument to class must be a base class
     messageReceived = pyqtSignal(str)
 
+    activateWindowSignal = pyqtSignal()
+
     __slots__ = [ '_id', '_viewer_id', '_activationWindow', '_activateOnMessage', '_inSocket', '_outSocket', '_isRunning', '_server',
         '_isRunningViewer', '_outSocketViewer', '_inStream', '_outStream', '_outStreamViewer' ]
 
@@ -36,14 +38,16 @@ class QtSingleApplication(QApplication): # pyright: ignore [reportGeneralTypeIss
 
         if sys.platform.startswith('darwin') and mp.current_process().name == 'WebLCDs':
             import AppKit # type: ignore # pylint: disable=import-error
-            info = AppKit.NSBundle.mainBundle().infoDictionary()  # type:ignore # @UndefinedVariable # pylint: disable=maybe-no-member
+            info = AppKit.NSBundle.mainBundle().infoDictionary()  # type:ignore[unused-ignore] # @UndefinedVariable # pylint: disable=maybe-no-member
             info['LSBackgroundOnly'] = '1'
 
         super().__init__(*argv)
 
+        self.activateWindowSignal.connect(self.activateWindow, type=Qt.ConnectionType.QueuedConnection)  # type: ignore
+
         self._id:str = _id
         self._viewer_id:str = _viewer_id
-        self._activationWindow:Optional['ApplicationWindow'] = None
+        self._activationWindow:Optional[ApplicationWindow] = None
         self._activateOnMessage:bool = False
 
         self._inSocket:Optional[QLocalSocket] = None
@@ -123,6 +127,7 @@ class QtSingleApplication(QApplication): # pyright: ignore [reportGeneralTypeIss
         self._activationWindow = activationWindow
         self._activateOnMessage = activateOnMessage
 
+    @pyqtSlot()
     def activateWindow(self) -> None:
         if not self._activationWindow:
             return

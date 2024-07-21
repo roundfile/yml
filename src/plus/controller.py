@@ -23,28 +23,23 @@
 
 try:
     #pylint: disable = E, W, R, C
-    from PyQt6.QtGui import QPixmap # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtCore import QSemaphore, QTimer, Qt, pyqtSlot # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt6.QtWidgets import QWidget,QApplication, QMessageBox # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt6.QtWidgets import QWidget, QApplication, QMessageBox # @UnusedImport @Reimport  @UnresolvedImport
 except Exception: # pylint: disable=broad-except
     #pylint: disable = E, W, R, C
-    from PyQt5.QtGui import QPixmap # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtCore import QSemaphore, QTimer, Qt, pyqtSlot # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import QWidget, QApplication, QMessageBox # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
 
-import os
 import platform
 import threading
 import logging
-from typing import Optional, TYPE_CHECKING
-from typing import Final # Python <=3.7
+from typing import Final, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
 
-from artisanlib.util import getResourcePath
-from plus import config, connection, stock, queue, sync, roast
+from plus import config, connection, stock, queue, sync, roast, util
 
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
@@ -84,7 +79,7 @@ def start(app_window:'ApplicationWindow') -> None:
 
 # toggles between connected and disconnected modes. If connected and
 # not is_synced() send current data to server
-def toggle(app_window):
+def toggle(app_window:'ApplicationWindow') -> None:
     _log.debug('toggle()')
     config.app_window = app_window
     if config.app_window is not None and config.app_window.plus_account is None:  # @UndefinedVariable
@@ -310,7 +305,7 @@ def connect(clear_on_failure: bool =False, interactive: bool = True) -> None:
         if config.app_window is not None:
             config.app_window.updatePlusStatusSignal.emit()  # @UndefinedVariable
         if interactive and is_connected():
-            QTimer.singleShot(2500, stock.update)
+            QTimer.singleShot(2000, stock.update)
 
 
 # show a dialog to have the user confirm the disconnect action
@@ -325,11 +320,9 @@ def disconnect_confirmed() -> bool:
 #        QMessageBox.StandardButton.Ok | QMessageBox.StandardButton.Cancel,
 #    )
 #    return QMessageBox.StandardButton.Ok == reply
-    mbox = QMessageBox(aw)
+    mbox = QMessageBox() #(aw) # only without super this one shows the native dialog on macOS under Qt 6.6.2
     mbox.setText(string)
-    basedir = os.path.join(getResourcePath(),'Icons')
-    p = os.path.join(basedir, 'plus-notification.svg')
-    mbox.setIconPixmap(QPixmap(p))
+    util.setPlusIcon(mbox)
     mbox.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
     res = mbox.exec()
     return QMessageBox.StandardButton.Yes == res
@@ -363,6 +356,8 @@ def disconnect(
                     remove_from_keychain=remove_credentials
                 )
             if config.app_window is not None:
+                if not keepON:
+                    config.app_window.plus_user_id = None # if this is cleared, the Scheduler cannot filter by user in this ON (dark-grey) state
                 if remove_credentials:
                     config.app_window.sendmessageSignal.emit(
                         QApplication.translate(
@@ -387,6 +382,7 @@ def disconnect(
                 connect_semaphore.release(1)
         if config.app_window is not None:
             config.app_window.updatePlusStatusSignal.emit()  # @UndefinedVariable
+            config.app_window.disconnectPlusSignal.emit()  # @UndefinedVariable
 
 
 def reconnected() -> None:

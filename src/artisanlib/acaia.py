@@ -16,8 +16,7 @@
 # Marko Luther, 2023
 
 import logging
-from typing import List, Optional, Union, Tuple, Callable
-from typing import Final  # Python <=3.7
+from typing import Final, List, Optional, Union, Tuple, Callable
 
 
 from artisanlib.ble import UUID, BLE_CHAR_TYPE
@@ -170,7 +169,7 @@ class AcaiaBLE:
                 self.resetProtocolParser()
 
 
-    def reset(self):
+    def reset(self) -> None:
         self.__init__() # type: ignore # pylint: disable=unnecessary-dunder-call
 
     # return a bytearray of len 2 containing the even and odd CRCs over the given payload

@@ -30,17 +30,17 @@ except Exception: # pylint: disable=broad-except
     from PyQt5.QtCore import QSemaphore, QObject, QThread, pyqtSlot, pyqtSignal # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import QApplication # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
-from artisanlib.util import decodeLocal, encodeLocal, getDirectory, is_int_list, is_float_list
-from plus import config, connection, controller, util
-from typing import List, Union, Optional, Tuple, Dict, TextIO
-from typing_extensions import NotRequired # Python <=3.10
-from typing_extensions import TypedDict  # Python <=3.7
-from typing import Final
-
 import copy
 import json
 import time
+import datetime
 import logging
+
+from artisanlib.util import (decodeLocal, encodeLocal, getDirectory, is_int_list, is_float_list, render_weight,
+    weight_units, float2float, convertWeight)
+from plus import config, connection, controller, util
+from typing import Final, TypedDict, List, Union, Optional, Tuple, Dict, TextIO
+from typing_extensions import NotRequired # Python <=3.10
 
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
@@ -51,6 +51,7 @@ stock_semaphore = QSemaphore(
 )  # protects access to the stock_cache file and the stock dict
 
 stock_cache_path = getDirectory(config.stock_cache)
+
 
 # stock data structures
 
@@ -107,10 +108,28 @@ class Blend(TypedDict):
     screen_min: NotRequired[int]
     screen_max: NotRequired[int]
 
+class ScheduledItem(TypedDict, total=False):
+    _id: str                # ScheduledItem ObjectId
+    date: str               # ISO date string 'YYYY-MM-DD'
+    count: int              # number of roasts planned for this item
+    title: str
+    amount: float           # planned batch size in kg
+    loss: Optional[float]   # default loss based calculated by magic on the server in % (either not given or guaranteed to be in range 5% < loss < 25%)
+    location: str           # location hr_id
+    coffee: Optional[str]   # coffee hr_id; only set if no blend is specified
+    blend: Optional[str]    # blend hr_id; only set if no coffee is specified
+    machine: Optional[str]  # optional target machine name
+    user: Optional[str]     # optional target users UUID
+    nickname: Optional[str] # optional nickname of target user
+    template: Optional[str] # roast_id (UUID) of the selected template profile if any
+    note: str
+    roasts: List[str]       # roast_id's (UUID) of already completed roasts of this item
+
 class Stock(TypedDict, total=False):
     coffees: List[Coffee]
     blends: List[Blend]
     replBlends: List[Blend]
+    schedule: List[ScheduledItem]
     retrieved: float
 
 ReplacementBlend = Tuple[float, Blend]
@@ -138,6 +157,8 @@ worker_thread:Optional[QThread] = None
 class Worker(QObject): # pyright: ignore [reportGeneralTypeIssues] # Argument to class must be a base class
     startSignal = pyqtSignal()
     replySignal = pyqtSignal(float, float, str, int, list) # rlimit:float, rused:float, pu:str, notifications:int, machines:List[str]
+    updatedSignal = pyqtSignal()  # issued once the stock was updated
+    upToDateSignal = pyqtSignal() # issued if the stock was still valid and did NOT get update
 
     @pyqtSlot()
     def update_blocking(self) -> None:
@@ -162,16 +183,18 @@ class Worker(QObject): # pyright: ignore [reportGeneralTypeIssues] # Argument to
             res = self.fetch()
             if res:
                 save()
+                self.updatedSignal.emit()
         else:
             _log.debug('-> stock valid')
+            self.upToDateSignal.emit()
 
     # requests stock data from server and fills the stock cache
     def fetch(self) -> bool:
         global stock  # pylint: disable=global-statement
         _log.debug('fetch()')
         try:
-            # fetch from server
-            d = connection.getData(config.stock_url)
+            # fetch from server (send along the current date to have the server filter the schedule correctly for the local timezone)
+            d = connection.getData(f'{config.stock_url}?today={datetime.datetime.now().astimezone().date()}')
             _log.debug('-> %s', d.status_code)
             j = d.json()
             if j:
@@ -196,11 +219,8 @@ class Worker(QObject): # pyright: ignore [reportGeneralTypeIssues] # Argument to
             controller.disconnect(remove_credentials=False, stop_queue=False)
             return False
 
-@pyqtSlot()
-def update() -> None:
-    _log.debug('update()')
+def getWorker() -> Optional['Worker']:
     global worker, worker_thread  # pylint: disable=global-statement
-
     try:
         if worker_thread is None:
             worker_thread = QThread()
@@ -209,6 +229,18 @@ def update() -> None:
             worker.moveToThread(worker_thread)
             worker.startSignal.connect(worker.update_blocking)
             worker.replySignal.connect(util.updateLimits)
+            worker.updatedSignal.connect(util.updateSchedule)
+            worker.upToDateSignal.connect(util.updateSchedule)
+        return worker
+    except Exception as e:  # pylint: disable=broad-except
+        _log.exception(e)
+    return None
+
+@pyqtSlot()
+def update() -> None:
+    _log.debug('update()')
+    try:
+        getWorker()
         if worker is not None:
             worker.startSignal.emit()
     except Exception as e:  # pylint: disable=broad-except
@@ -218,6 +250,8 @@ def update() -> None:
 ###################
 # stock cache access
 #
+# NOTE: stock cache data file access is not protected by portalocker for parallel access via a second Artisan instance
+#   as the ArtisanViewer handles is separate cache file
 
 # save stock data to local file cache
 def save() -> None:
@@ -227,7 +261,7 @@ def save() -> None:
         if stock is not None:
             f:TextIO
             with open(stock_cache_path, 'w', encoding='utf-8') as f:
-                json.dump(stock, f)
+                json.dump(stock, f, indent=None, separators=(',', ':'), ensure_ascii=False)
     except Exception as e:  # pylint: disable=broad-except
         _log.error(e)
     finally:
@@ -346,58 +380,27 @@ def renderAmount(amount:float, default_unit:Optional[CoffeeUnit]=None, target_un
         pass
     # if we could not convert to default_unit type,
     # we convert to the weightunit
-    if not res and config.app_window is not None:
+    if not res:
         # we convert the amount from Kg to the target_unit
-        w = config.app_window.convertWeight(
-            amount, 1, target_unit_idx
-        )  # @UndefinedVariable
-        if w < 1 and target_unit_idx == 1:
-            # we convert Kg to the smaller unit g for readability
-            w = config.app_window.convertWeight(
-                amount, 1, target_unit_idx - 1
-            )  # @UndefinedVariable
-            target_unit = config.app_window.qmc.weight_units[
-                target_unit_idx - 1
-            ]  # @UndefinedVariable
-        elif w >= 1000000 and target_unit_idx == 0:
-            # we convert kg to tonnes
-            w = w / 1000000.0
-            target_unit = 't'
-        elif w > 999 and target_unit_idx == 0:
-            # we convert g to the larger unit Kg for readability
-            w = config.app_window.convertWeight(
-                amount, 1, target_unit_idx + 1
-            )  # @UndefinedVariable
-            target_unit = config.app_window.qmc.weight_units[
-                target_unit_idx + 1
-            ]  # @UndefinedVariable
-        elif w >= 1000 and target_unit_idx == 1:
-            # we convert kg to tonnes
-            w = w / 1000.0
-            target_unit = 't'
-        elif w >= 2000 and target_unit_idx == 2:
-            # we convert lbs to tonnes
-            w = w / 2000.0
-            target_unit = 't'  # US tons
-        elif w >= 16 and target_unit_idx == 3:
-            if w >= 3200:
-                # we convert oz to US tonnes
-                w = w / 32000.0
-                target_unit = 't'  # US tons
-            else:  # w >= 16:
-                # we convert oz to lb
-                w = w / 16.0
-                target_unit = 'lb' if abs(abs(w) - 1.0) < 0.01 else 'lbs'
-        else:
-            target_unit = config.app_window.qmc.weight_units[
-                target_unit_idx
-            ]  # @UndefinedVariable
-            if target_unit_idx == 2 and abs(abs(w) - 1.00) >= 0.01:
-                # lb => lbs if |w|>1
-                target_unit = f'{target_unit}s'
-        w = int(round(w)) if w > 9 else config.app_window.float2float(w, 1) # @UndefinedVariable # we keep one decimal
-        res = f'{w:g}{target_unit}'.lower()
+        res = render_weight(amount, 1, target_unit_idx)
     return res
+
+
+# ==================
+# Schedule
+
+# returns the list of ScheduledItem defined in stock
+def getSchedule(acquire_lock:bool=True) -> List[ScheduledItem]:
+    _log.debug('getSchedule()')
+    try:
+        if acquire_lock:
+            stock_semaphore.acquire(1)
+        if stock is not None and 'schedule' in stock:
+            return stock['schedule']
+        return []
+    finally:
+        if acquire_lock and stock_semaphore.available() < 1:
+            stock_semaphore.release(1)
 
 
 # ==================
@@ -451,6 +454,10 @@ def getStorePosition(storeId:str, stores:List[Tuple[str, str]]) -> Optional[int]
     except Exception:  # pylint: disable=broad-except
         return None
 
+def getStoreItem(storeId:str, stores:List[Tuple[str, str]]) -> Optional[Tuple[str, str]]:
+    return next((x for x in stores if getStoreId(x) == storeId), None)
+
+
 
 # ==================
 # Coffees
@@ -468,20 +475,19 @@ def getCoffeeCoffeeDict(coffee:Tuple[str, Tuple[Coffee, StockItem]]) -> Coffee:
 def getCoffeeStockDict(coffee:Tuple[str, Tuple[Coffee, StockItem]]) -> StockItem:
     return coffee[1][1]
 
-
-def getCoffeeId(coffee:Tuple[str, Tuple[Coffee, StockItem]]) -> str:
-    return getCoffeeCoffeeDict(coffee).get('hr_id','')
+# unused
+#def getCoffeeId(coffee:Tuple[str, Tuple[Coffee, StockItem]]) -> str:
+#    return getCoffeeCoffeeDict(coffee).get('hr_id','')
 
 
 def getCoffeesLabels(coffees:List[Tuple[str, Tuple[Coffee, StockItem]]]) -> List[str]:
     return [getCoffeeLabel(c) for c in coffees]
 
 
-def coffee2beans(coffee:Tuple[str, Tuple[Coffee, StockItem]]) -> str:
-    c:Coffee = getCoffeeCoffeeDict(coffee)
+def coffee2beans(c:Coffee) -> str:
     origin = ''
     try:
-        origin_str = c['origin'].strip()
+        origin_str = c['origin'].strip() # pyright:ignore[reportTypedDictNotRequiredAccess]
         if len(origin_str) > 0 and origin_str != 'null':
             origin = QApplication.translate('Countries', origin_str)
     except Exception:  # pylint: disable=broad-except
@@ -494,7 +500,7 @@ def coffee2beans(coffee:Tuple[str, Tuple[Coffee, StockItem]]) -> str:
         label = ''
     processing = ''
     try:
-        processing_str = c['processing'].strip()
+        processing_str = c['processing'].strip() # pyright:ignore[reportTypedDictNotRequiredAccess]
         # processing_str can have the form "fully washed" or with
         # newer servers "Wet/fully washed"
         processing_split = processing_str.split('/')
@@ -509,7 +515,7 @@ def coffee2beans(coffee:Tuple[str, Tuple[Coffee, StockItem]]) -> str:
         pass
     grade = ''
     try:
-        grade = f" {c['grade']}"
+        grade = f" {c['grade']}" # pyright:ignore[reportTypedDictNotRequiredAccess]
     except Exception:  # pylint: disable=broad-except
         pass
     varietals = ''
@@ -522,7 +528,7 @@ def coffee2beans(coffee:Tuple[str, Tuple[Coffee, StockItem]]) -> str:
             vs = [
                 v.strip()
                 for v in c['varietals']
-                if v is not None and v != 'null' and v != ''
+                if v is not None and v not in {'null', ''}
             ]
             if processing == '':
                 varietals = f" {', '.join(vs)}"
@@ -535,15 +541,15 @@ def coffee2beans(coffee:Tuple[str, Tuple[Coffee, StockItem]]) -> str:
         bean = f',{bean}'
     year = ''
     try:
-        cy = c['crop_date']
+        cy = c['crop_date'] # pyright:ignore[reportTypedDictNotRequiredAccess]
         picked = None
         landed = None
         try:
-            picked = int(cy['picked'][0])
+            picked = int(cy['picked'][0]) # pyright:ignore[reportTypedDictNotRequiredAccess]
         except Exception:  # pylint: disable=broad-except
             pass
         try:
-            landed = int(cy['landed'][0])
+            landed = int(cy['landed'][0]) # pyright:ignore[reportTypedDictNotRequiredAccess]
         except Exception:  # pylint: disable=broad-except
             pass
         if picked is not None and not bool(landed):
@@ -559,49 +565,46 @@ def coffee2beans(coffee:Tuple[str, Tuple[Coffee, StockItem]]) -> str:
         pass
     return f'{origin}{label}{bean}{year}'
 
+def coffeeLabel(c:Coffee) -> str:
+    origin = ''
+    try:
+        origin_str = c['origin'].strip() # pyright:ignore[reportTypedDictNotRequiredAccess]
+        if len(origin_str) > 0 and origin_str != 'null':
+            origin = QApplication.translate(
+                'Countries', origin_str
+            )
+    except Exception:  # pylint: disable=broad-except
+        pass
+    if origin != '':
+        try:
+            if 'crop_date' in c:
+                cy = c['crop_date']
+                if (
+                    'picked' in cy
+                    and len(cy['picked']) > 0
+                    and cy['picked'][0] is not None
+                ):
+                    origin += f" {cy['picked'][0]:d}"
+        except Exception as e:  # pylint: disable=broad-except
+            _log.exception(e)
+        origin = f'{origin}, '
+    return f"{origin}{c.get('label', '')}"
 
 # returns a dict with all coffees with stock associated as string of the form  "<origin> <picked>, <label>"
 # associated to their hr_id
 def getCoffeeLabels() -> Dict[str, str]:
-    _log.debug('getCoffeeList()')
     try:
         stock_semaphore.acquire(1)
         if stock is not None and 'coffees' in stock:
             res = {}
             for c in stock['coffees']:
                 try:
-                    if 'hr_id' in c:
-                        hr_id = c['hr_id']
-                        origin = ''
-                        try:
-                            origin_str = c['origin'].strip()
-                            if len(origin_str) > 0 and origin_str != 'null':
-                                origin = QApplication.translate(
-                                    'Countries', origin_str
-                                )
-                        except Exception:  # pylint: disable=broad-except
-                            pass
-                        if origin != '':
-                            try:
-                                if 'crop_date' in c:
-                                    cy = c['crop_date']
-                                    if (
-                                        'picked' in cy
-                                        and len(cy['picked']) > 0
-                                        and cy['picked'][0] is not None
-                                    ):
-                                        origin += f" {cy['picked'][0]:d}"
-                            except Exception as e:  # pylint: disable=broad-except
-                                _log.exception(e)
-                            origin = f'{origin}, '
-                        label = c.get('label', '')
-
-                        if 'stock' in c:
-                            for s in c['stock']:
-                                if 'amount' in s:
-                                    amount = s['amount']
-                                    if amount > stock_epsilon:
-                                        res[f'{origin}{label}'] = hr_id
+                    if 'hr_id' in c and 'stock' in c:
+                        for s in c['stock']:
+                            if 'amount' in s:
+                                amount = s['amount']
+                                if amount > stock_epsilon:
+                                    res[coffeeLabel(c)] = c['hr_id']
                 except Exception as e:  # pylint: disable=broad-except
                     _log.exception(e)
             return res
@@ -611,6 +614,17 @@ def getCoffeeLabels() -> Dict[str, str]:
         if stock_semaphore.available() < 1:
             stock_semaphore.release(1)
 
+
+def getCoffee(hr_id:str) -> Optional[Coffee]:
+    if stock is not None and 'coffees' in stock:
+        return next((x for x in stock['coffees'] if 'hr_id' in x and x['hr_id'] == hr_id), None)
+    return None
+
+# returns the location label for the given store_id from the given Coffee dict
+def getLocationLabel(c:Coffee, location_hr_id:str) -> str:
+    if 'stock' in c:
+        return next( (si['location_label'] for si in c['stock'] if location_hr_id == si['location_hr_id']), '')
+    return ''
 
 # returns coffees with stock
 def getCoffees(weight_unit_idx:int, store:Optional[str]=None) -> List[Tuple[str, Tuple[Coffee, StockItem]]]:
@@ -623,7 +637,7 @@ def getCoffees(weight_unit_idx:int, store:Optional[str]=None) -> List[Tuple[str,
                 try:
                     origin = ''
                     try:
-                        origin_str = c['origin'].strip()
+                        origin_str = c['origin'].strip() # pyright:ignore[reportTypedDictNotRequiredAccess]
                         if len(origin_str) > 0 and origin_str != 'null':
                             origin = QApplication.translate(
                                 'Countries', origin_str
@@ -661,7 +675,7 @@ def getCoffees(weight_unit_idx:int, store:Optional[str]=None) -> List[Tuple[str,
                                     # is available in several locations
                                     loc = '' if store else f'{location}, '
                                     res[
-                                        f'{origin}{label} ({loc}{renderAmount(amount,default_unit,weight_unit_idx)})'
+                                        f'{origin}{label} [{loc}{renderAmount(amount,default_unit,weight_unit_idx)}]'
                                     ] = (c, s)
                 except Exception as e:  # pylint: disable=broad-except
                     _log.exception(e)
@@ -709,7 +723,7 @@ def getCoffeeStore(coffeeId:str, storeId:str, acquire_lock:bool = True) -> Tuple
             coffee = [c for c in stock['coffees'] if 'hr_id' in c and c['hr_id'] == coffeeId][0]
             return [
                 (coffee, s)
-                for s in coffee['stock']
+                for s in coffee['stock']  # pyright:ignore[reportTypedDictNotRequiredAccess]
                 if s['location_hr_id'] == storeId
             ][0]
         return None, None
@@ -723,8 +737,8 @@ def getCoffeeStore(coffeeId:str, storeId:str, acquire_lock:bool = True) -> Tuple
 
 # ==================
 # Blends
-#   blend:BlendStructure =  <blendLabel:str, [blendDict:Blend,stockDict:StockItem,maxAmount:float,coffeeLabelDict:Dict[hr_id:str, label:str],
-#             replaceMaxAmount:float,replacementBlends:List[Tuple[float, Blend]]]>
+#   blend:BlendStructure =  <blendLabel:str, <blendDict:Blend,stockDict:StockItem,maxAmount:float,coffeeLabelDict:Dict[hr_id:str, label:str],
+#             replaceMaxAmount:float,replacementBlends:List[Tuple[float, Blend]]>>
 #          for blends with replacement coffees defined
 #
 #   blendDict:Blend = { "label": <blend name>, "hr_id": <BlendID>, "ingredients" :
@@ -750,6 +764,12 @@ def getCoffeeStore(coffeeId:str, storeId:str, acquire_lock:bool = True) -> Tuple
 
 def getBlendLabel(blend:BlendStructure) -> str:
     return blend[0]
+
+def getBlendDict(blend:BlendStructure) -> Blend:
+    return blend[1][0]
+
+def getBlendName(blend:BlendStructure) -> str:
+    return getBlendDict(blend)['label']
 
 
 # composes a blend for weight in kg taking into account
@@ -877,21 +897,17 @@ def getBlendBlendDict(blend:BlendStructure, weight:Optional[float]=None) -> Blen
                 else None
             )
             screen_mins.append(
-                components_screen_min[c]
-                if c in components_screen_min
-                else None
+                components_screen_min.get(c)
             )
             screen_maxs.append(
-                components_screen_max[c]
-                if c in components_screen_max
-                else None
+                components_screen_max.get(c)
             )
         res['ingredients'] = ingredients
         try:
             if not is_float_list(moistures):
                 del res['moisture']
             elif config.app_window is not None:
-                res['moisture'] = config.app_window.float2float(sum(moistures))
+                res['moisture'] = float2float(sum(moistures))
         except Exception:  # pylint: disable=broad-except
             pass
         try:
@@ -955,7 +971,7 @@ def getReplacementBlendBlendDict(replacementBlend:ReplacementBlend) -> Blend:
 
 
 def getBlendId(blend:BlendStructure) -> str:
-    return getBlendBlendDict(blend).get('hr_id', '')
+    return getBlendDict(blend).get('hr_id', '')
 
 
 def hasBlendReplace(blend:BlendStructure) -> bool:
@@ -965,16 +981,32 @@ def hasBlendReplace(blend:BlendStructure) -> bool:
 def getBlendLabels(blends:List[BlendStructure]) -> List[str]:
     return [getBlendLabel(c) for c in blends]
 
+# weightIn is in kg. Weights are rendered in weight_unit_idx
+def blend2weight_beans(blend:BlendStructure, weight_unit_idx:int, weightIn:float=0) -> List[Tuple[str,str]]:
+    res:List[Tuple[str,str]] = []
+    try:
+        blends = getBlendBlendDict(blend, weightIn)
+        sorted_ingredients = sorted(
+            blends['ingredients'], key=lambda x: x['ratio'], reverse=True
+        )
+        for i in sorted_ingredients:
+            c = getBlendCoffeeLabelDict(blend)[i['coffee']]
+            w = ''
+            if weightIn:
+                w = render_weight(i['ratio'] * weightIn, 1, weight_unit_idx)
+            res.append((w,c))
+    except Exception as e:  # pylint: disable=broad-except
+        _log.exception(e)
+    return res
 
 def blend2beans(blend:BlendStructure, weight_unit_idx:int, weightIn:float=0) -> List[str]:
     res = []
     try:
-        # convert weightIn to g
-        assert config.app_window is not None
-        v = config.app_window.convertWeight(
+        # convert weightIn to kg
+        v = convertWeight(
             weightIn,
             weight_unit_idx,
-            config.app_window.qmc.weight_units.index('Kg'),
+            weight_units.index('Kg'),
         )  # v is weightIn converted to kg
         blends = getBlendBlendDict(blend, v)
         sorted_ingredients = sorted(
@@ -982,11 +1014,11 @@ def blend2beans(blend:BlendStructure, weight_unit_idx:int, weightIn:float=0) -> 
         )
         for i in sorted_ingredients:
             c = getBlendCoffeeLabelDict(blend)[i['coffee']]
+            w = ''
             if weightIn:
-                w = f"  {config.app_window.float2float(i['ratio'] * weightIn, 2)}{config.app_window.qmc.weight_units[weight_unit_idx]}" # @UndefinedVariable
-            else:
-                w = ''
-            res.append(f"{int(round(i['ratio'] * 100))}%{w}  {c}")
+                w = f"{render_weight(i['ratio'] * weightIn,weight_unit_idx,weight_unit_idx)} " # @UndefinedVariable
+            ratio = f"{int(round(i['ratio'] * 100))}% "
+            res.append(f'{ratio}{w}{c}')
     except Exception as e:  # pylint: disable=broad-except
         _log.exception(e)
     return res
@@ -1006,7 +1038,7 @@ def blend2beans(blend:BlendStructure, weight_unit_idx:int, weightIn:float=0) -> 
 # Blend is an extra locally defined blend that gets added to the result if it has a non-empty ingredients list
 #    it is a dict of the form { 'hr_id': '', 'label': <some string>, 'ingredients': [ {'ratio':<num>, 'coffee':<hr_id_str>},...] }
 def getBlends(weight_unit_idx:int, store:Optional[str] = None, customBlend:Optional[Blend] = None) -> List[BlendStructure]:
-    _log.debug('getBlends(%s,%s)', weight_unit_idx, store)
+#    _log.debug('getBlends(%s,%s)', weight_unit_idx, store)
     try:
         stock_semaphore.acquire(1)
         if stock is not None and ('blends' in stock or customBlend is not None):
@@ -1091,9 +1123,7 @@ def getBlends(weight_unit_idx:int, store:Optional[str] = None, customBlend:Optio
                                 res_sd = sd
                                 coffee_stock[coffee] = sd['amount']
                                 coffee_data[coffee] = (cd, sd)
-                                coffeeLabels[coffee] = coffee2beans(
-                                    (coffee, (cd, sd))
-                                )
+                                coffeeLabels[coffee] = coffee2beans(cd)
                                 if cd is not None:
                                     if 'label' in cd:
                                         i['label'] = cd['label']
@@ -1101,12 +1131,13 @@ def getBlends(weight_unit_idx:int, store:Optional[str] = None, customBlend:Optio
                                         # used in the Roast Properties dialog
                                         # for links to the coffees
                                         try:
-                                            i['label'] = f"{cd['crop_date']['picked'][0]} {i['label']}"
+                                            if cd['crop_date']['picked'][0] is not None: # pyright:ignore[reportTypedDictNotRequiredAccess]
+                                                i['label'] = f"{cd['crop_date']['picked'][0]} {i['label']}" # pyright:ignore[reportTypedDictNotRequiredAccess]
                                             # pylint: disable=broad-except
                                         except Exception:
                                             pass
                                     try:
-                                        m = float(cd['moisture'])
+                                        m = float(cd['moisture']) # pyright:ignore[reportTypedDictNotRequiredAccess]
                                         if m > 0:
                                             coffee_moisture[coffee] = m
                                             i['moisture'] = m
@@ -1114,7 +1145,7 @@ def getBlends(weight_unit_idx:int, store:Optional[str] = None, customBlend:Optio
                                     except Exception:
                                         pass
                                     try:
-                                        d = int(cd['density'])
+                                        d = int(cd['density']) # pyright:ignore[reportTypedDictNotRequiredAccess]
                                         if d > 0:
                                             coffee_density[coffee] = d
                                             i['density'] = d
@@ -1123,7 +1154,7 @@ def getBlends(weight_unit_idx:int, store:Optional[str] = None, customBlend:Optio
                                         pass
                                     try:
                                         screen_size_min = int(
-                                            cd['screen_size']['min']
+                                            cd['screen_size']['min'] # pyright:ignore[reportTypedDictNotRequiredAccess]
                                         )
                                         if screen_size_min > 0:
                                             coffee_screen_min[
@@ -1135,7 +1166,7 @@ def getBlends(weight_unit_idx:int, store:Optional[str] = None, customBlend:Optio
                                         pass
                                     try:
                                         screen_size_max = int(
-                                            cd['screen_size']['max']
+                                            cd['screen_size']['max'] # pyright:ignore[reportTypedDictNotRequiredAccess]
                                         )
                                         if screen_size_max > 0:
                                             coffee_screen_max[
@@ -1159,9 +1190,7 @@ def getBlends(weight_unit_idx:int, store:Optional[str] = None, customBlend:Optio
                                     res_sd = sd
                                     coffee_stock[replaceCoffee] = sd['amount']
                                     coffee_data[replaceCoffee] = (cd, sd)
-                                    coffeeLabels[replaceCoffee] = coffee2beans(
-                                        (replaceCoffee, (cd, sd))
-                                    )
+                                    coffeeLabels[replaceCoffee] = coffee2beans(cd)
                                     if cd is not None:
                                         if 'label' in cd:
                                             i['replaceLabel'] = cd['label']
@@ -1169,14 +1198,15 @@ def getBlends(weight_unit_idx:int, store:Optional[str] = None, customBlend:Optio
                                             # used in the Roast Properties
                                             # dialog for links to the coffees
                                             try:
-                                                i[
-                                                    'replaceLabel'
-                                                ] = f"{cd['crop_date']['picked'][0]} {i['replaceLabel']}"
+                                                if cd['crop_date']['picked'][0] is not None:  # pyright:ignore[reportTypedDictNotRequiredAccess]
+                                                    i[
+                                                        'replaceLabel'
+                                                    ] = f"{cd['crop_date']['picked'][0]} {i['replaceLabel']}"  # pyright:ignore[reportTypedDictNotRequiredAccess]
                                                 # pylint: disable=broad-except
                                             except Exception:
                                                 pass
                                         try:
-                                            m = float(cd['moisture'])
+                                            m = float(cd['moisture']) # pyright:ignore[reportTypedDictNotRequiredAccess]
                                             if m > 0:
                                                 coffee_moisture[
                                                     replaceCoffee
@@ -1185,7 +1215,7 @@ def getBlends(weight_unit_idx:int, store:Optional[str] = None, customBlend:Optio
                                         except Exception:
                                             pass
                                         try:
-                                            d = int(cd['density'])
+                                            d = int(cd['density']) # pyright:ignore[reportTypedDictNotRequiredAccess]
                                             if d > 0:
                                                 coffee_density[
                                                     replaceCoffee
@@ -1195,7 +1225,7 @@ def getBlends(weight_unit_idx:int, store:Optional[str] = None, customBlend:Optio
                                             pass
                                         try:
                                             screen_size_min = int(
-                                                cd['screen_size']['min']
+                                                cd['screen_size']['min'] # pyright:ignore[reportTypedDictNotRequiredAccess]
                                             )
                                             if screen_size_min > 0:
                                                 coffee_screen_min[
@@ -1206,7 +1236,7 @@ def getBlends(weight_unit_idx:int, store:Optional[str] = None, customBlend:Optio
                                             pass
                                         try:
                                             screen_size_max = int(
-                                                cd['screen_size']['max']
+                                                cd['screen_size']['max'] # pyright:ignore[reportTypedDictNotRequiredAccess]
                                             )
                                             if screen_size_max > 0:
                                                 coffee_screen_max[
@@ -1257,25 +1287,17 @@ def getBlends(weight_unit_idx:int, store:Optional[str] = None, customBlend:Optio
                                 for i in ingredients
                             ]
                             screen_mins = [
-                                (
-                                    coffee_screen_min[i['coffee']]
-                                    if i['coffee'] in coffee_screen_min
-                                    else None
-                                )
+                                coffee_screen_min.get(i['coffee'], None)
                                 for i in ingredients
                             ]
                             screen_maxs = [
-                                (
-                                    coffee_screen_max[i['coffee']]
-                                    if i['coffee'] in coffee_screen_max
-                                    else None
-                                )
+                                coffee_screen_max.get(i['coffee'], None)
                                 for i in ingredients
                             ]
                             # only if the moisture of all components is known,
                             # we can estimate the moisture of this blend
                             if is_float_list(moistures) and config.app_window is not None:
-                                m = config.app_window.float2float(sum(moistures), 1)
+                                m = float2float(sum(moistures), 1)
                                 new_blend[
                                     'moisture'
                                 ] = m  # @UndefinedVariable
@@ -1286,7 +1308,7 @@ def getBlends(weight_unit_idx:int, store:Optional[str] = None, customBlend:Optio
                                     blend['moisture'] = m
                             # only if the density of all components is known,
                             # we can estimate the density of this blend
-                            if is_int_list(densities):
+                            if is_float_list(densities): # component densities are floats as they are ints multiplied by ratio!
                                 new_blend['density'] = int(
                                     round(sum(densities))
                                 )  # @UndefinedVariable
@@ -1539,7 +1561,11 @@ def getBlends(weight_unit_idx:int, store:Optional[str] = None, customBlend:Optio
                                 )
                             if max_replacement_amount > 0:
                                 amount_str = f'{amount_str}/{renderAmount(max_replacement_amount,target_unit_idx=weight_unit_idx)}'
-                            label = f'{blend["label"]} ({loc}{amount_str})'
+                            loc_amount_str = f'{loc}{amount_str}'
+                            if loc_amount_str == '':
+                                label = blend['label']
+                            else:
+                                label = f'{blend["label"]} ({loc_amount_str})'
                             # we filter all items from replacementBlends with
                             # empty amount and the first original blend
                             replacementBlends = [

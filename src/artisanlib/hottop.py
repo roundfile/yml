@@ -19,8 +19,7 @@ import time
 import logging
 import asyncio
 
-from typing import Optional, Tuple, Callable, TYPE_CHECKING
-from typing import Final  # Python <=3.7
+from typing import Final, Optional, Tuple, Callable, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from artisanlib.types import SerialSettings # pylint: disable=unused-import
@@ -201,8 +200,8 @@ class Hottop(AsyncComm):
             if cooling_motor is not None:
                 self._set_cooling_motor = (1 if cooling_motor else 0)
 
-def main():
-    hottop_serial:'SerialSettings' = {
+def main() -> None:
+    hottop_serial:SerialSettings = {
         'port': '/dev/slave',
         'baudrate': 9600, # 115200
         'bytesize': 8,

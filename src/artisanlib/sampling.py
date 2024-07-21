@@ -27,11 +27,12 @@ try:
 except ImportError:
     from PyQt5.QtCore import Qt, pyqtSlot, QSettings # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QMessageBox, QApplication, QHBoxLayout, QVBoxLayout, QCheckBox, QGridLayout, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
-                                 QDialogButtonBox, QLayout) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
+                                 QDialogButtonBox, QLayout) # @UnusedImport @Reimport  @UnresolvedImport
 
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
     from PyQt6.QtWidgets import QWidget, QPushButton # pylint: disable=unused-import
+    from PyQt6.QtGui import QCloseEvent # pylint: disable=unused-import
 
 class SamplingDlg(ArtisanDialog):
     def __init__(self, parent:'QWidget', aw:'ApplicationWindow') -> None:
@@ -83,7 +84,7 @@ class SamplingDlg(ArtisanDialog):
         layout.addStretch()
         layout.addLayout(buttonsLayout)
         self.setLayout(layout)
-        ok_button: Optional['QPushButton'] = self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok)
+        ok_button: Optional[QPushButton] = self.dialogbuttons.button(QDialogButtonBox.StandardButton.Ok)
         if ok_button is not None:
             ok_button.setFocus()
 
@@ -94,28 +95,30 @@ class SamplingDlg(ArtisanDialog):
         layout.setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
 
     #window close box
-    def closeEvent(self,_):
+    @pyqtSlot('QCloseEvent')
+    def closeEvent(self,_:Optional['QCloseEvent'] = None) -> None:
         self.close()
 
     #cancel button
     @pyqtSlot()
-    def close(self):
+    def close(self) -> bool:
         self.storeSettings()
         self.reject()
+        return True
 
-    def storeSettings(self):
+    def storeSettings(self) -> None:
         #save window position (only; not size!)
         settings = QSettings()
         settings.setValue('SamplingPosition',self.frameGeometry().topLeft())
 
     #ok button
     @pyqtSlot()
-    def ok(self):
+    def ok(self) -> None:
         self.aw.qmc.flagKeepON = bool(self.keepOnFlag.isChecked())
         self.aw.qmc.flagOpenCompleted = bool(self.openCompletedFlag.isChecked())
         self.aw.setSamplingRate(int(self.interval.value()*1000.))
         if self.aw.qmc.delay < self.aw.qmc.default_delay:
-            QMessageBox.warning(self.aw,
+            QMessageBox.warning(None, #self.aw, # only without super this one shows the native dialog on macOS under Qt 6.6.2 and later
                 QApplication.translate('Message', 'Warning', None),
                 QApplication.translate('Message', 'A tight sampling interval might lead to instability on some machines. We suggest a minimum of 1s.'))
         self.storeSettings()

@@ -5,10 +5,10 @@
 import time as libtime
 import xlrd # type: ignore
 import logging
-from typing import Union, List, Optional, TYPE_CHECKING
-from typing_extensions import Final  # Python <=3.7
+from typing import Final, Union, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
+    from artisanlib.main import ApplicationWindow # pylint: disable=unused-import
     from artisanlib.types import ProfileData # pylint: disable=unused-import
 
 try:
@@ -24,9 +24,9 @@ from artisanlib.util import encodeLocal
 _log: Final[logging.Logger] = logging.getLogger(__name__)
 
 # returns a dict containing all profile information contained in the given Cropster XLS file
-def extractProfileCropsterXLS(file,_):
+def extractProfileCropsterXLS(file:str, _:'ApplicationWindow') -> 'ProfileData':
 
-    def takeClosest(num, collection):
+    def takeClosest(num:float, collection:List[float]) -> float:
         return min(collection, key=lambda x:abs(x-num))
 
     res:ProfileData = {} # the interpreted data set
@@ -910,17 +910,17 @@ def extractProfileCropsterXLS(file,_):
                                 c = takeClosest(time,res['timex'])
                                 timex_idx = res['timex'].index(c)
                                 if comment_type in color_change_trans:
-                                    res['timeindex'][1] = max(0,timex_idx)
+                                    res['timeindex'][1] = max(0,timex_idx) # pyright:ignore[reportTypedDictNotRequiredAccess]
                                 elif comment_type in first_crack_trans:
-                                    res['timeindex'][2] = max(0,timex_idx)
+                                    res['timeindex'][2] = max(0,timex_idx) # pyright:ignore[reportTypedDictNotRequiredAccess]
                                 elif comment_type == 'First crack end':
-                                    res['timeindex'][3] = max(0,timex_idx)
+                                    res['timeindex'][3] = max(0,timex_idx) # pyright:ignore[reportTypedDictNotRequiredAccess]
                                 elif comment_type in second_crack_trans:
-                                    res['timeindex'][4] = max(0,timex_idx)
+                                    res['timeindex'][4] = max(0,timex_idx) # pyright:ignore[reportTypedDictNotRequiredAccess]
                                 elif comment_type == 'Second crack end':
-                                    res['timeindex'][5] = max(0,timex_idx)
+                                    res['timeindex'][5] = max(0,timex_idx) # pyright:ignore[reportTypedDictNotRequiredAccess]
                                 elif comment_type == 'Duration':
-                                    res['timeindex'][6] = max(0,timex_idx)
+                                    res['timeindex'][6] = max(0,timex_idx) # pyright:ignore[reportTypedDictNotRequiredAccess]
                                 else:
                                     specialevents.append(timex_idx)
                                     ae = False

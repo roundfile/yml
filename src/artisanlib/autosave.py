@@ -15,7 +15,7 @@
 # AUTHOR
 # Marko Luther, 2023
 
-from typing import Optional, TYPE_CHECKING
+from typing import Optional, cast, TYPE_CHECKING
 from artisanlib.dialogs import ArtisanDialog
 
 try:
@@ -26,14 +26,14 @@ try:
 except ImportError:
     from PyQt5.QtCore import Qt, pyqtSlot, QSettings # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QApplication, QLabel, QPushButton, QDialogButtonBox, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
-        QComboBox, QHBoxLayout, QVBoxLayout, QCheckBox, QGridLayout, QLineEdit) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
+        QComboBox, QHBoxLayout, QVBoxLayout, QCheckBox, QGridLayout, QLineEdit) # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtGui import QStandardItemModel # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
 
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
     from PyQt6.QtWidgets import QWidget # pylint: disable=unused-import
-    from PyQt6.QtGui import QStandardItem # pylint: disable=unused-import
+    from PyQt6.QtGui import QStandardItem, QCloseEvent # pylint: disable=unused-import
 
 class autosaveDlg(ArtisanDialog):
     def __init__(self, parent:'QWidget', aw:'ApplicationWindow') -> None:
@@ -79,10 +79,10 @@ class autosaveDlg(ArtisanDialog):
             if not self.aw.QtWebEngineSupport:
                 # disable "PDF Report" item if QtWebEngine Support is not available
                 model = self.imageTypesComboBox.model()
-                assert isinstance(model, QStandardItemModel)
-                item: Optional['QStandardItem'] = model.item(self.aw.qmc.autoasaveimageformat_types.index('PDF Report'))
-                if item is not None:
-                    item.setEnabled(False)
+                if model is not None:
+                    item: Optional[QStandardItem] = cast(QStandardItemModel, model).item(self.aw.qmc.autoasaveimageformat_types.index('PDF Report'))
+                    if item is not None:
+                        item.setEnabled(False)
         except Exception: # pylint: disable=broad-except
             pass
         self.imageTypesComboBox.setCurrentIndex(self.aw.qmc.autoasaveimageformat_types.index(self.aw.qmc.autosaveimageformat))
@@ -150,19 +150,19 @@ class autosaveDlg(ArtisanDialog):
         self.setFixedHeight(self.sizeHint().height())
 
     @pyqtSlot(bool)
-    def showautosavehelp(self,_=False):
-        from help import autosave_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
+    def showautosavehelp(self,_:bool = False) -> None:
+        from help import autosave_help # pyright:ignore [attr-defined] # pylint: disable=no-name-in-module
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
                 QApplication.translate('Form Caption','Autosave Fields Help'),
-                autosave_help.content())
+                autosave_help.content()) # pyright:ignore # "content" in typed context  [no-untyped-call]
 
-    def closeHelp(self):
+    def closeHelp(self) -> None:
         self.aw.closeHelpDialog(self.helpdialog)
 
     @pyqtSlot()
-    def prefixChanged(self):
+    def prefixChanged(self) -> None:
         preview = self.aw.generateFilename(self.prefixEdit.text(),previewmode=2)
         self.prefixPreview.setText(preview)
         previewrecording = self.aw.generateFilename(self.prefixEdit.text(),previewmode=1)
@@ -174,17 +174,17 @@ class autosaveDlg(ArtisanDialog):
             self.prefixPreviewrecording.setText(previewrecording)
 
     @pyqtSlot(bool)
-    def getpath(self,_):
+    def getpath(self,_:bool) -> None:
         filename = self.aw.ArtisanExistingDirectoryDialog(msg=QApplication.translate('Form Caption','AutoSave Path'))
         self.pathEdit.setText(filename)
 
     @pyqtSlot(bool)
-    def getalsopath(self,_):
+    def getalsopath(self,_:bool) -> None:
         filename = self.aw.ArtisanExistingDirectoryDialog(msg=QApplication.translate('Form Caption','AutoSave Save Also Path'))
         self.pathAlsoEdit.setText(filename)
 
     @pyqtSlot()
-    def autoChanged(self):
+    def autoChanged(self) -> None:
         self.aw.qmc.autosavepath = self.pathEdit.text()
         self.aw.qmc.autosavealsopath = self.pathAlsoEdit.text()
         if self.autocheckbox.isChecked():
@@ -200,11 +200,10 @@ class autosaveDlg(ArtisanDialog):
         self.aw.qmc.autosaveimage = self.autopdfcheckbox.isChecked()
         self.aw.qmc.autosaveimageformat = self.imageTypesComboBox.currentText()
         self.aw.qmc.autosaveaddtorecentfilesflag = self.addtorecentfiles.isChecked()
-#        self.aw.closeEventSettings()
         self.close()
 
-    @pyqtSlot()
-    def closeEvent(self, _):
+    @pyqtSlot('QCloseEvent')
+    def closeEvent(self, _:Optional['QCloseEvent'] = None) -> None:
         self.closeHelp()
         settings = QSettings()
         #save window geometry

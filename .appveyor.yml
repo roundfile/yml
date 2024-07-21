@@ -17,20 +17,21 @@
 
 # Include "skip ci" in the commit message to prevent this build process from running
 environment:
-  # Set the Appveyor Python version for windows, macos and linux here. Does not affect windows_legacy.
-  PYTHON_V: 3.11
+  # Set the default Appveyor Python version here. Does not affect windows_legacy. Can be overridden in platform environment.
+  PYTHON_V: 3.12
   # Upgrade to specific version (for platforms supporting upgrade). Upgrade skipped if env var is missing or blank.
-  PYUPGRADE_V: 3.11.5 # causes ssl problems failing to connect to plus
+  #PYUPGRADE_WIN_V: 3.11.6
+  #PYUPGRADE_MACOS_V: 3.12.1
 
   matrix:
   - job_name: windows_legacy
     appveyor_build_worker_image: Visual Studio 2019
-#  - job_name: windows
-#    appveyor_build_worker_image: Visual Studio 2022
-#  - job_name: macos
-#    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
-#  - job_name: linux
-#    appveyor_build_worker_image: Ubuntu2004
+  - job_name: windows
+    appveyor_build_worker_image: Visual Studio 2022
+  - job_name: macos
+    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
+  - job_name: linux
+    appveyor_build_worker_image: Ubuntu2204
 
 
 # Generic build number, later set to commit hash by init
@@ -43,6 +44,12 @@ clone_depth: 1
 init:
   # Sets the commit hash to "build version number" shown in appveyor build status, the build number keeps it unique
   - ps: Update-AppveyorBuild -Version "$($env:APPVEYOR_REPO_COMMIT.substring(0,7)) ($env:APPVEYOR_BUILD_NUMBER)"
+  # Env used to enable artifact upload for PR builds by providing a valid file name, invalid for REPO builds
+  - ps: |
+      $env:artifact_prefix = 'disable_artifact'
+      if ([bool]$env:APPVEYOR_PULL_REQUEST_NUMBER -eq $true) {
+        $env:artifact_prefix = 'artisan'
+      }
 
 branches:
   only:
@@ -76,9 +83,7 @@ for:
 
     # pull library versions from requirments file
     - ps: $env:PYINSTALLER_VER = Select-String -Path ./src/requirements.txt "pyinstaller==([\d\.]*).*platform_system='Windows'" -List | ForEach-Object {$_.Matches.Groups[1].Value}
-    - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements.txt "libusb==([\d\.]*).*platform_system='Windows'" -List | ForEach-Object {$_.Matches.Groups[1].Value}
     - ps: Write-Host "PYINSTALLER_VER= $env:PYINSTALLER_VER"
-    - ps: Write-Host "LIBUSB_VER= $env:LIBUSB_VER"
 
     # update path env var
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
@@ -97,7 +102,7 @@ for:
 
     # update the __revision__ field with the left seven of the GIT commit hash
     - ps: $GIT_VERSION=git rev-parse --verify --short HEAD
-    - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '0'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
+    - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '.*'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the build script
@@ -107,8 +112,8 @@ for:
 #    - cmd: python -m unittest discover
 
   artifacts:
-    - path: 'generated-win-legacy.zip'
-#    - path: 'src\artisan-*.zip'
+#    - path: 'generated-win-legacy.zip'
+    - path: 'src\%artifact_prefix%-*.zip'
 
   deploy_script:
     - cmd: bash ../.ci/upload.sh artisan-*.zip
@@ -132,10 +137,17 @@ for:
     ARTISAN_LEGACY: "False"
     VC_REDIST: "https://aka.ms/vs/17/release/vc_redist.x64.exe"  #redistributable for VS 2015-2022
     VCVARSALL: "C:/Program Files/Microsoft Visual Studio/2022/Community/VC/Auxiliary/Build/vcvarsall.bat"
-#    QT_TRANSL: "C:\\Python311-x64\\Lib\\site-packages\\PyQt6\\Qt6\\translations"
 
   install:
     - cmd: echo Windows Install
+
+    # Update the Python version when PYUPGRADE_WIN_V is set.  The upgrade happens in install-win.bat
+    # Note that the paths set below may not exist yet.
+    - ps: |
+        if (Test-Path env:PYUPGRADE_WIN_V) {
+            $env:PREV_PYTHON_V = $env:PYTHON_V
+            $env:PYTHON_V = ($env:PYUPGRADE_WIN_V -split '\.')[0..1] -join '.'
+        }
 
     # derive the python path from the version number
     - ps: $env:PYTHON_PATH = "C:/Python$($env:PYTHON_V -replace '\.','')-x64"
@@ -146,9 +158,7 @@ for:
 
     # pull library versions from requirments file
     - ps: $env:PYINSTALLER_VER = Select-String -Path ./src/requirements.txt "pyinstaller==([\d\.]*).*platform_system='Windows'" -List | ForEach-Object {$_.Matches.Groups[1].Value}
-    - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements.txt "libusb==([\d\.]*).*platform_system='Windows'" -List | ForEach-Object {$_.Matches.Groups[1].Value}
     - ps: Write-Host "PYINSTALLER_VER= $env:PYINSTALLER_VER"
-    - ps: Write-Host "LIBUSB_VER= $env:LIBUSB_VER"
 
     # update path env var
     - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
@@ -167,7 +177,7 @@ for:
 
     # update the __revision__ field with the left seven of the GIT commit hash
     - ps: $GIT_VERSION=git rev-parse --verify --short HEAD
-    - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '0'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
+    - ps: gc artisanlib/__init__.py | %{ $_ -replace "__revision__ = '.*'", "__revision__ = '$GIT_VERSION'" } | out-file newfile -encoding ascii
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the build script
@@ -177,8 +187,8 @@ for:
 #    - cmd: python -m unittest discover
 
   artifacts:
-    - path: 'generated-win.zip'
-#    - path: 'src\artisan-*.zip'
+#    - path: 'generated-win.zip'
+    - path: 'src\%artifact_prefix%-*.zip'
 
   deploy_script:
     - cmd: bash ../.ci/upload.sh artisan-*.zip
@@ -199,7 +209,7 @@ for:
     MACOSX_DEPLOYMENT_TARGET: 11.0
     PYTHONSITEPKGS: /Users/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
     QT_PATH: ${PYTHONSITEPKGS}/PyQt6/Qt6
-    QT_SRC_PATH: /Users/appveyor/Qt/6.4/macos
+    QT_SRC_PATH: /Users/appveyor/Qt/6.6/macos
     PYUIC: pyuic6
     PYLUPDATE: ./pylupdate6pro.py  #the dot slash is necessary
 
@@ -209,7 +219,7 @@ for:
 
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
-    - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
+    - sed -i'' -e "s/__revision__ = '.*'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
 
     # run the install script
     - .ci/install-macos.sh
@@ -228,9 +238,9 @@ for:
 #  test_script:
 #    - python -m unittest discover -s src
 
-#  artifacts:
+  artifacts:
 #    - path: 'generated-macos.zip'
-#    - path: 'src/artisan-*.dmg'
+    - path: 'src/%artifact_prefix%-*.dmg'
 
   deploy_script:
     # we upgrade libidn2 and curl to prevent issues caused by the previous python update
@@ -253,25 +263,28 @@ for:
     fast_finish: false
 
   environment:
+    #PYTHON_V: 3.11
     ARTISAN_OS: linux
     PYTHONSITEPKGS: /home/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
     QT_PATH: $PYTHON_PATH/PyQt6/Qt6
-    QT_SRC_PATH: /home/appveyor/Qt/6.4/gcc_64
+    QT_SRC_PATH: /home/appveyor/Qt/6.4/gcc_64 # latest points still to 5.15.2
     PYUIC: pyuic6
     PYLUPDATE: ./pylupdate6pro.py  #the dot slash is necessary
 
   install:
+    #- ls -la /home/appveyor/Qt/
     - echo "Linux Install"
     - chmod +x .ci/*.sh
 
     # pull library versions from requirments file
-#    - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements.txt 'libusb==([\d\.]*)' -List | ForEach-Object {$_.Matches.Groups[1].Value}
     - ps: $env:LIBUSB_VER = Select-String -Path ./src/requirements.txt "libusb==([\d\.]*).*platform_system='Linux'" -List | ForEach-Object {$_.Matches.Groups[1].Value}
     - ps: Write-Host "LIBUSB_VER= $env:LIBUSB_VER"
+    - ps: $env:DOTENV_VER = Select-String -Path ./src/requirements.txt "dotenv==([\d\.]*).*platform_system='Linux'" -List | ForEach-Object {$_.Matches.Groups[1].Value}
+    - ps: Write-Host "DOTENV_VER= $env:DOTENV_VER"
 
     # update the __revision__ field with the left seven of the GIT commit hash
     - export GIT_VERSION=`git rev-parse --verify --short HEAD 2>/dev/null|| echo "???"`
-    - sed -i'' -e "s/__revision__ = '0'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
+    - sed -i'' -e "s/__revision__ = '.*'/__revision__ = '$GIT_VERSION'/" src/artisanlib/__init__.py
 
     # run the install script
     - .ci/install-linux.sh
@@ -289,10 +302,10 @@ for:
 #    - QT_QPA_PLATFORM=offscreen python -m unittest discover -s src
 
   artifacts:
-    - path: 'generated-linux.zip'
-#    - path: 'src/artisan-*.deb'
-#    - path: 'src/artisan-*.rpm'
-#    - path: 'src/artisan-*.AppImage'
+#    - path: 'generated-linux.zip'
+    - path: 'src/%artifact_prefix%-*.deb'
+    - path: 'src/%artifact_prefix%-*.rpm'
+    - path: 'src/%artifact_prefix%-*.AppImage'
 
   deploy_script:
     - ../.ci/upload.sh artisan-*.deb

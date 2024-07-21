@@ -24,10 +24,11 @@ from typing import List, Tuple, Callable, Optional, TYPE_CHECKING
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
     from PyQt6.QtWidgets import QWidget # noqa: F401 # pylint: disable=unused-import
+    from PyQt6.QtGui import QCloseEvent # pylint: disable=unused-import
     import numpy.typing as npt  # pylint: disable=unused-import
 
 from artisanlib.dialogs import ArtisanDialog
-from artisanlib.util import stringfromseconds, stringtoseconds
+from artisanlib.util import stringfromseconds, stringtoseconds, float2float
 
 
 try:
@@ -39,21 +40,23 @@ except ImportError:
     from PyQt5.QtCore import Qt, pyqtSlot, QSettings, QRegularExpression, QDateTime # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtGui import QRegularExpressionValidator # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QApplication, QHeaderView, QAbstractItemView, QWidget, QLabel, QLineEdit, QComboBox, QDialogButtonBox, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
-                QTableWidget, QTableWidgetItem, QGroupBox, QLayout, QHBoxLayout, QVBoxLayout, QFrame) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
+                QTableWidget, QTableWidgetItem, QGroupBox, QLayout, QHBoxLayout, QVBoxLayout, QFrame) # @UnusedImport @Reimport  @UnresolvedImport
 
 
 class MyQRegularExpressionValidator(QRegularExpressionValidator): # pyright: ignore [reportGeneralTypeIssues] # Argument to class must be a base class
     # we fix partial time input like '12' => '12:00', '12:' => '12:00' and '12:0' => '12:00'
 
     @staticmethod
-    def fixup(value):
-        if ':' not in value:
-            return value + ':00'
-        if value.endswith(':'):
-            return value + '00'
-        if len(value[value.index(':')+1:]) == 1:
-            return value + '0'
-        return value
+    def fixup(value:Optional[str]) -> str:
+        if value is not None:
+            if ':' not in value:
+                return value + ':00'
+            if value.endswith(':'):
+                return value + '00'
+            if len(value[value.index(':')+1:]) == 1:
+                return value + '0'
+            return value
+        return ''
 
 class profileTransformatorDlg(ArtisanDialog):
     def __init__(self, parent:'QWidget', aw:'ApplicationWindow') -> None:
@@ -216,54 +219,54 @@ class profileTransformatorDlg(ArtisanDialog):
             return 0
         return self.org_timex[self.aw.qmc.timeindex[0]]
 
-    def backgroundOffset(self):
+    def backgroundOffset(self) -> float:
         if self.aw.qmc.timeindexB[0] != -1 and len(self.aw.qmc.timeB) > self.aw.qmc.timeindexB[0]:
             return self.aw.qmc.timeB[self.aw.qmc.timeindexB[0]]
         return 0
 
-    def clearPhasesTargetTimes(self):
+    def clearPhasesTargetTimes(self) -> None:
         if self.phases_target_widgets_time is not None and len(self.phases_target_widgets_time)>2:
             for i in range(3):
                 phases_target_widgets_time = self.phases_target_widgets_time[i]
                 if phases_target_widgets_time is not None:
                     phases_target_widgets_time.setText('')
 
-    def clearPhasesTargetPercent(self):
+    def clearPhasesTargetPercent(self) -> None:
         if self.phases_target_widgets_percent is not None and len(self.phases_target_widgets_percent)>2:
             for i in range(3):
                 phases_target_widgets_percent = self.phases_target_widgets_percent[i]
                 if phases_target_widgets_percent is not None:
                     phases_target_widgets_percent.setText('')
 
-    def clearPhasesResults(self):
+    def clearPhasesResults(self) -> None:
         if self.phases_result_widgets is not None and len(self.phases_result_widgets)>2:
             for i in range(3):
                 phases_result_widgets = self.phases_result_widgets[i]
                 if phases_result_widgets is not None:
                     phases_result_widgets.setText('')
 
-    def clearTimeTargets(self):
+    def clearTimeTargets(self) -> None:
         if self.time_target_widgets is not None and len(self.time_target_widgets)>3:
             for i in range(4):
                 time_target_widgets = self.time_target_widgets[i]
                 if time_target_widgets is not None:
                     time_target_widgets.setText('')
 
-    def clearTimeResults(self):
+    def clearTimeResults(self) -> None:
         if self.time_result_widgets is not None and len(self.time_result_widgets)>3:
             for i in range(4):
                 time_result_widgets = self.time_result_widgets[i]
                 if time_result_widgets is not None:
                     time_result_widgets.setText('')
 
-    def clearTempTargets(self):
+    def clearTempTargets(self) -> None:
         if self.temp_target_widgets is not None and len(self.temp_target_widgets)>4:
             for i in range(5):
                 temp_target_widget:Optional[QLineEdit] = self.temp_target_widgets[i]
                 if temp_target_widget is not None:
                     temp_target_widget.setText('')
 
-    def clearTempResults(self):
+    def clearTempResults(self) -> None:
         if self.temp_result_widgets is not None and len(self.temp_result_widgets)>4:
             for i in range(5):
                 temp_result_widget:Optional[QTableWidgetItem] = self.temp_result_widgets[i]
@@ -334,7 +337,7 @@ class profileTransformatorDlg(ArtisanDialog):
         return res
 
     # returns list of CHARGE, DRY, FCs, SCs and DROP BT temperatures if event is set, otherwise None
-    def getTargetTemps(self):
+    def getTargetTemps(self) -> List[Optional[float]]:
         res = []
         if self.temp_target_widgets is not None:
             for w in self.temp_target_widgets:
@@ -350,21 +353,25 @@ class profileTransformatorDlg(ArtisanDialog):
     # message slots
 
     @pyqtSlot(int)
-    def changeMappingMode(self,i):
+    def changeMappingMode(self, i:int) -> None:
         self.aw.qmc.transMappingMode = i
         self.updateTimeResults()
         self.updateTempResults()
 
     @pyqtSlot(int)
-    def phasesTableColumnHeaderClicked(self,i):
+    def phasesTableColumnHeaderClicked(self, i:int) -> None:
         if (self.phases_target_widgets_time is not None and
                 self.phases_target_widgets_time[i] is not None and
                 self.phases_target_widgets_percent is not None and
                 self.phases_target_widgets_percent[i] is not None):
             # clear target value i
-            if self.phases_target_widgets_time[i].text() != '' or self.phases_target_widgets_percent[i].text() != '':
-                self.phases_target_widgets_time[i].setText('')
-                self.phases_target_widgets_percent[i].setText('')
+            phases_target_widgets_time_i = self.phases_target_widgets_time[i]
+            phases_target_widgets_percent_i = self.phases_target_widgets_percent[i]
+            if (phases_target_widgets_time_i is not None and phases_target_widgets_time_i.text() != '') or (phases_target_widgets_percent_i is not None and phases_target_widgets_percent_i.text() != ''):
+                if phases_target_widgets_time_i is not None:
+                    phases_target_widgets_time_i.setText('')
+                if phases_target_widgets_percent_i is not None:
+                    phases_target_widgets_percent_i.setText('')
             elif self.aw.qmc.backgroundprofile is not None and self.aw.qmc.timeindexB[1]>0 and self.aw.qmc.timeindexB[2]>0 and self.aw.qmc.timeindexB[6]>0 and \
                     self.aw.qmc.timeindex[1]>0 and self.aw.qmc.timeindex[2]>0 and self.aw.qmc.timeindex[6]>0:
                 back_offset = self.backgroundOffset()
@@ -380,11 +387,13 @@ class profileTransformatorDlg(ArtisanDialog):
                     s = stringfromseconds(back_fcs - back_dry)
                 elif i == 2:
                     s = stringfromseconds(back_drop - back_fcs)
-                self.phases_target_widgets_time[i].setText(s)
+                qline_edit = (self.phases_target_widgets_time[i] if len(self.phases_target_widgets_time)>i else None)
+                if qline_edit is not None:
+                    qline_edit.setText(s)
             self.updateTimeResults()
 
     @pyqtSlot(int)
-    def phasesTableRowHeaderClicked(self,i):
+    def phasesTableRowHeaderClicked(self, i:int) -> None:
         if i == 1: # row targets
             # clear all targets and results
             # clear all targets
@@ -393,46 +402,50 @@ class profileTransformatorDlg(ArtisanDialog):
             self.clearPhasesResults()
 
     @pyqtSlot(int)
-    def timeTableColumnHeaderClicked(self,i):
+    def timeTableColumnHeaderClicked(self, i:int) -> None:
         if self.time_target_widgets is not None and self.time_target_widgets[i] is not None:
             # clear target value i
-            if self.time_target_widgets[i].text() != '':
-                self.time_target_widgets[i].setText('')
-                self.updateTimeResults()
-            elif self.aw.qmc.backgroundprofile is not None:
-                timeidx = [1,2,4,6][i]
-                if self.aw.qmc.timeindex[timeidx] and self.aw.qmc.timeindexB[timeidx]:
-                    s = stringfromseconds(self.aw.qmc.timeB[self.aw.qmc.timeindexB[timeidx]]-self.backgroundOffset(),False)
-                    self.time_target_widgets[i].setText(s)
+            time_target_widgets_i = self.time_target_widgets[i]
+            if time_target_widgets_i is not None:
+                if time_target_widgets_i.text() != '':
+                    time_target_widgets_i.setText('')
                     self.updateTimeResults()
+                elif self.aw.qmc.backgroundprofile is not None:
+                    timeidx = [1,2,4,6][i]
+                    if self.aw.qmc.timeindex[timeidx] and self.aw.qmc.timeindexB[timeidx]:
+                        s = stringfromseconds(self.aw.qmc.timeB[self.aw.qmc.timeindexB[timeidx]]-self.backgroundOffset(),False)
+                        time_target_widgets_i.setText(s)
+                        self.updateTimeResults()
 
     @pyqtSlot(int)
-    def timeTableRowHeaderClicked(self,i):
+    def timeTableRowHeaderClicked(self, i:int) -> None:
         if i == 1: # row targets
             self.clearTimeTargets()
             self.clearTimeResults()
 
     @pyqtSlot(int)
-    def tempTableColumnHeaderClicked(self,i):
+    def tempTableColumnHeaderClicked(self, i:int) -> None:
         if self.temp_target_widgets is not None and self.temp_target_widgets[i] is not None:
             # clear target value i
-            if self.temp_target_widgets[i].text() != '':
-                self.temp_target_widgets[i].setText('')
-                self.updateTempResults()
-            elif self.aw.qmc.backgroundprofile is not None:
-                timeidx = [0,1,2,4,6][i]
-                if self.aw.qmc.timeindexB[timeidx] > 0:
-                    self.temp_target_widgets[i].setText(str(self.aw.float2float(self.aw.qmc.temp2B[self.aw.qmc.timeindexB[timeidx]])))
+            temp_target_widgets_i = self.temp_target_widgets[i]
+            if temp_target_widgets_i is not None:
+                if temp_target_widgets_i.text() != '':
+                    temp_target_widgets_i.setText('')
                     self.updateTempResults()
+                elif self.aw.qmc.backgroundprofile is not None:
+                    timeidx = [0,1,2,4,6][i]
+                    if self.aw.qmc.timeindexB[timeidx] > 0:
+                        temp_target_widgets_i.setText(str(float2float(self.aw.qmc.temp2B[self.aw.qmc.timeindexB[timeidx]])))
+                        self.updateTempResults()
 
     @pyqtSlot(int)
-    def tempTableRowHeaderClicked(self,i):
+    def tempTableRowHeaderClicked(self, i:int) -> None:
         if i == 1: # row targets
             self.clearTempTargets()
             self.clearTempResults()
 
     @pyqtSlot()
-    def updatePhasesWidget(self):
+    def updatePhasesWidget(self) -> None:
         self.clearTimeTargets()
         if self.phases_target_widgets_time is not None and self.phases_target_widgets_percent is not None:
             sender = self.sender()
@@ -456,13 +469,13 @@ class profileTransformatorDlg(ArtisanDialog):
             self.updateTimeResults()
 
     @pyqtSlot()
-    def updateTimesWidget(self):
+    def updateTimesWidget(self) -> None:
         self.clearPhasesTargetTimes()
         self.clearPhasesTargetPercent()
         self.updateTimeResults()
 
     # updates time and phases result widgets
-    def updateTimeResults(self):
+    def updateTimeResults(self) -> None:
         self.targetTimes = self.getTargetTimes()
         time_targets_clear = all(v is None for v in self.targetTimes)
         target_times, target_phases = self.getTargetPhases()
@@ -494,7 +507,7 @@ class profileTransformatorDlg(ArtisanDialog):
                     drying_period = result_times[0]
                     drying_percentage = 100 * drying_period / result_times[3]
                     drying_str = \
-                            f'{stringfromseconds(drying_period,leadingzero=False)}    {self.aw.float2float(drying_percentage)}%'
+                            f'{stringfromseconds(drying_period,leadingzero=False)}    {float2float(drying_percentage)}%'
                     phases_result_widgets = self.phases_result_widgets[0]
                     if phases_result_widgets is not None:
                         phases_result_widgets.setText(drying_str)
@@ -502,7 +515,7 @@ class profileTransformatorDlg(ArtisanDialog):
                     mailard_period = result_times[1] - result_times[0]
                     mailard_percentage = 100 * mailard_period / result_times[3]
                     mailard_str = \
-                            f'{stringfromseconds(mailard_period,leadingzero=False)}    {self.aw.float2float(mailard_percentage)}%'
+                            f'{stringfromseconds(mailard_period,leadingzero=False)}    {float2float(mailard_percentage)}%'
                     phases_result_widgets= self.phases_result_widgets[1]
                     if phases_result_widgets is not None:
                         phases_result_widgets.setText(mailard_str)
@@ -510,7 +523,7 @@ class profileTransformatorDlg(ArtisanDialog):
                     finishing_period = result_times[3] - result_times[1]
                     finishing_percentage = 100 * finishing_period / result_times[3]
                     finishing_str = \
-                            f'{stringfromseconds(finishing_period,leadingzero=False)}    {self.aw.float2float(finishing_percentage)}%'
+                            f'{stringfromseconds(finishing_period,leadingzero=False)}    {float2float(finishing_percentage)}%'
                     phases_result_widgets = self.phases_result_widgets[2]
                     if phases_result_widgets is not None:
                         phases_result_widgets.setText(finishing_str)
@@ -520,7 +533,7 @@ class profileTransformatorDlg(ArtisanDialog):
                             w.setText('')
 
     @pyqtSlot()
-    def updateTempResults(self):
+    def updateTempResults(self) -> None:
         self.targetTemps = self.getTargetTemps()
         if all(v is None for v in self.targetTemps):
             # clear all results if no targets are set
@@ -532,7 +545,7 @@ class profileTransformatorDlg(ArtisanDialog):
                 temp_result_widget:Optional[QTableWidgetItem] = self.temp_result_widgets[i]
                 result_temp = result_temps[i]
                 if temp_result_widget is not None and result_temp is not None:
-                    temp_result_widget.setText(str(self.aw.float2float(result_temp)) + self.aw.qmc.mode)
+                    temp_result_widget.setText(str(float2float(result_temp)) + self.aw.qmc.mode)
             s = ''
             if fit is not None:
                 s = fit
@@ -541,7 +554,7 @@ class profileTransformatorDlg(ArtisanDialog):
 
     #called from Apply button
     @pyqtSlot(bool)
-    def apply(self,_=False):
+    def apply(self,_:bool = False) -> None:
         applied_time = self.applyTimeTransformation()
         applied_temp = self.applyTempTransformation()
         if applied_time or applied_temp:
@@ -562,7 +575,7 @@ class profileTransformatorDlg(ArtisanDialog):
 
     #called from Restore button
     @pyqtSlot(bool)
-    def restore(self,_=False):
+    def restore(self, _:bool = False) -> None:
         self.aw.setCurrentFile(self.org_curFile,addToRecent=False)
         self.aw.qmc.roastUUID = self.org_UUID
         self.aw.qmc.roastdate = self.org_roastdate
@@ -583,7 +596,7 @@ class profileTransformatorDlg(ArtisanDialog):
 
     #called from OK button
     @pyqtSlot()
-    def applyTransformations(self):
+    def applyTransformations(self) -> None:
         self.apply()
         #save window position (only; not size!)
         settings = QSettings()
@@ -592,7 +605,7 @@ class profileTransformatorDlg(ArtisanDialog):
 
     #called from Cancel button
     @pyqtSlot()
-    def restoreState(self):
+    def restoreState(self) -> None:
         self.restore()
         self.aw.qmc.transMappingMode = self.org_transMappingMode
         #save window position (only; not size!)
@@ -602,34 +615,35 @@ class profileTransformatorDlg(ArtisanDialog):
         self.reject()
 
     @pyqtSlot(bool)
-    def openHelp(self,_=False):
-        from help import transposer_help # type: ignore [attr-defined] # pylint: disable=no-name-in-module
+    def openHelp(self,_:bool = False) -> None:
+        from help import transposer_help # pyright: ignore [attr-defined] # pylint: disable=no-name-in-module
         self.helpdialog = self.aw.showHelpDialog(
                 self,            # this dialog as parent
                 self.helpdialog, # the existing help dialog
                 QApplication.translate('Form Caption','Profile Transposer Help'),
                 transposer_help.content())
 
-    def closeHelp(self):
+    def closeHelp(self) -> None:
         self.aw.closeHelpDialog(self.helpdialog)
 
-    def closeEvent(self, _):
+    @pyqtSlot('QCloseEvent')
+    def closeEvent(self, _:Optional['QCloseEvent'] = None) -> None:
         self.restoreState()
 
 
     # Calculations
 
     # returns the list of results times in seconds
-    def calcTimeResults(self):
+    def calcTimeResults(self) -> List[float]:
         res = []
         profileTime:Optional[float]
         if self.aw.qmc.transMappingMode == 0:
             # discrete mapping
             # adding CHARGE
-            fits:List[Optional['npt.NDArray[numpy.float64]']] = self.calcDiscretefits([0] + self.profileTimes,[0] + self.targetTimes)
+            fits:List[Optional[npt.NDArray[numpy.float64]]] = self.calcDiscretefits([0] + self.profileTimes,[0] + self.targetTimes)
             if len(fits)>4 and len(self.profileTimes)>3:
                 for i in range(4):
-                    fit:Optional['npt.NDArray[numpy.float64]'] = fits[i+1]
+                    fit:Optional[npt.NDArray[numpy.float64]] = fits[i+1]
                     profileTime = self.profileTimes[i]
                     if fit is not None and profileTime is not None:
                         res.append(numpy.poly1d(fit)(profileTime))
@@ -646,8 +660,8 @@ class profileTransformatorDlg(ArtisanDialog):
                             res.append(fit_fuc(profileTime))
                         else:
                             res.append(None)
-                except numpy.RankWarning:
-                    pass
+#                except numpy.exceptions.RankWarning:
+#                    pass
                 except Exception: # pylint: disable=broad-except
                     pass
         return res
@@ -655,7 +669,7 @@ class profileTransformatorDlg(ArtisanDialog):
     # returns the list of results temperatures and the polyfit or None as second result
     def calcTempResults(self) -> Tuple[List[Optional[float]], Optional[str]]:
         res:List[Optional[float]] = []
-        fit:Optional['npt.NDArray[numpy.float64]'] = None
+        fit:Optional[npt.NDArray[numpy.float64]] = None
         fit_str:Optional[str] = None
         profileTemp:Optional[float]
         if self.aw.qmc.transMappingMode == 0:
@@ -673,7 +687,7 @@ class profileTransformatorDlg(ArtisanDialog):
                 fit_str = self.aw.fit2str(fits[0])
             else:
                 formula = ''
-                last_target:Optional[Tuple] = None
+                last_target:Optional[float] = None
                 for f,tpl in reversed(active_fits[:-1]):
                     if last_target is None:
                         formula = self.aw.fit2str(f)
@@ -697,14 +711,14 @@ class profileTransformatorDlg(ArtisanDialog):
                         fit_str = self.aw.fit2str(fit_func)
                     else:
                         res = [None]*5
-                except numpy.RankWarning:
-                    pass
+#                except numpy.exceptions.RankWarning:
+#                    pass
                 except Exception: # pylint: disable=broad-except
                     pass
         return res,fit_str
 
     # returns target times based on the phases target
-    def getTargetPhasesTimes(self):
+    def getTargetPhasesTimes(self) -> List[Optional[float]]:
         # get the offset
         offset:float = self.forgroundOffset()
         # get profile phases events time
@@ -782,7 +796,7 @@ class profileTransformatorDlg(ArtisanDialog):
 
     # calculates the linear (self.aw.qmc.transMappingMode = 1) or quadratic (self.aw.qmc.transMappingMode = 2) mapping
     # between the profileTemps and the targetTemps
-    def calcTempPolyfit(self):
+    def calcTempPolyfit(self) -> Optional['npt.NDArray[numpy.float64]']:
         xa:List[float] = []
         ya:List[float] = []
         for i in range(5):
@@ -815,8 +829,8 @@ class profileTransformatorDlg(ArtisanDialog):
     def calcDiscretefits(sources:List[Optional[float]], targets:List[Optional[float]]) -> List[Optional['npt.NDArray[numpy.float64]']]:
         if len(sources) != len(targets):
             return [None]*len(sources)
-        fits:List[Optional['npt.NDArray[numpy.float64]']] = [None]*len(sources)
-        last_fit:Optional['npt.NDArray[numpy.float64]'] = None
+        fits:List[Optional[npt.NDArray[numpy.float64]]] = [None]*len(sources)
+        last_fit:Optional[npt.NDArray[numpy.float64]] = None
         for i, _ in enumerate(sources):
             if sources[i] is not None:
                 if targets[i] is None:
@@ -828,9 +842,11 @@ class profileTransformatorDlg(ArtisanDialog):
                         if sources[j] is not None and targets[j] is not None:
                             next_idx = j
                             break
+                    sources_i:Optional[float] = None
+                    targets_i:Optional[float] = None
+                    sources_i = sources[i]
+                    targets_i = targets[i]
                     if next_idx is None:
-                        sources_i = sources[i]
-                        targets_i = targets[i]
                         if last_fit is not None:
                             fits[i] = last_fit # copy previous fit
                         elif sources_i is not None and targets_i is not None:
@@ -855,7 +871,7 @@ class profileTransformatorDlg(ArtisanDialog):
         return fits
 
     # fits of length 5
-    def applyDiscreteTimeMapping(self,timex,fits):
+    def applyDiscreteTimeMapping(self, timex:List[float], fits:List[Optional['npt.NDArray[numpy.float64]']]) -> List[float]:
         offset = self.forgroundOffset()
         res_timex = []
         if offset == 0 or fits[0] is None:
@@ -874,15 +890,16 @@ class profileTransformatorDlg(ArtisanDialog):
                 j = 2 # after FCs
             elif self.aw.qmc.timeindex[1] > 0 and i >= self.aw.qmc.timeindex[1]:
                 j = 1 # after DRY
-            if fits[j] is None:
+            fitsj = fits[j]
+            if fitsj is None:
                 res_timex.append(timex[i] - offset + new_offset)
             else:
-                fit = numpy.poly1d(fits[j]) # fit to be applied
+                fit = numpy.poly1d(fitsj) # fit to be applied
                 res_timex.append(fit(timex[i] - offset)+new_offset)
         return res_timex
 
     # returns False if no transformation was applied
-    def applyTimeTransformation(self):
+    def applyTimeTransformation(self) -> bool:
         # first update the targets
         self.targetTimes = self.getTargetTimes()
         if all(v is None for v in self.targetTimes):
@@ -897,7 +914,9 @@ class profileTransformatorDlg(ArtisanDialog):
         # apply either the discrete or the polyfit mappings
         if self.aw.qmc.transMappingMode == 0:
             # discrete mapping
-            fits = self.calcDiscretefits([0] + self.profileTimes,[0] + self.targetTimes)
+            base:List[Optional[float]] = [0]
+            base.extend(self.targetTimes)
+            fits = self.calcDiscretefits([0] + self.profileTimes, base)
             self.aw.qmc.timex = self.applyDiscreteTimeMapping(self.org_timex,fits)
             # apply to the extra timex
             self.aw.qmc.extratimex = []
@@ -929,12 +948,14 @@ class profileTransformatorDlg(ArtisanDialog):
                                 new_timex = [tx+foffset for tx in new_timex]
                             extratimex.append(new_timex)
                         self.aw.qmc.extratimex = extratimex
-                except numpy.RankWarning:
+#                except numpy.exceptions.RankWarning:
+#                    pass
+                except Exception: # pylint: disable=broad-except
                     pass
         return True
 
     # returns False if no transformation was applied
-    def applyTempTransformation(self):
+    def applyTempTransformation(self) -> bool:
         # first update the targets
         self.targetTemps = self.getTargetTemps()
         if all(v is None for v in self.targetTemps):
@@ -975,17 +996,17 @@ class profileTransformatorDlg(ArtisanDialog):
                     fit = numpy.poly1d(p)
                     if fit is not None:
                         self.aw.qmc.temp2 = [(-1 if (temp is None) or (temp == -1) else fit(temp)) for temp in self.org_temp2]
-            except numpy.RankWarning:
+#            except numpy.exceptions.RankWarning:
+#                pass
+            except Exception: # pylint: disable=broad-except
                 pass
         return True
 
     # tables
 
-    def createPhasesTable(self):
+    def createPhasesTable(self) -> None:
         vheader = self.phasestable.verticalHeader()
         hheader = self.phasestable.horizontalHeader()
-
-        self.phasestable.setStyleSheet('QTableView { background-color: red); }')
 
         self.phasestable.setRowCount(3)
         self.phasestable.setColumnCount(3)
@@ -1045,7 +1066,7 @@ class profileTransformatorDlg(ArtisanDialog):
             profilePhasesPercentage = profilePhasesPercentages[i]
             if len(profilePhasesTimes) > i and profilePhasesTime is not None and profilePhasesPercentage is not None:
                 profile_phases_time_str = \
-                    f'{stringfromseconds(int(round(profilePhasesTime)),leadingzero=False)}    {self.aw.float2float(profilePhasesPercentage)}%'
+                    f'{stringfromseconds(int(round(profilePhasesTime)),leadingzero=False)}    {float2float(profilePhasesPercentage)}%'
                 profile_phases_widget = QTableWidgetItem(profile_phases_time_str)
                 profile_phases_widget.setTextAlignment(Qt.AlignmentFlag.AlignCenter|Qt.AlignmentFlag.AlignVCenter)
                 self.phasestable.setItem(0,i,profile_phases_widget)
@@ -1084,7 +1105,7 @@ class profileTransformatorDlg(ArtisanDialog):
             self.phases_target_widgets_percent.append(target_widget_percent)
             self.phases_result_widgets.append(result_widget)
 
-    def createTimeTable(self):
+    def createTimeTable(self) -> None:
         hheader = self.timetable.horizontalHeader()
         vheader = self.timetable.verticalHeader()
         self.timetable.clear()
@@ -1155,7 +1176,7 @@ class profileTransformatorDlg(ArtisanDialog):
             self.time_target_widgets.append(target_widget)
             self.time_result_widgets.append(result_widget)
 
-    def createTempTable(self):
+    def createTempTable(self) -> None:
         vheader = self.temptable.verticalHeader()
         hheader = self.temptable.horizontalHeader()
         self.temptable.clear()
@@ -1201,7 +1222,7 @@ class profileTransformatorDlg(ArtisanDialog):
         for i in range(5):
             profileTemp = self.profileTemps[i]
             if len(self.profileTemps) > i and profileTemp is not None:
-                profile_temp_str = str(self.aw.float2float(profileTemp)) + self.aw.qmc.mode
+                profile_temp_str = str(float2float(profileTemp)) + self.aw.qmc.mode
                 profile_widget = QTableWidgetItem(profile_temp_str)
                 profile_widget.setTextAlignment(Qt.AlignmentFlag.AlignCenter|Qt.AlignmentFlag.AlignVCenter)
                 self.temptable.setItem(0,i,profile_widget)

@@ -22,8 +22,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Optional, TYPE_CHECKING
-from typing import Final  # Python <=3.7
+from typing import Final, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # pylint: disable=unused-import
@@ -31,7 +30,9 @@ if TYPE_CHECKING:
 # Constants
 app_name: Final[str] = 'artisan.plus'
 profile_ext: Final[str] = 'alog'
-uuid_tag: Final[str] = 'roastUUID'
+uuid_tag: Final[str] = 'roastUUID' # as used in .alog profiles, send as 'roast_id' as part of the sync record to the server
+schedule_uuid_tag: Final[str] = 'scheduleID' # send as 's_item_id' as part of the sync record to the server
+schedule_date_tag: Final[str] = 'scheduleDate' # send as 's_item_date' as part of the sync record to the server
 
 # Service URLs
 
@@ -43,13 +44,14 @@ uuid_tag: Final[str] = 'roastUUID'
 api_base_url: Final[str] = 'https://artisan.plus/api/v1'
 web_base_url: Final[str] = 'https://artisan.plus'
 
-shop_base_url: Final[str] = 'https://shop.artisan.plus'
+shop_base_url: Final[str] = 'https://buy.artisan.plus/'
 
 register_url: Final[str] = web_base_url + '/register'
 reset_passwd_url: Final[str] = web_base_url + '/resetPassword'
 auth_url: Final[str] = api_base_url + '/accounts/users/authenticate'
 stock_url: Final[str] = api_base_url + '/acoffees'
 roast_url: Final[str] = api_base_url + '/aroast'
+lock_schedule_url: Final[str] = api_base_url + '/aschedule/lock'
 notifications_url: Final[str] = api_base_url + '/notifications'
 
 # Connection configurations
@@ -93,6 +95,12 @@ queue_put_timeout: Final[float] = 0.5
 # gets automatically synced with the cloud
 stock_cache: Final[str] = 'cache'
 
+# the completed roasts cache reflects the last roasted scheduled items
+completed_roasts_cache: Final[str] = 'completed'
+
+# the prepared items cache reflects the prepared scheduled items
+prepared_items_cache: Final[str] = 'prepared'
+
 # the uuid register that associates UUIDs with local filepaths where to
 # locate the corresponding Artisan profiles
 uuid_cache: Final[str] = 'uuids'
@@ -114,7 +122,7 @@ sync_cache: Final[str] = 'sync'
 
 # the outbox queues the outgoing PUSH/PUT data requests
 # Note: the outbox_cache file is shared between the main Artisan and the
-# ArtisanViewer app, NOT protected by ab extra filelock
+# ArtisanViewer app, NOT protected by an extra filelock
 outbox_cache: Final[str] = 'outbox'
 
 

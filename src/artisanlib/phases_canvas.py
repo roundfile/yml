@@ -20,8 +20,7 @@ import warnings
 import numpy
 import logging
 
-from typing import Dict, Tuple, Optional, TYPE_CHECKING
-from typing import Final  # Python <=3.7
+from typing import Final, Dict, Tuple, List, Optional, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # pylint: disable=unused-import
@@ -43,7 +42,8 @@ with suppress_stdout_stderr():
     import matplotlib as mpl
 
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas  # @Reimport
+from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas  # @Reimport
+from matplotlib.font_manager import FontProperties
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
 
@@ -59,7 +59,7 @@ class tphasescanvas(FigureCanvas):
         self.m = 10             # width of batch number field and drop time field
         self.g = 2              # width of the gap between batch number field and drop time field and the actual phase percentage bars
         # set data
-        self.data:Optional[Tuple] = None  # the phases data per profile
+        self.data:Optional[List[Tuple[str, float, Tuple[float,float,float], bool, bool, str]]] = None  # the phases data per profile
         # the canvas
         self.fig = Figure(figsize=(1, 1), frameon=False, dpi=dpi+self.dpi_offset)
         # as alternative to the experimental constrained_layout we could use tight_layout as for them main canvas:
@@ -67,67 +67,66 @@ class tphasescanvas(FigureCanvas):
 #        self.fig.set_tight_layout(self.tight_layout_params)
         self.fig.set_layout_engine('tight', **self.tight_layout_params)
         #
-        super().__init__(self.fig)
-        self.ax:Optional['Axes'] = None
+        super().__init__(self.fig) # type:ignore # Call to untyped function "__init__" in typed context
+        self.ax:Optional[Axes] = None
         self.clear_phases()
 
-    def clear_phases(self):
+    def clear_phases(self) -> None:
         if self.ax is None:
             self.ax = self.fig.add_subplot(111, frameon=False)
         if self.ax is not None:
-            self.ax.clear() # type: ignore # mypy: Statement is unreachable  [unreachable]
+            self.ax.clear()
             self.ax.axis('off')
             self.ax.grid(False)
             self.ax.set_xlim(0,100 + 2*self.m + 2*self.g)
 
     # a similar function is define in aw:ApplicationWindow
-    def setdpi(self,dpi,moveWindow=True):
+    def setdpi(self, dpi:int, moveWindow:bool = True) -> None:
         if self.aw is not None and self.fig and dpi >= 40:
             try:
-                dpi = (dpi + self.dpi_offset) * self.aw.devicePixelRatio()
-                self.fig.set_dpi(dpi)
+                self.fig.set_dpi((dpi + self.dpi_offset) * self.aw.devicePixelRatio())
                 if moveWindow:
                     with warnings.catch_warnings():
                         warnings.simplefilter('ignore')
                         self.fig.canvas.draw()
 #                        self.fig.canvas.update()
                     FigureCanvas.updateGeometry(self)  #@UndefinedVariable
-                self.aw.scroller.setMaximumHeight(self.sizeHint().height())
+                self.aw.scroller.setMaximumHeight(self.sizeHint().height()) # type:ignore[no-untyped-call] # Call to untyped function "sizeHint" in typed context  [no-untyped-call]
             except Exception as e:  # pylint: disable=broad-except
                 _log.exception(e)
 
     # data is expected to be a None or a list of tuples of the form
-    #   (label, total_time, (phase1_time, phase2_time, phase3_time), active, color)
+    #   (label, total_time, (phase1_time, phase2_time, phase3_time), active, aligned, color)
     # each time value in the triple is in seconds and can be 0 if corresponding phase is missing
     # active is of type bool indicating the state of the corresponding profile
     # aligned is of type bool indicating that the profile is aligned to the current selected alignment target
     # color is a regular color string like '#00b950'
-    def set_phases(self, data):
+    def set_phases(self, data:Optional[List[Tuple[str, float, Tuple[float,float,float], bool, bool, str]]]) -> None:
         self.data = data
 
     # updates the phases graphs data and redraws its canvas
     # side condition: only profile data of visible profiles are contained in data
-    def update_phases(self, data):
+    def update_phases(self, data:Optional[List[Tuple[str, float, Tuple[float,float,float], bool, bool, str]]]) -> None:
         self.set_phases(data)
         self.redraw_phases()
 
-    def redraw_phases(self):
+    def redraw_phases(self) -> None:
         if self.ax is None:
             return
         # clear canvas
         self.clear_phases()
-        if self.data and len(self.data):
+        if self.data is not None and len(self.data):
             self.aw.scroller.setVisible(True)
             # set canvas background color
             background_color = self.aw.qmc.palette['background']
-            self.setStyleSheet(f'background-color: {background_color}')
+            self.setStyleSheet(f'background-color: {background_color[:7]}')
             # maximum total roast time of all given profiles
             max_total_time = max(p[1] for p in self.data)
             # set font
             if self.aw:
                 prop = self.aw.mpl_fontproperties
             else:
-                prop = mpl.font_manager.FontProperties().copy()
+                prop = FontProperties().copy()
             prop.set_family(mpl.rcParams['font.family'])
             prop.set_size('medium')
 
@@ -155,7 +154,7 @@ class tphasescanvas(FigureCanvas):
                         starts = widths.cumsum() - widths
                         if active:
                             labels = [f"{str(round(percent,digits)).rstrip('0').rstrip('.')}%  {stringfromseconds(tx,leadingzero=False)}" if percent>20 else (f"{str(round(percent,digits)).rstrip('0').rstrip('.')}%" if percent>10 else '')
-                                    for (percent,tx) in zip(phases_percentages, phases_times)] # type: ignore # pyright: error: "object*" is not iterable
+                                    for (percent,tx) in zip(phases_percentages, phases_times)]
                         else:
                             labels = ['']*3
                         labels = [label, ''] + labels + ['', stringfromseconds(total_time,leadingzero=False)]
@@ -240,7 +239,7 @@ class tphasescanvas(FigureCanvas):
 #                  loc='upper center', fontsize='small', shadow=False, frameon=False, fancybox=False, labelcolor=legend_labelcolor)
 
             self.fig.canvas.draw_idle()
-            self.aw.scroller.setMaximumHeight(self.sizeHint().height())
+            self.aw.scroller.setMaximumHeight(self.sizeHint().height()) # type:ignore[no-untyped-call] # Call to untyped function "sizeHint" in typed context  [no-untyped-call]
         else:
             # if no profiles are given we set the canvas height to 0
             QSettings().setValue('MainSplitter',self.aw.splitter.saveState())

@@ -240,20 +240,20 @@ enable='''c-extension-no-member,'''
 
 [tool.mypy]
 files = ["artisanlib/*.py", "plus/*.py"]
-exclude = ['build', 'dist', 'uic']
+exclude = ['build', 'dist', 'uic', 'misc']
 python_version = "3.9"
 # "3.8" throws "matplotlib/backends/backend_agg.py:393: error: Parenthesized context managers are only supported in Python 3.9 and greater"
 
 # Ensure full coverage
 check_untyped_defs = true
 disallow_incomplete_defs = true
-#disallow_untyped_calls = true # Not yet
-#disallow_untyped_defs = true # Not yet
+disallow_untyped_calls = true
+disallow_untyped_defs = true
 disallow_untyped_decorators = true
-#disallow_any_unimported = true # Not yet
+disallow_any_unimported = true
 
 # Restrict dynamic typing
-#disallow_any_generics = true # Not yet
+disallow_any_generics = true
 disallow_subclassing_any = true
 warn_return_any = true
 
@@ -264,7 +264,7 @@ strict_equality = true
 # Know exactly what we're doing
 warn_redundant_casts = true
 warn_unused_configs = true
-#warn_unused_ignores = true
+warn_unused_ignores = true
 warn_unreachable = true
 #show_error_codes = true
 
@@ -275,7 +275,7 @@ no_implicit_optional = true
 plugins = ["numpy.typing.mypy_plugin"]
 
 [[tool.mypy.overrides]]
-module = ["matplotlib.*", "aiohttp.*", "aiohttp.web.*", "aiohttp_jinja2.*"]
+module = ["matplotlib.*", "aiohttp.*", "aiohttp.web.*", "aiohttp_jinja2.*", "libusb_package.*"]
 ignore_missing_imports = true
 
 
@@ -293,7 +293,7 @@ follow_imports = 'skip'
 # flake8-simplify (SIM), flake8-gettext (INT), flake8-unused-arguments (ARG),
 # Error (PLE), Refactor (PLR), Warning (PLW)
 ## next: flake8-use-pathlib (PTH), flake8-print (T20)
-select = ["E", "F", "UP", "B", "A", "YTT", "COM", "C4", "DTZ", "PIE", "RSE", "RET", "SIM", "ARG", "PLE", "PLR", "PLW", "INT"]
+lint.select = ["E", "F", "UP", "B", "A", "YTT", "COM", "C4", "DTZ", "PIE", "RSE", "RET", "SIM", "ARG", "PLE", "PLR", "PLW", "INT", "RUF013"]
 
 output-format = "pylint" # one of: text, json, junit, grouped, github, gitlab, pylint, azure
 
@@ -301,15 +301,15 @@ output-format = "pylint" # one of: text, json, junit, grouped, github, gitlab, p
 line-length = 80
 
 # Never enforce `E501` (line length violations).
-ignore = ["E402", "E501", "E741", "PLR0913", "PLR2004", "COM812", "PLR0912", "PLR0915", "PLW0603", "PLR0911", "SIM105", "SIM114"]
+lint.ignore = ["E402", "E501", "E741", "PLR0913", "PLR2004", "COM812", "PLR0912", "PLR0915", "PLW0603", "PLR0911", "SIM105", "SIM114", "PLR2044"]
 
 # Exclude a variety of commonly ignored directories.
 exclude = ["dist", "build", "proto", ".pytype", ".mypy_cache", ".git"]
 
-# Assume Python 3.7.
-target-version = "py37"
+# Assume Python 3.8.
+target-version = "py38"
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint.per-file-ignores]
 "uic/*.py" = ["UP004", "F401", "ARG002"]
 
 
@@ -324,7 +324,7 @@ exclude = ["proto"]
 reportMissingImports = true
 reportMissingTypeStubs = false
 
-pythonVersion = "3.7"
+pythonVersion = "3.8"
 pythonPlatform = "All"
 
 #typeCheckingMode = "strict" # "off", "basic", "strict"
@@ -355,4 +355,4 @@ pythonpath = [
 skip = '*.ts,./coverage,./build,./dist*,./htmlcov,./*.spec'
 count = ''
 quiet-level = 3
-ignore-words-list = 'ser,alog,nd,iterm,dout,te,commandi,dout,exitt,currenty,exaust,controle,coment,controle,outweight,everytime,sade'
+ignore-words-list = 'ser,alog,nd,iterm,dout,te,commandi,dout,exitt,currenty,exaust,controle,coment,controle,outweight,everytime,sade,weightIn,weightin'

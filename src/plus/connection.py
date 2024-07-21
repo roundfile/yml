@@ -29,8 +29,7 @@ except Exception: # pylint: disable=broad-except
     from PyQt5.QtCore import QSemaphore  # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
 from artisanlib import __version__
-from typing import Any, Optional, Dict, Tuple  #for Python >= 3.9: can remove 'Dict' since type hints can now use the generic 'dict'
-from typing import Final  # Python <=3.7
+from typing import Final, Any, Optional, Dict, Tuple  #for Python >= 3.9: can remove 'Dict' since type hints can now use the generic 'dict'
 
 import uuid
 import datetime
@@ -221,13 +220,17 @@ def authentify() -> bool:
                 config.app_window.plus_language = util.extractInfo(
                     res['result']['user'], 'language', 'en'
                 )
-
+                config.app_window.plus_user_id = util.extractInfo(
+                    res['result']['user'], 'user_id', None
+                )
                 config.app_window.plus_paidUntil = None
                 config.app_window.plus_subscription = None
                 config.app_window.plus_rlimit = 0
                 config.app_window.plus_used = 0
                 if 'account' in res['result']['user']:
                     res_account = res['result']['user']['account']
+                    if '_id' in res_account:
+                        config.app_window.plus_account_id = res_account['_id']
                     subscription = util.extractInfo(
                         res_account, 'subscription', ''
                     )
@@ -324,7 +327,8 @@ def getHeaders(
     assert config.app_window is not None
     os, os_version, os_arch = config.app_window.get_os()  # @UndefinedVariable
     headers = {
-        'user-agent': f'Artisan/{__version__} ({os}; {os_version}; {os_arch})'
+        'user-agent': f'Artisan/{__version__} ({os}; {os_version}; {os_arch})',
+        'Accept-Charset': 'utf-8'
     }
     try:
         locale = config.app_window.locale_str
@@ -347,7 +351,7 @@ def getHeaders(
 
 def getHeadersAndData(authorized: bool, compress: bool, jsondata: JSON, verb: str) -> Tuple[Dict[str, str],bytes]:
     headers = getHeaders(authorized, decompress=compress)
-    headers['Content-Type'] = 'application/json'
+    headers['Content-Type'] = 'application/json; charset=utf-8'
     if verb == 'POST':
         headers['Idempotency-Key'] = uuid.uuid4().hex
     if compress and len(jsondata) > config.post_compression_threshold:
@@ -368,7 +372,7 @@ def sendData(
 ) -> Any:
     # don't log POST data as it might contain credentials!
     _log.debug('sendData(%s,_data_,%s,%s)', url, verb, authorized)
-    jsondata = json.dumps(data).encode('utf8')
+    jsondata = json.dumps(data, indent=None, separators=(',', ':'), ensure_ascii=False).encode('utf8')
     _log.debug('-> size %s', len(jsondata))
     headers, postdata = getHeadersAndData(authorized, compress, jsondata, verb)
     import requests  # @Reimport
@@ -430,7 +434,7 @@ def getData(url: str, authorized: bool = True, params:Optional[Dict[str,str]]=No
         timeout=(config.connect_timeout, config.read_timeout),
     )
     _log.debug('-> status %s', r.status_code)
-    #    _log.debug("-> headers %s",r.headers)
+    # _log.debug("-> headers %s",r.headers)
     _log.debug('-> time %s', r.elapsed.total_seconds())
     if authorized and r.status_code == 401:  # authorisation failed
         _log.debug(

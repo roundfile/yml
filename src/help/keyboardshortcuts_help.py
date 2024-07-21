@@ -5,7 +5,7 @@ try:
 except Exception: # pylint: disable=broad-except
     from PyQt5.QtWidgets import QApplication # type: ignore # @Reimport @UnresolvedImport @UnusedImport
 
-def content():
+def content() -> str:
     strlist = []
     helpstr = ''  # noqa: F841 #@UnusedVariable # pylint: disable=unused-variable
     newline = '\n'  # noqa: F841 #@UnusedVariable  # pylint: disable=unused-variable
@@ -18,7 +18,7 @@ def content():
     tbl_KeyboardShortcuts.add_row(['ENTER',QApplication.translate('HelpDlg','Turns ON/OFF Keyboard Shortcuts')])
     tbl_KeyboardShortcuts.add_row(['⌘-ENTER [Mac]\nCTRL+ENTER [Win]',QApplication.translate('HelpDlg','Starts recording')])
     tbl_KeyboardShortcuts.add_row(['SHIFT-ENTER',QApplication.translate('HelpDlg','Turns Artisan OFF')])
-    tbl_KeyboardShortcuts.add_row(['SPACE',QApplication.translate('HelpDlg','When Keyboard Shortcuts are ON chooses the current button\nWhen Keyboard Shortcuts are OFF adds a custom event')])
+    tbl_KeyboardShortcuts.add_row(['SPACE',QApplication.translate('HelpDlg','When Keyboard Shortcuts are ON chooses the current button\nWhen Keyboard Shortcuts are OFF adds a custom event\nWhen Meter=NONE opens dialog to manually enter temperatures during roast')])
     tbl_KeyboardShortcuts.add_row(['LEFT,RIGHT',QApplication.translate('HelpDlg','Change roast event key focus')])
     tbl_KeyboardShortcuts.add_row(['LEFT,RIGHT,UP,DOWN',QApplication.translate('HelpDlg','Move background (when sliders not visible or when Config>> Events>> Sliders tab>> Keyboard Control is not selected)')])
     tbl_KeyboardShortcuts.add_row(['A',QApplication.translate('HelpDlg','Autosave')])
@@ -39,7 +39,7 @@ def content():
     tbl_KeyboardShortcuts.add_row(['H\nCTRL+H [Win]',QApplication.translate('HelpDlg','Load background profile')])
     tbl_KeyboardShortcuts.add_row(['OPTION+H [Mac]\nCTRL+SHIFT+H [Win]',QApplication.translate('HelpDlg','Remove background profile')])
     tbl_KeyboardShortcuts.add_row(['I',QApplication.translate('HelpDlg','Toggle foreground curves “show full”')])
-    tbl_KeyboardShortcuts.add_row(['OPTION+H [Mac]\nCTRL+SHIFT+H [Win]',QApplication.translate('HelpDlg','Toggle background curves “show full”')])
+    tbl_KeyboardShortcuts.add_row(['O',QApplication.translate('HelpDlg','Toggle background curves “show full”')])
     tbl_KeyboardShortcuts.add_row(['L',QApplication.translate('HelpDlg','Load alarms')])
     tbl_KeyboardShortcuts.add_row(['+,-',QApplication.translate('HelpDlg','Inc/dec PID lookahead')])
     tbl_KeyboardShortcuts.add_row(['⌘ +,- [Mac]\nCRTL +,- [Win]',QApplication.translate('HelpDlg','Inc/dec graph resolution')])
@@ -91,6 +91,9 @@ def content():
     tbl_AddlShortcuts.add_row([QApplication.translate('HelpDlg','⌘+C [Mac]\nCTRL+C [Win]'),QApplication.translate('HelpDlg','Roast Properties Data tab'),QApplication.translate('HelpDlg','Copy table'),'&#160;'])
     tbl_AddlShortcuts.add_row([QApplication.translate('HelpDlg','OPTION click &#39;Copy Table&#39; Button [Mac]\nALT click &#39;Copy Table&#39; Button [Win]'),QApplication.translate('HelpDlg','Various'),QApplication.translate('HelpDlg','For various tables this copies the table in tabular form'),'&#160;'])
     tbl_AddlShortcuts.add_row([QApplication.translate('HelpDlg','Click on Home Icon\nWhile recording only'),QApplication.translate('HelpDlg','Navigation Toolbar'),QApplication.translate('HelpDlg','Toggle Zoom Follow (automatic panning)'),QApplication.translate('HelpDlg','Zoom action while recording sets Follow ON')])
+    tbl_AddlShortcuts.add_row([QApplication.translate('HelpDlg','Hold Shift+Option [Mac]\nHold Shift+Alt [Win]'),QApplication.translate('HelpDlg','When starting Artisan'),QApplication.translate('HelpDlg','Skip Settings Load'),'&#160;'])
+    tbl_AddlShortcuts.add_row([QApplication.translate('HelpDlg','Hold Shift+Option [Mac]\nHold Shift+Alt [Win]'),QApplication.translate('HelpDlg','When quitting Artisan'),QApplication.translate('HelpDlg','Skip Settings Save'),'&#160;'])
+    tbl_AddlShortcuts.add_row([QApplication.translate('HelpDlg','Hold Shift+Option [Mac]\nHold Shift+Alt [Win]'),QApplication.translate('HelpDlg','When opening a profile (.alog file)'),QApplication.translate('HelpDlg','Skip creating settings cache and ask user to apply existing settings or settings from profile'),'&#160;'])
     strlist.append(tbl_AddlShortcuts.get_html_string(attributes={'width':'100%','border':'1','padding':'1','border-collapse':'collapse'}))
     strlist.append('<br/><br/><b>')
     strlist.append(QApplication.translate('HelpDlg','MENU SHORTCUTS'))

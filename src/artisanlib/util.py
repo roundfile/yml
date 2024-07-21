@@ -26,11 +26,11 @@ import numpy
 import functools
 from pathlib import Path
 from matplotlib import colors
-from typing import Optional, Tuple, List, Sequence, Union, Any, TYPE_CHECKING
-from typing import Final  # Python <=3.7
+from typing import Final, Optional, Tuple, List, Sequence, Union, Any, TYPE_CHECKING
 from typing_extensions import TypeGuard  # Python <=3.10
 
 if TYPE_CHECKING:
+    from artisanlib.main import Artisan # pylint: disable=unused-import
     import numpy.typing as npt # pylint: disable=unused-import
 
 
@@ -42,6 +42,7 @@ application_name: Final[str] = 'Artisan'
 application_viewer_name: Final[str] = 'ArtisanViewer'
 application_organization_name: Final[str] = 'artisan-scope'
 application_organization_domain: Final[str] = 'artisan-scope.org'
+application_desktop_file_name: Final[str] = 'org.artisan_scope.artisan'
 
 
 try:
@@ -105,11 +106,11 @@ def str2cmd(s:str) -> bytes:
     return bytes(s,'ascii')
 def cmd2str(c:bytes) -> str:
     return str(c,'latin1')
-def s2a(s):
+def s2a(s:str) -> str:
     return s.encode('ascii','ignore').decode('ascii')
 
 # returns True if x is not None, not NaN and not the error value -1 or 0
-def is_proper_temp(x):
+def is_proper_temp(x:Union[None, int, float]) -> bool:
     return x is not None and not numpy.isnan(x) and isinstance(x, (int, float)) and x not in [0, -1]
 
 # returns the prefix of length ll of s and adds eclipse
@@ -196,12 +197,19 @@ def RoRfromFtoC(FRoR:Optional[float]) -> Optional[float]:
         return FRoR
     return RoRfromFtoCstrict(FRoR)
 
-def convertRoR(r,source_unit,target_unit):
+def convertRoR(r:Optional[float], source_unit:str, target_unit:str) -> Optional[float]:
     if source_unit == target_unit:
         return r
     if source_unit == 'C':
         return RoRfromCtoF(r)
     return RoRfromFtoC(r)
+
+def convertRoRstrict(r:float, source_unit:str, target_unit:str) -> float:
+    if source_unit == target_unit:
+        return r
+    if source_unit == 'C':
+        return RoRfromCtoFstrict(r)
+    return RoRfromFtoCstrict(r)
 
 def convertTemp(t:float, source_unit:str, target_unit:str) -> float:
     if source_unit in ('', target_unit) or target_unit == '':
@@ -217,7 +225,7 @@ def convertTemp(t:float, source_unit:str, target_unit:str) -> float:
         return t
     return res
 
-def path2url(path):
+def path2url(path:str) -> str:
     import urllib.parse as urlparse  # @Reimport
     import urllib.request as urllib  # @Reimport
     return urlparse.urljoin(
@@ -237,7 +245,7 @@ def toInt(x:Optional[Union[int,str,float]]) -> int:
 def toString(x:Any) -> str:
     return str(x)
 
-def toList(x:Any) -> List:
+def toList(x:Any) -> List[Any]:
     if x is None:
         return []
     return list(x)
@@ -263,12 +271,12 @@ def toBool(x:Any) -> bool:
             return False
     return bool(x)
 
-def toStringList(x:List) -> List[str]:
+def toStringList(x:List[Any]) -> List[str]:
     if x:
         return [str(s) for s in x]
     return []
 
-def removeAll(ll, s):
+def removeAll(ll:List[str], s:str) -> None:
     for _ in range(ll.count(s)):  # @UndefinedVariable
         ll.remove(s)
 
@@ -278,7 +286,7 @@ def removeAll(ll, s):
 # [-1,-1,2] => [2, 2, 2] # a prefix of -1 of max length 'interpolate_max' will be replaced by the first value in l that is not -1
 # INVARIANT: the resulting list has always the same length as l
 # only gaps of length interpolate_max (should be set to the global aw.qmc.interpolatemax), if not None, are interpolated
-def fill_gaps(ll:Union[Sequence[Union[float, int]], 'npt.NDArray[numpy.floating]'], interpolate_max:int=3) -> List[float]:
+def fill_gaps(ll:Union[Sequence[Union[float, int]], 'npt.NDArray[numpy.floating[Any]]'], interpolate_max:int=3) -> List[float]:
     res:List[float] = []
     last_val:float = -1
     skip:int = -1
@@ -321,6 +329,19 @@ def fill_gaps(ll:Union[Sequence[Union[float, int]], 'npt.NDArray[numpy.floating]
                 last_val = e
     return res
 
+def replace_duplicates(data:List[float]) -> List[float]:
+    lv:float = -1
+    data_core:List[float] = []
+    for v in data:
+        if v == lv:
+            data_core.append(-1)
+        else:
+            data_core.append(v)
+            lv = v
+    # reconstruct first and last reading
+    if len(data)>0:
+        data_core[-1] = data[-1]
+    return fill_gaps(data_core, interpolate_max=100)
 
 # we store data in the user- and app-specific local default data directory
 # for the platform
@@ -328,20 +349,20 @@ def fill_gaps(ll:Union[Sequence[Union[float, int]], 'npt.NDArray[numpy.floating]
 # setting of the app
 # eg. ~/Library/Application Support/artisan-scope/Artisan (macOS)
 #     C:\Users\<USER>\AppData\Local\artisan-scope\Artisan (Windows)
-#     ~/.local/shared/artisan-scope/Artisan (Linux)
+#     ~/.local/share/artisan-scope/Artisan (Linux)
 
 # getDataDirectory() returns the Artisan data directory
 # if app is not yet initialized None is returned
 # otherwise the path is computed on first call and then memorized
 # if the computed path does not exists it is created
 # if creation or access of the path fails None is returned and memorized
-def getDataDirectory():
+def getDataDirectory() -> Optional[str]:
     app = QCoreApplication.instance()
     return _getAppDataDirectory(app)
 
 # internal function to return
 @functools.lru_cache(maxsize=None)  #for Python >= 3.9 can use @functools.cache
-def _getAppDataDirectory(app):
+def _getAppDataDirectory(app:'Artisan') -> Optional[str]:
     # temporarily switch app name to Artisan (as it might be ArtisanViewer)
     appName = app.applicationName()
     app.setApplicationName(application_name)
@@ -357,7 +378,7 @@ def _getAppDataDirectory(app):
         return None
 
 @functools.lru_cache(maxsize=None)  #for Python >= 3.9 can use @functools.cache
-def getAppPath():
+def getAppPath() -> str:
     platf = platform.system()
     if platf in {'Darwin','Linux'}:
         if appFrozen():
@@ -370,7 +391,7 @@ def getAppPath():
     return QCoreApplication.applicationDirPath() + '/'
 
 @functools.lru_cache(maxsize=None)  #for Python >= 3.9 can use @functools.cache
-def getResourcePath():
+def getResourcePath() -> str:
     platf = platform.system()
     if platf == 'Darwin':
         if appFrozen():
@@ -408,27 +429,45 @@ def getDirectory(filename: str, ext: Optional[str] = None, share: bool = False) 
     return str(fp)
 
 
+# standard/MPL hex color strings append alpha information to the end, while QColor assumes the alpha information in color name strings at the begin
+
+# converts QColor ARGB names to a standard/MPL hex color strings with alpha values at the end
+def argb_colorname2rgba_colorname(c:str) -> str:
+    if len(c) == 9 and c[0] == '#':
+        return f'#{c[3:9]}{c[1:3]}'
+    return c
+
+# converts standard/MPL hex color strings to QColor ARGB names with alpha at the begin
+def rgba_colorname2argb_colorname(c:str) -> str:
+    if len(c) == 9 and c[0] == '#':
+        return f'#{c[7:9]}{c[1:7]}'
+    return c
+
 # takes a hex color string and returns the same color as hex string with staturation set to 0 and incr. lightness
-def toGrey(color):
-    h, _s, l, a = QColor(color).getHslF()
+def toGrey(color:str) -> str:
+    h, _s, l, a = QColor(rgba_colorname2argb_colorname(color)).getHslF()
     if h is not None and l is not None and a is not None:
         gray = QColor.fromHslF(h,0,(1-l)/1.7+l,a) # saturation set to 0
     else:
         gray = QColor.fromHslF(0.5,0,0.5,1.0)
-    return gray.name()
+    if len(color) == 9:
+        return gray.name(QColor.NameFormat.HexArgb)
+    return gray.name(QColor.NameFormat.HexRgb)
 
 # takes a hex color string and returns the same color as hex string with reduced staturation and incr. lightness
-def toDim(color):
-    h, s, l, a = QColor(color).getHslF()
+def toDim(color:str) -> str:
+    h, s, l, a = QColor(rgba_colorname2argb_colorname(color)).getHslF()
     if h is not None and s is not None and l is not None and a is not None:
         gray = QColor.fromHslF(h,s/4,(1-l)/1.7+l,a)
     else:
         gray = QColor.fromHslF(0.5,0,0.5,1.0)
-    return gray.name()
+    if len(color) == 9:
+        return gray.name(QColor.NameFormat.HexArgb)
+    return gray.name(QColor.NameFormat.HexRgb)
 
 # creates QLinearGradient style from light to dark by default, or from dark to light if reverse is True
 @functools.lru_cache(maxsize=None)  #for Python >= 3.9 can use @functools.cache
-def createGradient(rgb, tint_factor=0.1, shade_factor=0.1, reverse=False):
+def createGradient(rgb:Union[QColor, str], tint_factor:float = 0.1, shade_factor:float = 0.1, reverse:bool = False) -> str:
     light_grad,dark_grad = createRGBGradient(rgb,tint_factor,shade_factor)
     if reverse:
         # dark to light
@@ -436,22 +475,23 @@ def createGradient(rgb, tint_factor=0.1, shade_factor=0.1, reverse=False):
     # light to dark (default)
     return f'QLinearGradient(x1:0,y1:0,x2:0,y2:1,stop:0 {light_grad}, stop:1 {dark_grad})'
 
-def createRGBGradient(rgb, tint_factor=0.3, shade_factor=0.3):
+# NOTE: for now alpha values of the rgb argument are ignored and resulting colors are RGB without alphas
+def createRGBGradient(rgb:Union[QColor, str], tint_factor:float = 0.3, shade_factor:float = 0.3) -> Tuple[str,str]:
     try:
         rgb_tuple: Tuple[float, float, float]
         if isinstance(rgb, QColor):
-            r,g,b,_ = rgb.getRgbF()
+            r,g,b,_ = rgb.getRgbF() # type:ignore[unused-ignore]
             if r is not None and g is not None and b is not None:
                 rgb_tuple = (r,g,b)
             else:
                 rgb_tuple = (0.5,0.5,0.5)
-        elif rgb[0:1] == '#':   # hex input like "#ffaa00"
+        elif rgb[0:1] == '#':   # hex input like "#ffaa00" # type: ignore
 #            rgb_tuple = tuple(int(rgb[i:i+2], 16)/255 for i in (1, 3 ,5))
-            rgb_tuple = (float(int(rgb[1:3], 16)/255),float(int(rgb[3:5], 16)/255),float(int(rgb[5:7], 16)/255))
+            rgb_tuple = (float(int(rgb[1:3], 16)/255),float(int(rgb[3:5], 16)/255),float(int(rgb[5:7], 16)/255)) # type:ignore[unused-ignore]
         else:                 # color name
-            rgb_tuple = colors.hex2color(colors.cnames[rgb])
+            rgb_tuple = colors.hex2color(colors.cnames[rgb]) # type:ignore[unused-ignore]
         #ref: https://stackoverflow.com/questions/6615002/given-an-rgb-value-how-do-i-create-a-tint-or-shade
-        r,g,b = tuple(int(255 * (x * (1 - shade_factor))) for x in rgb_tuple)
+        r,g,b = tuple(int(255 * (x * (1 - shade_factor))) for x in rgb_tuple) # type:ignore[unused-ignore]
         darker_rgb = f'#{r:02x}{g:02x}{b:02x}'
         r,g,b = tuple(int(255 * (x + (1 - x) * tint_factor)) for x in rgb_tuple)
         lighter_rgb = f'#{r:02x}{g:02x}{b:02x}'
@@ -459,6 +499,7 @@ def createRGBGradient(rgb, tint_factor=0.3, shade_factor=0.3):
         _log.exception(e)
         lighter_rgb = darker_rgb = '#000000'
     return lighter_rgb,darker_rgb
+
 
 # Networking
 
@@ -525,11 +566,11 @@ def debugLogLevelToggle() -> bool:
     setDebugLogLevel(newDebugLevel)
     return newDebugLevel
 
-def natsort(s):
+def natsort(s:str) -> List[Union[int,str]]:
     return [int(t) if t.isdigit() else t.lower() for t in re.split(r'(\d+)', s)]
 
 #convert number to string and auto set the number of decimal places 0, 0.999, 9.99, 999.9, 9999
-def scaleFloat2String(num):
+def scaleFloat2String(num:Union[float,str]) -> str:
     n = toFloat(num)
     if n == 0:
         return '0'
@@ -552,17 +593,135 @@ def comma2dot(s:str) -> str:
         if last_dot + 1 == len(s):
             # this is just a trailing dot, we remove this and all other dots and commas
             return s.replace(',','').replace('.','')
-        # we just keep this one and remove all other comma and dots
-        return s[:last_dot].replace(',','').replace('.','') + s[last_dot:].replace(',','')
+        # we just keep this one and remove all other comma and dots; we also remove trailing zero decimals
+        return s[:last_dot].replace(',','').replace('.','') + s[last_dot:].replace(',','').rstrip('0').rstrip('.')
     # there is no dot in the string
     last_pos = s.rfind(',')
     if last_pos > -1:
         if last_pos + 1 == len(s):
             # this is just a trailing comma, we remove this and all other dots and commas
             return s.replace(',','').replace('.','')
-        # we turn the last comma into a dot and remove all others
-        return s[:last_pos].replace(',','') + '.' + s[last_pos+1:]
+        # we turn the last comma into a dot and remove all others; we also remove trailing zero decimals
+        return s[:last_pos].replace(',','') + '.' + s[last_pos+1:].rstrip('0').rstrip('.')
     return s
+
+
+#--- weight / volume
+
+weight_units:Final[Tuple[str,str,str,str]] = ('g','Kg','lb','oz')
+weight_units_lower:Final[Tuple[str,str,str,str]] = ('g','kg','lb','oz') # just for display use
+volume_units:Final[Tuple[str,str,str,str,str,str]] = ('l','gal','qt','pt','cup','ml')
+
+
+def weightVolumeDigits(v:float) -> int:
+    if v >= 1000:
+        return 1
+    if v >= 100:
+        return 2
+    if v >= 10:
+        return 3
+    return 4
+
+def float2floatWeightVolume(v:float) -> float:
+    d = weightVolumeDigits(v)
+    return float2float(v,d)
+
+# the int n specifies the number of digits
+def float2floatNone(f:Optional[float], n:int=1) -> Optional[float]:
+    if f is None:
+        return None
+    return float2float(f,n)
+
+# the int n specifies the number of digits
+def float2float(f:float, n:int=1) -> float:
+    f = float(f)
+    if n==0:
+        if math.isnan(f):
+            return 0
+        return int(round(f))
+    res:float = float(f'%.{n}f'%f)
+    if math.isnan(res):
+        return 0.0
+    return res
+
+# i/o: 0:g, 1:Kg, 2:lb (pound), 3:oz (ounce)
+def convertWeight(v:float, i:int, o:int) -> float:
+    #                g,            kg,         lb,             oz,
+    convtable = [
+                    [1.,           0.001,      0.00220462262,  0.035274],  # g
+                    [1000,         1.,         2.205,          35.274],    # Kg
+                    [453.591999,   0.45359237, 1.,             16.],       # lb
+                    [28.3495,      0.0283495,  0.0625,         1.]         # oz
+                ]
+    return v*convtable[i][o]
+
+# i/o: 0:l (liter), 1:gal (gallons US), 2:qt, 3:pt, 4:cup, 5:cm^3/ml
+def convertVolume(v:float, i:int, o:int) -> float:
+                    #liter          gal             qt              pt              cup             ml/cm^3
+    convtable = [
+                    [1.,            0.26417205,     1.05668821,     2.11337643,     4.22675284,     1000.                ],    # liter
+                    [3.78541181,    1.,             4.,             8.,             16,             3785.4117884         ],    # gallon
+                    [0.94635294,    0.25,           1.,             2.,             4.,             946.352946           ],    # quart
+                    [0.47317647,    0.125,          0.5,            1.,             2.,             473.176473           ],    # pint
+                    [0.23658823,    0.0625,         0.25,           0.5,            1.,             236.5882365          ],    # cup
+                    [0.001,         2.6417205e-4,   1.05668821e-3,  2.11337641e-3,  4.2267528e-3,   1.                   ]     # cm^3
+                ]
+    return v*convtable[i][o]
+
+
+# takes a weight, its weight unit index, and a weight unit target index (decides over metric vs imperial)
+# and returns a string rendering the weight with unit, potentially adjusted by its magnitude
+def render_weight(amount:float, weight_unit_index:int, target_unit_idx:int) -> str:
+    w = convertWeight(
+        amount, weight_unit_index, target_unit_idx
+    )  # @UndefinedVariable
+    if w < 1 and target_unit_idx == 1:
+        # we convert Kg to the smaller unit g for readability
+        w = convertWeight(
+            amount, weight_unit_index, 0
+        )  # @UndefinedVariable
+        target_unit = weight_units[
+            0
+        ]  # @UndefinedVariable
+    elif w >= 1000000 and target_unit_idx == 0:
+        # we convert kg to tonnes
+        w = w / 1000000.0
+        target_unit = 't'
+    elif w > 999 and target_unit_idx == 0:
+        # we convert g to the larger unit kg for readability
+        w = convertWeight(
+            amount, weight_unit_index, 1
+        )  # @UndefinedVariable
+        target_unit = weight_units[
+            1
+        ]  # @UndefinedVariable
+    elif w >= 1000 and target_unit_idx == 1:
+        # we convert kg to tonnes
+        w = w / 1000.0
+        target_unit = 't'
+    elif w >= 2000 and target_unit_idx == 2:
+        # we convert lbs to tonnes
+        w = w / 2000.0
+        target_unit = 't'  # US tons
+    elif w >= 16 and target_unit_idx == 3:
+        if w >= 3200:
+            # we convert oz to US tonnes
+            w = w / 32000.0
+            target_unit = 't'  # US tons
+        else:  # 3200 > w >= 16
+            # we convert oz to lb
+            w = w / 16.0
+            target_unit = 'lb' if abs(abs(w) - 1.0) < 0.01 else 'lbs'
+    else:
+        target_unit = weight_units[
+            target_unit_idx
+        ]  # @UndefinedVariable
+        if target_unit_idx == 2 and abs(abs(w) - 1.00) >= 0.01:
+            # lb => lbs if |w|>1
+            target_unit = f'{target_unit}s'
+    w = int(round(w)) if w > 99 else float2float(w, 1) # @UndefinedVariable # we keep one decimal
+    return f'{w:g}{target_unit}'.lower()
+
 
 # typing tools
 
@@ -571,3 +730,44 @@ def is_int_list(xs: List[Any]) -> TypeGuard[List[int]]:
 
 def is_float_list(xs: List[Any]) -> TypeGuard[List[float]]:
     return all(isinstance(x, float) for x in xs)
+
+
+# locale tools
+
+#def locale2full_local(locale:str) -> str:
+#    locale_map:Dict[str,str] = {
+#        'ar': 'ar_AA',
+#        'da': 'da_DK',
+#        'de': 'de_DE',
+#        'el': 'el_GR',
+#        'en': 'en_US',
+#        'es': 'es_ES',
+#        'fa': 'fa_IR',
+#        'fi': 'fi_FI',
+#        'fr': 'fr_FR',
+#        'gd': 'gd_GB',
+#        'he': 'he_IL',
+#        'hu': 'hu_HU',
+#        'id': 'id_ID',
+#        'it': 'it_IT',
+#        'ja': 'ja_JP',
+#        'ko': 'ko_KR',
+#        'lv': 'lv_LV',
+#        'nl': 'nl_NL',
+#        'no': 'nn_NO',
+#        'pt': 'pt_PT',
+#        'pt_BR': 'pt_BR',
+#        'pl': 'pl_PL',
+#        'ru': 'ru_RU',
+#        'sk': 'sk_SK',
+#        'sv': 'sv_SE',
+#        'th': 'th_TH',
+#        'tr': 'tr_TR',
+#        'uk': 'uk_UA',
+#        'vi': 'vi_VN',
+#        'zh_CN': 'zh_CN',
+#        'zh_TW': 'zh_TW'
+#    }
+#    if locale in locale_map:
+#        return locale_map[locale]
+#    return locale

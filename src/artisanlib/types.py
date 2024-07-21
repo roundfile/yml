@@ -23,8 +23,8 @@ try:
 except ImportError:
     from PyQt5.QtCore import QDateTime  # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
-from typing import Optional,  Tuple, List, Union, TYPE_CHECKING
-from typing_extensions import TypedDict  # Python <=3.7
+from typing import TypedDict, Optional,  Tuple, List, Union, TYPE_CHECKING
+from typing_extensions import Required # Python <3.11
 
 if TYPE_CHECKING:
     from plus.stock import BlendList, Blend
@@ -118,6 +118,12 @@ class ComputedProfileInformation(TypedDict, total=False):
     CO2_roast_per_green_kg: float
     KWH_batch_per_green_kg: float
     KWH_roast_per_green_kg: float
+    bbp_total_time: float
+    bbp_bottom_temp: float
+    bbp_begin_to_bottom_time: float
+    bbp_bottom_to_charge_time: float
+    bbp_begin_to_bottom_ror: float
+    bbp_bottom_to_charge_ror: float
 
 class ProfileData(TypedDict, total=False):
     recording_version: str
@@ -181,6 +187,8 @@ class ProfileData(TypedDict, total=False):
     roastbatchprefix: str
     roastbatchpos: int
     roastUUID: str
+    scheduleID: str
+    scheduleDate: str
     beansize:str # legacy; float in str mapped to beansize_max
     beansize_min:str # int saved as str to external profiles (internal variable of type int)
     beansize_max:str # int saved as str to external profiles (internal variable of type int)
@@ -188,6 +196,7 @@ class ProfileData(TypedDict, total=False):
     specialeventstype: List[int]
     specialeventsvalue: List[float]
     specialeventsStrings: List[str]
+    default_etypes: List[bool]
     etypes: List[str]
     cuppingnotes: str
     roastingnotes: str
@@ -261,6 +270,12 @@ class ProfileData(TypedDict, total=False):
     svActions: List[int]
     svBeeps: List[bool]
     svDescriptions: List[str]
+    pidKp: float
+    pidKi: float
+    pidKd: float
+    pidSource: int
+    pOnE: bool
+    svLookahead: int
     devices: List[str]
     elevation: int
     computed: ComputedProfileInformation
@@ -284,9 +299,16 @@ class ProfileData(TypedDict, total=False):
     betweenbatch_after_preheat: bool
     electricEnergyMix: int
     plus_sync_record_hash: str
+    bbp_begin: str
+    bbp_time_added_from_prev: float
+    bbp_endroast_epoch_msec: int
+    bbp_endevents: List[List[Optional[float]]]
+    bbp_dropevents: List[List[Optional[float]]]
+    bbp_dropbt: float
+    bbp_dropet: float
+    bbp_drop_to_end: float
 
-
-class ExtraDeviceSettings(TypedDict): #, total=False):
+class ExtraDeviceSettings(TypedDict):
     extradevices           : List[int]
     extradevicecolor1      : List[str]
     extradevicecolor2      : List[str]
@@ -345,7 +367,7 @@ Palette = Tuple[
     List[int]     # 27 quantifier SV flags; len=self.eventsliders
     ]
 
-class BTU(TypedDict, total=False):
+class BTU(TypedDict):
     load_pct    : float
     duration    : float
     BTUs        : float
@@ -448,11 +470,11 @@ class CurveSimilarity(TypedDict):
     segmentresultstr: str
 
 class RecentRoast(TypedDict, total=False):
-    title: str
+    title: Required[str]
     beans: str
-    weightIn: float
+    weightIn: Required[float]
     weightOut: float
-    weightUnit: str
+    weightUnit: Required[str]
     volumeIn: float
     volumeOut: float
     volumeUnit: str
@@ -485,3 +507,39 @@ class SerialSettings(TypedDict):
     stopbits: int
     parity: str
     timeout: float
+
+class BTBreakParams(TypedDict, total=False):
+    delay: List[List[float]]
+    d_drop: List[List[float]]
+    d_charge: List[List[float]]
+    offset_charge: List[List[float]]
+    offset_drop: List[List[float]]
+    dpre_dpost_diff: List[List[float]]
+    tight: int
+    loose: int
+    f: float
+    maxdpre: float
+    f_dtwice: float
+
+class AlarmSet(TypedDict):
+    label: str
+    flags: List[int]
+    guards: List[int]
+    negguards: List[int]
+    times: List[int]
+    offsets: List[int]
+    sources: List[int]
+    conditions: List[int]
+    temperatures: List[float]
+    actions: List[int]
+    beeps: List[int]
+    alarmstrings: List[str]
+
+class BbpCache(TypedDict, total=False):
+    mode: str
+    drop_bt: float
+    drop_et: float
+    end_roastepoch_msec: int
+    end_events: List[List[Optional[float]]]
+    drop_events: List[List[Optional[float]]]
+    drop_to_end: float
