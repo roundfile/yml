@@ -66,8 +66,7 @@ python -m pip install wheel
 ::
 python -m pip install -r src\requirements.txt | findstr /v /b "Ignoring"
 
-:: Pause Build Here For Remote Desktop Access
-::PowerShell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "if ($env:APPVEYOR_RDP_BLOCK -eq $true) {$blockRdp = $true; & iex ((new-object net.webclient).DownloadString(\"https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1\"))}"
+:: #dave  added install build
 python -m pip install build
 
 ::
@@ -108,9 +107,12 @@ echo ***** Finished install pyinstaller v%PYINSTALLER_VER%
 ::
 :: download and install required libraries not available on pip
 ::
-echo curl vc_redist.x64.exe %VC_REDIST%
+echo curl vc_redist.x64.exe
 curl -L -O %VC_REDIST%
 if not exist vc_redist.x64.exe (exit /b 140)
+
+:: Pause Build Here For Remote Desktop Access
+PowerShell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "if ($env:APPVEYOR_RDP_BLOCK -eq $true) {$blockRdp = $true; & iex ((new-object net.webclient).DownloadString(\"https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1\"))}"
 
 ::
 :: copy the snap7 binary
