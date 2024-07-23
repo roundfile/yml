@@ -64,9 +64,13 @@ python -m pip install wheel
 ::
 :: install Artisan required libraries from pip
 ::
-python -m pip install -r src\requirements.txt | findstr /v /b "Ignoring"
+::python -m pip install -r src\requirements.txt | findstr /v /b "Ignoring"
+:: SPEW EVERYTHING
+python -m pip install -r src\requirements.txt 
 
 :: #dave  added install build
+echo.
+echo Explicit (re)install of build v1.2.1
 python -m pip install build
 
 ::
