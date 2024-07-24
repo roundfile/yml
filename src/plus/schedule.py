@@ -1251,7 +1251,10 @@ class DragWidget(BaseWidget):
 
 
     def _find_drop_location(self, e:'QDragMoveEvent') -> int:
-        pos = e.position()
+        try:
+            pos = e.position()
+        except Exception:   # pylint: disable=broad-except
+            pos = e.posF()
         spacing = self.blayout.spacing() / 2
 
         n = 0
