@@ -504,10 +504,19 @@ class tgraphcanvas(FigureCanvas):
 
         #F = Fahrenheit; C = Celsius
         self.mode:str = 'F'
+
+        # default mode on platforms we can detect it like macOS:
         if platform.system() == 'Darwin':
             # try to "guess" the users preferred temperature unit
             try:
                 if QSettings().value('AppleTemperatureUnit') == 'Celsius':
+                    self.mode = 'C'
+            except Exception: # pylint: disable=broad-except
+                pass
+        else:
+            # try to "guess" the users preferred temperature unit also on Windows and Linux
+            try:
+                if QLocale.system().countryToString(QLocale.system().country()) != 'United States':
                     self.mode = 'C'
             except Exception: # pylint: disable=broad-except
                 pass
@@ -772,19 +781,19 @@ class tgraphcanvas(FigureCanvas):
                        'Phidget TMP1101 4xTC 01',  #58
                        '+Phidget TMP1101 4xTC 23', #59
                        '+Phidget TMP1101 4xTC AT', #60
-                       'Phidget TMP1100 1xTC',  #61
-                       'Phidget 1011 IO 01',    #62
-                       'Phidget HUB IO 01', #63
-                       '+Phidget HUB IO 23',#64
-                       '+Phidget HUB IO 45',#65
-                       '-Omega HH806W',         #66 NOT WORKING
-                       'VOLTCRAFT PL-125-T2',   #67
-                       'Phidget TMP1200 1xRTD A', #68
-                       'Phidget IO Digital 01',         #69
-                       '+Phidget IO Digital 23',        #70
-                       '+Phidget IO Digital 45',        #71
-                       '+Phidget IO Digital 67',        #72
-                       'Phidget 1011 IO Digital 01',    #73
+                       'Phidget TMP1100 1xTC',     #61
+                       'Phidget 1011 IO 01',       #62
+                       'Phidget HUB IO 01',        #63
+                       '+Phidget HUB IO 23',       #64
+                       '+Phidget HUB IO 45',       #65
+                       '-Omega HH806W',            #66 NOT WORKING
+                       'VOLTCRAFT PL-125-T2',      #67
+                       'Phidget TMP1200 1xRTD A',  #68
+                       'Phidget IO Digital 01',    #69
+                       '+Phidget IO Digital 23',   #70
+                       '+Phidget IO Digital 45',   #71
+                       '+Phidget IO Digital 67',   #72
+                       'Phidget 1011 IO Digital 01', #73
                        'Phidget HUB IO Digital 01', #74
                        '+Phidget HUB IO Digital 23',#75
                        '+Phidget HUB IO Digital 45',#76
@@ -878,7 +887,9 @@ class tgraphcanvas(FigureCanvas):
                        'Mugma BT/ET',               #164
                        '+Mugma Heater/Fan',         #165
                        '+Mugma Heater/Catalyzer',   #166
-                       '+Mugma SV'                  #167
+                       '+Mugma SV',                 #167
+                       'Phidget TMP1202 1xRTD A',   #168
+                       '+Phidget TMP1202 1xRTD B'   #169
                        ]
 
         # ADD DEVICE:
@@ -914,7 +925,8 @@ class tgraphcanvas(FigureCanvas):
             146, # Phidget DAQ1000 01
             152, # Phidget DAQ1200 01
             154, # Phidget DAQ1300 01
-            156  # Phidget DAQ1301 01
+            156, # Phidget DAQ1301 01
+            168, # Phidget TMP1202
         ]
 
         # ADD DEVICE:
@@ -9128,26 +9140,34 @@ class tgraphcanvas(FigureCanvas):
                     self.smoothETBT(re_smooth_foreground,recomputeAllDeltas,decay_smoothing_p)
 
     ## Output Idle Noise StdDev of BT RoR
-    #                        try:
-    #                            start = self.timeindex[0]
-    #                            end = self.timeindex[6]
-    #                            if start == -1:
-    #                                start = 0
-    #                            start = start + 30 # avoiding the empty begin of heavy smoothed data
-    #                            if end == 0:
-    #                                end = min(len(self.delta2) -1,100)
-    #                            print("ET RoR mean:",numpy.mean([x for x in self.delta1[start:end] if x is not None]))
-    #                            print("ET RoR std:",numpy.std([x for x in self.delta1[start:end] if x is not None]))
-    #                            print("BT RoR mean:",numpy.mean([x for x in self.delta2[start:end] if x is not None]))
-    #                            print("BT RoR std:",numpy.std([x for x in self.delta2[start:end] if x is not None]))
-    #                            print("BT mean:",numpy.mean([x for x in self.temp2[start:end] if x is not None]))
-    #                            print("BT std:",numpy.std([x for x in self.temp2[start:end] if x is not None]))
-    #                            max_BT = numpy.max([x for x in self.temp2[start:end] if x is not None])
-    #                            min_BT = numpy.max([x for x in self.temp2[start:end] if x is not None])
-    #                            mean_BT = numpy.mean([x for x in self.temp2[start:end] if x is not None])
-    #                            print("BT max delta:", max(mean_BT - min_BT,max_BT - mean_BT))
-    #                        except Exception as e: # pylint: disable=broad-except
-    #                            _log.exception(e)
+#                    try:
+#                        print("*** IdleNoise ***")
+#                        start = self.timeindex[0]
+#                        end = self.timeindex[6]
+#                        if start == -1:
+#                            start = 0
+#                        else:
+#                            print("CHARGE set")
+#                        start = start + 20 # avoiding the empty begin of heavy smoothed data
+#                        if end == 0:
+#                            end = len(self.timex) - 1
+##                            end = min(len(self.delta2) -1,100)
+#                        print("start",start)
+#                        print("end",end)
+#                        print("total", end-start)
+#                        if end>start:
+#                            print("ET RoR mean:",numpy.mean([x for x in self.delta1[start:end] if x is not None]))
+#                            print("ET RoR std:",numpy.std([x for x in self.delta1[start:end] if x is not None]))
+#                            print("BT RoR mean:",numpy.mean([x for x in self.delta2[start:end] if x is not None]))
+#                            print("BT RoR std:",numpy.std([x for x in self.delta2[start:end] if x is not None]))
+#                            print("BT mean:",numpy.mean([x for x in self.temp2[start:end] if x is not None]))
+#                            print("BT std:",numpy.std([x for x in self.temp2[start:end] if x is not None]))
+#                            max_BT = numpy.max([x for x in self.temp2[start:end] if x is not None])
+#                            min_BT = numpy.max([x for x in self.temp2[start:end] if x is not None])
+#                            mean_BT = numpy.mean([x for x in self.temp2[start:end] if x is not None])
+#                            print("BT max delta:", max(mean_BT - min_BT,max_BT - mean_BT))
+#                    except Exception as e: # pylint: disable=broad-except
+#                        _log.exception(e)
 
                     # CHARGE-DROP curve index limits
                     charge_idx = 0
@@ -10748,6 +10768,7 @@ class tgraphcanvas(FigureCanvas):
 
             # reformat string as necessary
             stattype_str = self.__dijkstra_to_ascii(stattype_str)
+            stattype_str = self.aw.arabicReshape(stattype_str)
 
             # Trim the long lines
             trimmedstatype_segments:List[str] = []
@@ -10986,7 +11007,11 @@ class tgraphcanvas(FigureCanvas):
         try:
             if self.legendloc > 0 and self.ax is not None and self.legend is not None:
                 # Get the legend bounding box in axes-relative coordinates
-                legend_bb_axes = self.legend.get_window_extent().transformed(self.ax.transAxes.inverted())
+
+                with warnings.catch_warnings():
+                    warnings.simplefilter('ignore')
+                    # suppress font warnings (eg. with language arabic on using Han Sans TW font) like: UserWarning: Glyph 65166 (\N{ARABIC LETTER ALEF FINAL FORM}) missing from font(s) Source Han Sans TW.
+                    legend_bb_axes = self.legend.get_window_extent().transformed(self.ax.transAxes.inverted())
 
                 # Get the data range
                 x_min, x_max = self.ax.get_xlim()
@@ -11113,9 +11138,6 @@ class tgraphcanvas(FigureCanvas):
             self.RoRlimitm = int(round(fromCtoFstrict(self.RoRlimitm)))
             self.RoRlimit = int(round(fromCtoFstrict(self.RoRlimit)))
             self.alarmtemperature = [(fromCtoFstrict(t) if t != 500 else t) for t in self.alarmtemperature]
-#            # conv Arduino mode
-#            if self.aw:
-#                self.aw.pidcontrol.conv2fahrenheit()
         if self.ax is not None:
             self.ax.set_ylabel('F',size=16,color = self.palette['ylabel']) #Write "F" on Y axis
         self.mode = 'F'
@@ -11129,6 +11151,7 @@ class tgraphcanvas(FigureCanvas):
             self.filterDropOut_tmax = self.filterDropOut_tmax_F_default
             self.filterDropOut_spikeRoR_dRoR_limit = self.filterDropOut_spikeRoR_dRoR_limit_F_default
             self.adjustTempSliders()
+            self.aw.realignbuttons() # reset button labels as they might refer to the temperature mode via {TEMP}
 
     #sets the graph display in Celsius mode
     def celsiusMode(self, setdefaultaxes:bool = True) -> None:
@@ -11150,8 +11173,6 @@ class tgraphcanvas(FigureCanvas):
             self.RoRlimitm = int(round(fromFtoCstrict(self.RoRlimitm)))
             self.RoRlimit = int(round(fromFtoCstrict(self.RoRlimit)))
             self.alarmtemperature = [(fromFtoCstrict(t) if t != 500 else t) for t in self.alarmtemperature]
-#            # conv Arduino mode
-#            self.aw.pidcontrol.conv2celsius()
         if self.ax is not None:
             self.ax.set_ylabel('C',size=16,color = self.palette['ylabel']) #Write "C" on Y axis
         self.mode = 'C'
@@ -11165,6 +11186,7 @@ class tgraphcanvas(FigureCanvas):
             self.filterDropOut_tmax = self.filterDropOut_tmax_C_default
             self.filterDropOut_spikeRoR_dRoR_limit = self.filterDropOut_spikeRoR_dRoR_limit_C_default
             self.adjustTempSliders()
+            self.aw.realignbuttons() # reset button labels as they might refer to the temperature mode via {TEMP}
 
     @pyqtSlot()
     @pyqtSlot(bool)
@@ -12782,6 +12804,11 @@ class tgraphcanvas(FigureCanvas):
     # if noaction is True, the button event action is not triggered
     @pyqtSlot(bool)
     def markCharge(self, noaction:bool = False) -> None:
+        try:
+            if self.aw.ntb._nav_stack(): # pylint: disable=protected-access # if ZOOMED in we push state on stack
+                self.aw.ntb.push_current() # remember current canvas ZOOM/POSITION on stack
+        except Exception: # pylint: disable=broad-except
+            pass
         removed = False
         try:
             self.profileDataSemaphore.acquire(1)
@@ -12927,6 +12954,10 @@ class tgraphcanvas(FigureCanvas):
                 if self.roastpropertiesAutoOpenFlag:
                     self.aw.openPropertiesSignal.emit()
             self.aw.onMarkMoveToNext(self.aw.buttonCHARGE)
+        try:
+            self.aw.ntb._update_view() # type:ignore[has-type] # pylint: disable=protected-access # recallcanvas ZOOM/POSITION from stack
+        except Exception: # pylint: disable=broad-except
+            pass
 
     # called via markTPSignal (queued), triggered by external device
     # does directly call markTP()

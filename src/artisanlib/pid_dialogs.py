@@ -142,7 +142,7 @@ class PID_DlgControl(ArtisanDialog):
         pOnLayout.addWidget(self.pOnM)
 
         pidVBox = QVBoxLayout()
-        if pid_controller in {0, 3, 4}: # only for internal PID and TC4/Kaleido
+        if pid_controller in {0, 1, 2, 3, 4}: # only for internal PID, MODBUS/S7 PID and TC4/Kaleido; NOTE: for MODBUS/S7 the input is used only to decide on the source for the background follow mode SV
             self.pidSource = QComboBox()
             self.pidSource.setToolTip(QApplication.translate('Tooltip', 'PID input signal'))
             if self.aw.qmc.device == 19 and self.aw.qmc.PIDbuttonflag:
@@ -155,11 +155,11 @@ class PID_DlgControl(ArtisanDialog):
                 # Hottop or MODBUS or others (self.qmc.device in [53,29])
                 pidSourceItems = []
                 # NOTE: ET/BT inverted as pidSource=1 => BT and pidSource=2 => ET !!
-                pidSourceItems.append(QApplication.translate('ComboBox','ET'))
-                pidSourceItems.append(QApplication.translate('ComboBox','BT'))
+                pidSourceItems.append(self.aw.ETname.format(self.aw.qmc.etypesf(0),self.aw.qmc.etypesf(1),self.aw.qmc.etypesf(2),self.aw.qmc.etypesf(3)))
+                pidSourceItems.append(self.aw.BTname.format(self.aw.qmc.etypesf(0),self.aw.qmc.etypesf(1),self.aw.qmc.etypesf(2),self.aw.qmc.etypesf(3)))
                 for i in range(len(self.aw.qmc.extradevices)):
-                    pidSourceItems.append(str(i) + 'xT1: ' + self.aw.qmc.extraname1[i])
-                    pidSourceItems.append(str(i) + 'xT2: ' + self.aw.qmc.extraname2[i])
+                    pidSourceItems.append(self.aw.qmc.extraname1[i].format(self.aw.qmc.etypesf(0),self.aw.qmc.etypesf(1),self.aw.qmc.etypesf(2),self.aw.qmc.etypesf(3)))
+                    pidSourceItems.append(self.aw.qmc.extraname2[i].format(self.aw.qmc.etypesf(0),self.aw.qmc.etypesf(1),self.aw.qmc.etypesf(2),self.aw.qmc.etypesf(3)))
                 self.pidSource.addItems(pidSourceItems)
                 if self.aw.pidcontrol.pidSource in {0,1}:
                     self.pidSource.setCurrentIndex(1)

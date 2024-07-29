@@ -1662,6 +1662,7 @@ class editGraphDlg(ArtisanResizeablDialog):
             self.aw.qmc.drumspeed_setup = self.setup_ui.lineEditDrumSpeed.text()
             self.populateSetupDefaults()
             self.setupEdited()
+            self.aw.updateScheduleSignal.emit()
 
     @pyqtSlot(bool)
     def SetupDefaults(self, _:bool = False) -> None:
@@ -2546,7 +2547,6 @@ class editGraphDlg(ArtisanResizeablDialog):
         self.aw.editGraphDlg_activeTab = self.TabWidget.currentIndex()
 #        self.aw.closeEventSettings() # save all app settings
         self.aw.editgraphdialog = None
-        self.aw.updateScheduleSignal.emit()
         if self.stockWorker is not None and self.updateStockSignalConnection is not None:
             self.stockWorker.updatedSignal.disconnect(self.updateStockSignalConnection)
 

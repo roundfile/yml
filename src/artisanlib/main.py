@@ -129,6 +129,7 @@ try:
     #QtWebEngineWidgets must be imported before a QCoreApplication instance is created
     try:
         from PyQt6.QtWebEngineWidgets import QWebEngineView # @Reimport @UnresolvedImport @UnusedImport  # pylint: disable=import-error,no-name-in-module
+        from PyQt6.QtWebEngineCore import QWebEngineProfile
         QtWebEngineSupport = True
     except ImportError:
         # on the RPi platform there is no native package PyQt-WebEngine nor PyQt6-WebEngine for Raspebarry 32bit
@@ -153,7 +154,7 @@ except ImportError:
     from PyQt5.QtNetwork import QLocalSocket # type: ignore # @Reimport @UnresolvedImport @UnusedImport
     #QtWebEngineWidgets must be imported before a QCoreApplication instance is created
     try:
-        from PyQt5.QtWebEngineWidgets import QWebEngineView # type: ignore # @Reimport @UnresolvedImport @UnusedImport # pylint: disable=import-error,no-name-in-module
+        from PyQt5.QtWebEngineWidgets import (QWebEngineView, QWebEngineProfile) # type: ignore[import-not-found, no-redef] # @Reimport @UnresolvedImport @UnusedImport # pylint: disable=import-error,no-name-in-module
         QtWebEngineSupport = True
     except ImportError:
         # on the RPi platform there is no native package PyQt-WebEngine nor PyQt6-WebEngine for Raspebarry 32bit
@@ -4480,11 +4481,16 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             elif self.curFile:
                 # profile loaded
                 self.setWindowTitle(f'{dirtySign}{self.strippedName(self.curFile)} – {appTitle}')
+                # if not Simulator, Comparator, Designer, WheelGraph
+                if self.comparator is None and not self.qmc.designerflag and not self.qmc.wheelflag and self.qmc.ax is not None:
+                    self.setWindowFilePath(self.curFile)
             # no profile loaded
             elif __release_sponsor_name__:
                 self.setWindowTitle(f"{dirtySign}{appTitle} – {__release_sponsor_name__} ({QApplication.translate('About','Release Sponsor')})")
+                self.setWindowFilePath('')
             else:
                 self.setWindowTitle(f'{dirtySign}{appTitle}')
+                self.setWindowFilePath('')
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
 
@@ -10403,7 +10409,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         if len(self.extraeventstypes)>tee and len(self.buttonlist)>tee:
             button_style = self.extraEventButtonStyle(tee, style)
             self.buttonlist[tee].setStyleSheet(button_style)
-            self.buttonlist[tee].setText(self.substButtonLabel(tee, self.extraeventslabels[tee], self.extraeventstypes[tee]))
+            self.buttonlist[tee].setText(self.substButtonLabel(tee, self.extraeventslabels[tee], self.extraeventstypes[tee], self.extraeventsvalues[tee]))
 
     @pyqtSlot(bool)
     def recordextraevent_slot(self, _:bool) -> None:
@@ -10444,6 +10450,11 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 # we just fire the action
                 # split on an octothorpe '#' that is not inside parentheses '()'
                 cmd = re.split(r'\#(?![^\(]*\))',self.extraeventsactionstrings[ee])[0].strip()
+#                try:
+#                    # subst {TEMP} by given event value interpreted as temperature in Fahrenheit, potentially converted to C if self.qmc.mode='C'
+#                    cmd = cmd.format(TEMP=(cmdvalue if self.qmc.mode == 'F' else int(round(fromFtoCstrict(cmdvalue)))))
+#                except Exception:  # pylint: disable=broad-except
+#                    pass
                 cmd = cmd.format(*(tuple([cmdvalue]*cmd.count('{}'))))
                 self.eventaction(self.extraeventsactions[ee],cmd,parallel=parallel)
                 # and record the event
@@ -10471,6 +10482,11 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 else:
                     # split on an octothorpe '#' that is not inside parentheses '()'
                     cmd = re.split(r'\#(?![^\(]*\))',self.extraeventsactionstrings[ee])[0].strip()
+#                    try:
+#                        # subst {TEMP} by given event value interpreted as temperature in Fahrenheit, potentially converted to C if self.qmc.mode='C'
+#                        cmd = cmd.format(TEMP=(actionvalue if self.qmc.mode == 'F' else int(round(fromFtoCstrict(actionvalue)))))
+#                    except Exception: # pylint: disable=broad-except
+#                        pass
                     try:
                         cmd = cmd.format(*(tuple([actionvalue]*cmd.count('{}'))))
                     except Exception: # pylint: disable=broad-except
@@ -10492,8 +10508,12 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             # just issue the eventaction (no cmd substitution here)
             # split on an octothorpe '#' that is not inside parentheses '()'
             cmd = re.split(r'\#(?![^\(]*\))',self.extraeventsactionstrings[ee])[0].strip()
-            if '{}' in cmd:
-                cmd = cmd.format(*(tuple([cmdvalue]*cmd.count('{}'))))
+#            try:
+#                # subst {TEMP} by given event value interpreted as temperature in Fahrenheit, potentially converted to C if self.qmc.mode='C'
+#                cmd = cmd.format(TEMP=(cmdvalue if self.qmc.mode == 'F' else int(round(fromFtoCstrict(cmdvalue)))))
+#            except Exception:  # pylint: disable=broad-except
+#                pass
+            cmd = cmd.format(*(tuple([cmdvalue]*cmd.count('{}'))))
             if cmdvalue == 0 and eventtype == 4:
                 # no event type and cmdvalue is 0 => cmd actions should await response and bind result to _
                 self.eventaction(self.extraeventsactions[ee],cmd,parallel=parallel,eventtype=-1)
@@ -12480,7 +12500,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 if self.qmc.statssummary and self.summarystats_startup and self.qmc.autotimex:
                     # allow only once, at startup
                     self.summarystats_startup = False
-                    self.qmc.redraw(False)
+                    self.qmc.redraw(recomputeAllDeltas = False, re_smooth_foreground = False)
 
 
                 self.qmc.redraw()
@@ -15422,7 +15442,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     _log.debug('clearing bbpCache')
             # now calculate all the bbp data
             # does the current profile have the minimum time for bbp?
-            if (len(self.qmc.timeindex) > 0) and (self.qmc.timex[self.qmc.timeindex[0]] > 0) and (self.qmc.timex[self.qmc.timeindex[0]] - self.qmc.timex[0] >= minBbpTime):
+            if (len(self.qmc.timeindex) > 0 and len(self.qmc.timex) > self.qmc.timeindex[0] > -1 and (self.qmc.timex[self.qmc.timeindex[0]] > 0) and
+                (self.qmc.timex[self.qmc.timeindex[0]] - self.qmc.timex[0] >= minBbpTime)):
                 self.bbp_total_time = self.qmc.timex[self.qmc.timeindex[0]] - self.qmc.timex[0] + self.bbp_time_added_from_prev
                 # fake the events to use with findTPint
                 bbp_timeindex = [0, 0, self.qmc.timeindex[0], 0, 0, 0, self.qmc.timeindex[0], 0]
@@ -17445,8 +17466,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.qmc.roastersize_setup_default = toFloat(settings.value('roastersize_setup_default',self.qmc.roastersize_setup_default))
             self.qmc.roastersize_setup = toFloat(settings.value('roastersize_setup',self.qmc.roastersize_setup))
             self.qmc.last_batchsize = toFloat(settings.value('last_batchsize',self.qmc.last_batchsize))
-            # we set the default in-weight from the given last_batchsize
-            self.qmc.weight = (self.qmc.last_batchsize,self.qmc.weight[1],self.qmc.weight[2])
             self.qmc.roasterheating_setup = toInt(settings.value('roasterheating_setup',self.qmc.roasterheating_setup))
             self.qmc.roasterheating_setup_default = toInt(settings.value('roasterheating_setup_default',self.qmc.roasterheating_setup_default))
             self.qmc.drumspeed_setup = toString(settings.value('drumspeed_setup',self.qmc.drumspeed_setup))
@@ -17856,62 +17875,63 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 #--- BEGIN GROUP ExtraEventButtons
             #restore buttons
             settings.beginGroup('ExtraEventButtons')
-            self.buttonlistmaxlen = toInt(settings.value('buttonlistmaxlen',self.buttonlistmaxlen))
-            self.extraeventsbuttonsflags = [toInt(x) for x in toList(settings.value('extraeventsbuttonsflags',self.extraeventsbuttonsflags))]
-            extraeventstypes = [toInt(x) for x in toList(settings.value('extraeventstypes',self.extraeventstypes))]
-            extraeventsvalues = [toFloat(x) for x in toList(settings.value('extraeventsvalues',self.extraeventsvalues))]
-            extraeventsactions = [toInt(x) for x in toList(settings.value('extraeventsactions',self.extraeventsactions))]
-            extraeventsvisibility = [toInt(x) for x in toList(settings.value('extraeventsvisibility',self.extraeventsvisibility))]
-            extraeventsactionstrings = list(toStringList(settings.value('extraeventsactionstrings',self.extraeventsactionstrings)))
-            extraeventslabels = list(toStringList(settings.value('extraeventslabels',self.extraeventslabels)))
-            extraeventsdescriptions= list(toStringList(settings.value('extraeventsdescriptions',self.extraeventsdescriptions)))
-            if settings.contains('extraeventbuttoncolor'):
-                extraeventbuttoncolor = list(toStringList(settings.value('extraeventbuttoncolor',self.extraeventbuttoncolor)))
-            else:
-                extraeventbuttoncolor = ['yellow']*len(extraeventstypes)
-            if settings.contains('extraeventbuttontextcolor'):
-                extraeventbuttontextcolor = list(toStringList(settings.value('extraeventbuttontextcolor',self.extraeventbuttontextcolor)))
-            else:
-                extraeventbuttontextcolor = ['#000000']*len(extraeventstypes)
-            if len(extraeventstypes) == len(extraeventsvalues) == len(extraeventsactions) == len(extraeventsvisibility) ==\
-                    len(extraeventsactionstrings) == len(extraeventslabels) == len(extraeventsdescriptions) == \
-                    len(extraeventbuttoncolor) == len(extraeventbuttontextcolor):
-                self.extraeventstypes = extraeventstypes
-                self.extraeventsvalues = extraeventsvalues
-                self.extraeventsactions = extraeventsactions
-                self.extraeventsvisibility = extraeventsvisibility
-                self.extraeventsactionstrings = extraeventsactionstrings
-                self.extraeventslabels = extraeventslabels
-                self.extraeventsdescriptions = extraeventsdescriptions
-                self.extraeventbuttoncolor = extraeventbuttoncolor
-                self.extraeventbuttontextcolor = extraeventbuttontextcolor
-            self.buttonpalettemaxlen = [min(30,max(6,toInt(x))) for x in toList(settings.value('buttonpalettemaxlen',self.buttonpalettemaxlen))]
-            bp = toList(settings.value('buttonpalette',self.buttonpalette))
-            self.buttonpalette = []
-            if not bp:
-                self.buttonpalette = [ self.makePalette() for _ in range(10) ] # initialize empty palettes
-            else:
-                for p in bp[:self.max_palettes]:
-                    if p is None or len(p)>self.palette_entries:
-                        # we generate a new default palette
-                        self.buttonpalette.append(self.makePalette())
-                    elif len(p) == self.palette_entries:
-                        # we convert the list into a Palette tuple
-                        if self.paletteValid(p):
-                            tp = cast('Palette', tuple(p))
-                            self.buttonpalette.append(tp)
-                        else:
+            if settings.contains('extraeventsactions'):
+                self.buttonlistmaxlen = toInt(settings.value('buttonlistmaxlen',self.buttonlistmaxlen))
+                self.extraeventsbuttonsflags = [toInt(x) for x in toList(settings.value('extraeventsbuttonsflags',self.extraeventsbuttonsflags))]
+                extraeventstypes = [toInt(x) for x in toList(settings.value('extraeventstypes',self.extraeventstypes))]
+                extraeventsvalues = [toFloat(x) for x in toList(settings.value('extraeventsvalues',self.extraeventsvalues))]
+                extraeventsactions = [toInt(x) for x in toList(settings.value('extraeventsactions',self.extraeventsactions))]
+                extraeventsvisibility = [toInt(x) for x in toList(settings.value('extraeventsvisibility',self.extraeventsvisibility))]
+                extraeventsactionstrings = list(toStringList(settings.value('extraeventsactionstrings',self.extraeventsactionstrings)))
+                extraeventslabels = list(toStringList(settings.value('extraeventslabels',self.extraeventslabels)))
+                extraeventsdescriptions= list(toStringList(settings.value('extraeventsdescriptions',self.extraeventsdescriptions)))
+                if settings.contains('extraeventbuttoncolor'):
+                    extraeventbuttoncolor = list(toStringList(settings.value('extraeventbuttoncolor',self.extraeventbuttoncolor)))
+                else:
+                    extraeventbuttoncolor = ['#808080']*len(extraeventstypes)
+                if settings.contains('extraeventbuttontextcolor'):
+                    extraeventbuttontextcolor = list(toStringList(settings.value('extraeventbuttontextcolor',self.extraeventbuttontextcolor)))
+                else:
+                    extraeventbuttontextcolor = ['white']*len(extraeventstypes)
+                if len(extraeventstypes) == len(extraeventsvalues) == len(extraeventsactions) == len(extraeventsvisibility) ==\
+                        len(extraeventsactionstrings) == len(extraeventslabels) == len(extraeventsdescriptions) == \
+                        len(extraeventbuttoncolor) == len(extraeventbuttontextcolor):
+                    self.extraeventstypes = extraeventstypes
+                    self.extraeventsvalues = extraeventsvalues
+                    self.extraeventsactions = extraeventsactions
+                    self.extraeventsvisibility = extraeventsvisibility
+                    self.extraeventsactionstrings = extraeventsactionstrings
+                    self.extraeventslabels = extraeventslabels
+                    self.extraeventsdescriptions = extraeventsdescriptions
+                    self.extraeventbuttoncolor = extraeventbuttoncolor
+                    self.extraeventbuttontextcolor = extraeventbuttontextcolor
+                self.buttonpalettemaxlen = [min(30,max(6,toInt(x))) for x in toList(settings.value('buttonpalettemaxlen',self.buttonpalettemaxlen))]
+                bp = toList(settings.value('buttonpalette',self.buttonpalette))
+                self.buttonpalette = []
+                if not bp:
+                    self.buttonpalette = [ self.makePalette() for _ in range(10) ] # initialize empty palettes
+                else:
+                    for p in bp[:self.max_palettes]:
+                        if p is None or len(p)>self.palette_entries:
+                            # we generate a new default palette
                             self.buttonpalette.append(self.makePalette())
-                    else:
-                        # to be compatible to older Artisan versions with smaller palettes we fill the list from the defaults and convert it into a Palette
-                        tp = cast('Palette', tuple(p + list(self.makePalette(empty=False))[len(p):]))
-                        self.buttonpalette.append(tp)
-            self.buttonpalette_shortcuts = bool(toBool(settings.value('buttonpalette_shortcuts',self.buttonpalette_shortcuts)))
-            self.eventbuttontablecolumnwidths = [toInt(x) for x in toList(settings.value('eventbuttontablecolumnwidths',self.eventbuttontablecolumnwidths))]
-            self.buttonsize = toInt(settings.value('buttonsize',self.buttonsize))
-            self.mark_last_button_pressed = bool(toBool(settings.value('marklastbuttonpressed',self.mark_last_button_pressed)))
-            self.show_extrabutton_tooltips = bool(toBool(settings.value('showextrabuttontooltips',self.show_extrabutton_tooltips)))
-            self.buttonpalette_label = toString(settings.value('buttonpalette_label',self.buttonpalette_label))
+                        elif len(p) == self.palette_entries:
+                            # we convert the list into a Palette tuple
+                            if self.paletteValid(p):
+                                tp = cast('Palette', tuple(p))
+                                self.buttonpalette.append(tp)
+                            else:
+                                self.buttonpalette.append(self.makePalette())
+                        else:
+                            # to be compatible to older Artisan versions with smaller palettes we fill the list from the defaults and convert it into a Palette
+                            tp = cast('Palette', tuple(p + list(self.makePalette(empty=False))[len(p):]))
+                            self.buttonpalette.append(tp)
+                self.buttonpalette_shortcuts = bool(toBool(settings.value('buttonpalette_shortcuts',self.buttonpalette_shortcuts)))
+                self.eventbuttontablecolumnwidths = [toInt(x) for x in toList(settings.value('eventbuttontablecolumnwidths',self.eventbuttontablecolumnwidths))]
+                self.buttonsize = toInt(settings.value('buttonsize',self.buttonsize))
+                self.mark_last_button_pressed = bool(toBool(settings.value('marklastbuttonpressed',self.mark_last_button_pressed)))
+                self.show_extrabutton_tooltips = bool(toBool(settings.value('showextrabuttontooltips',self.show_extrabutton_tooltips)))
+                self.buttonpalette_label = toString(settings.value('buttonpalette_label',self.buttonpalette_label))
             settings.endGroup()
 #--- END GROUP ExtraEventButtons
 
@@ -21694,7 +21714,13 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 libtime.sleep(0.001)
             self.pdf_rendering = True
             if self.html_loader is None:
-                self.html_loader = QWebEngineView() # pyright:ignore[reportPossiblyUnboundVariable]
+                try:
+                    profile = QWebEngineProfile() # pyright:ignore[reportPossiblyUnboundVariable]
+                    profile.setSpellCheckEnabled(False) # disable spell checker
+                    profile.setHttpCacheType(QWebEngineProfile.HttpCacheType.NoCache) # pyright:ignore[reportPossiblyUnboundVariable]
+                    self.html_loader = QWebEngineView(profile) # pyright:ignore[reportPossiblyUnboundVariable]
+                except Exception: # pylint: disable=broad-except
+                    self.html_loader = QWebEngineView() # pyright:ignore[reportPossiblyUnboundVariable]
                 self.html_loader.setZoomFactor(1)
             if self.pdf_page_layout is None:
                 # lazy imports
@@ -22689,24 +22715,35 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
     def checkUpdate(self, _:bool = False) -> None:
         update_url = '<a href="https://artisan-scope.org">https://artisan-scope.org</a>'
         update_str = QApplication.translate('About', 'There was a problem retrieving the latest version information.  Please check your Internet connection, try again later, or check manually.')
+        import json
         try:
             import requests
             r = requests.get('https://api.github.com/repos/artisan-roaster-scope/artisan/releases/latest', timeout=(2,4))
-            tag_name = r.json()['tag_name']
-            match = re.search(r'[\d\.]+',tag_name)
-            if match is not None:
-                latest = match.group(0)
-                if latest > __version__:
-                    update_str = QApplication.translate('About', 'A new release is available.')
-                    update_str += '<br/><a href="https://github.com/artisan-roaster-scope/artisan/blob/master/wiki/ReleaseHistory.md">'
-                    update_str +=  QApplication.translate('About', 'Show Change list')
-                    update_str += '<br/><a href="https://github.com/artisan-roaster-scope/artisan/releases/tag/' + str(tag_name) + '">'
-                    update_str +=  QApplication.translate('About', 'Download Release') + ' ' + str(tag_name)
-                elif latest == __version__ :
-                    update_str = QApplication.translate('About', 'You are using the latest release.')
-                elif latest < __version__:
-                    update_str = QApplication.translate('About', 'You are using a beta continuous build.')
-                    update_str += '<br/><br/>' + QApplication.translate('About', 'You will see a notice here once a new official release is available.')
+            if r.status_code != 204 and r.headers['content-type'].strip().startswith('application/json'):
+                response = r.json()
+                if 'tag_name' in response:
+                    tag_name = r.json()['tag_name']
+                    match = re.search(r'[\d\.]+',tag_name)
+                    if match is not None:
+                        latest = match.group(0)
+                        if latest > __version__:
+                            update_str = QApplication.translate('About', 'A new release is available.')
+                            update_str += '<br/><a href="https://github.com/artisan-roaster-scope/artisan/blob/master/wiki/ReleaseHistory.md">'
+                            update_str +=  QApplication.translate('About', 'Show Change list')
+                            update_str += '<br/><a href="https://github.com/artisan-roaster-scope/artisan/releases/tag/' + str(tag_name) + '">'
+                            update_str +=  QApplication.translate('About', 'Download Release') + ' ' + str(tag_name)
+                        elif latest == __version__ :
+                            update_str = QApplication.translate('About', 'You are using the latest release.')
+                        elif latest < __version__:
+                            update_str = QApplication.translate('About', 'You are using a beta continuous build.')
+                            update_str += '<br/><br/>' + QApplication.translate('About', 'You will see a notice here once a new official release is available.')
+        except json.decoder.JSONDecodeError as e:
+            if not e.doc:
+                _log.error('Empty response in checkUpdate.')
+            else:
+                _log.error("Decoding error at char %s (line %s, col %s): '%s'", e.pos, e.lineno, e.colno, e.doc)
+        except ValueError:
+            _log.error('checkUpdate response content is not valid JSON')
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _a, _b, exc_tb = sys.exc_info()
@@ -24629,9 +24666,16 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     widget.deleteLater()
 
     # applies button label substitutions like \t => eventname, \0 => ON,...
-    def substButtonLabel(self, buttonNr:int, label:str, eventtype:int) -> str:
+    # supplied eventvalue as stored, not yet converted to the visible int value
+    def substButtonLabel(self, buttonNr:int, label:str, eventtype:int, eventvalue:float) -> str:
         et:int = eventtype
         res:str = label
+        value = self.qmc.eventsInternal2ExternalValue(eventvalue)
+        tempvalueF = (value if self.qmc.mode == 'F' else int(round(fromFtoCstrict(value))))
+        tempvalueC = (value if self.qmc.mode == 'C' else int(round(fromCtoFstrict(value))))
+        sign = ''
+        if 4 < et < 9 and value > 0:
+            sign = '+'
         if et > 4:
             et = et - 5
         if et < 4:
@@ -24664,7 +24708,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 ('\\f', QApplication.translate('Label','FILL')),
                 ('\\R', QApplication.translate('Label','RELEASE')),
                 ('\\h', QApplication.translate('Label','HEATING')),
-                ('\\l', QApplication.translate('Label','COOLING'))
+                ('\\l', QApplication.translate('Label','COOLING')),
+                ('\\V', f'{sign}{value}'),
+                ('\\F', f'{tempvalueF}{self.qmc.mode}'),
+                ('\\T', f'{tempvalueC}{self.qmc.mode}')
                 ]:
             res = res.replace(var,subst)
         return res
@@ -24738,7 +24785,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 
             p.setCursor(QCursor(Qt.CursorShape.PointingHandCursor))
 
-            p.setText(self.substButtonLabel(i, self.extraeventslabels[i], eet))
+            p.setText(self.substButtonLabel(i, self.extraeventslabels[i], eet, self.extraeventsvalues[i]))
             p.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             p.clicked.connect(self.recordextraevent_slot)
             self.buttonlist.append(p)
@@ -25958,6 +26005,8 @@ def main() -> None:
     start_time = libtime.process_time() # begin of settings load
     # fill self.defaultSettings with default app QSettings values before loading app settings from system via settingsLoad()
     appWindow.saveAllSettings(QSettings(), appWindow.defaultSettings, read_defaults=True) # don't save any settings, but just read in the defaults
+
+    # now load the app settings
     appWindow.settingsLoad(redraw=False) # redraw is triggered later in the startup process again
     appWindow.restoreExtraDeviceSettingsBackup() # load settings backup if it exists (like on RESET)
     _log.info('loaded %s settings in %.2fs', len(QSettings().allKeys()), libtime.process_time() - start_time)
@@ -26023,7 +26072,7 @@ def main() -> None:
                         appWindow.qmc.reset(redraw=False, soundOn=False)
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
-            elif appWindow.logofilename != '':  #ensure background image aspect ratio is calculated
+            else:  #ensure background image aspect ratio is calculated and default weight from last_batchsize is set
                 appWindow.qmc.reset(redraw=False, soundOn=False)
             if appWindow.lastLoadedBackground and appWindow.lastLoadedBackground != '' and not appWindow.curFile:
                 try:
