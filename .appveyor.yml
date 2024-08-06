@@ -24,14 +24,14 @@ environment:
   #PYUPGRADE_MACOS_V: 3.12.1
 
   matrix:
-#  - job_name: windows_legacy
-#    appveyor_build_worker_image: Visual Studio 2019
+  - job_name: windows_legacy
+    appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
     appveyor_build_worker_image: Visual Studio 2022
-#  - job_name: macos
-#    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
-#  - job_name: linux
-#    appveyor_build_worker_image: Previous Ubuntu2204
+  - job_name: macos
+    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
+  - job_name: linux
+    appveyor_build_worker_image: Ubuntu2204
 
 
 # Generic build number, later set to commit hash by init
@@ -42,8 +42,6 @@ skip_tags: true
 clone_depth: 1
 
 init:
-  - ps: $env:APPVEYOR_RDP_BLOCK = $true
-    
   # Sets the commit hash to "build version number" shown in appveyor build status, the build number keeps it unique
   - ps: Update-AppveyorBuild -Version "$($env:APPVEYOR_REPO_COMMIT.substring(0,7)) ($env:APPVEYOR_BUILD_NUMBER)"
   # Env used to enable artifact upload for PR builds by providing a valid file name, invalid for REPO builds
