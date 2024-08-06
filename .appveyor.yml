@@ -24,8 +24,8 @@ environment:
   #PYUPGRADE_MACOS_V: 3.12.1
 
   matrix:
-  - job_name: windows_legacy
-    appveyor_build_worker_image: Visual Studio 2019
+#  - job_name: windows_legacy
+#    appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
     appveyor_build_worker_image: Visual Studio 2022
 #  - job_name: macos
@@ -50,6 +50,7 @@ init:
       if ([bool]$env:APPVEYOR_PULL_REQUEST_NUMBER -eq $true) {
         $env:artifact_prefix = 'artisan'
       }
+  - ps: $env:APPVEYOR_RDP_BLOCK = $true
 
 branches:
   only:
