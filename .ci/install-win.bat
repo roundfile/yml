@@ -65,10 +65,11 @@ python -m pip install wheel
 ::
 :: install Artisan required libraries from pip
 ::
-python -m pip install -r src\requirements.txt | findstr /v /b "Ignoring"
+::python -m pip install -r src\requirements.txt | findstr /v /b "Ignoring"
+python -m pip install -r src\requirements.txt
 
 :: Pause Build Here For Remote Desktop Access
-PowerShell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "if ($env:APPVEYOR_RDP_BLOCK -eq $true) {$blockRdp = $true; & iex ((new-object net.webclient).DownloadString(\"https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1\"))}"
+::PowerShell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "if ($env:APPVEYOR_RDP_BLOCK -eq $true) {$blockRdp = $true; & iex ((new-object net.webclient).DownloadString(\"https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1\"))}"
 
 ::
 :: custom build the pyinstaller bootloader or install a prebuilt
