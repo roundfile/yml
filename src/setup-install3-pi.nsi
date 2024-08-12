@@ -138,6 +138,11 @@ RequestExecutionLevel admin
 !define /ifndef PRODUCT_VERSION "0.0.0"
 !define /ifndef PRODUCT_BUILD "0"
 !define /ifndef SIGN "False"
+!ifdef LEGACY
+  LEGACY_STR "-legacy"
+!else
+  LEGACY_STR =""
+!endif
 !define /ifndef LEGACY "False"
 
 !define /date CUR_YEAR "%Y"
@@ -187,7 +192,7 @@ SetCompressor lzma
 ; MUI end ------
 
 Name "${PRODUCT_NAME}"
-OutFile "Setup-${PRODUCT_NAME}-${PRODUCT_VERSION}.exe"
+OutFile "Setup-${PRODUCT_NAME}${LEGACY_STR}-${PRODUCT_VERSION}.exe"
 InstallDir "C:\Program Files\Artisan"
 InstallDirRegKey HKLM "${PRODUCT_DIR_REGKEY}" ""
 ShowInstDetails show

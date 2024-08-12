@@ -26,8 +26,10 @@ if /i "%APPVEYOR%" NEQ "True" (
 )
 if /i "%ARTISAN_LEGACY%" NEQ "True" (
     set ARTISAN_SPEC=win
+    set ARTISAN_SPEC=Setup-Artisan
 ) else (
     set ARTISAN_SPEC=win-legacy
+    set ARTISAN_SPEC=Setup-Artisan-legacy
 )
 :: ----------------------------------------------------------------------
 
@@ -78,16 +80,17 @@ if ERRORLEVEL 1 (echo ** Failed in NSIS & exit /b 1) else (echo ** Success)
 ::
 :: package the installation zip file
 ::
-if /i "%APPVEYOR%" == "True" (
-    copy "..\LICENSE" "LICENSE.txt"
-    7z a artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
-    if ERRORLEVEL 1 (echo ** Failed in 7z zipping the setup files & exit /b 1)
-)
+::if /i "%APPVEYOR%" == "True" (
+::    copy "..\LICENSE" "LICENSE.txt"
+::    7z a artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip Setup*.exe LICENSE.txt README.txt
+::    if ERRORLEVEL 1 (echo ** Failed in 7z zipping the setup files & exit /b 1)
+::)
 
 ::
 :: check that the packaged files are above an expected size
 ::
-set file=artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip
+::set file=artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip
+set file=%ARTISAN_SPEC%-%ARTISAN_VERSION%.exe
 set min_size=170000000
 for %%A in (%file%) do set size=%%~zA
 if %size% LSS %min_size% (
