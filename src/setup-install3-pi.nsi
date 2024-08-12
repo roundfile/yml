@@ -107,11 +107,11 @@ RequestExecutionLevel admin
 
 ; !defines for use with SHChangeNotify
 !ifdef SHCNE_ASSOCCHANGED
-!undef SHCNE_ASSOCCHANGED
+  !undef SHCNE_ASSOCCHANGED
 !endif
 !define SHCNE_ASSOCCHANGED 0x08000000
 !ifdef SHCNF_FLUSH
-!undef SHCNF_FLUSH
+  !undef SHCNF_FLUSH
 !endif
 !define SHCNF_FLUSH        0x1000
 
@@ -138,25 +138,22 @@ RequestExecutionLevel admin
 !define /ifndef PRODUCT_VERSION "0.0.0"
 !define /ifndef PRODUCT_BUILD "0"
 !define /ifndef SIGN "False"
-!ifdef LEGACY
+!define /ifndef LEGACY "False"
+!if ${LEGACY} == "True"
   !define LEGACY_STR "-legacy"
 !else
   !define LEGACY_STR ""
 !endif
-!define /ifndef LEGACY "False"
 
 !define /date CUR_YEAR "%Y"
 Caption "${PRODUCT_NAME} Installer"
-;VIProductVersion ${PRODUCT_VERSION}
 VIProductVersion "${PRODUCT_VERSION}.${PRODUCT_BUILD}"
 VIAddVersionKey ProductName "${PRODUCT_NAME}"
 VIAddVersionKey Comments "Installer for Artisan"
 VIAddVersionKey CompanyName ""
 VIAddVersionKey LegalCopyright "Copyright 2010-${CUR_YEAR}, Artisan developers. GNU General Public License"
-;VIAddVersionKey FileVersion "${PRODUCT_VERSION}"
 VIAddVersionKey FileVersion "${PRODUCT_VERSION}.${PRODUCT_BUILD}"
 VIAddVersionKey FileDescription "${PRODUCT_NAME} Installer"
-;VIAddVersionKey ProductVersion "${PRODUCT_VERSION}"
 VIAddVersionKey ProductVersion "${PRODUCT_VERSION}.${PRODUCT_BUILD}"
 
 SetCompressor lzma
