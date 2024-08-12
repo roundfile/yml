@@ -72,7 +72,7 @@ echo **** Running NSIS makensis.exe file date %NSIS_DATE%
 ::
 :: run NSIS to build the install .exe file
 ::%NSIS_EXE% /DPRODUCT_VERSION=%ARTISAN_VERSION%.%ARTISAN_BUILD% /DLEGACY=%ARTISAN_LEGACY% setup-install3-pi.nsi
-%NSIS_EXE% /DPRODUCT_VERSION=%ARTISAN_VERSION% /DLEGACY=%ARTISAN_LEGACY% setup-install3-pi.nsi
+%NSIS_EXE% /DPRODUCT_VERSION=%ARTISAN_VERSION% /DPRODUCT_BUILD=%ARTISAN_BUILD% /DLEGACY=%ARTISAN_LEGACY% setup-install3-pi.nsi
 if ERRORLEVEL 1 (echo ** Failed in NSIS & exit /b 1) else (echo ** Success)
 
 ::

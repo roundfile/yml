@@ -15,7 +15,8 @@
 ; Dave Baxter, Marko Luther 2023
 ;
 ; .nsi command line options:
-;    /DPRODUCT_VERSION=ww.xx.yy.zz  -explicitly set the product version, default is 0.0.0.0
+;    /DPRODUCT_VERSION=ww.xx.yy     -explicitly set the product version, default is 0.0.0
+;    /PRODUCT_BUILD=zz              -explicityl set the product build, default is 0
 ;    /DLEGACY=True|False            -True is a build for legacy Windows, default is False
 ;    /DSIGN=True|False              -True if the build is part of the process to sign files, default is False
 ;                                    Note: SignArtisan is not a part of the ci process
@@ -132,22 +133,26 @@ RequestExecutionLevel admin
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
 ;Special commandline options
-;Product version can be defined on the command line '/DPRODUCT_VERSION=ww.xx.yy.zz'
-;  and will override the version explicitly set below.
-!define /ifndef PRODUCT_VERSION "0.0.0.0"
+;Product version and build can be defined on the command line '/DPRODUCT_VERSION=ww.xx.yy'
+;  and '/DPRODUCT_VERSION=zz' These will override the default version an build explicitly set below.
+!define /ifndef PRODUCT_VERSION "0.0.0"
+!define /ifndef PRODUCT_BUILD "0"
 !define /ifndef SIGN "False"
 !define /ifndef LEGACY "False"
 
 !define /date CUR_YEAR "%Y"
 Caption "${PRODUCT_NAME} Installer"
-VIProductVersion ${PRODUCT_VERSION}
+;VIProductVersion ${PRODUCT_VERSION}
+VIProductVersion "${PRODUCT_VERSION}.${PRODUCT_BUILD}"
 VIAddVersionKey ProductName "${PRODUCT_NAME}"
 VIAddVersionKey Comments "Installer for Artisan"
 VIAddVersionKey CompanyName ""
 VIAddVersionKey LegalCopyright "Copyright 2010-${CUR_YEAR}, Artisan developers. GNU General Public License"
-VIAddVersionKey FileVersion "${PRODUCT_VERSION}"
+;VIAddVersionKey FileVersion "${PRODUCT_VERSION}"
+VIAddVersionKey FileVersion "${PRODUCT_VERSION}.${PRODUCT_BUILD}"
 VIAddVersionKey FileDescription "${PRODUCT_NAME} Installer"
-VIAddVersionKey ProductVersion "${PRODUCT_VERSION}"
+;VIAddVersionKey ProductVersion "${PRODUCT_VERSION}"
+VIAddVersionKey ProductVersion "${PRODUCT_VERSION}.${PRODUCT_BUILD}"
 
 SetCompressor lzma
 
@@ -283,7 +288,7 @@ Section -Post
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayName" "$(^Name)"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "UninstallString" "$INSTDIR\uninst.exe"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayIcon" "$INSTDIR\artisan.exe"
-  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion" "${PRODUCT_VERSION}"
+  WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "DisplayVersion" "${PRODUCT_VERSION}.${PRODUCT_BUILD}"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "URLInfoAbout" "${PRODUCT_WEB_SITE}"
   WriteRegStr ${PRODUCT_UNINST_ROOT_KEY} "${PRODUCT_UNINST_KEY}" "Publisher" "${PRODUCT_PUBLISHER}"
 
