@@ -141,7 +141,7 @@ RequestExecutionLevel admin
 !ifdef LEGACY
   LEGACY_STR "-legacy"
 !else
-  LEGACY_STR =""
+  LEGACY_STR ""
 !endif
 !define /ifndef LEGACY "False"
 
