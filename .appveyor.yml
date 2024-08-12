@@ -24,8 +24,8 @@ environment:
   #PYUPGRADE_MACOS_V: 3.12.1
 
   matrix:
-  - job_name: windows_legacy
-    appveyor_build_worker_image: Visual Studio 2019
+#  - job_name: windows_legacy
+#    appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
     appveyor_build_worker_image: Visual Studio 2022
 #  - job_name: macos
@@ -50,7 +50,6 @@ init:
       if ([bool]$env:APPVEYOR_PULL_REQUEST_NUMBER -eq $true) {
         $env:artifact_prefix = 'artisan'
       }
-  - ps: $env:APPVEYOR_RDP_BLOCK = $true
 
 branches:
   only:
@@ -107,19 +106,17 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the build script
-#    - cmd: build-win3-pi.bat
-    - cmd: build-win3-standalone-pi.bat
+    - cmd: build-win3-pi.bat
 
 #  test_script:
 #    - cmd: python -m unittest discover
 
   artifacts:
 #    - path: 'generated-win-legacy.zip'
-#    - path: 'src\%artifact_prefix%-*.zip'
-    - path: 'src\artisan*.exe'
+    - path: 'src\%artifact_prefix%-*.zip'
 
-#  deploy_script:
-#    - cmd: bash ../.ci/upload.sh artisan-*.zip
+  deploy_script:
+    - cmd: bash ../.ci/upload.sh artisan-*.zip
 
 #  # uncomment this section for remote desktop connection to build image
 #  on_finish:
@@ -184,19 +181,17 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the build script
-#    - cmd: build-win3-pi.bat
-    - cmd: build-win3-standalone-pi.bat
+    - cmd: build-win3-pi.bat
 
 #  test_script:
 #    - cmd: python -m unittest discover
 
   artifacts:
 #    - path: 'generated-win.zip'
-#    - path: 'src\%artifact_prefix%-*.zip'
-    - path: 'src\artisan*.exe'
+    - path: 'src\%artifact_prefix%-*.zip'
 
-#  deploy_script:
-#    - cmd: bash ../.ci/upload.sh artisan-*.zip
+  deploy_script:
+    - cmd: bash ../.ci/upload.sh artisan-*.zip
 
 #  # uncomment this section for remote desktop connection to build image
 #  on_finish:
