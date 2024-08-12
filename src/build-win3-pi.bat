@@ -25,10 +25,10 @@ if /i "%APPVEYOR%" NEQ "True" (
     exit /b 1
 )
 if /i "%ARTISAN_LEGACY%" NEQ "True" (
-    set ARTISAN_SPEC=win
+rem    set ARTISAN_SPEC=win
     set ARTISAN_SPEC=Setup-Artisan
 ) else (
-    set ARTISAN_SPEC=win-legacy
+rem    set ARTISAN_SPEC=win-legacy
     set ARTISAN_SPEC=Setup-Artisan-legacy
 )
 :: ----------------------------------------------------------------------
@@ -90,7 +90,9 @@ if ERRORLEVEL 1 (echo ** Failed in NSIS & exit /b 1) else (echo ** Success)
 :: check that the packaged files are above an expected size
 ::
 ::set file=artisan-%ARTISAN_SPEC%-%ARTISAN_VERSION%.zip
+echo ARTISAN_SPEC= %ARTISAN_SPEC%
 set file=%ARTISAN_SPEC%-%ARTISAN_VERSION%.exe
+echo file= %file%
 set min_size=170000000
 for %%A in (%file%) do set size=%%~zA
 if %size% LSS %min_size% (
