@@ -139,9 +139,9 @@ RequestExecutionLevel admin
 !define /ifndef PRODUCT_BUILD "0"
 !define /ifndef SIGN "False"
 !ifdef LEGACY
-  LEGACY_STR "-legacy"
+  !define LEGACY_STR "-legacy"
 !else
-  LEGACY_STR ""
+  !define LEGACY_STR ""
 !endif
 !define /ifndef LEGACY "False"
 
