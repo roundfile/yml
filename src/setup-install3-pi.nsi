@@ -16,7 +16,7 @@
 ;
 ; .nsi command line options:
 ;    /DPRODUCT_VERSION=ww.xx.yy     -explicitly set the product version, default is 0.0.0
-;    /PRODUCT_BUILD=zz              -explicityl set the product build, default is 0
+;    /DPRODUCT_BUILD=zz             -explicityl set the product build, default is 0
 ;    /DLEGACY=True|False            -True is a build for legacy Windows, default is False
 ;    /DSIGN=True|False              -True if the build is part of the process to sign files, default is False
 ;                                    Note: SignArtisan is not a part of the ci process
@@ -132,9 +132,9 @@ RequestExecutionLevel admin
 !define PRODUCT_UNINST_KEY "Software\Microsoft\Windows\CurrentVersion\Uninstall\${PRODUCT_NAME}"
 !define PRODUCT_UNINST_ROOT_KEY "HKLM"
 
-;Special commandline options
-;Product version and build can be defined on the command line '/DPRODUCT_VERSION=ww.xx.yy'
-;  and '/DPRODUCT_VERSION=zz' These will override the default version an build explicitly set below.
+; Special commandline options
+; Product version and build can be defined on the command line '/DPRODUCT_VERSION=ww.xx.yy'
+;   and '/DPRODUCT_VERSION=zz' These will override the default version an build explicitly set below.
 !define /ifndef PRODUCT_VERSION "0.0.0"
 !define /ifndef PRODUCT_BUILD "0"
 !define /ifndef SIGN "False"
@@ -147,6 +147,7 @@ RequestExecutionLevel admin
 
 !define /date CUR_YEAR "%Y"
 Caption "${PRODUCT_NAME} Installer"
+
 VIProductVersion "${PRODUCT_VERSION}.${PRODUCT_BUILD}"
 VIAddVersionKey ProductName "${PRODUCT_NAME}"
 VIAddVersionKey Comments "Installer for Artisan"

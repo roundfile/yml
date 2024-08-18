@@ -62,9 +62,10 @@ import io
 import functools
 import dateutil.parser
 import copy as copyd
-import arabic_reshaper # type:ignore
+import arabic_reshaper # type:ignore[import-untyped]
 from pathlib import Path
-from bidi.algorithm import get_display # type:ignore
+#from bidi.algorithm import get_display # type:ignore # pure Python implementation
+from bidi import get_display # type:ignore[import-untyped] # newer rust based implementation of the above Python implementation
 
 # links CTR-C signals to the system default (ignore)
 import signal
@@ -6086,7 +6087,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     background = True
                 if background:
                     t_min,t_max = self.calcAutoAxisBackground()
-                    if self.qmc.timeindex[0] != -1 and len(self.qmc.timex) > self.qmc.timeindex[0]:
+                    if len(self.qmc.timex)<3 and self.qmc.timeindexB[0] != -1 and len(self.qmc.timeB) > self.qmc.timeindexB[0]:
+                        # no foregroundn loaded
+                        t_max = t_max - self.qmc.timeB[self.qmc.timeindexB[0]]
+                    elif self.qmc.timeindex[0] != -1 and len(self.qmc.timex) > self.qmc.timeindex[0]:
                         t_max = t_max - self.qmc.timex[self.qmc.timeindex[0]]
                 elif len(self.qmc.timex) > 3:
                     t_min,t_max = self.calcAutoAxisForeground()
@@ -6147,6 +6151,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             _, _, exc_tb = sys.exc_info()
             self.qmc.adderror((QApplication.translate('Error Message','Exception:') + ' autoAdjustAxis() {0}').format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
+
     @pyqtSlot()
     @pyqtSlot(bool)
     def toggleFullscreen(self, _:bool = False) -> None:
@@ -6189,7 +6194,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             t_start -= 1/16*time_period
             t_end += 1/10*time_period
             return t_start, t_end
-        return self.qmc.startofx, self.qmc.endofx
+        return self.qmc.startofx, self.qmc.endofx # BUG? here the second result does not includes the CHARGE offset while in the line above it does!
 
     def calcAutoDelta(self, d1:List[Optional[float]], d2:List[Optional[float]],
             timeindex:List[int], d1flag:bool, d2flag:bool) -> float:
@@ -6228,7 +6233,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         return 0
 
     def calcAutoAxisBackground(self) -> Tuple[float,float]:
-        return self.calcAutoAxis(self.qmc.timeB,self.qmc.timeindexB,self.qmc.backgroundShowFullflag or self.qmc.flagstart)
+        return self.calcAutoAxis(self.qmc.timeB,self.qmc.timeindexB, self.qmc.backgroundShowFullflag or self.qmc.flagstart)
 
     # returns the last event value of the given type, or None if no event was ever recorded
     def lastEventValue(self, tp:int) -> Optional[float]:
@@ -6617,8 +6622,9 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                         else:
                             a[nvi] = a[nvi + 1]
                     return a
-                nv = numpy.where(np_dbt is None)[0]
-                nvb = numpy.where(np_dbtb is None)[0]
+                nv = numpy.atleast_1d(numpy.asarray(np_dbt is None)).nonzero()[0] # fixes "Calling nonzero on 0d arrays is not allowed" numpy error of previous two lines
+                nvb = numpy.atleast_1d(numpy.asarray(np_dbtb is None)).nonzero()[0] # fixes "Calling nonzero on 0d arrays is not allowed" numpy error of previous two lines
+
                 np_dbt = replNone(np_dbt,nv)
                 np_dbtb = replNone(np_dbtb,nvb)
 
@@ -11295,15 +11301,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                             filename = self.ArtisanOpenFileDialog(msg=QApplication.translate('Message','Load Background'),ext_alt='.alog')
                             if len(filename) != 0:
                                 self.loadBackgroundSignal.emit(filename)
-#                                try:
-#                                    self.qmc.resetlinecountcaches()
-#                                    self.loadbackground(filename)
-#                                except Exception as e: # pylint: disable=broad-except
-#                                    _log.exception(e)
-#                                self.qmc.background = True
-#                                self.autoAdjustAxis()
-#                                self.qmc.timealign(redraw=False)
-#                                self.qmc.redraw()
                 elif k == 76:                       #L (load alarms)
                     if not self.qmc.designerflag and self.comparator is None:
                         filename = self.ArtisanOpenFileDialog(msg=QApplication.translate('Message','Load Alarms'),ext='*.alrm')
@@ -12836,7 +12833,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 self.qmc.resetlinecountcaches()
                 self.loadbackground(filename)
                 self.qmc.background = not self.qmc.hideBgafterprofileload
-                self.autoAdjustAxis()
                 self.qmc.timealign(redraw=False)
                 self.qmc.redraw()
                 if self.qmc.backgroundPlaybackEvents:
@@ -17139,7 +17135,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.scale.parity = s2a(toString(settings.value('parity',self.scale.parity)))
             self.scale.timeout = float2float(toFloat(settings.value('timeout',self.scale.timeout)))
             #TODO removes acaia from Windows 11 (and 7/8) until BLE is fixed in Qt/PyQt # pylint: disable=fixme
-            if platform.system() == "Windows" and "Windows-10" not in platform.platform():
+            if platform.system() == 'Windows' and 'Windows-10' not in platform.platform():
                 self.scale.device = None
             settings.endGroup()
 #--- END GROUP Scale
@@ -17299,8 +17295,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     self.fujipid.PXG4[k][0] = toFloat(settings.value(k,self.fujipid.PXG4[k][0]))
                 elif isinstance(self.fujipid.PXG4[k][0], int):
                     self.fujipid.PXG4[k][0] = toInt(settings.value(k,self.fujipid.PXG4[k][0]))
-            if self.fujipid.PXG4['selectsv'][0] < 1:
-                self.fujipid.PXG4['selectsv'][0] = 1
+            self.fujipid.PXG4['selectsv'][0] = max(1,self.fujipid.PXG4['selectsv'][0])
             self.fujipid.followBackground = bool(toBool(settings.value('followBackground',self.fujipid.followBackground)))
             self.fujipid.lookahead = toInt(settings.value('lookahead',self.fujipid.lookahead))
             settings.endGroup()
@@ -20883,8 +20878,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                             FCs_temp += convertTemp(rd['FCs_temp'],rd['temp_unit'],self.qmc.mode)
                             FCs_temp_count += 1
                         if 'DROP_time' in rd:
-                            if rd['DROP_time'] > max_drop_time:
-                                max_drop_time = rd['DROP_time']
+                            max_drop_time = max(max_drop_time, rd['DROP_time'])
                             DROP_time += rd['DROP_time']
                             DROP_time_count += 1
                         if 'DROP_temp' in rd:
@@ -22625,26 +22619,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
     def helpAbout(self, _:bool = False) -> None:
         # pylint: disable=consider-using-f-string
         coredevelopers = '<br>Rafael Cobo, Marko Luther &amp; Dave Baxter'
-        contribs = ['<br>' + uchr(199) + 'etin Barut, Marcio Carnerio, Bradley Collins, ',
-                    'Sebastien Delgrande, Kalle Deligeorgakis, Jim Gall, ',
-                    'Frans Goddijn, Rich Helms, Kyle Iseminger, Ingo, ',
-                    'Savvas Kiretsis, Lukas Kolbe, David Lahoz, ',
-                    'Runar Ostnes, Carlos Pascual, Claudia Raddatz, ',
-                    'Matthew Sewell, Bertrand Souville, Minoru Yoshida, ',
-                    "Wa'il, Alex Fan, Piet Dijk, Rubens Gardelli, ",
-                    'David Trebilcock, Zolt' + uchr(225) + 'n Kis, Miroslav Stankovic, ',
-                    'Barrie Fairley, Ziv Sade, Nicholas Seckar, ',
-                    'Morten M' + uchr(252) + 'nchow',
-                    ', Andrzej Kie' + uchr(322) + 'basi' + uchr(324) + 'ski, Marco Cremonese, Josef Gander',
-                    ', Paolo Scimone, Google, eightbit11, Phidgets, Hottop, Yoctopuce, Taras Prokopyuk',
-                    ', Reiss Gunson (Londinium), Ram Evgi (Coffee-Tech), Rob Gardner, Jaroslav Tu' + uchr(269) + 'ek (doubleshot)',
-                    ', Nick Watson, Azis Nawawi, Rit Multi, Joongbae Dave Cho (the Chambers), Probat, Andreas Bader, Dario Ernst',
-                    ', Nicolas (Marvell Street Coffee Roasters), Randy (Buckeye Coffee), Moshe Spinell',
-                    ', Morris Beume (Morris.Coffee), Michael Herbert, Bill (San Franciscan Roaster), Chistopher Feran',
-                    ', Coffed, Bono Gargolov, Rodrigo Ramos (King Caf' + uchr(233) + 's), Nico Bigler, Saeed Abdinasab, Lewis Li',
-                    ', Fotis Lefas (Coffee Lovers, Editors & Trainers), Leo Huang (Rainforest Coffee Institute)<br>'
-                    ]
-        contributors = ''.join(contribs)
         box = QMessageBox(self)
 
         #create a html QString
@@ -22673,14 +22647,13 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             _log.exception(e)
         box.about(self,
                 QApplication.translate('About', 'About'),
-                """<h2>{0} {1}{16} ({2})</h2>
+                """<h2>{0} {1}{14} ({2})</h2>
                 <p>
-                <small>Python {3}, Qt {4}, PyQt {5}, Matplotlib {6}, NumPy {7}, SciPy {8}, pymodbus {13}{17}</small>
+                <small>Python {3}, Qt {4}, PyQt {5}, Matplotlib {6}, NumPy {7}, SciPy {8}, pymodbus {11}{15}</small>
                 </p>
-                <p>{18}</p>
+                <p>{16}</p>
                 <p><b>{9}</b><small>{10}</small></p>
-                <p><b>{11}</b><small>{12}</small></p>
-                <p><b>{14}</b><br><small>{15}</small></p>
+                <p><b>{12}</b><br><small>{13}</small></p>
                 """.format( # noqa: UP030
                 name,
                 str(__version__),
@@ -22693,8 +22666,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 SCIPY_VERSION_STR,
                 QApplication.translate('About', 'Core Developers'),
                 coredevelopers,
-                QApplication.translate('About', 'Contributors'),
-                contributors,
                 PYMODBUS_VERSION_STR,
                 QApplication.translate('About', 'License'),
                 '<a href="http://www.gnu.org/copyleft/gpl.html">GNU Public Licence (GPLv3.0)</a>',

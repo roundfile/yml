@@ -59,7 +59,7 @@ if TYPE_CHECKING:
 
 from artisanlib.util import (uchr, fill_gaps, deltaLabelPrefix, deltaLabelUTF8, deltaLabelMathPrefix, stringfromseconds,
         fromFtoC, fromFtoCstrict, fromCtoF, fromCtoFstrict, RoRfromFtoC, RoRfromFtoCstrict, RoRfromCtoF, toInt, toString,
-        toFloat, application_name, getResourcePath, getDirectory, convertWeight,
+        toFloat, application_name, getResourcePath, getDirectory, convertWeight, right_to_left,
         abbrevString, scaleFloat2String, is_proper_temp, weight_units, render_weight, volume_units, float2float)
 from artisanlib import pid
 from artisanlib.time import ArtisanTime
@@ -6886,6 +6886,8 @@ class tgraphcanvas(FigureCanvas):
         if self.endofx < 1:
             self.endofx = 60
 
+        self.aw.qmc.timealign(redraw=False)
+
         ### REDRAW  ##
         if redraw:
             self.aw.autoAdjustAxis(background=not keepProperties) # if reset() triggered by ON, we ignore background on adjusting the axis and adjust according to RESET min/max
@@ -8055,6 +8057,14 @@ class tgraphcanvas(FigureCanvas):
             self.delta_ax.set_xlim(xlimit_min, xlimit)
             self.delta_ax.set_ylim(zlimit_min, zlimit)
 
+    def default_xlabel_text(self) -> str:
+        if self.flagstart or self.xgrid == 0:
+            return ''
+        if right_to_left(self.locale_str):
+            return f"{(render_weight(self.roastersize_setup, 1, weight_units.index(self.weight[2]), right_to_left_lang=True) if self.roastersize_setup>=0 else '')}  {self.__dijkstra_to_ascii(self.roastertype_setup)}"
+        return f"{self.__dijkstra_to_ascii(self.roastertype_setup)} {(render_weight(self.roastersize_setup, 1, weight_units.index(self.weight[2])) if self.roastersize_setup>0 else '')}"
+
+
     #Redraws data
     # if recomputeAllDeltas, the delta arrays and if smooth the smoothed line arrays are recomputed (incl. those of the background curves)
     # re_smooth_foreground: the foreground curves (incl. extras) will be re-smoothed if called while not recording. During recording foreground will never be smoothed here.
@@ -8190,14 +8200,7 @@ class tgraphcanvas(FigureCanvas):
                         y_label = self.ax.set_ylabel(self.mode,color=self.palette['ylabel'],rotation=0,labelpad=10,
                                 fontsize='medium',
                                 fontfamily=prop.get_family())
-                    if self.flagstart or self.xgrid == 0:
-                        self.set_xlabel('')
-                    else:
-                        self.set_xlabel(f'{self.__dijkstra_to_ascii(self.roastertype_setup)} {render_weight(self.roastersize_setup, 1, weight_units.index(self.weight[2]))}')
-
-
-
-
+                    self.set_xlabel(self.default_xlabel_text())
 
                     try:
                         y_label.set_in_layout(False) # remove y-axis labels from tight_layout calculation
@@ -14405,7 +14408,7 @@ class tgraphcanvas(FigureCanvas):
                             else:
                                 lcdformat = '%.0f'
                             temp1_values_max = max(temp1_values)
-                            ETmax = lcdformat%temp1_values_max + self.mode
+                            ETmax = (self.mode + lcdformat%temp1_values_max  if self.locale_str == 'ar' else lcdformat%temp1_values_max + self.mode)
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
 
@@ -14433,17 +14436,17 @@ class tgraphcanvas(FigureCanvas):
                         dbt_txt = '––'
                     else:
                         dbt_txt = f'{dbt:.1f}'
-                    if self.locale_str == 'ar':
+                    if right_to_left(self.locale_str):
                         strline = (
                                     f'C*min{int(tsb)}={self.aw.arabicReshape(QApplication.translate("Label", "AUC"))}   '
                                     f'{self.aw.arabicReshape(self.mode + "/min")}'
-                                    f'{ror}=self.aw.arabicReshape(QApplication.translate("Label", "RoR"))   '
-                                    f'{ETmax}=self.aw.arabicReshape(QApplication.translate("Label", "MET"))'
+                                    f'{ror}={self.aw.arabicReshape(QApplication.translate("Label", "RoR"))}   '
+                                    f'{ETmax}={self.aw.arabicReshape(QApplication.translate("Label", "MET"))}'
                                    )
                         if det is not None:
-                            strline = f"{det_txt}/{dbt_txt}{self.mode}={QApplication.translate('Label', 'CM')} {strline}"
+                            strline = f"{self.mode}{det_txt}/{dbt_txt}={QApplication.translate('Label', 'CM')}  {strline}"
                         if FCperiod is not None:
-                            strline = f"min{FCperiod + QApplication.translate('Label', 'FC')}=   {strline}"
+                            strline = f"min{FCperiod}={QApplication.translate('Label', 'FC')}  {strline}"
                     else:
                         strline = ''
                         if temp1_values_max and temp1_values_max > 0:
@@ -14456,30 +14459,54 @@ class tgraphcanvas(FigureCanvas):
                     self.set_xlabel(strline)
                 elif self.statisticsmode == 1:
                     sep = '   '
-                    msg = self.roastdate.date().toString(QLocale().dateFormat(QLocale.FormatType.ShortFormat))
                     tm = self.roastdate.time().toString()[:-3]
-                    if tm != '00:00':
-                        msg = f'{msg}, {tm}'
-                    if self.beans and self.beans != '':
-                        msg = f"{msg} {abbrevString(self.beans.replace(chr(10),' '),25)}"
                     starttime = (self.timex[self.timeindex[0]] if self.timeindex[0] != -1 and self.timeindex[0] < len(self.timex) else 0)
                     endtime = (self.timex[self.timeindex[6]] if self.timeindex[6] > 0  and self.timeindex[6] < len(self.timex) else self.timex[-1])
                     totaltime = endtime - starttime
-                    if totaltime > 0:
-                        msg = f'{msg} {stringfromseconds(totaltime)}'
-                    if self.weight[0]:
-                        if self.weight[2] in {'g', 'oz'}:
-                            msg += f'{sep}{float2float(self.weight[0],0)}{self.weight[2]}'
-                        else:
-                            msg += f'{sep}{float2float(self.weight[0],1)}{self.weight[2]}'
-                        if self.weight[1]:
-                            msg += f'{sep}{-1*float2float(self.aw.weight_loss(self.weight[0],self.weight[1]),1)}%'
-                    if self.volume[0] and self.volume[1]:
-                        msg += f'{sep}{float2float(self.aw.volume_increase(self.volume[0],self.volume[1]),1)}%'
-                    if self.whole_color and self.ground_color:
-                        msg += f'{sep}#{self.whole_color}/{self.ground_color}'
-                    elif self.ground_color:
-                        msg += f'{sep}#{self.ground_color}'
+                    if right_to_left(self.locale_str):
+                        msg = ''
+                        if self.whole_color and self.ground_color:
+                            msg += f'{self.ground_color}/{self.whole_color}#'
+                        elif self.ground_color:
+                            msg += f'{self.ground_color}#'
+                        if self.volume[0] and self.volume[1]:
+                            msg += f'{sep}%{float2float(self.aw.volume_increase(self.volume[0],self.volume[1]),1)}'
+                        if self.weight[0]:
+                            if self.weight[2] in {'g', 'oz'}:
+                                msg += f'{sep}{self.weight[2]}{float2float(self.weight[0],0)}'
+                            else:
+                                msg += f'{sep}{self.weight[2]}{float2float(self.weight[0],1)}'
+                            if self.weight[1]:
+                                msg += f'{sep}%{float2float(self.aw.weight_loss(self.weight[0],self.weight[1]),1)}-'
+                        if totaltime > 0:
+                            msg = f'{msg}{sep}{stringfromseconds(totaltime)}'
+                        if self.beans and self.beans != '':
+                            msg = f"{msg}{sep}{abbrevString(self.beans.replace(chr(10),' '),25)}"
+                        msg += sep
+                        if tm != '00:00':
+                            msg = f'{msg}{tm}, '
+                        msg += self.roastdate.date().toString(QLocale().dateFormat(QLocale.FormatType.ShortFormat))
+                    else:
+                        msg = self.roastdate.date().toString(QLocale().dateFormat(QLocale.FormatType.ShortFormat))
+                        if tm != '00:00':
+                            msg = f'{msg}, {tm}'
+                        if self.beans and self.beans != '':
+                            msg = f"{msg}{sep}{abbrevString(self.beans.replace(chr(10),' '),25)}"
+                        if totaltime > 0:
+                            msg = f'{msg}{sep}{stringfromseconds(totaltime)}'
+                        if self.weight[0]:
+                            if self.weight[2] in {'g', 'oz'}:
+                                msg += f'{sep}{float2float(self.weight[0],0)}{self.weight[2]}'
+                            else:
+                                msg += f'{sep}{float2float(self.weight[0],1)}{self.weight[2]}'
+                            if self.weight[1]:
+                                msg += f'{sep}{-1*float2float(self.aw.weight_loss(self.weight[0],self.weight[1]),1)}%'
+                        if self.volume[0] and self.volume[1]:
+                            msg += f'{sep}{float2float(self.aw.volume_increase(self.volume[0],self.volume[1]),1)}%'
+                        if self.whole_color and self.ground_color:
+                            msg += f'{sep}#{self.whole_color}/{self.ground_color}'
+                        elif self.ground_color:
+                            msg += f'{sep}#{self.ground_color}'
                     self.set_xlabel(msg)
                 elif self.statisticsmode == 2:
                     # total energy/CO2
@@ -14496,10 +14523,18 @@ class tgraphcanvas(FigureCanvas):
                     # energy per kg
                     if KWH_per_green > 0:
                         if KWH_per_green < 1:
-                            scaled_energy_kwh = scaleFloat2String(KWH_per_green*1000.) + ' Wh/kg'
+                            if right_to_left(self.locale_str):
+                                scaled_energy_kwh = 'Wh/kg ' + scaleFloat2String(KWH_per_green*1000.)
+                            else:
+                                scaled_energy_kwh = scaleFloat2String(KWH_per_green*1000.) + ' Wh/kg'
+                        elif right_to_left(self.locale_str):
+                            scaled_energy_kwh = 'kWh/kg ' + scaleFloat2String(KWH_per_green)
                         else:
                             scaled_energy_kwh = scaleFloat2String(KWH_per_green) + ' kWh/kg'
-                        energyPerKgCoffeeLabel = f'  ({scaled_energy_kwh})'
+                        if right_to_left(self.locale_str):
+                            energyPerKgCoffeeLabel = f'({scaled_energy_kwh})  '
+                        else:
+                            energyPerKgCoffeeLabel = f'  ({scaled_energy_kwh})'
                     # no weight is available
                     else:
                         energyPerKgCoffeeLabel = ''
@@ -14507,20 +14542,33 @@ class tgraphcanvas(FigureCanvas):
                     # CO2 per kg
                     if CO2_per_green > 0:
                         if CO2_per_green < 1000:
-                            scaled_co2_kg = scaleFloat2String(CO2_per_green) + 'g/kg'
+                            if right_to_left(self.locale_str):
+                                scaled_co2_kg = 'g/kg ' + scaleFloat2String(CO2_per_green)
+                            else:
+                                scaled_co2_kg = scaleFloat2String(CO2_per_green) + ' g/kg'
+                        elif right_to_left(self.locale_str):
+                            scaled_co2_kg = 'kg/kg ' + scaleFloat2String(CO2_per_green/1000.)
                         else:
-                            scaled_co2_kg = scaleFloat2String(CO2_per_green/1000.) + 'kg/kg'
-                        CO2perKgCoffeeLabel = f'  ({scaled_co2_kg})'
+                            scaled_co2_kg = scaleFloat2String(CO2_per_green/1000.) + ' kg/kg'
+                        if right_to_left(self.locale_str):
+                            CO2perKgCoffeeLabel = f'({scaled_co2_kg})  '
+                        else:
+                            CO2perKgCoffeeLabel = f'  ({scaled_co2_kg})'
                     # no weight is available
                     else:
                         CO2perKgCoffeeLabel = ''
 
                     total_energy = scaleFloat2String(self.convertHeat(energymetrics.get('BTU_batch', 0), 0, self.energyresultunit_setup))
                     CO2_batch = energymetrics.get('CO2_batch', 0)
-                    scaled_co2_batch = str(scaleFloat2String(CO2_batch))+'g' if CO2_batch<1000 else str(scaleFloat2String(CO2_batch/1000.)) +'kg'
+                    if right_to_left(self.locale_str):
+                        scaled_co2_batch = f'g{scaleFloat2String(CO2_batch)}' if CO2_batch<1000 else f'kg{scaleFloat2String(CO2_batch/1000.)}'
+                    else:
+                        scaled_co2_batch = f'{scaleFloat2String(CO2_batch)}g' if CO2_batch<1000 else f'{scaleFloat2String(CO2_batch/1000.)}kg'
 
-
-                    msg = f'{energy_label}: {total_energy}{energy_unit}{energyPerKgCoffeeLabel}   {CO2_label}: {scaled_co2_batch}{CO2perKgCoffeeLabel}'
+                    if right_to_left(self.locale_str):
+                        msg = f'{CO2perKgCoffeeLabel}{scaled_co2_batch} :{CO2_label}   {energyPerKgCoffeeLabel}{energy_unit}{total_energy} :{energy_label}'
+                    else:
+                        msg = f'{energy_label}: {total_energy}{energy_unit}{energyPerKgCoffeeLabel}   {CO2_label}: {scaled_co2_batch}{CO2perKgCoffeeLabel}'
                     self.set_xlabel(msg)
                 elif self.statisticsmode == 3:
                     # just roast energy/CO2
@@ -14538,10 +14586,18 @@ class tgraphcanvas(FigureCanvas):
                     # energy per kg
                     if KWH_per_green_roast > 0:
                         if KWH_per_green_roast < 1:
-                            scaled_energy_kwh = scaleFloat2String(KWH_per_green_roast*1000.) + ' Wh/kg'
+                            if right_to_left(self.locale_str):
+                                scaled_energy_kwh = f'Wh/kg {scaleFloat2String(KWH_per_green_roast*1000.)}'
+                            else:
+                                scaled_energy_kwh = f'{scaleFloat2String(KWH_per_green_roast*1000.)} Wh/kg'
+                        elif right_to_left(self.locale_str):
+                            scaled_energy_kwh = f'kWh/kg {scaleFloat2String(KWH_per_green_roast)}'
                         else:
-                            scaled_energy_kwh = scaleFloat2String(KWH_per_green_roast) + ' kWh/kg'
-                        energyPerKgCoffeeLabel = f'  ({scaled_energy_kwh})'
+                            scaled_energy_kwh = f'{scaleFloat2String(KWH_per_green_roast)} kWh/kg'
+                        if right_to_left(self.locale_str):
+                            energyPerKgCoffeeLabel = f'({scaled_energy_kwh})  '
+                        else:
+                            energyPerKgCoffeeLabel = f'  ({scaled_energy_kwh})'
                     # no weight is available
                     else:
                         energyPerKgCoffeeLabel = ''
@@ -14549,25 +14605,38 @@ class tgraphcanvas(FigureCanvas):
                     # CO2 per kg
                     if CO2_per_green_roast > 0:
                         if CO2_per_green_roast < 1000:
-                            scaled_co2_kg = scaleFloat2String(CO2_per_green_roast) + 'g/kg'
+                            if right_to_left(self.locale_str):
+                                scaled_co2_kg = f'g/kg {scaleFloat2String(CO2_per_green_roast)}'
+                            else:
+                                scaled_co2_kg = f'{scaleFloat2String(CO2_per_green_roast)} g/kg'
+                        elif right_to_left(self.locale_str):
+                            scaled_co2_kg = f'kg/kg {scaleFloat2String(CO2_per_green_roast/1000.)}'
                         else:
-                            scaled_co2_kg = scaleFloat2String(CO2_per_green_roast/1000.) + 'kg/kg'
-                        CO2perKgCoffeeLabel = f'  ({scaled_co2_kg})'
+                            scaled_co2_kg = f'{scaleFloat2String(CO2_per_green_roast/1000.)} kg/kg'
+                        if right_to_left(self.locale_str):
+                            CO2perKgCoffeeLabel = f'({scaled_co2_kg})  '
+                        else:
+                            CO2perKgCoffeeLabel = f'  ({scaled_co2_kg})'
                     # no weight is available
                     else:
                         CO2perKgCoffeeLabel = ''
 
                     total_energy = (scaleFloat2String(self.convertHeat(energymetrics['BTU_roast'],0,self.energyresultunit_setup)) if 'BTU_roast' in energymetrics else '0')
-                    scaled_co2_batch = ((str(scaleFloat2String(energymetrics['CO2_roast']))+'g' if energymetrics['CO2_roast']<1000 else str(scaleFloat2String(energymetrics['CO2_roast']/1000.)) +'kg') if 'CO2_roast' in energymetrics else '0')
+                    if right_to_left(self.locale_str):
+                        scaled_co2_batch = (f"g{scaleFloat2String(energymetrics['CO2_roast'])}" if energymetrics['CO2_roast']<1000 else f"kg{scaleFloat2String(energymetrics['CO2_roast']/1000.)}") if 'CO2_roast' in energymetrics else '0'
+                    else:
+                        scaled_co2_batch = (f"{scaleFloat2String(energymetrics['CO2_roast'])}g" if energymetrics['CO2_roast']<1000 else f"{scaleFloat2String(energymetrics['CO2_roast']/1000.)}kg") if 'CO2_roast' in energymetrics else '0'
 
-                    msg = f'{roast_label} {energy_label}: {total_energy}{energy_unit}{energyPerKgCoffeeLabel}   {roast_label} {CO2_label}: {scaled_co2_batch}{CO2perKgCoffeeLabel}'
+                    if right_to_left(self.locale_str):
+                        msg = f'{CO2perKgCoffeeLabel}{scaled_co2_batch} :{CO2_label} {roast_label}    {energyPerKgCoffeeLabel}{energy_unit}{total_energy}:{energy_label} {roast_label}'
+                    else:
+                        msg = f'{roast_label} {energy_label}: {total_energy}{energy_unit}{energyPerKgCoffeeLabel}    {roast_label} {CO2_label}: {scaled_co2_batch}{CO2perKgCoffeeLabel}'
                     self.set_xlabel(msg)
                 else:
                     self.set_xlabel('')
-            elif self.flagstart or self.xgrid == 0:
-                self.set_xlabel('')
             else:
-                self.set_xlabel(f'{self.roastertype_setup} {self.roastersize_setup}kg')
+                self.set_xlabel(self.default_xlabel_text())
+
         except Exception as ex: # pylint: disable=broad-except
             _log.exception(ex)
             _, _, exc_tb = sys.exc_info()
@@ -14733,31 +14802,52 @@ class tgraphcanvas(FigureCanvas):
                 if self.statisticsflags[0]:
                     if self.timeindex[0] > -1:
                         # only if CHARGE is set
-                        text = self.ax.text(starttime + self.statisticstimes[1]/2.,statisticsupper,
-                                f'{st1}  {dryphaseP}%',
-                                color=self.palette['text'],ha='center',
-                            fontsize='medium'
-                            )
+                        if right_to_left(self.locale_str):
+                            text = self.ax.text(starttime + self.statisticstimes[1]/2.,statisticsupper,
+                                    f'%{dryphaseP}  {st1}',
+                                    color=self.palette['text'],ha='center',
+                                fontsize='medium'
+                                )
+                        else:
+                            text = self.ax.text(starttime + self.statisticstimes[1]/2.,statisticsupper,
+                                    f'{st1}  {dryphaseP}%',
+                                    color=self.palette['text'],ha='center',
+                                fontsize='medium'
+                                )
                         try:
                             text.set_in_layout(False)
                         except Exception: # pylint: disable=broad-except
                             pass
                     if self.timeindex[2]: # only if FCs exists
                         if self.statisticstimes[2]*100./self.statisticstimes[0]>1: # annotate only if mid phase is at least 1% of the total
-                            text = self.ax.text(starttime + self.statisticstimes[1]+self.statisticstimes[2]/2.,statisticsupper,
-                                    (f'{st2}  {midphaseP}%' if self.timeindex[0] > -1 else st2),
-                                    color=self.palette['text'],ha='center',
-                                fontsize='medium'
-                                )
+                            if right_to_left(self.locale_str):
+                                text = self.ax.text(starttime + self.statisticstimes[1]+self.statisticstimes[2]/2.,statisticsupper,
+                                        (f'%{midphaseP}  {st2}' if self.timeindex[0] > -1 else st2),
+                                        color=self.palette['text'],ha='center',
+                                    fontsize='medium'
+                                    )
+                            else:
+                                text = self.ax.text(starttime + self.statisticstimes[1]+self.statisticstimes[2]/2.,statisticsupper,
+                                        (f'{st2}  {midphaseP}%' if self.timeindex[0] > -1 else st2),
+                                        color=self.palette['text'],ha='center',
+                                    fontsize='medium'
+                                    )
                             try:
                                 text.set_in_layout(False)
                             except Exception: # pylint: disable=broad-except
                                 pass
-                        text = self.ax.text(starttime + self.statisticstimes[1]+self.statisticstimes[2]+self.statisticstimes[3]/2.,statisticsupper,
-                                    (f'{st3}  {finishphaseP}%' if self.timeindex[0] > -1 else st3),
-                                    color=self.palette['text'],ha='center',
-                            fontsize='medium'
-                            )
+                        if right_to_left(self.locale_str):
+                            text = self.ax.text(starttime + self.statisticstimes[1]+self.statisticstimes[2]+self.statisticstimes[3]/2.,statisticsupper,
+                                        (f'%{finishphaseP}  {st3}' if self.timeindex[0] > -1 else st3),
+                                        color=self.palette['text'],ha='center',
+                                fontsize='medium'
+                                )
+                        else:
+                            text = self.ax.text(starttime + self.statisticstimes[1]+self.statisticstimes[2]+self.statisticstimes[3]/2.,statisticsupper,
+                                        (f'{st3}  {finishphaseP}%' if self.timeindex[0] > -1 else st3),
+                                        color=self.palette['text'],ha='center',
+                                fontsize='medium'
+                                )
                         try:
                             text.set_in_layout(False)
                         except Exception:  # pylint: disable=broad-except
@@ -14776,7 +14866,14 @@ class tgraphcanvas(FigureCanvas):
                 if self.statisticsflags[4] or self.statisticsflags[6]:
                     rates_of_changes = self.aw.RoR(TP_index,dryEndIndex)
                     d = str(self.LCDdecimalplaces)
-                    if self.statisticsflags[6]:
+                    if right_to_left(self.locale_str):
+                        if self.statisticsflags[6]:
+                            fmtstr = '{1}{0:.' + d + 'f}'
+                            if self.statisticsflags[4]:
+                                fmtstr += '  {3}{2:.' + d + 'f}'
+                        else:
+                            fmtstr = '{3}{2:.' + d + 'f}'
+                    elif self.statisticsflags[6]:
                         fmtstr = '{0:.' + d + 'f}{1}'
                         if self.statisticsflags[4]:
                             fmtstr += '  {2:.' + d + 'f}{3}'
@@ -15450,7 +15547,7 @@ class tgraphcanvas(FigureCanvas):
                 idx = numpy.isfinite(c1) & numpy.isfinite(c2)
                 z:npt.NDArray[numpy.double] = numpy.polyfit(c1[idx],c2[idx],deg)
                 p = numpy.poly1d(z)
-                x = p(c1[startindex:endindex])
+                x = p(numpy.array(xarray[startindex:endindex], dtype='float64'))
                 pad = max(0,len(self.timex) - startindex - len(x))
                 xx = numpy.concatenate((numpy.full((max(0,startindex)), None),x, numpy.full((pad,), None)))
                 trans = None
@@ -15459,7 +15556,7 @@ class tgraphcanvas(FigureCanvas):
                 elif self.ax is not None:
                     trans = self.ax.transData
                 if trans is not None and self.ax is not None:
-                    self.ax.plot(self.timex, xx, linestyle = '--', linewidth=3,transform=trans)
+                    self.ax.plot(self.timex, xx, linestyle = '--', linewidth=3, transform=trans)
                     with warnings.catch_warnings():
                         warnings.simplefilter('ignore')
                         self.fig.canvas.draw()
