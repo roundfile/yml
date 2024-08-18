@@ -65,9 +65,9 @@ if exist "/Program Files/NSIS/makensis.exe"         set NSIS_EXE="/Program Files
 if exist "%ProgramFiles%/NSIS/makensis.exe"         set NSIS_EXE="%ProgramFiles%/NSIS/makensis.exe"
 if exist "%ProgramFiles(x86)%/NSIS/makensis.exe"    set NSIS_EXE="%ProgramFiles(x86)%/NSIS/makensis.exe"
 ::
-:: echo the file date since makensis does not have a version command
-for %%x in (%NSIS_EXE%) do set NSIS_DATE=%%~tx
-echo **** Running NSIS makensis.exe file date %NSIS_DATE%
+:: record the NSIS version
+for /f "delims=" %%i in ('%NSIS_EXE% /version') do set "NSIS_VERSION=%%i"
+echo **** Running NSIS %NSIS_EXE% version %NSIS_VERSION%
 
 ::
 :: run NSIS to build the install .exe file
