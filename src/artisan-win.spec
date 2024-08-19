@@ -108,7 +108,7 @@ else:
 
 #os.system(PYTHON + r'\Scripts\pylupdate5 artisan.pro')
 
-hiddenimports_list=[babel.numbers,
+hiddenimports_list=['babel.numbers',
                             'charset_normalizer.md__mypyc', # part of requests 2.28.2 # see https://github.com/pyinstaller/pyinstaller-hooks-contrib/issues/534
                             'matplotlib.backends.backend_pdf',
                             'matplotlib.backends.backend_svg',
