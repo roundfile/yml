@@ -50,7 +50,7 @@ protobuf==5.27.3
 numpy==1.24.3; python_version < '3.9' # last Python 3.8 release
 numpy==2.1.0    #1.26.4; python_version >= '3.9' #  # v2.0.0 fails to incl. numpy.f2py
 scipy==1.10.1; python_version < '3.9' # last Python 3.8 release
-scipy==1.13.1; python_version >= '3.9' # v1.14.0 fails to incl. numpy.f2py (see numpy v2)
+scipy==1.14.0   #1.13.1; python_version >= '3.9' # v1.14.0 fails to incl. numpy.f2py (see numpy v2)
 wquantiles==0.6
 colorspacious==1.1.2
 openpyxl==3.1.5
