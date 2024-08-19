@@ -19,6 +19,8 @@
 import logging
 import sys
 
+from PyInstaller.utils.hooks import copy_metadata
+
 # Set up the logger
 logging.basicConfig(level=logging.INFO)
 
@@ -108,8 +110,7 @@ else:
 
 #os.system(PYTHON + r'\Scripts\pylupdate5 artisan.pro')
 
-hiddenimports_list=['babel.numbers',
-                            'charset_normalizer.md__mypyc', # part of requests 2.28.2 # see https://github.com/pyinstaller/pyinstaller-hooks-contrib/issues/534
+hiddenimports_list=['charset_normalizer.md__mypyc', # part of requests 2.28.2 # see https://github.com/pyinstaller/pyinstaller-hooks-contrib/issues/534
                             'matplotlib.backends.backend_pdf',
                             'matplotlib.backends.backend_svg',
                             'scipy.spatial.transform._rotation_groups',
@@ -117,21 +118,23 @@ hiddenimports_list=['babel.numbers',
                             'scipy._lib.messagestream',
                             'pywintypes',
                             'win32cred',
-                            'win32timezone'
+                            'win32timezone',
+                            'babel.numbers'
                             ]
 # Add the hidden imports not required by legacy Windows.
 if not ARTISAN_LEGACY=='True':
     logging.info(">>>>> Appending hidden imports")
     hiddenimports_list[len(hiddenimports_list):] = [
                             'PyQt6.QtWebChannel',
-                            'PyQt6.QtWebEngineCore'
+                            'PyQt6.QtWebEngineCore',
+                            'importlib_resources'
                             ]
 
 
 a = Analysis(['artisan.py'],
              pathex=[PYQT_QT_BIN, ARTISAN_SRC, SCIPY_BIN],
              binaries=[],
-             datas=[],
+             datas=[], # + copy_metadata('tzdata')
              hookspath=[],
              runtime_hooks=[],
              excludes=[],
