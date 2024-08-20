@@ -24,11 +24,6 @@ if /i "%APPVEYOR%" NEQ "True" (
     echo This file is for use on Appveyor CI only.
     exit /b 1
 )
-if /i "%ARTISAN_LEGACY%" NEQ "True" (
-    set LEGACY_STR=Setup-Artisan
-) else (
-    set ARTISAN_SPEC=Setup-Artisan-legacy
-)
 :: ----------------------------------------------------------------------
 
 python -V
