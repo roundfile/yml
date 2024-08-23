@@ -110,6 +110,8 @@ else:
 
 #os.system(PYTHON + r'\Scripts\pylupdate5 artisan.pro')
 
+options=[ ('v', None, 'OPTION')]  # added for debug
+
 hiddenimports_list=['charset_normalizer.md__mypyc', # part of requests 2.28.2 # see https://github.com/pyinstaller/pyinstaller-hooks-contrib/issues/534
                             'matplotlib.backends.backend_pdf',
                             'matplotlib.backends.backend_svg',
@@ -146,6 +148,7 @@ a = Analysis(['artisan.py'],
 pyz = PYZ(a.pure, a.zipped_data,cipher=block_cipher)
 
 exe = EXE(pyz,
+          options,    #added for debug
           a.scripts,
           exclude_binaries=True,
           name=NAME,
