@@ -52,7 +52,7 @@ for /f "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanl
 :: create a version file for pyinstaller
 create-version-file version-metadata.yml --outfile version_info-win.txt --version %ARTISAN_VERSION%.%ARTISAN_BUILD%
 
-set PATH=%PATH%;C:\Windows\System32\downlevel; 
+set PATH=%PATH%;C:\Windows\SysWow64\downlevel;C:\Windows\System32\downlevel; 
 ::
 :: run pyinstaller
 :: Choose log-level from 'TRACE', 'DEBUG', 'INFO', 'WARN', 'DEPRECATION', 'ERROR', 'FATAL'
