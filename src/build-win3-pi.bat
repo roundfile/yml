@@ -52,15 +52,12 @@ for /f "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanl
 :: create a version file for pyinstaller
 create-version-file version-metadata.yml --outfile version_info-win.txt --version %ARTISAN_VERSION%.%ARTISAN_BUILD%
 
-path
 ::
 :: run pyinstaller
 :: Choose log-level from 'TRACE', 'DEBUG', 'INFO', 'WARN', 'DEPRECATION', 'ERROR', 'FATAL'
 echo **** Running pyinstaller
 pyinstaller --noconfirm --log-level=WARN artisan-win.spec
 if ERRORLEVEL 1 (echo ** Failed in pyinstaller & exit /b 1) else (echo ** Success)
-
-exit /b 1
 
 ::
 :: Don't make assumptions as to where the 'makensis.exe' is - look in the obvious places
