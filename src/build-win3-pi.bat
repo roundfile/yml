@@ -60,6 +60,8 @@ echo **** Running pyinstaller
 pyinstaller --noconfirm --log-level=WARN artisan-win.spec
 if ERRORLEVEL 1 (echo ** Failed in pyinstaller & exit /b 1) else (echo ** Success)
 
+exit /b 1
+
 ::
 :: Don't make assumptions as to where the 'makensis.exe' is - look in the obvious places
 if exist "/Program Files (x86)/NSIS/makensis.exe"   set NSIS_EXE="/Program Files (x86)/NSIS/makensis.exe"
