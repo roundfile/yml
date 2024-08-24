@@ -161,7 +161,7 @@ for:
     - ps: Write-Host "PYINSTALLER_VER= $env:PYINSTALLER_VER"
 
     # update path env var
-    - cmd: set PATH=%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
+    - cmd: set PATH=C:\Windows\SysWow64\downlevel;C:\Windows\System32\downlevel;%PYTHON_PATH%;%PYTHON_PATH%\Scripts;%PATH%
 
     # run the install script
     - cmd: .ci/install-win.bat
