@@ -168,12 +168,12 @@ for:
 
 
     # test kludge
-    - cmd copy '\windows\system32\downlevel\api-ms-win-core-path-l1-1-0.dll' '\windows\system32\'
-    - cmd copy '\windows\system32\downlevel\api-ms-win-core-realtime-l1-1-1.dll' '\windows\system32\'
-    - cmd copy '\windows\system32\downlevel\api-ms-win-core-winrt-l1-1-0.dll' '\windows\system32\'
-    - cmd copy '\windows\system32\downlevel\api-ms-win-core-winrt-string-l1-1-0.dll' '\windows\system32\'
-    - cmd copy '\windows\system32\downlevel\api-ms-win-power-base-l1-1-0.dll' '\windows\system32\'
-    - cmd copy '\windows\system32\downlevel\api-ms-win-shcore-scaling-l1-1-1.dll' '\windows\system32\'
+    - cmd: copy '\windows\system32\downlevel\api-ms-win-core-path-l1-1-0.dll' '\windows\system32\'
+    - cmd: copy '\windows\system32\downlevel\api-ms-win-core-realtime-l1-1-1.dll' '\windows\system32\'
+    - cmd: copy '\windows\system32\downlevel\api-ms-win-core-winrt-l1-1-0.dll' '\windows\system32\'
+    - cmd: copy '\windows\system32\downlevel\api-ms-win-core-winrt-string-l1-1-0.dll' '\windows\system32\'
+    - cmd: copy '\windows\system32\downlevel\api-ms-win-power-base-l1-1-0.dll' '\windows\system32\'
+    - cmd: copy '\windows\system32\downlevel\api-ms-win-shcore-scaling-l1-1-1.dll' '\windows\system32\'
     # Pause
 #    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
