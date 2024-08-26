@@ -18,7 +18,7 @@
 # Include "skip ci" in the commit message to prevent this build process from running
 environment:
   # Set the default Appveyor Python version here. Does not affect windows_legacy. Can be overridden in platform environment.
-  PYTHON_V: 3.11
+  PYTHON_V: 3.12
   # Upgrade to specific version (for platforms supporting upgrade). Upgrade skipped if env var is missing or blank.
   #PYUPGRADE_WIN_V: 3.11.6
   #PYUPGRADE_MACOS_V: 3.12.1
@@ -166,6 +166,14 @@ for:
     # run the install script
     - cmd: .ci/install-win.bat
 
+
+    # test kludge
+    - cmd copy '\windows\system32\downlevel\api-ms-win-core-path-l1-1-0.dll' '\windows\system32\'
+    - cmd copy '\windows\system32\downlevel\api-ms-win-core-realtime-l1-1-1.dll' '\windows\system32\'
+    - cmd copy '\windows\system32\downlevel\api-ms-win-core-winrt-l1-1-0.dll' '\windows\system32\'
+    - cmd copy '\windows\system32\downlevel\api-ms-win-core-winrt-string-l1-1-0.dll' '\windows\system32\'
+    - cmd copy '\windows\system32\downlevel\api-ms-win-power-base-l1-1-0.dll' '\windows\system32\'
+    - cmd copy '\windows\system32\downlevel\api-ms-win-shcore-scaling-l1-1-1.dll' '\windows\system32\'
     # Pause
 #    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
