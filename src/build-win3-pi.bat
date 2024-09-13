@@ -52,9 +52,6 @@ for /f "usebackq delims==" %%a IN (`python -c "import artisanlib; print(artisanl
 :: create a version file for pyinstaller
 create-version-file version-metadata.yml --outfile version_info-win.txt --version %ARTISAN_VERSION%.%ARTISAN_BUILD%
 
-:: Pause Build Here For Remote Desktop Access
-PowerShell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "if ($env:APPVEYOR_RDP_BLOCK -eq $true) {$blockRdp = $true; & iex ((new-object net.webclient).DownloadString(\"https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1\"))}"
-
 ::
 :: run pyinstaller
 :: Choose log-level from 'TRACE', 'DEBUG', 'INFO', 'WARN', 'DEPRECATION', 'ERROR', 'FATAL'
@@ -62,8 +59,12 @@ echo **** Running pyinstaller
 pyinstaller --noconfirm --log-level=WARN artisan-win.spec
 if ERRORLEVEL 1 (echo ** Failed in pyinstaller & exit /b 1) else (echo ** Success)
 
+:: Zip the pinstaller files
+7z a ..\pyinstaller_files.zip dist\ build\
+if ERRORLEVEL 1 (echo ** Failed in 7z zipping pyinstaller files & exit /b 1) else (echo ** Success zipping pyinstaller files)
+
 :: Pause Build Here For Remote Desktop Access
-PowerShell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "if ($env:APPVEYOR_RDP_BLOCK -eq $true) {$blockRdp = $true; & iex ((new-object net.webclient).DownloadString(\"https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1\"))}"
+rem PowerShell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "if ($env:APPVEYOR_RDP_BLOCK -eq $true) {$blockRdp = $true; & iex ((new-object net.webclient).DownloadString(\"https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1\"))}"
 
 ::
 :: Don't make assumptions as to where the 'makensis.exe' is - look in the obvious places

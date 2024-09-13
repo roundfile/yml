@@ -175,7 +175,7 @@ for:
 #    - cmd: copy '\windows\system32\downlevel\api-ms-win-power-base-l1-1-0.dll' '\windows\system32\'
 #    - cmd: copy '\windows\system32\downlevel\api-ms-win-shcore-scaling-l1-1-1.dll' '\windows\system32\'
     # Pause
-    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+#    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
   build_script:
     - cmd: echo Windows Build
@@ -199,7 +199,8 @@ for:
 
   artifacts:
 #    - path: 'generated-win.zip'
-    - path: 'src\%artifact_prefix%-win*setup.exe'
+#    - path: 'src\%artifact_prefix%-win*setup.exe'
+    - path: 'pyinstaller_files.zip'
 
   deploy_script:
     - cmd: bash ../.ci/upload.sh artisan-win*setup.exe
