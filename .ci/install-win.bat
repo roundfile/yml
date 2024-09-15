@@ -70,8 +70,8 @@ python -m pip install -r src\requirements.txt | findstr /v /b "Ignoring"
 
 :: Hack to look at the libusb-package install 
 python -m pip cache purge
-python -m pip -y uninstall libusb-package
-python -m pip install -v -v -v libusb-package==1.0.26.1
+python -m pip uninstall libusb-package -y
+python -m pip -v -v -v install libusb-package==1.0.26.1
 ::
 :: custom build the pyinstaller bootloader or install a prebuilt
 ::
