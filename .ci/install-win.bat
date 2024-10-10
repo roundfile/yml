@@ -65,13 +65,9 @@ python -m pip install wheel
 ::
 :: install Artisan required libraries from pip
 ::
-python -m pip install -r src\requirements.txt | findstr /v /b "Ignoring"
+::python -m pip install -r src\requirements.txt | findstr /v /b "Ignoring"
+python -m pip install -r src\requirements.txt
 
-
-:: Hack to look at the libusb-package install 
-python -m pip cache purge
-python -m pip uninstall libusb-package -y
-python -m pip -v -v -v install libusb-package==1.0.26.1
 ::
 :: custom build the pyinstaller bootloader or install a prebuilt
 ::
@@ -114,11 +110,6 @@ echo curl vc_redist.x64.exe
 curl -L -O %VC_REDIST%
 if not exist vc_redist.x64.exe (exit /b 140)
 
-::
-:: copy the snap7 binary
-::
-copy "%PYTHON_PATH%\Lib\site-packages\snap7\lib\snap7.dll" "C:\Windows"
-if not exist "C:\Windows\snap7.dll" (exit /b 150)
 
 ::
 :: show set of libraries are installed

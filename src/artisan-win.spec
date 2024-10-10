@@ -19,7 +19,7 @@
 import logging
 import sys
 
-from PyInstaller.utils.hooks import copy_metadata
+from PyInstaller.utils.hooks import copy_metadata, collect_data_files, collect_dynamic_libs
 
 # Set up the logger
 logging.basicConfig(level=logging.INFO)
@@ -100,7 +100,7 @@ PYQT_QT = PYTHON_PACKAGES + r'\PyQt' + PYQT + r'\Qt'
 PYQT_QT_BIN = PYQT_QT + r'\bin'
 PYQT_QT_TRANSLATIONS = QT_TRANSL
 YOCTO_BIN = PYTHON_PACKAGES + r'\yoctopuce\cdll'
-SNAP7_BIN = r'C:\Windows'
+SNAP7_BIN = PYTHON_PACKAGES + r'\snap7\lib'
 
 from PyInstaller.utils.hooks import is_module_satisfies
 if is_module_satisfies('scipy >= 1.3.2'):
@@ -109,8 +109,6 @@ else:
     SCIPY_BIN = PYTHON_PACKAGES + r'\scipy\extra-dll'
 
 #os.system(PYTHON + r'\Scripts\pylupdate5 artisan.pro')
-
-options=[ ('v', None, 'OPTION')]  # added for debug
 
 hiddenimports_list=['charset_normalizer.md__mypyc', # part of requests 2.28.2 # see https://github.com/pyinstaller/pyinstaller-hooks-contrib/issues/534
                             'matplotlib.backends.backend_pdf',
@@ -121,8 +119,7 @@ hiddenimports_list=['charset_normalizer.md__mypyc', # part of requests 2.28.2 # 
                             'pywintypes',
                             'win32cred',
                             'win32timezone',
-                            'babel.numbers',
-                            'ctypes'
+                            'babel.numbers'
                             ]
 # Add the hidden imports not required by legacy Windows.
 if not ARTISAN_LEGACY=='True':
@@ -130,14 +127,17 @@ if not ARTISAN_LEGACY=='True':
     hiddenimports_list[len(hiddenimports_list):] = [
                             'PyQt6.QtWebChannel',
                             'PyQt6.QtWebEngineCore',
-                            'importlib_resources'
+                            'importlib_resources',
+			    'winrt.windows.foundation.collections'
                             ]
 
+datas = collect_data_files('bleak', subdir=r'backends\winrt')
+binaries = collect_dynamic_libs('bleak')
 
 a = Analysis(['artisan.py'],
              pathex=[PYQT_QT_BIN, ARTISAN_SRC, SCIPY_BIN],
-             binaries=[],
-             datas=[], # + copy_metadata('tzdata')
+             binaries=binaries,
+             datas=datas, # + copy_metadata('tzdata')
              hookspath=[],
              runtime_hooks=[],
              excludes=[],
@@ -149,7 +149,6 @@ a = Analysis(['artisan.py'],
 pyz = PYZ(a.pure, a.zipped_data,cipher=block_cipher)
 
 exe = EXE(pyz,
-          options,    #added for debug
           a.scripts,
           exclude_binaries=True,
           name=NAME,
@@ -238,7 +237,7 @@ copy_file(YOCTO_BIN + r'\yapi64.dll', TARGET + r'_internal\yoctopuce\cdll')
 # YOCTO HACK END
 
 # copy Snap7 lib
-copy_file(SNAP7_BIN + r'\snap7.dll', TARGET)
+copy_file(SNAP7_BIN + r'\snap7.dll', TARGET + r'_internal')
 
 for fn in [
     'artisan.png',

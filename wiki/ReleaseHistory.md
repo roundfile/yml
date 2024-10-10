@@ -1,6 +1,44 @@
 Detailed Release History
 ========================
 
+
+----
+v3.0.3
+------------------
+
+* ADDITIONS
+  - adds symbolic expression `bit(n,x)` which returns the n-th bit of x interpreted as integer
+  - adds (total) correction to cup profiles and enables column drag-and-drop([Discussion #1690](../../../discussions/1690))
+
+* NEW HARDWARE SUPPORT
+  - adds ColorTrack support ([Issue #1680](../../../issues/1680))
+  - adds support for [Primo roasting machines](https://artisan-scope.org/machines/primo/)
+  - adds [Loring](https://artisan-scope.org/machines/loring/) 'auto' setup which picks up CHARGE and DROP events set at the machine
+  - adds control function to [Diedrich DR](https://artisan-scope.org/machines/diedrich/) machine setup and adds [Diedrich CR](https://artisan-scope.org/machines/diedrich/) machine setup
+
+* CHANGES
+  - automatically start of the scheduler on connected to artisan.plus if there are incompleted scheduled items
+  - disable items in coffee popups of the Custom Blend dialog without stock in the selected store or, if no store is selected, without stock in every store
+  - reduce the size of builds by removing unnecessary files
+  - removes the optional delay on reads from serial MODBUS
+  - adds optional delay after connect before sending requests to serial MODBUS to allow to wait for Arduino slaves to complete reboot ([Issue #1694](../../../issues/1694))
+  - upgrades MODBUS communication from sync to async IO
+  - limits the visible length of long popup lists in Devices and Statistics Dialog
+
+* FIXES
+  - updates Cropster XLS importer ([Issue #1685](../../../issues/1685))
+  - fixes regression which broke SV number switching for Fuji PIDs ([Discussion #1683](../../../discussions/1683))
+  - fixes missing statistic content ([Discussion #1689](../../../discussions/1689))
+  - fixes a regression which prevented loading settings written (slightly broken) by Artisan v3.0 ([Discussion #1692](../../../discussions/1692))
+  - fixes a regression communicating with some serial MODBUS devices resulting from a more strict protocol interpretation by the underlying MODBUS pymodbus lib 3.7 introduced in Artisan v3.0.2, by adding a 'strict' flag (default off) to the serial MODBUS configuration ([Issue #1694](../../../issues/1694))
+  - removes incorrectly reconstructed custom events outside of the CHARGE to DROP period on quitting the designer ([Discussion #1696](../../../discussions/1696))
+  - makes validation of numeric configuration input more robust ([Issue #1700](../../../issues/1700))
+  - ensures that splitter state in Comparator is properly reset on Factory Reset
+
+
+
+
+
 ----
 v3.0.2 (August 20, 2024)
 ------------------

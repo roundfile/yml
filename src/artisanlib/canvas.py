@@ -30,6 +30,7 @@ import ast
 import platform
 import math
 import warnings
+import datetime
 import numpy
 import logging
 import re
@@ -204,7 +205,7 @@ class tgraphcanvas(FigureCanvas):
     __slots__ = [ 'aw', 'alignnames', 'locale_str', 'alpha', 'palette', 'palette1', 'EvalueColor_default', 'EvalueTextColor_default', 'artisanflavordefaultlabels', 'customflavorlabels',
         'SCAAflavordefaultlabels', 'SCAflavordefaultlabels', 'CQIflavordefaultlabels', 'SweetMariasflavordefaultlabels', 'Cflavordefaultlabels', 'Eflavordefaultlabels', 'coffeegeekflavordefaultlabels',
         'Intelligentsiaflavordefaultlabels', 'IstitutoInternazionaleAssaggiatoriCaffe', 'WorldCoffeeRoastingChampionship', 'ax1', 'ax2', 'ambiWorker', 'ambiThread', 'afterTP',
-        'decay_weights', 'temp_decay_weights', 'flavorlabels', 'flavors', 'flavorstartangle', 'flavoraspect', 'flavorchart_plotf', 'flavorchart_angles', 'flavorchart_plot',
+        'decay_weights', 'temp_decay_weights', 'flavorlabels', 'flavors', 'flavors_total_correction', 'flavorstartangle', 'flavoraspect', 'flavorchart_plotf', 'flavorchart_angles', 'flavorchart_plot',
         'flavorchart_fill', 'flavorchart_labels', 'flavorchart_total', 'mode', 'mode_tempsliders', 'errorlog', 'default_delay', 'delay', 'min_delay', 'extra_event_sampling_delay',
         'phases_fahrenheit_defaults', 'phases_celsius_defaults', 'phases', 'phasesbuttonflag', 'phasesfromBackgroundflag', 'watermarksflag', 'step100temp', 'phasesLCDflag',
         'phasesLCDmode', 'phasesLCDmode_l', 'phasesLCDmode_all', 'statisticsflags', 'statisticsmode', 'AUCbegin', 'AUCbase', 'AUCbaseFlag', 'AUCtarget', 'AUCbackground',
@@ -283,7 +284,7 @@ class tgraphcanvas(FigureCanvas):
         'l_eventtype3dots', 'l_eventtype4dots', 'l_eteventannos', 'l_bteventannos', 'l_eventtype1annos', 'l_eventtype2annos', 'l_eventtype3annos',
         'l_eventtype4annos', 'l_annotations', 'l_background_annotations', 'l_annotations_dict', 'l_annotations_pos_dict', 'l_event_flags_dict',
         'l_event_flags_pos_dict', 'ai', 'timeclock', 'threadserver', 'designerflag', 'designerconnections', 'mousepress', 'indexpoint',
-        'workingline', 'eventtimecopy', 'specialeventsStringscopy', 'specialeventsvaluecopy', 'specialeventstypecopy', 'currentx', 'currenty',
+        'workingline', 'eventtimecopy', 'etypescopy', 'specialeventsStringscopy', 'specialeventsvaluecopy', 'specialeventstypecopy', 'currentx', 'currenty',
         'designertimeinit', 'BTsplinedegree', 'ETsplinedegree', 'reproducedesigner', 'designertemp1init', 'designertemp2init', 'ax_background_designer', 'designer_timez', 'time_step_size',
         '_designer_orange_mark', '_designer_orange_mark_shown', '_designer_blue_mark', '_designer_blue_mark_shown', 'l_temp1_markers', 'l_temp2_markers',
         'l_stat1', 'l_stat2', 'l_stat3', 'l_div1', 'l_div2', 'l_div3', 'l_div4',
@@ -340,13 +341,14 @@ class tgraphcanvas(FigureCanvas):
         self.EvalueColor_default:Final[List[str]] = ['#43a7cf','#49b160','#800080','#ad0427']
         self.EvalueTextColor_default:Final[List[str]] = ['#ffffff','#ffffff','#ffffff','#ffffff']
 
+
         # standard math functions allowed in symbolic formulas
         self.mathdictionary_base = {
             'min':min,'max':max,'sin':math.sin,'cos':math.cos,'tan':math.tan,
             'pow':math.pow,'exp':math.exp,'pi':math.pi,'e':math.e,
             'abs':abs,'acos':math.acos,'asin':math.asin,'atan':math.atan,
             'log':math.log,'radians':math.radians,
-            'sqrt':math.sqrt,'degrees':math.degrees}
+            'sqrt':math.sqrt,'degrees':math.degrees,'bit':lambda n,x:min(1,(int(x) & (1<<int(n))))}
 
 
         self.artisanflavordefaultlabels: Final[List[str]] = [QApplication.translate('Textbox', 'Acidity'),
@@ -492,6 +494,7 @@ class tgraphcanvas(FigureCanvas):
         #Initial flavor parameters.
         self.flavors_default_value:float = 5.
         self.flavors:List[float] = [5.]*len(self.flavorlabels)
+        self.flavors_total_correction:float = 0
         self.flavorstartangle:float = 90.
         self.flavoraspect:float = 1.0  #aspect ratio
         # flavor chart graph plots and annotations
@@ -889,7 +892,8 @@ class tgraphcanvas(FigureCanvas):
                        '+Mugma Heater/Catalyzer',   #166
                        '+Mugma SV',                 #167
                        'Phidget TMP1202 1xRTD A',   #168
-                       '+Phidget TMP1202 1xRTD B'   #169
+                       '+Phidget TMP1202 1xRTD B',  #169
+                       'ColorTrack'                 #170
                        ]
 
         # ADD DEVICE:
@@ -1024,7 +1028,8 @@ class tgraphcanvas(FigureCanvas):
             159, # +Phidget DAQ1301 67
             160, # IKAWA \Delta Humidity / \Delat Humidity direction
             165, # +Mugma Heater/Fan
-            166  # +Mugma Heater/Catalyzer
+            166, # +Mugma Heater/Catalyzer
+            170  # +ColorTrack
         ]
 
         # ADD DEVICE:
@@ -1471,6 +1476,10 @@ class tgraphcanvas(FigureCanvas):
         self.plus_file_last_modified:Optional[float] = None # holds the last_modified timestamp of the loaded profile as EPOCH (float incl. milliseconds as returned by time.time())
         # plus_file_last_modified is set on load, reset on RESET, and updated on save. It is also update, if not None and new data is received from the server (sync:applyServerUpdates)
         # this timestamp is used in sync:fetchServerUpdate to ask server for updated data
+
+        # remember the lockSchedule date/account sent to the server to prevent re-sending
+        self.plus_lockSchedule_sent_account:Optional[str] = None
+        self.plus_lockSchedule_sent_date:Optional[str] = None
 
         self.beans:str = ''
 
@@ -1956,6 +1965,7 @@ class tgraphcanvas(FigureCanvas):
         self.indexpoint:int = 0
         self.workingline:int = 2  #selects 1:ET or 2:BT
         self.eventtimecopy:List[float] = []
+        self.etypescopy:List[str] = []
         self.specialeventsStringscopy:List[str] = []
         self.specialeventsvaluecopy:List[float]   = []
         self.specialeventstypecopy:List[int]    = []
@@ -2991,14 +3001,22 @@ class tgraphcanvas(FigureCanvas):
                 bboxpatch = self.aw.analysisresultsanno.get_bbox_patch()
                 if bboxpatch is not None:
                     corners = self.ax.transAxes.inverted().transform(bboxpatch.get_extents())
-                    self.analysisresultsloc = (float(corners[0][0]), float(corners[0][1] + (corners[1][1] - corners[0][1])/2))
+                    self.analysisresultsloc = (toFloat(corners[0][0]), toFloat(corners[0][1] + (corners[1][1] - corners[0][1])/2))
+                    #reset the annotation location if the origin is out of the screen
+                    for dim in self.analysisresultsloc:
+                        if dim >= 1 or dim <=0:
+                            self.analysisresultsloc = self.analysisresultsloc_default
             # save the location of segment results after dragging
             if self.segmentpickflag and self.aw.segmentresultsanno is not None:
                 self.segmentpickflag = False
                 bbox_patch = self.aw.segmentresultsanno.get_bbox_patch()
                 if bbox_patch is not None:
                     corners = self.ax.transAxes.inverted().transform(bbox_patch.get_extents())
-                    self.segmentresultsloc = (float(corners[0][0]), float(corners[0][1] + (corners[1][1] - corners[0][1])/2))
+                    self.segmentresultsloc = (toFloat(corners[0][0]), toFloat(corners[0][1] + (corners[1][1] - corners[0][1])/2))
+                    #reset the annotation location if the origin is out of the screen
+                    for dim in self.segmentresultsloc:
+                        if dim >= 1 or dim <=0:
+                            self.segmentresultsloc = self.segmentresultsloc_default
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
             _, _, exc_tb = sys.exc_info()
@@ -3704,13 +3722,13 @@ class tgraphcanvas(FigureCanvas):
                                     sample_extractemp2[i].append(None)
 
                                 # update extra lines
-
-                                if self.aw.extraCurveVisibility1[i] and len(self.extratemp1lines) > xtra_dev_lines1 and self.extratemp1lines[xtra_dev_lines1] is not None:
-                                    self.extratemp1lines[xtra_dev_lines1].set_data(sample_extractimex1[i], numpy.array(sample_extractemp1[i]))
-                                    xtra_dev_lines1 = xtra_dev_lines1 + 1
-                                if self.aw.extraCurveVisibility2[i] and len(self.extratemp2lines) > xtra_dev_lines2 and self.extratemp2lines[xtra_dev_lines2] is not None:
-                                    self.extratemp2lines[xtra_dev_lines2].set_data(sample_extractimex2[i], numpy.array(sample_extractemp2[i]))
-                                    xtra_dev_lines2 = xtra_dev_lines2 + 1
+                                if local_flagstart:
+                                    if self.aw.extraCurveVisibility1[i] and len(self.extratemp1lines) > xtra_dev_lines1 and self.extratemp1lines[xtra_dev_lines1] is not None:
+                                        self.extratemp1lines[xtra_dev_lines1].set_data(sample_extractimex1[i], numpy.array(sample_extractemp1[i]))
+                                        xtra_dev_lines1 = xtra_dev_lines1 + 1
+                                    if self.aw.extraCurveVisibility2[i] and len(self.extratemp2lines) > xtra_dev_lines2 and self.extratemp2lines[xtra_dev_lines2] is not None:
+                                        self.extratemp2lines[xtra_dev_lines2].set_data(sample_extractimex2[i], numpy.array(sample_extractemp2[i]))
+                                        xtra_dev_lines2 = xtra_dev_lines2 + 1
                         #ERROR FOUND
                         else:
                             lengths = [les,led,let]
@@ -5034,7 +5052,7 @@ class tgraphcanvas(FigureCanvas):
                         elif action == 6:
                             slidernr = 3
                         if slidernr is not None:
-                            slidervalue = max(self.aw.eventslidermin[slidernr],min(self.aw.eventslidermax[slidernr],int(str(text))))
+                            slidervalue = max(self.aw.eventslidermin[slidernr],min(self.aw.eventslidermax[slidernr],toInt(str(text))))
                             self.aw.moveslider(slidernr,slidervalue)
                             # we set the last value to be used for relative +- button action as base
                             self.aw.extraeventsactionslastvalue[slidernr] = int(round(slidervalue))
@@ -6287,9 +6305,8 @@ class tgraphcanvas(FigureCanvas):
                 return -1
         return -1
 
-
     #format X axis labels
-    def xaxistosm(self,redraw:bool = True, min_time:Optional[float] = None, max_time:Optional[float] = None) -> None:
+    def xaxistosm(self,redraw:bool = True, min_time:Optional[float] = None, max_time:Optional[float] = None, set_xlim:bool = True) -> None:
         if self.ax is None:
             return
         try:
@@ -6310,7 +6327,8 @@ class tgraphcanvas(FigureCanvas):
 
             endtime = endofx + starttime
 
-            self.ax.set_xlim(startofx,endtime)
+            if set_xlim:
+                self.ax.set_xlim(startofx,endtime)
 
             if self.xgrid != 0:
 
@@ -6562,6 +6580,11 @@ class tgraphcanvas(FigureCanvas):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
 
+
+        import threading
+        for thread in threading.enumerate():
+            _log.info('PRINT running thread: %s', thread.name)
+
         if not self.checkSaved():
             return False
 
@@ -6597,6 +6620,10 @@ class tgraphcanvas(FigureCanvas):
             self.roastbatchnr = 0 # initialized to 0, set to increased batchcounter on DROP
             self.roastbatchpos = 1 # initialized to 1, set to increased batchsequence on DROP
             self.roastbatchprefix = self.batchprefix
+
+            # reset scheduleID/Date (prevents re-using a previous loaded profiles scheduleID to be 'reused')
+            self.scheduleID = None
+            self.scheduleDate = None
 
             self.aw.sendmessage(QApplication.translate('Message','Scope has been reset'))
             self.aw.AUClcd.setNumDigits(3)
@@ -6785,6 +6812,7 @@ class tgraphcanvas(FigureCanvas):
 
             #reset cupping flavor values
             self.flavors = [5.]*len(self.flavorlabels)
+            self.flavors_total_correction = 0
 
             try:
                 # reset color of last pressed button
@@ -10761,11 +10789,14 @@ class tgraphcanvas(FigureCanvas):
                                      f"{stringfromseconds(cp['dryphasetime'])}, "
                                      f"{int(round(cp['dryphasetime']*100./cp['totaltime']))}%"
                                      )
+            elif n == 31:  #Whole Bean Color
+                if self.whole_color > 0:
+                    stattype_str += (f"{newline}{QApplication.translate('HTML Report Template','Whole Color')}: #"
+                        f'{self.whole_color} {self.color_systems[self.color_system_idx]}')
             else:
                 errmsg = (f"{QApplication.translate('Error Message','Exception:')} buildStat() "
                           f"{QApplication.translate('Error Message','Unexpected value for n, got')} {n}")
-                self.adderror(errmsg)
-                #raise ValueError(errmsg)
+                _log.debug(errmsg)
 
             #TODO add more stats  MET, CM, RoR, Profile quality, RoR at FCs, RMSE BT (Bckgd) # pylint: disable=fixme
 
@@ -11611,7 +11642,7 @@ class tgraphcanvas(FigureCanvas):
             self.flavorchart_plotf[i] /= 10.
 
     @staticmethod
-    def calcFlavorChartScoreFromFlavors(flavors:List[float]) -> float:
+    def calcFlavorChartScoreFromFlavors(flavors:List[float], flavors_total_correction:float) -> float:
         if len(flavors) < 1:
             return 50
         score:float = 0.
@@ -11620,10 +11651,11 @@ class tgraphcanvas(FigureCanvas):
             score += flavors[i]
         score /= (nflavors)
         score *= 10.
+        score += flavors_total_correction
         return score
 
     def calcFlavorChartScore(self) -> float:
-        return self.calcFlavorChartScoreFromFlavors(self.flavors)
+        return self.calcFlavorChartScoreFromFlavors(self.flavors, self.flavors_total_correction)
 
     # set the flavor chart scores such that the given overall score is reached
     def setFlavorChartScore(self, value:float) -> None:
@@ -12013,7 +12045,7 @@ class tgraphcanvas(FigureCanvas):
                             connected_handler=lambda : self.aw.sendmessageSignal.emit(QApplication.translate('Message', '{} connected').format('IKAWA'),True,None),
                             disconnected_handler=lambda : self.aw.sendmessageSignal.emit(QApplication.translate('Message', '{} disconnected').format('IKAWA'),True,None))
                         if self.aw.ikawa is not None:
-                            self.aw.ikawa.start(self.device_logging)
+                            self.aw.ikawa.start_sampling(self.device_logging)
                             self.aw.sendmessageSignal.emit(QApplication.translate('Message', 'scanning for device'),True,None)
                     except Exception as ex:  # pylint: disable=broad-except
                         _log.error(ex)
@@ -12141,7 +12173,7 @@ class tgraphcanvas(FigureCanvas):
 
                 # disconnect IKAWA
                 if not bool(self.aw.simulator) and self.device == 142 and self.aw.ikawa is not None:
-                    self.aw.ikawa.stop()
+                    self.aw.ikawa.stop_sampling()
                     try:
                         if self.aw.ikawa.ambient_pressure != -1:
                             self.ambient_pressure = self.aw.ikawa.ambient_pressure
@@ -12370,6 +12402,11 @@ class tgraphcanvas(FigureCanvas):
     def disconnectProbesFromSerialDevice(self, ser:'serialport') -> None:
         try:
             self.samplingSemaphore.acquire(1)
+
+            if ser.colorTrack is not None:
+                ser.colorTrack.stop()
+                ser.colorTrack = None
+
             # close main serial port
             try:
                 ser.closeport()
@@ -12537,6 +12574,7 @@ class tgraphcanvas(FigureCanvas):
 
     @pyqtSlot()
     def disconnectProbes(self) -> None:
+        _log.debug('disconnectProbes')
         # close ports of main device
         self.disconnectProbesFromSerialDevice(self.aw.ser)
         # close (serial) port of Modbus device
@@ -12584,6 +12622,14 @@ class tgraphcanvas(FigureCanvas):
                 self.profileDataSemaphore.release(1)
         self.markChargeSignal.emit(False) # this queues an event which forces a realignment/redraw by resetting the cache ax_background and fires the CHARGE action
 
+    def registerLockScheduleSent(self) -> None:
+        self.plus_lockSchedule_sent_account = self.aw.plus_account
+        self.plus_lockSchedule_sent_date = str(datetime.datetime.now().astimezone().date())
+
+    # returns True if the lockSchedule was already sent for today and the current account
+    def lockScheduleSent(self) -> bool:
+        return (self.plus_lockSchedule_sent_account is not None and self.plus_lockSchedule_sent_account == self.aw.plus_account and
+            self.plus_lockSchedule_sent_date is not None and self.plus_lockSchedule_sent_date == str(datetime.datetime.now().astimezone().date()))
 
     def OnRecorder(self) -> None:
         try:
@@ -12678,7 +12724,7 @@ class tgraphcanvas(FigureCanvas):
             self.aw.update_minieventline_visibility()
 
             # lock todays schedule
-            if self.aw.plus_account is not None and self.aw.schedule_window is not None:
+            if self.aw.plus_account is not None and self.aw.schedule_window is not None and len(self.aw.schedule_window.scheduled_items)>0 and not self.lockScheduleSent():
                 try:
                     sendLockSchedule()
                 except Exception: # pylint: disable=broad-except
@@ -12807,9 +12853,10 @@ class tgraphcanvas(FigureCanvas):
     # if noaction is True, the button event action is not triggered
     @pyqtSlot(bool)
     def markCharge(self, noaction:bool = False) -> None:
+        zoomed_in: bool = False # True if zoomed in; in that case we prevent xaxistoxm to reset the x-axis limits (set_xlim)
         try:
-            if self.aw.ntb._nav_stack(): # pylint: disable=protected-access # if ZOOMED in we push state on stack
-                self.aw.ntb.push_current() # remember current canvas ZOOM/POSITION on stack
+            if self.aw.ntb._nav_stack(): # pylint: disable=protected-access
+                zoomed_in = True
         except Exception: # pylint: disable=broad-except
             pass
         removed = False
@@ -12842,7 +12889,7 @@ class tgraphcanvas(FigureCanvas):
                                 del self.l_annotations_dict[0]
                             self.timeindex[0] = -1
                             removed = True
-                            self.xaxistosm(redraw=False)
+                            self.xaxistosm(redraw=False, set_xlim=not zoomed_in)
                     elif not self.aw.buttonCHARGE.isFlat():
                         if self.device == 18 and self.aw.simulator is None: #manual mode
                             tx,et,bt = self.aw.ser.NONE()
@@ -12887,7 +12934,7 @@ class tgraphcanvas(FigureCanvas):
                                 self.endofx = self.resetmaxtime
                         except Exception: # pylint: disable=broad-except
                             pass
-                        self.xaxistosm(redraw=False) # need to fix uneven x-axis labels like -0:13
+                        self.xaxistosm(redraw=False, set_xlim=not zoomed_in) # need to fix uneven x-axis labels like -0:13
 
                         if self.BTcurve or self.ETcurve:
                             temp = (self.temp2[self.timeindex[0]] if self.BTcurve else self.temp1[self.timeindex[0]])
@@ -12957,10 +13004,6 @@ class tgraphcanvas(FigureCanvas):
                 if self.roastpropertiesAutoOpenFlag:
                     self.aw.openPropertiesSignal.emit()
             self.aw.onMarkMoveToNext(self.aw.buttonCHARGE)
-        try:
-            self.aw.ntb._update_view() # type:ignore[has-type] # pylint: disable=protected-access # recallcanvas ZOOM/POSITION from stack
-        except Exception: # pylint: disable=broad-except
-            pass
 
     # called via markTPSignal (queued), triggered by external device
     # does directly call markTP()
@@ -15931,9 +15974,11 @@ class tgraphcanvas(FigureCanvas):
             #
             # reset also the special event copy held for the designer
             self.eventtimecopy = []
+            self.eventtimecopy = []
             self.specialeventsStringscopy = []
             self.specialeventsvaluecopy = []
             self.specialeventstypecopy = []
+            self.etypescopy = self.etypes[:]
             #
             #pylint: disable=E0611
             #reset (clear) plot
@@ -16067,6 +16112,7 @@ class tgraphcanvas(FigureCanvas):
         for spe in self.specialevents:
             #save relative time of events
             self.eventtimecopy.append(self.timex[spe]-self.timex[self.timeindex[0]])
+        self.etypescopy = self.etypes[:]
 
         #find lowest point from profile to be converted
         lpindex = self.aw.findTP()
@@ -16911,10 +16957,14 @@ class tgraphcanvas(FigureCanvas):
             if self.eventtimecopy:
                 self.clearEvents() # first clear previous special event lists
                 for i, etc in enumerate(self.eventtimecopy):
-                    self.addEvent(self.time2index(etc + self.timex[self.timeindex[0]]),
-                        self.specialeventstypecopy[i],
-                        self.specialeventsStringscopy[i],
-                        self.specialeventsvaluecopy[i])
+                    tx_idx:int = self.time2index(etc + self.timex[self.timeindex[0]])
+                    if tx_idx > -1:
+                        # only if event time is between CHARGE and DROP we reconstruct the event
+                        self.addEvent(tx_idx,
+                            self.specialeventstypecopy[i],
+                            self.specialeventsStringscopy[i],
+                            self.specialeventsvaluecopy[i])
+            self.etypes = self.etypescopy[:]
 
             #check for extra devices
             num = len(self.timex)

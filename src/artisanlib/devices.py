@@ -26,9 +26,9 @@ from typing import Final, Optional, List, Tuple, cast, TYPE_CHECKING
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
 
-from artisanlib.util import deltaLabelUTF8, setDeviceDebugLogLevel, argb_colorname2rgba_colorname, rgba_colorname2argb_colorname
+from artisanlib.util import deltaLabelUTF8, setDeviceDebugLogLevel, argb_colorname2rgba_colorname, rgba_colorname2argb_colorname, toInt
 from artisanlib.dialogs import ArtisanResizeablDialog
-from artisanlib.widgets import MyQComboBox, MyQDoubleSpinBox
+from artisanlib.widgets import MyContentLimitedQComboBox, MyQComboBox, MyQDoubleSpinBox
 
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
@@ -39,14 +39,14 @@ try:
     from PyQt6.QtWidgets import (QApplication, QWidget, QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit,  # @UnusedImport @Reimport  @UnresolvedImport
                                  QPushButton, QSpinBox, QTabWidget, QComboBox, QDialogButtonBox, QGridLayout, # @UnusedImport @Reimport  @UnresolvedImport
                                  QGroupBox, QRadioButton, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QTableWidget, QMessageBox, QHeaderView, QTableWidgetItem) # @UnusedImport @Reimport  @UnresolvedImport
+                                 QTableWidget, QMessageBox, QHeaderView, QTableWidgetItem, QSizePolicy) # @UnusedImport @Reimport  @UnresolvedImport
 except ImportError:
     from PyQt5.QtCore import (Qt, pyqtSlot, QSettings, QTimer, QRegularExpression) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtGui import (QStandardItemModel, QStandardItem, QColor, QIntValidator, QRegularExpressionValidator) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QApplication, QWidget, QCheckBox, QVBoxLayout, QHBoxLayout, QLabel, QLineEdit, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
                                  QPushButton, QSpinBox, QTabWidget, QComboBox, QDialogButtonBox, QGridLayout, # @UnusedImport @Reimport  @UnresolvedImport
                                  QGroupBox, QRadioButton, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QTableWidget, QMessageBox, QHeaderView, QTableWidgetItem) # @UnusedImport @Reimport  @UnresolvedImport
+                                 QTableWidget, QMessageBox, QHeaderView, QTableWidgetItem, QSizePolicy) # @UnusedImport @Reimport  @UnresolvedImport
 
 
 class DeviceAssignmentDlg(ArtisanResizeablDialog):
@@ -122,7 +122,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                     dev.pop(i)              #note: pop() makes the list smaller that's why there are 2 FOR statements
                     break
         self.sorted_devices = sorted(dev)
-        self.devicetypeComboBox = MyQComboBox()
+        self.devicetypeComboBox = MyContentLimitedQComboBox()
 
 ##        self.devicetypeComboBox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
 ##        self.devicetypeComboBox.view().setTextElideMode(Qt.TextElideMode.ElideNone)
@@ -172,7 +172,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         self.btpidtypeComboBox.setCurrentIndex([y[1] for y in supported_BT_pids].index(self.aw.ser.readBTpid[0])) #pid type is index 0
         label1 = QLabel(QApplication.translate('Label', 'Type'))
         label2 = QLabel(QApplication.translate('Label', 'RS485 Unit ID'))
-        #rs485 possible unit IDs (1-32); unit 0 is master (computer)
+        #rs485 possible unit IDs (1-32); unit 0 is client (computer)
         unitids = list(map(str,list(range(1,33))))
         self.controlpidunitidComboBox = QComboBox()
         self.controlpidunitidComboBox.addItems(unitids)
@@ -1002,6 +1002,9 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         self.yoctoBoxRemoteFlag.stateChanged.connect(self.yoctoBoxRemoteFlagStateChanged)
         yoctoServerIdLabel = QLabel(QApplication.translate('Label','VirtualHub'))
         self.yoctoServerId = QLineEdit(self.aw.qmc.yoctoServerID)
+        self.yoctoServerId.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.yoctoServerId.setMinimumWidth(100)
+        self.yoctoServerId.setSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum)
         self.yoctoServerId.setEnabled(self.aw.qmc.yoctoRemoteFlag)
         YoctoEmissivityLabel = QLabel(QApplication.translate('Label','Emissivity'))
         self.yoctoEmissivitySpinBox = MyQDoubleSpinBox()
@@ -1013,6 +1016,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         yoctoServerBox.addWidget(yoctoServerIdLabel)
         yoctoServerBox.addSpacing(10)
         yoctoServerBox.addWidget(self.yoctoServerId)
+        yoctoServerBox.addStretch()
         yoctoServerBox.setContentsMargins(0,0,0,0)
         yoctoServerBox.setSpacing(10)
         yoctoNetworkGrid = QGridLayout()
@@ -1611,6 +1615,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
             if vheader is not None:
                 vheader.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
 
+            fixed_size_sections = [7,8,9,10,11,12,13,14]
             if nddevices:
                 dev = self.aw.qmc.devices[:]             #deep copy
                 limit = len(dev)
@@ -1623,7 +1628,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 for i in range(nddevices):
                     try:
                         # 0: device type
-                        typeComboBox =  MyQComboBox()
+                        typeComboBox =  MyContentLimitedQComboBox()
 #                        typeComboBox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContentsOnFirstShow) # default
                         typeComboBox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
 #                        typeComboBox.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
@@ -1639,14 +1644,14 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                         color1Button = QPushButton(self.aw.qmc.extradevicecolor1[i])
                         color1Button.clicked.connect(self.setextracolor1)
                         textcolor = self.aw.labelBorW(self.aw.qmc.extradevicecolor1[i])
-                        color1Button.setStyleSheet(f'selection-background-color: transparent; border: none; outline: none; background-color: rgba{ImageColor.getcolor(self.aw.qmc.extradevicecolor1[i], "RGBA")}; color: {textcolor}')
+                        color1Button.setStyleSheet(f"selection-background-color: transparent; border: none; outline: none; background-color: rgba{ImageColor.getcolor(self.aw.qmc.extradevicecolor1[i], 'RGBA')}; color: {textcolor}")
                         color1Button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
                         # 2: color 2
                         color2Button = QPushButton(self.aw.qmc.extradevicecolor2[i])
                         color2Button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
                         color2Button.clicked.connect(self.setextracolor2)
                         textcolor = self.aw.labelBorW(self.aw.qmc.extradevicecolor2[i])
-                        color2Button.setStyleSheet(f'selection-background-color: transparent; border: none; outline: none; background-color: rgba{ImageColor.getcolor(self.aw.qmc.extradevicecolor2[i], "RGBA")}; color: {textcolor}')
+                        color2Button.setStyleSheet(f"selection-background-color: transparent; border: none; outline: none; background-color: rgba{ImageColor.getcolor(self.aw.qmc.extradevicecolor2[i], 'RGBA')}; color: {textcolor}")
                         # 3+4: name 1 + 2
                         name1edit = QLineEdit(self.aw.qmc.extraname1[i])
                         name2edit = QLineEdit(self.aw.qmc.extraname2[i])
@@ -1742,7 +1747,6 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
 
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
-                fixed_size_sections = [7,8,9,10,11,12,13,14]
                 header = self.devicetable.horizontalHeader()
                 if header is not None:
                     header.setStretchLastSection(False)
@@ -1750,20 +1754,22 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                     for i in fixed_size_sections:
                         header.setSectionResizeMode(i, QHeaderView.ResizeMode.Fixed)
                         header.resizeSection(i, header.sectionSize(i) + 5)
-                if not self.aw.qmc.devicetablecolumnwidths:
-                    self.devicetable.setColumnWidth(0, 100)
-                    self.devicetable.setColumnWidth(3, 100)
-                    self.devicetable.setColumnWidth(4, 100)
-                    self.devicetable.setColumnWidth(5, 40)
-                    self.devicetable.setColumnWidth(6, 40)
-                else:
-                    # remember the columnwidth
-                    for i, _ in enumerate(self.aw.qmc.devicetablecolumnwidths):
-                        if i not in fixed_size_sections:
-                            try:
-                                self.devicetable.setColumnWidth(i, self.aw.qmc.devicetablecolumnwidths[i])
-                            except Exception: # pylint: disable=broad-except
-                                pass
+            if not self.aw.qmc.devicetablecolumnwidths:
+                self.devicetable.setColumnWidth(0, 230)
+                self.devicetable.setColumnWidth(1, 80)
+                self.devicetable.setColumnWidth(2, 80)
+                self.devicetable.setColumnWidth(3, 80)
+                self.devicetable.setColumnWidth(4, 80)
+                self.devicetable.setColumnWidth(5, 40)
+                self.devicetable.setColumnWidth(6, 40)
+            else:
+                # remember the columnwidth
+                for i, _ in enumerate(self.aw.qmc.devicetablecolumnwidths):
+                    if i not in fixed_size_sections:
+                        try:
+                            self.devicetable.setColumnWidth(i, self.aw.qmc.devicetablecolumnwidths[i])
+                        except Exception: # pylint: disable=broad-except
+                            pass
         except Exception as e: # pylint: disable=broad-except
             _t, _e, exc_tb = sys.exc_info()
             self.aw.qmc.adderror((QApplication.translate('Error Message', 'Exception:') + ' createDeviceTable(): {0}').format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
@@ -2264,7 +2270,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                     # set LCD label color
                     self.aw.setLabelColor(self.aw.extraLCDlabel1[i],colorname)
                     color1Button = cast(QPushButton, self.devicetable.cellWidget(i,1))
-                    color1Button.setStyleSheet(f'border: none; outline: none; background-color: rgba{ImageColor.getcolor(self.aw.qmc.extradevicecolor1[i], "RGBA")}; color: { self.aw.labelBorW(self.aw.qmc.extradevicecolor1[i])}')
+                    color1Button.setStyleSheet(f"border: none; outline: none; background-color: rgba{ImageColor.getcolor(self.aw.qmc.extradevicecolor1[i], 'RGBA')}; color: { self.aw.labelBorW(self.aw.qmc.extradevicecolor1[i])}")
                     color1Button.setText(colorname)
                     self.aw.checkColors([(self.aw.qmc.extraname1[i], self.aw.qmc.extradevicecolor1[i], QApplication.translate('Label','Background'), self.aw.qmc.palette['background'])])
                     self.aw.checkColors([(self.aw.qmc.extraname1[i], self.aw.qmc.extradevicecolor1[i], QApplication.translate('Label','Legend bkgnd'), self.aw.qmc.palette['background'])])
@@ -2278,7 +2284,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                     # set LCD label color
                     self.aw.setLabelColor(self.aw.extraLCDlabel2[i],colorname)
                     color2Button = cast(QPushButton, self.devicetable.cellWidget(i,2))
-                    color2Button.setStyleSheet(f'border: none; outline: none; background-color: rgba{ImageColor.getcolor(self.aw.qmc.extradevicecolor2[i], "RGBA")}; color: {self.aw.labelBorW(self.aw.qmc.extradevicecolor2[i])}')
+                    color2Button.setStyleSheet(f"border: none; outline: none; background-color: rgba{ImageColor.getcolor(self.aw.qmc.extradevicecolor2[i], 'RGBA')}; color: {self.aw.labelBorW(self.aw.qmc.extradevicecolor2[i])}")
                     color2Button.setText(colorname)
                     self.aw.checkColors([(self.aw.qmc.extraname2[i], self.aw.qmc.extradevicecolor2[i], QApplication.translate('Label','Background'), self.aw.qmc.palette['background'])])
                     self.aw.checkColors([(self.aw.qmc.extraname2[i], self.aw.qmc.extradevicecolor2[i], QApplication.translate('Label','Legend bkgnd'),self.aw.qmc.palette['background'])])
@@ -2347,7 +2353,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 elif str(self.controlpidtypeComboBox.currentText()) == 'Fuji PXF':
                     self.aw.ser.controlETpid[0] = 4
                     str1 = 'Fuji PXF'
-                self.aw.ser.controlETpid[1] =  int(str(self.controlpidunitidComboBox.currentText()))
+                self.aw.ser.controlETpid[1] =  toInt(str(self.controlpidunitidComboBox.currentText()))
                 #if str(self.btpidtypeComboBox.currentText()) == 'Fuji PXG':
                 self.aw.ser.readBTpid[0] = 0
                 str2 = 'Fuji PXG'
@@ -2363,7 +2369,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 elif str(self.btpidtypeComboBox.currentText()) == 'Fuji PXF':
                     self.aw.ser.readBTpid[0] = 4
                     str2 = 'Fuji PXF'
-                self.aw.ser.readBTpid[1] =  int(str(self.btpidunitidComboBox.currentText()))
+                self.aw.ser.readBTpid[1] =  toInt(str(self.btpidunitidComboBox.currentText()))
                 if self.showFujiLCDs.isChecked():
                     self.aw.ser.showFujiLCDs = True
                 else:
@@ -3225,6 +3231,9 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ##########################
                 ####  DEVICE 169 is +TMP1202_2 (a second TMP1202 configuration)
                 ##########################
+                ##########################
+                ####  DEVICE 170 is +ColorTrack
+                ##########################
 
 
                 # ADD DEVICE:
@@ -3414,7 +3423,8 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 1, # 166
                 1, # 167
                 1, # 168
-                1  # 169
+                1, # 169
+                3  # 170
                 ]
             #init serial settings of extra devices
             for i, _ in enumerate(self.aw.qmc.extradevices):

@@ -36,13 +36,13 @@ from uuid import UUID
 try:
     from PyQt6.QtCore import (QRect, Qt, QMimeData, QSettings, pyqtSlot, pyqtSignal, QPoint, QPointF, QLocale, QDate, QDateTime, QSemaphore, QTimer) # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtGui import (QDrag, QPixmap, QPainter, QTextLayout, QTextLine, QColor, QFontMetrics, QCursor, QAction) # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt6.QtWidgets import (QStackedWidget, QApplication, QWidget, QVBoxLayout, QHBoxLayout, QFrame, QTabWidget,  # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt6.QtWidgets import (QMessageBox, QStackedWidget, QApplication, QWidget, QVBoxLayout, QHBoxLayout, QFrame, QTabWidget,  # @UnusedImport @Reimport  @UnresolvedImport
             QCheckBox, QGroupBox, QScrollArea, QLabel, QSizePolicy,  # @UnusedImport @Reimport  @UnresolvedImport
             QGraphicsDropShadowEffect, QPlainTextEdit, QLineEdit, QMenu)  # @UnusedImport @Reimport  @UnresolvedImport
 except ImportError:
     from PyQt5.QtCore import (QRect, Qt, QMimeData, QSettings, pyqtSlot, pyqtSignal, QPoint, QPointF, QLocale, QDate, QDateTime, QSemaphore, QTimer) # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtGui import (QDrag, QPixmap, QPainter, QTextLayout, QTextLine, QColor, QFontMetrics, QCursor) # type: ignore # @UnusedImport @Reimport @UnresolvedImport
-    from PyQt5.QtWidgets import (QStackedWidget, QApplication, QWidget, QVBoxLayout, QHBoxLayout, QFrame, QTabWidget, # type: ignore # @UnusedImport @Reimport @UnresolvedImport
+    from PyQt5.QtWidgets import (QMessageBox, QStackedWidget, QApplication, QWidget, QVBoxLayout, QHBoxLayout, QFrame, QTabWidget, # type: ignore # @UnusedImport @Reimport @UnresolvedImport
             QCheckBox, QGroupBox, QScrollArea, QLabel, QSizePolicy, QAction,  # @UnusedImport @Reimport @UnresolvedImport
             QGraphicsDropShadowEffect, QPlainTextEdit, QLineEdit, QMenu)  # @UnusedImport @Reimport  @UnresolvedImport
 
@@ -971,7 +971,6 @@ class NoDragItem(StandardItem):
             else:
                 # date formatted according to the locale without the year
                 task_date_str = locale_format_date_no_year(self.locale_str, roastdate_date_local)
-    #            task_date_str = format_date(roastdate_date_local, format='long', locale=self.locale_str).replace(format_date(roastdate_date_local, 'Y', locale=self.locale_str),'').strip().rstrip(',')
 
             weight = (f'{render_weight(self.data.weight, 1, self.weight_unit_idx)}  ' if self.data.measured else '')
 
@@ -1029,7 +1028,6 @@ class DragItem(StandardItem):
                 task_date = locale.toString(QDate(date_local.year, date_local.month, date_local.day), 'dddd').capitalize()
             else:
                 # date formatted according to the locale without the year
-    #            task_date = format_date(date_local, format='long', locale=self.aw.locale_str).replace(format_date(date_local, 'Y', locale=self.aw.locale_str),'').strip().rstrip(',')
                 task_date = locale_format_date_no_year(self.aw.locale_str, date_local)
         except Exception as e: # pylint: disable=broad-except
             # if anything goes wrong here we log an exception and use the empty string as task_date
@@ -2084,6 +2082,11 @@ class ScheduleWindow(ArtisanResizeablDialog): # pyright:ignore[reportGeneralType
             self.aw.qmc.scheduleID = None
             self.aw.qmc.scheduleDate = None
         self.aw.sendmessage(QApplication.translate('Message','Scheduler stopped'))
+        if self.aw.scheduler_auto_open and len(self.scheduled_items) > 0 and self.aw.plus_account is not None:
+            self.aw.scheduler_auto_open = False
+            QMessageBox.warning(None, #self.aw, # only without super this one shows the native dialog on macOS under Qt 6.6.2 and later
+                QApplication.translate('Message', 'Warning', None),
+                QApplication.translate('Message', 'Completed roasts will not adjust the schedule while the schedule window is closed'))
 
 
     # updates the current schedule items by joining its roast with those received as part of a stock update from the server
@@ -2392,7 +2395,7 @@ class ScheduleWindow(ArtisanResizeablDialog): # pyright:ignore[reportGeneralType
             # reselect the previously selected item
             self.select_item(selected_item)
         else:
-            # otherwise select first item schedule is not empty
+            # otherwise select first item if schedule is not empty
             self.selected_remaining_item = None
             if self.drag_remaining.count() > 0:
                 first_item:Optional[DragItem] = self.drag_remaining.itemAt(0)
@@ -2433,6 +2436,12 @@ class ScheduleWindow(ArtisanResizeablDialog): # pyright:ignore[reportGeneralType
             self.TabWidget.setTabToolTip(0,'')
             # update app badge number
             self.setAppBadge(0)
+            # clear selection and reset scheduleID
+            self.selected_remaining_item = None
+            if self.aw.qmc.timeindex[6] == 0:
+                # if DROP is not set we clear the ScheduleItem UUID/Date
+                self.aw.qmc.scheduleID = None
+                self.aw.qmc.scheduleDate = None
         return len(scheduled_items)
 
     @staticmethod
@@ -2443,9 +2452,9 @@ class ScheduleWindow(ArtisanResizeablDialog): # pyright:ignore[reportGeneralType
         except Exception: # pylint: disable=broad-except
             pass # setBadgeNumber only supported by Qt 6.5 and newer
 
-    # update app badge to be called from outside of the ScheduleWindow if ScheduleWindow is not open, recomputing all data
+    # returns number of open items
     @staticmethod
-    def updateAppBadge(aw:'ApplicationWindow') -> None:
+    def openScheduleItemsCount(aw:'ApplicationWindow') -> int:
         try:
             plus.stock.init()
             schedule:List[plus.stock.ScheduledItem] = plus.stock.getSchedule()
@@ -2457,10 +2466,10 @@ class ScheduleWindow(ArtisanResizeablDialog): # pyright:ignore[reportGeneralType
                 except Exception:  # pylint: disable=broad-except
                     pass # validation fails for outdated items
             today:datetime.date = datetime.datetime.now(datetime.timezone.utc).astimezone().date()
-            ScheduleWindow.setAppBadge(sum(max(0, x.count - len(x.roasts)) for x in scheduled_items if aw.scheduledItemsfilter(today, x)))
+            return sum(max(0, x.count - len(x.roasts)) for x in scheduled_items if aw.scheduledItemsfilter(today, x))
         except Exception as e:  # pylint: disable=broad-except
             _log.exception(e)
-
+            return 0
 
     @pyqtSlot()
     def updateFilters(self) -> None:
@@ -3079,8 +3088,15 @@ class ScheduleWindow(ArtisanResizeablDialog): # pyright:ignore[reportGeneralType
             self.completed_items = self.getCompletedItems()             # updates completed items from cache
             self.updateFilters()                                        # update filter widget (user and machine)
 
-            # show empty message if there are no scheduled items or the schedule items scrolling widget if there are
+            # show empty message if there are no scheduled items or the schedule items scrolling widget if there are entries
             if self.scheduled_items == []:
+                # clear selection and reset scheduleID
+                self.selected_remaining_item = None
+                if self.aw.qmc.timeindex[6] == 0:
+                    # if DROP is not set we clear the ScheduleItem UUID/Date
+                    self.aw.qmc.scheduleID = None
+                    self.aw.qmc.scheduleDate = None
+                # show empty schedule message
                 self.remaining_message.setText(QApplication.translate('Plus', 'Schedule empty!{}Plan your schedule on {}').format('<BR><BR>', f'<a href="{schedulerLink()}">{plus.config.app_name}</a><br>'))
                 self.stacked_remaining_widget.setCurrentWidget(self.remaining_message_widget)
                 self.setAppBadge(0)
@@ -3093,7 +3109,7 @@ class ScheduleWindow(ArtisanResizeablDialog): # pyright:ignore[reportGeneralType
                     self.stacked_remaining_widget.setCurrentWidget(self.remaining_message_widget)
 
 
-            # show empty message if there are no completed items or the completed splitter widget if there are
+            # show empty message if there are no completed items or the completed splitter widget if there are entries
             if not self.completed_items:
                 self.completed_stacked_widget.setCurrentWidget(self.completed_message_widget)
             else:

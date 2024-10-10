@@ -59,13 +59,6 @@ echo **** Running pyinstaller
 pyinstaller --noconfirm --log-level=WARN artisan-win.spec
 if ERRORLEVEL 1 (echo ** Failed in pyinstaller & exit /b 1) else (echo ** Success)
 
-:: Zip the pinstaller files
-7z a ..\pyinstaller_files.zip dist\ build\
-if ERRORLEVEL 1 (echo ** Failed in 7z zipping pyinstaller files & exit /b 1) else (echo ** Success zipping pyinstaller files)
-
-:: Pause Build Here For Remote Desktop Access
-rem PowerShell.exe -NoProfile -WindowStyle Hidden -ExecutionPolicy Bypass -Command "if ($env:APPVEYOR_RDP_BLOCK -eq $true) {$blockRdp = $true; & iex ((new-object net.webclient).DownloadString(\"https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1\"))}"
-
 ::
 :: Don't make assumptions as to where the 'makensis.exe' is - look in the obvious places
 if exist "/Program Files (x86)/NSIS/makensis.exe"   set NSIS_EXE="/Program Files (x86)/NSIS/makensis.exe"
