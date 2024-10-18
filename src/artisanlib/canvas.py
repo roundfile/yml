@@ -6580,11 +6580,6 @@ class tgraphcanvas(FigureCanvas):
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
 
-
-        import threading
-        for thread in threading.enumerate():
-            _log.info('PRINT running thread: %s', thread.name)
-
         if not self.checkSaved():
             return False
 
@@ -12155,9 +12150,9 @@ class tgraphcanvas(FigureCanvas):
             self.aw.pidcontrol.pidOff(send_command=self.device != 138)
 
             try:
-                if not bool(self.aw.simulator) and self.device == 53 and self.aw.hottop is not None:
-                    self.aw.HottopControlOff()
-                    # disconnect HOTTOP
+                if not bool(self.aw.simulator) and self.device == 53 and self.aw.hottop is not None and \
+                        not self.aw.hottop.hasHottopControl():
+                    # disconnect HOTTOP only if not under Artisan control
                     self.aw.hottop.stop()
                     self.aw.hottop = None
 
