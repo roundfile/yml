@@ -8,18 +8,21 @@ v3.0.3
 
 * ADDITIONS
   - adds symbolic expression `bit(n,x)` which returns the n-th bit of x interpreted as integer
-  - adds (total) correction to cup profiles and enables column drag-and-drop([Discussion #1690](../../../discussions/1690))
+  - adds (total) correction to cup profiles and enables column drag-and-drop ([Discussion #1690](../../../discussions/1690))
 
 * NEW HARDWARE SUPPORT
+  - adds support for various newer [Santoker machines](https://artisan-scope.org/machines/santoker/) communicating via Bluetooth like the Cube10, the Bluetooth enabled X, Q and R Master Series as well as the R Series machines ([Issue #1088](../../../issues/1088) and [Issue #1702](../../../issues/1702))
   - adds ColorTrack support ([Issue #1680](../../../issues/1680))
+  - adds support for Acaia scales on Windows 11
   - adds support for [Primo roasting machines](https://artisan-scope.org/machines/primo/)
   - adds [Loring](https://artisan-scope.org/machines/loring/) 'auto' setup which picks up CHARGE and DROP events set at the machine
   - adds control function to [Diedrich DR](https://artisan-scope.org/machines/diedrich/) machine setup and adds [Diedrich CR](https://artisan-scope.org/machines/diedrich/) machine setup
+  - adds support for [Phidget Stepper Motor Controllers](https://artisan-scope.org/devices/phidgets/#47-stepper-motor-control) ([Discussion #891](../../../discussions/891) and [PR #1715](../../../pull/1715))
 
 * CHANGES
-  - automatically start of the scheduler on connected to artisan.plus if there are incompleted scheduled items
+  - automatically start of the scheduler on connected to [artisan.plus](https://artisan.plus) if there are incompleted scheduled items
   - disable items in coffee popups of the Custom Blend dialog without stock in the selected store or, if no store is selected, without stock in every store
-  - reduce the size of builds by removing unnecessary files
+  - reduces the size of builds by removing unnecessary files
   - removes the optional delay on reads from serial MODBUS
   - adds optional delay after connect before sending requests to serial MODBUS to allow to wait for Arduino slaves to complete reboot ([Issue #1694](../../../issues/1694))
   - upgrades MODBUS communication from sync to async IO
@@ -37,7 +40,8 @@ v3.0.3
   - makes validation of numeric configuration input more robust ([Issue #1700](../../../issues/1700))
   - ensures that splitter state in Comparator is properly reset on Factory Reset
 
-
+* REMOVALS
+  - support for the image format BMP has been removed
 
 
 

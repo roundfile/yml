@@ -200,6 +200,7 @@ if TYPE_CHECKING:
     from artisanlib.hottop import Hottop # pylint: disable=unused-import
     from artisanlib.weblcds import WebLCDs # pylint: disable=unused-import
     from artisanlib.santoker import Santoker # pylint: disable=unused-import
+    from artisanlib.santoker_r import SantokerR # pylint: disable=unused-import
     from artisanlib.mugma import Mugma # pylint: disable=unused-import
     from artisanlib.kaleido import KaleidoPort # pylint: disable=unused-import
     from artisanlib.ikawa import IKAWA_BLE # pylint: disable=unused-import
@@ -1450,7 +1451,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         'userprofilepath', 'printer', 'main_widget', 'defaultdpi', 'dpi', 'qmc', 'HottopControlActive', 'AsyncSamplingTimer', 'wheeldialog',
         'simulator', 'simulatorpath', 'comparator', 'stack', 'eventsbuttonflag', 'minieventsflags', 'seriallogflag',
         'seriallog', 'ser', 'modbus', 'extraMODBUStemps', 'extraMODBUStx', 's7', 'extraS7tx', 'ws', 'scale', 'color', 'extraser', 'extracomport', 'extrabaudrate',
-        'extrabytesize', 'extraparity', 'extrastopbits', 'extratimeout', 'hottop', 'santokerHost', 'santokerPort', 'santokerSerial', 'santoker', 'fujipid', 'dtapid', 'pidcontrol', 'soundflag', 'recentRoasts', 'maxRecentRoasts',
+        'extrabytesize', 'extraparity', 'extrastopbits', 'extratimeout', 'hottop', 'santokerHost', 'santokerPort', 'santokerSerial', 'santokerBLE', 'santoker', 'santokerr', 'fujipid', 'dtapid', 'pidcontrol', 'soundflag', 'recentRoasts', 'maxRecentRoasts',
         'mugmaHost','mugmaPort', 'mugma', 'mugma_default_host',
         'kaleido_default_host', 'kaleidoHost', 'kaleidoPort', 'kaleidoSerial', 'kaleidoPID', 'kaleido', 'ikawa',
         'lcdpaletteB', 'lcdpaletteF', 'extraeventsbuttonsflags', 'extraeventslabels', 'extraeventbuttoncolor', 'extraeventsactionstrings',
@@ -1750,11 +1751,17 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         # Hottop
         self.hottop:Optional[Hottop] = None # holds the Hottop instance created on connect; reset to None on disconnect
 
-        # Santoker Network
+        # Santoker WiFi/BLE
         self.santokerHost:str = '10.10.100.254'
         self.santokerPort:int = 20001
+        # NOTE if not santokerSerial and not santokerBLE, connection is via Network (WiFi)
+        #    santokerSerial and santokerBLE should never be True at the same time (BLE will have preceedence)
         self.santokerSerial:bool = False # if True connection is via the main serial port
+        self.santokerBLE:bool = False # if True connection is via the main serial port
         self.santoker:Optional[Santoker] = None # holds the Santoker instance created on connect; reset to None on disconnect
+
+        # Santoker R
+        self.santokerR:Optional[SantokerR] = None # holds the Santoker R instance created on connect; reset to None on disconnect
 
         # Mugma Network
         self.mugma_default_host:Final[str] = '127.0.0.1'
@@ -5430,7 +5437,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                             res = res2
                             self.mugmaHost = host
                     elif (self.qmc.device in {0, 9, 19, 53, 101, 115, 126} or ((self.qmc.device == 29 or 29 in self.qmc.extradevices) and self.modbus.type in {0, 1, 2}) or
-                            (self.qmc.device == 134 and self.santokerSerial) or
+                            (self.qmc.device == 134 and self.santokerSerial and not self.santokerBLE) or
                             (self.qmc.device == 138 and self.kaleidoSerial)): # Fuji, Center301, TC4, Hottop, Behmor or MODBUS serial, HB/ARC
                         select_device_name = None
                         # as default we offer the current settings serial/modbus port, or if this is set to its default as after a factory reset (self.ser.default_comport or self.modbus.default_comport) we take the one from the machine setup
@@ -10242,6 +10249,57 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                         else:
                             # command not recognized
                             _log.info('WebSocket Command <%s> not recognized', cs)
+                elif action == 23:
+                    # PHIDGETS   sn : has the form <hub_serial>[:<hub_port>], an optional serial number of the hub, optionally specifying the port number the module is connected to
+                    ##  rescale(ch,rs,[,sn]) : sets the rescaleFactor
+                    ##  engaged(ch,b[,sn])   : engage (b=1) or disengage (b = 0)
+                    ##  set(ch,pos[,sn])     : set the target position
+                    if cmd_str:
+                        cmds = filter(None, cmd_str.split(';')) # allows for sequences of commands like in "<cmd>;<cmd>;...;<cmd>"
+                        for c in cmds:
+                            cs = c.strip()
+                            # rescale(ch,val[,sn]) # sets rescaleFactor
+                            if cs.startswith('rescale(') and len(cs) > 11:
+                                try:
+                                    n = 2
+                                    cs_split = cs[len('rescale('):-1].split(',')
+                                    channel_str, value_str = cs_split[0:n]
+                                    if len(cs_split)>n:
+                                        sn = cs_split[n]
+                                    else:
+                                        sn = None
+                                    self.ser.phidgetStepperRescale(int(channel_str),toFloat(eval(value_str)),sn) # pylint: disable=eval-used
+                                except Exception as e: # pylint: disable=broad-except
+                                    _log.exception(e)
+                            # engaged(ch,state[,sn]) # engage channel
+                            elif cs.startswith('engaged(') and len(cs) > 11:
+                                try:
+                                    n = 2
+                                    cs_split = cs[len('engaged('):-1].split(',')
+                                    channel_str, state_str = cs_split[0:n]
+                                    if len(cs_split)>n:
+                                        sn = cs_split[n]
+                                    else:
+                                        sn = None
+                                    state_engaged = bool(state_str.lower() in {'yes', 'true', 't', '1'})
+                                    self.ser.phidgetStepperEngaged(int(channel_str), state_engaged, sn)
+                                except Exception as e: # pylint: disable=broad-except
+                                    _log.exception(e)
+                            # set(ch,pos[,sn]) # set position
+                            elif cs.startswith('set(') and len(cs) > 7:
+                                try:
+                                    n = 2
+                                    cs_split = cs[len('set('):-1].split(',')
+                                    channel_str,pos = cs_split[0:n]
+                                    if len(cs_split)>n:
+                                        sn = cs_split[n]
+                                    else:
+                                        sn = None
+                                    self.ser.phidgetStepperSet(int(channel_str),toFloat(eval(pos)),sn) # pylint: disable=eval-used
+                                except Exception as e: # pylint: disable=broad-except
+                                    _log.exception(e)
+                            else:
+                                _log.info('Stepper Command <%s> not recognized', cs)
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
 
@@ -16782,6 +16840,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.santokerHost = toString(settings.value('santokerHost',self.santokerHost))
             self.santokerPort = toInt(settings.value('santokerPort',self.santokerPort))
             self.santokerSerial = bool(toBool(settings.value('santokerSerial',self.santokerSerial)))
+            self.santokerBLE = bool(toBool(settings.value('santokerBLE',self.santokerBLE)))
             self.kaleidoHost = toString(settings.value('kaleidoHost',self.kaleidoHost))
             self.kaleidoPort = toInt(settings.value('kaleidoPort',self.kaleidoPort))
             self.kaleidoSerial = toBool(settings.value('kaleidoSerial',self.kaleidoSerial))
@@ -18606,6 +18665,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.settingsSetValue(settings, default_settings, 'santokerHost',self.santokerHost, read_defaults)
             self.settingsSetValue(settings, default_settings, 'santokerPort',self.santokerPort, read_defaults)
             self.settingsSetValue(settings, default_settings, 'santokerSerial',self.santokerSerial, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'santokerBLE',self.santokerBLE, read_defaults)
             self.settingsSetValue(settings, default_settings, 'kaleidoHost',self.kaleidoHost, read_defaults)
             self.settingsSetValue(settings, default_settings, 'kaleidoPort',self.kaleidoPort, read_defaults)
             self.settingsSetValue(settings, default_settings, 'kaleidoSerial',self.kaleidoSerial, read_defaults)
@@ -19557,6 +19617,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 # disconnect Santoker
                 self.santoker.stop()
                 self.santoker = None
+            elif self.qmc.device == 171 and self.santokerR is not None:
+                # disconnect Santoker R
+                self.santokerR.stop()
+                self.santokerR = None
             elif self.qmc.device == 138 and self.kaleido is not None:
                 # disconnect Kaleido
                 self.kaleido.stop()

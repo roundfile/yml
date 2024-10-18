@@ -39,6 +39,7 @@ _log = logging.getLogger(__name__)
 class BLE:
 
     _scan_and_connect_lock: asyncio.Lock = asyncio.Lock()
+    _terminate_scan_event = asyncio.Event()
     _asyncLoopThread:Optional[AsyncLoopThread] = None
 
     def __del__(self) -> None:
@@ -49,6 +50,9 @@ class BLE:
         if self._asyncLoopThread is not None:
             del self._asyncLoopThread
             self._asyncLoopThread = None
+
+    def terminate_scan(self) -> None:
+        self._terminate_scan_event.set()
 
     # returns True if the given device name matches with the devices name or the local_name of the advertisement
     @staticmethod
@@ -83,7 +87,10 @@ class BLE:
             try:
                 async with asyncio.timeout(scan_timeout): # type:ignore[attr-defined]
                     async with BleakScanner() as scanner:
+                        self._terminate_scan_event.clear()
                         async for bd, ad in scanner.advertisement_data():
+                            if self._terminate_scan_event.is_set():
+                                break
 #                            _log.debug("device %s, (%s): %s", bd.name, ad.local_name, ad.service_uuids)
                             if bd.address not in blacklist:
                                 res:bool
@@ -114,15 +121,14 @@ class BLE:
             return client, service_uuid
 
 ##
-
-    def write(self, client:BleakClient, write_uuid:str, message:bytes) -> None:
+    def write(self, client:BleakClient, write_uuid:str, message:bytes, response:bool = False) -> None:
         if self._asyncLoopThread is not None and client.is_connected:
             # NOTE: we don't wait for a result not to block the bleak write loop
             junk_size = 20
             for i in range(0, len(message), junk_size):
                 # send message in junks of just 20 bytes (minimum BLE mtu size)
                 asyncio.run_coroutine_threadsafe(
-                    client.write_gatt_char(write_uuid, message[i:i+junk_size], response=False),
+                    client.write_gatt_char(write_uuid, message[i:i+junk_size], response=response),
                     self._asyncLoopThread.loop)
 
     def scan_and_connect(self,
@@ -131,7 +137,7 @@ class BLE:
             case_sensitive:bool=True,
             disconnected_callback:Optional[Callable[[BleakClient], None]] = None,
             scan_timeout:float=5,
-            connect_timeout:float=4) -> Tuple[Optional[BleakClient], Optional[str]]:
+            connect_timeout:float=2) -> Tuple[Optional[BleakClient], Optional[str]]:
         if self._asyncLoopThread is None:
             self._asyncLoopThread = AsyncLoopThread()
         fut = asyncio.run_coroutine_threadsafe(
@@ -194,12 +200,11 @@ class ClientBLE:
 
 # NOTE: __slots__ are incompatible with multiple inheritance mixings in subclasses (e.g. with QObject)
 #    __slots__ = [ '_running', '_async_loop_thread', '_ble_client', '_connected_service_uuid', '_disconnected_event',
-#                    '_active_notification_uuids', '_connected_handler', '_disconnected_handler',
+#                    '_active_notification_uuids',
 #                    '_device_descriptions', '_notifications', '_writers', '_heartbeat_frequency',
 #                    '_logging'  ]
 
-    def __init__(self, connected_handler:Optional[Callable[[], None]] = None,
-                       disconnected_handler:Optional[Callable[[], None]] = None) -> None:
+    def __init__(self) -> None:
         # internals
         self._running:bool                                   = False           # if True we keep reconnecting
         self._async_loop_thread: Optional[AsyncLoopThread]   = None            # the asyncio AsyncLoopThread object
@@ -207,10 +212,6 @@ class ClientBLE:
         self._connected_service_uuid:Optional[str]           = None            # set to the service UUID we are connected to
         self._disconnected_event:asyncio.Event               = asyncio.Event() # event set on disconnect
         self._active_notification_uuids:Set[str]             = set() # uuids of characteristics were notification are active
-
-        # handlers
-        self._connected_handler:Optional[Callable[[], None]] = connected_handler
-        self._disconnected_handler:Optional[Callable[[], None]] = disconnected_handler
 
         # configuration
         self._device_descriptions:Dict[Optional[str],Optional[Set[str]]] = {}
@@ -259,7 +260,7 @@ class ClientBLE:
 
 
     # connect and re-connect while self._running to BLE
-    async def _connect(self, case_sensitive:bool=True, scan_timeout:float=5, connect_timeout:float=4) -> None:
+    async def _connect(self, case_sensitive:bool=True, scan_timeout:float=5, connect_timeout:float=2) -> None:
         blacklist:Set[str] = set()
         while self._running:
             # scan and connect
@@ -310,10 +311,11 @@ class ClientBLE:
         if self._async_loop_thread is not None:
             asyncio.run_coroutine_threadsafe(self.set_event(), self._async_loop_thread.loop)
 
-    def send(self, message:bytes) -> None:
+    def send(self, message:bytes, response:bool = False) -> None:
         if self._ble_client is not None and self._connected_service_uuid is not None and self._connected_service_uuid in self._writers:
-            _log.debug('send: %s', message)
-            ble.write(self._ble_client, self._writers[self._connected_service_uuid], message)
+            if self._logging:
+                _log.debug('send to %s: %s', self._writers[self._connected_service_uuid], message)
+            ble.write(self._ble_client, self._writers[self._connected_service_uuid], message, response)
 
     async def _keep_alive(self) -> None:
         while self._heartbeat_frequency > 0:
@@ -332,14 +334,14 @@ class ClientBLE:
             _log.error('BLE client already running')
         else:
             try:
-                self._running = True # enable automatic reconnects
                 if self._async_loop_thread is None:
+                    self._running = True # enable automatic reconnects
                     self._async_loop_thread = AsyncLoopThread()
-                # run _connect in async loop
-                asyncio.run_coroutine_threadsafe(
-                    self._connect_and_keep_alive(case_sensitive, scan_timeout, connect_timeout),
-                    self._async_loop_thread.loop)
-                self.on_start()
+                    # run _connect in async loop
+                    asyncio.run_coroutine_threadsafe(
+                        self._connect_and_keep_alive(case_sensitive, scan_timeout, connect_timeout),
+                        self._async_loop_thread.loop)
+                    self.on_start()
             except Exception as e:  # pylint: disable=broad-except
                 _log.exception(e)
 
@@ -348,6 +350,8 @@ class ClientBLE:
         _log.debug('stop')
         if self._running:
             self._running = False # disable automatic reconnects
+            if self._ble_client is None:
+                ble.terminate_scan() # we stop ongoing scanning
             self._disconnect()
             del self._async_loop_thread
             self._async_loop_thread = None
