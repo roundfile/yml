@@ -168,6 +168,9 @@ for:
 
 
     # test kludge
+    - cmd: set PATH=C:\Program Files (x86)\Windows Kits\10\Redist\ucrt\DLLs\x86;%PATH%
+    - cmd: set PATH=C:\Program Files (x86)\Windows Kits\10\Redist\ucrt\DLLs\x64;%PATH%
+
 #    - cmd: copy '\windows\system32\downlevel\api-ms-win-core-path-l1-1-0.dll' '\windows\system32\'
 #    - cmd: copy '\windows\system32\downlevel\api-ms-win-core-realtime-l1-1-1.dll' '\windows\system32\'
 #    - cmd: copy '\windows\system32\downlevel\api-ms-win-core-winrt-l1-1-0.dll' '\windows\system32\'
@@ -204,7 +207,7 @@ for:
   artifacts:
 #    - path: 'generated-win.zip'
 #    - path: 'src\%artifact_prefix%-win*setup.exe'
-    - path: 'dist_folder.zip'
+    - path: 'src\dist_folder.zip'
 
   deploy_script:
     - cmd: bash ../.ci/upload.sh artisan-win*setup.exe
