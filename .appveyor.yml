@@ -170,6 +170,7 @@ for:
     # test kludge
     - cmd: set PATH=C:\Program Files (x86)\Windows Kits\10\Redist\ucrt\DLLs\x86;%PATH%
     - cmd: set PATH=C:\Program Files (x86)\Windows Kits\10\Redist\ucrt\DLLs\x64;%PATH%
+    - cmd: path
 
 #    - cmd: copy '\windows\system32\downlevel\api-ms-win-core-path-l1-1-0.dll' '\windows\system32\'
 #    - cmd: copy '\windows\system32\downlevel\api-ms-win-core-realtime-l1-1-1.dll' '\windows\system32\'
@@ -199,7 +200,7 @@ for:
 
     # zip up the dist folder
     - cmd: 7z a dist_folder.zip dist
-    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+#    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
 
 #  test_script:
 #    - cmd: python -m unittest discover
