@@ -194,13 +194,17 @@ for:
     # run the build script
     - cmd: build-win3-pi.bat
 
+    # zip up the dist folder
+    - cmd: 7z a dist_folder.zip dist
+    - ps: $blockRdp = $true; iex ((new-object net.webclient).DownloadString('https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-rdp.ps1'))
+
 #  test_script:
 #    - cmd: python -m unittest discover
 
   artifacts:
 #    - path: 'generated-win.zip'
 #    - path: 'src\%artifact_prefix%-win*setup.exe'
-    - path: 'pyinstaller_files.zip'
+    - path: 'dist_folder.zip'
 
   deploy_script:
     - cmd: bash ../.ci/upload.sh artisan-win*setup.exe
