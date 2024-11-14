@@ -44,7 +44,7 @@ from typing import Final, Optional, List, Dict, Callable, Tuple, Union, Any, Seq
 
 if TYPE_CHECKING:
     from artisanlib.comm import serialport # pylint: disable=unused-import
-    from artisanlib.types import ProfileData, EnergyMetrics, BTU, AlarmSet # pylint: disable=unused-import
+    from artisanlib.atypes import ProfileData, EnergyMetrics, BTU, AlarmSet # pylint: disable=unused-import
     from artisanlib.main import ApplicationWindow # pylint: disable=unused-import
     from plus.stock import Blend # pylint: disable=unused-import
     from plus.blend import CustomBlend # pylint: disable=unused-import
@@ -66,9 +66,7 @@ from artisanlib import pid
 from artisanlib.time import ArtisanTime
 from artisanlib.filters import LiveMedian
 from artisanlib.dialogs import ArtisanMessageBox
-from artisanlib.types import SerialSettings
-from artisanlib.types import BTBreakParams
-from artisanlib.types import BbpCache
+from artisanlib.atypes import SerialSettings, BTBreakParams, BbpCache
 
 # import artisan.plus module
 from plus.util import roastLink
@@ -257,7 +255,8 @@ class tgraphcanvas(FigureCanvas):
         'xextrabuttonactions', 'xextrabuttonactionstrings', 'chargeTimerFlag', 'autoChargeFlag', 'autoDropFlag', 'autoChargeMode', 'autoDropMode', 'autoChargeIdx', 'autoDropIdx', 'markTPflag',
         'autoDRYflag', 'autoFCsFlag', 'autoCHARGEenabled', 'autoDRYenabled', 'autoFCsenabled', 'autoDROPenabled', 'autoDryIdx', 'projectionconstant',
         'projectionmode', 'transMappingMode', 'weight', 'volume', 'density', 'density_roasted', 'volumeCalcUnit', 'volumeCalcWeightInStr',
-        'volumeCalcWeightOutStr', 'container_names', 'container_weights', 'container_idx', 'specialevents', 'etypes', 'etypesdefault', 'specialeventstype',
+        'volumeCalcWeightOutStr', 'container_names', 'container_weights', 'container_idx', 'specialevents', 'etypes', 'etypesdefault',
+        'alt_etypesdefault', 'default_etypes_set', 'specialeventstype',
         'specialeventsStrings', 'specialeventsvalue', 'eventsGraphflag', 'clampEvents', 'renderEventsDescr', 'eventslabelschars', 'eventsshowflag',
         'annotationsflag', 'showeventsonbt', 'showEtypes', 'E1timex', 'E2timex', 'E3timex', 'E4timex', 'E1values', 'E2values', 'E3values', 'E4values',
         'EvalueColor', 'EvalueTextColor', 'EvalueMarker', 'EvalueMarkerSize', 'Evaluelinethickness', 'Evaluealpha', 'eventpositionbars', 'specialeventannotations',
@@ -893,10 +892,11 @@ class tgraphcanvas(FigureCanvas):
                        '+Mugma SV',                 #167
                        'Phidget TMP1202 1xRTD A',   #168
                        '+Phidget TMP1202 1xRTD B',  #169
-                       '+ColorTrack',               #170
+                       'ColorTrack Serial',         #170
                        'Santoker R BT/ET',          #171
                        '+Santoker IR/Board',        #172
-                       '+Santoker DelatBT/DeltaET'  #173
+                       '+Santoker DelatBT/DeltaET', #173
+                       'ColorTrack BT'              #174
                        ]
 
         # ADD DEVICE:
@@ -961,7 +961,8 @@ class tgraphcanvas(FigureCanvas):
             138, # Kaleido BT/ET
             142, # IKAWA,
             164, # Mugma BT/ET
-            171  # Santoker R BT/ET
+            171, # Santoker R BT/ET
+            174  # ColorTrack BT
         ]
 
         # ADD DEVICE:
@@ -1033,8 +1034,9 @@ class tgraphcanvas(FigureCanvas):
             160, # IKAWA \Delta Humidity / \Delat Humidity direction
             165, # +Mugma Heater/Fan
             166, # +Mugma Heater/Catalyzer
-            170, # +ColorTrack
-            173  # +Santoker BT RoR / ET RoR
+            170, # ColorTrack Serial
+            173, # +Santoker BT RoR / ET RoR
+            174  # ColorTrack BT
         ]
 
         # ADD DEVICE:
@@ -1426,7 +1428,7 @@ class tgraphcanvas(FigureCanvas):
         self.operator: str = ''
         self.organization: str = ''
         self.roastertype: str = ''
-        self.roastersize: float = 0
+        self.roastersize: float = 0 # in kg
         self.roasterheating:int = 0 # 0: ??, 1: LPG, 2: NG, 3: Elec
         self.drumspeed: str = ''
         # kept in app settings
@@ -1463,7 +1465,7 @@ class tgraphcanvas(FigureCanvas):
         # profile UUID
         self.roastUUID:Optional[str] = None
         self.scheduleID:Optional[str] = None
-        self.scheduleDate:Optional[str] = None
+        self.scheduleDate:Optional[str] = None # not stored on server and thus might be None while scheduleID is not None (in case scheduleID got set on server side)
 
 #PLUS
         # the default store selected by the user (save in the  app settings)
@@ -1618,11 +1620,20 @@ class tgraphcanvas(FigureCanvas):
                        QApplication.translate('ComboBox', 'Burner'),
                        '--']
         #default etype settings to restore
-        self.etypesdefault: Final[List[str]] = [QApplication.translate('ComboBox', 'Air'),
-                              QApplication.translate('ComboBox', 'Drum'),
-                              QApplication.translate('ComboBox', 'Damper'),
-                              QApplication.translate('ComboBox', 'Burner'),
-                              '--']
+        self.etypesdefault: Final[List[str]] = [
+                                QApplication.translate('ComboBox', 'Air'),
+                                QApplication.translate('ComboBox', 'Drum'),
+                                QApplication.translate('ComboBox', 'Damper'),
+                                QApplication.translate('ComboBox', 'Burner'),
+                                '--']
+        #alternative default etype settings to restore
+        self.alt_etypesdefault: Final[List[str]] = [
+                                QApplication.translate('ComboBox', 'Fan'),
+                                QApplication.translate('ComboBox', 'Drum'), # still free to choose another name (currently unused)
+                                QApplication.translate('ComboBox', 'Cooling'),
+                                QApplication.translate('ComboBox', 'Heater'),
+                                '--']
+        self.default_etypes_set: List[int] = [0,0,0,0,0] # if 1 the default is taken from alt_etypesdefault if 0 from etypesdefault
         #stores the type of each event as index of self.etypes. None = 0, Power = 1, etc.
         self.specialeventstype:List[int] = []
         #stores text string descriptions for each event.
@@ -1859,7 +1870,7 @@ class tgraphcanvas(FigureCanvas):
         self.autosaveimage:bool = False # if true save an image along alog files
 
         self.autoasaveimageformat_types:List[str] = ['PDF', 'PDF Report', 'SVG', 'PNG', 'JPEG', 'CSV', 'JSON']
-        self.autosaveimageformat:str = 'PDF' # one of the supported image file formats PDF, SVG, PNG, JPEG, CSV, JSON
+        self.autosaveimageformat:str = 'PDF' # one of the supported image file formats PDF, PDF Report, SVG, PNG, JPEG, CSV, JSON
 
         #used to place correct height of text to avoid placing text over text (annotations)
         self.ystep_down:int = 0
@@ -2576,6 +2587,13 @@ class tgraphcanvas(FigureCanvas):
                     self.fig.canvas.blit(axfig.bbox)
 
         self.block_update = False
+
+    def get_etype_default(self, i:int, default_etypes_set:Optional[List[int]] = None) -> str:
+        etypes_set = (self.default_etypes_set if default_etypes_set is None else default_etypes_set)
+        return (self.alt_etypesdefault[i] if etypes_set[i] else self.etypesdefault[i])
+
+    def get_etypes_defaults(self) -> List[str]:
+        return [self.get_etype_default(i) for i,_ in enumerate(self.etypesdefault)]
 
     def getetypes(self) -> List[str]:
         if len(self.etypes) == 4:
@@ -10711,7 +10729,7 @@ class tgraphcanvas(FigureCanvas):
                     if 'CO2_batch_per_green_kg' in cp and cp['CO2_batch_per_green_kg']:
                         stattype_str += f" ({float2float(cp['CO2_batch_per_green_kg'],0)}g/kg)"
             elif n == 16:  #AUC
-                if cp['AUC']:
+                if 'AUC' in cp and 'AUCbase' in cp and cp['AUC']:
                     stattype_str += (f"{newline}{QApplication.translate('AddlInfo', 'AUC')}: "
                         f"{cp['AUC']}{degree}C*min [{cp['AUCbase']}{degree}{self.mode}]")
             elif n == 17:  #Notes (Roast)
@@ -10793,6 +10811,9 @@ class tgraphcanvas(FigureCanvas):
                 if self.whole_color > 0:
                     stattype_str += (f"{newline}{QApplication.translate('HTML Report Template','Whole Color')}: #"
                         f'{self.whole_color} {self.color_systems[self.color_system_idx]}')
+            elif n == 32:  #Cupper correction
+                if self.aw.qmc.flavors_total_correction != 0:
+                    stattype_str += (f"{newline}{QApplication.translate('Label','Correction')} {self.aw.qmc.flavors_total_correction}")
             else:
                 errmsg = (f"{QApplication.translate('Error Message','Exception:')} buildStat() "
                           f"{QApplication.translate('Error Message','Unexpected value for n, got')} {n}")
@@ -11540,7 +11561,11 @@ class tgraphcanvas(FigureCanvas):
                 self.ax1.set_autoscale_on(False)
                 self.ax1.grid(True,linewidth=1.,color='#212121', linestyle = '-',alpha=.3)
                 # hack to make flavor labels visible also on top and bottom
-                xlabel_artist = self.ax1.set_xlabel(' -\n ', alpha=0.0)
+                if self.flavors_total_correction != 0:
+                    xlabel_artist = self.ax1.set_xlabel(f"\n\n\n{QApplication.translate('Label','Correction')}: {self.flavors_total_correction}".rstrip('0').rstrip('.'), fontsize='small', alpha=0.6)
+                else:
+                    xlabel_artist = self.ax1.set_xlabel(' -\n ', alpha=0.0)
+
                 title_artist = self.ax1.set_title(' -\n ', alpha=0.0)
                 try:
                     xlabel_artist.set_in_layout(False) # remove x-axis labels from tight_layout calculation
@@ -11591,7 +11616,7 @@ class tgraphcanvas(FigureCanvas):
 
                 # total score
                 score = self.calcFlavorChartScore()
-                txt = f'{score:.2f}'
+                txt = f'{score:.2f}'.rstrip('0').rstrip('.')
                 self.flavorchart_total = self.ax1.text(0.,0.,txt,fontsize='x-large',fontproperties=self.aw.mpl_fontproperties,color='#FFFFFF',horizontalalignment='center',bbox={'facecolor':'#212121', 'alpha':0.5, 'pad':10})
 
                 #add background to plot if found
@@ -11622,7 +11647,7 @@ class tgraphcanvas(FigureCanvas):
             _log.exception(e)
 
     def flavorChartLabelText(self, i:int) -> str:
-        return f'{self.aw.arabicReshape(self.flavorlabels[i])}\n{self.flavors[i]:.2f}'
+        return f'{self.aw.arabicReshape(self.flavorlabels[i])}\n{self.flavors[i]:.2f}'.rstrip('0').rstrip('.')
 
     #To close circle we need one more element. angle and values need same dimension in order to plot.
     def updateFlavorChartData(self) -> None:
@@ -11687,8 +11712,14 @@ class tgraphcanvas(FigureCanvas):
         # total score
         score = self.calcFlavorChartScore()
         if self.flavorchart_total is not None:
-            txt = f'{score:.2f}'
+            txt = f'{score:.2f}'.rstrip('0').rstrip('.')
             self.flavorchart_total.set_text(txt)
+
+        if self.aw.qmc.ax1 is not None:
+            if self.aw.qmc.flavors_total_correction != 0:
+                self.aw.qmc.ax1.set_xlabel(f"\n\n\n{QApplication.translate('Label','Correction')}: {self.aw.qmc.flavors_total_correction}".rstrip('0').rstrip('.'), fontsize='small', alpha=0.6)
+            else:
+                self.aw.qmc.ax1.set_xlabel(' -\n ', alpha=0.0)
 
         # update canvas
         with warnings.catch_warnings():
@@ -12028,7 +12059,7 @@ class tgraphcanvas(FigureCanvas):
                         connected_handler=lambda : self.aw.sendmessageSignal.emit(QApplication.translate('Message', '{} connected').format('Santoker R'),True,None),
                         disconnected_handler=lambda : self.aw.sendmessageSignal.emit(QApplication.translate('Message', '{} disconnected').format('Santoker R'),True,None))
                     self.aw.santokerR.setLogging(self.device_logging)
-                    self.aw.santokerR.start()
+                    self.aw.santokerR.start(case_sensitive=False)
                 elif self.device == 138:
                     # connect Kaleido
                     from artisanlib.kaleido import KaleidoPort
@@ -12418,9 +12449,15 @@ class tgraphcanvas(FigureCanvas):
         try:
             self.samplingSemaphore.acquire(1)
 
-            if ser.colorTrack is not None:
-                ser.colorTrack.stop()
-                ser.colorTrack = None
+            if ser.colorTrackBT is not None:
+                ser.colorTrackBT.stop()
+                libtime.sleep(0.05)
+                ser.colorTrackBT = None
+
+            if ser.colorTrackSerial is not None:
+                ser.colorTrackSerial.stop()
+                libtime.sleep(0.05)
+                ser.colorTrackSerial = None
 
             # close main serial port
             try:
@@ -16014,9 +16051,9 @@ class tgraphcanvas(FigureCanvas):
             filename = self.aw.ArtisanSaveFileDialog(msg=QApplication.translate('Message', 'Save Points'),ext='*.adsg')
             if filename:
                 obj:Dict[str, Union[List[float],List[int]]] = {}
-                obj['timex'] = self.timex # List[float]
-                obj['temp1'] = self.temp1 # List[float]
-                obj['temp2'] = self.temp2 # List[float]
+                obj['timex'] = [float2float(float(tx), 10) for tx in self.timex] # List[float]
+                obj['temp1'] = [float2float(float(t1), 8) for t1 in self.temp1] # List[float]
+                obj['temp2'] = [float2float(float(t2), 8) for t2 in self.temp2] # List[float]
                 obj['timeindex'] = self.timeindex # List[int]
                 import codecs # @Reimport
                 with codecs.open(filename, 'w+', encoding='utf-8') as f:

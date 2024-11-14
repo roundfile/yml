@@ -1136,7 +1136,8 @@ class FujiPID:
 
 class PIDcontrol:
     __slots__ = [ 'aw', 'pidActive', 'sv', 'pidOnCHARGE', 'RStimeAfterCHARGE', 'loadpidfrombackground', 'createEvents', 'loadRampSoakFromProfile', 'loadRampSoakFromBackground', 'svLen', 'svLabel',
-            'svValues', 'svRamps', 'svSoaks', 'svActions', 'svBeeps', 'svDescriptions','svTriggeredAlarms', 'RSLen', 'RS_svLabels', 'RS_svValues', 'RS_svRamps', 'RS_svSoaks',
+            'svValues', 'svSync', 'svRamps', 'svSoaks', 'svActions', 'svBeeps', 'svDescriptions','svTriggeredAlarms',
+            'RSLen', 'RS_svLabels', 'RS_svValues', 'RS_svRamps', 'RS_svSoaks',
             'RS_svActions', 'RS_svBeeps', 'RS_svDescriptions', 'svSlider', 'svButtons', 'svMode', 'svLookahead', 'dutySteps', 'svSliderMin', 'svSliderMax', 'svValue',
             'dutyMin', 'dutyMax', 'pidKp', 'pidKi', 'pidKd', 'pOnE', 'pidSource', 'pidCycle', 'pidPositiveTarget', 'pidNegativeTarget', 'invertControl',
             'sv_smoothing_factor', 'sv_decay_weights', 'previous_svs', 'time_pidON', 'source_reading_pidON', 'current_ramp_segment',  'current_soak_segment', 'ramp_soak_engaged',
@@ -1149,7 +1150,7 @@ class PIDcontrol:
         self.sv:Optional[float] = None # the last sv send to the Arduino
         #
         self.pidOnCHARGE:bool = False
-        self.RStimeAfterCHARGE = True # if True RS time is taken from CHARGE if FALSE it is the time after the PID was last started
+        self.RStimeAfterCHARGE = False # if True RS time is taken from CHARGE if FALSE it is the time after the PID was last started
         self.loadpidfrombackground = False # if True, p-i-d parameters pidKp, pidKi, pidKd, pidSource, pOnE and svLookahead are set from the background profile
         self.createEvents:bool = False
         self.loadRampSoakFromProfile:bool = False
@@ -1181,6 +1182,7 @@ class PIDcontrol:
         self.svSliderMin:int = 0
         self.svSliderMax:int = (230 if self.aw.qmc.mode == 'C' else 446) # 446F / 230C
         self.svValue:float = (180 if self.aw.qmc.mode == 'C' else 356) # 356F / 180C # the value in the setSV textinput box of the PID dialog
+        self.svSync:int = 0 # 0: off, 1:BT, 2:ET, >2: extra devices index of temperature curve to be used to move SV slider in manual mode in external MODBUS/SV PID mode
         self.dutySteps:int = 1
         self.dutyMin:int = -100
         self.dutyMax:int = 100
@@ -1347,11 +1349,11 @@ class PIDcontrol:
             self.svTriggeredAlarms = [False]*self.svLen
 
             if self.aw.qmc.flagstart:
-                self.time_pidON = self.aw.qmc.timex[-1]
+                self.time_pidON = (self.aw.qmc.timex[-1] if len(self.aw.qmc.timex)>0 else 0)
             elif len(self.aw.qmc.on_timex)<1:
                 self.time_pidON = 0
             else:
-                self.time_pidON = self.aw.qmc.on_timex[-1]
+                self.time_pidON = (self.aw.qmc.on_timex[-1] if len(self.aw.qmc.on_timex)>0 else 0)
                 if self.svMode == 1:
                     # turn the timer LCD color blue if in RS mode and not recording
                     self.aw.setTimerColor('rstimer')
@@ -1359,9 +1361,9 @@ class PIDcontrol:
             # remember current pidSource reading
             self.source_reading_pidON = 0
             if self.pidSource == 1: # we observe the BT
-                self.source_reading_pidON = self.aw.qmc.temp2[-1]
+                self.source_reading_pidON = (self.aw.qmc.temp2[-1] if len(self.aw.qmc.temp2)>0 else 0)
             elif self.pidSource == 2: # we observe the ET
-                self.source_reading_pidON = self.aw.qmc.temp1[-1]
+                self.source_reading_pidON = (self.aw.qmc.temp1[-1] if len(self.aw.qmc.temp1)>0 else 0)
             elif self.pidSource>2: # we observe an extra curve
                 n = self.pidSource-3
                 c = n // 2
@@ -1370,7 +1372,7 @@ class PIDcontrol:
                 else:
                     tempX = self.aw.qmc.extratemp2 if self.aw.qmc.flagstart else self.aw.qmc.on_extratemp2
                 if len(tempX)>c:
-                    self.source_reading_pidON = tempX[c][-1]
+                    self.source_reading_pidON = (tempX[c][-1] if len(tempX[c])>0 else 0)
 
 
     # the internal software PID should be configured on ON, but not be activated yet to warm it up
@@ -1647,14 +1649,14 @@ class PIDcontrol:
 #            self.aw.sendmessage(QApplication.translate("Message","SV set to %s"%sv))
         if self.externalPIDControl() == 1:
             # MODBUS PID and Control ticked
-            self.sv = max(0,sv)
+            sv = max(0,sv)
             if move:
                 self.aw.moveSVslider(sv,setValue=True)
             self.aw.modbus.setTarget(sv)
             self.sv = sv # remember last sv
         elif self.externalPIDControl() == 2:
             # S7 PID and Control ticked
-            self.sv = max(0,sv)
+            sv = max(0,sv)
             if move:
                 self.aw.moveSVslider(sv,setValue=True)
             self.aw.s7.setTarget(sv,self.aw.s7.SVmultiplier)

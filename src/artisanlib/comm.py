@@ -30,7 +30,7 @@ from typing import Final, Optional, List, Tuple, Dict, Callable, Union, Any, TYP
 if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # pylint: disable=unused-import
     from artisanlib.aillio import AillioR1 # pylint: disable=unused-import
-    from artisanlib.colortrack import ColorTrackBLE # pylint: disable=unused-import
+    from artisanlib.colortrack import ColorTrack, ColorTrackBLE # pylint: disable=unused-import
     import serial # noqa: F401 # pylint: disable=unused-import
     from Phidget22.Phidget import Phidget # type: ignore # pylint: disable=unused-import
     from yoctopuce.yocto_voltageoutput import YVoltageOutput # type: ignore # pylint: disable=unused-import
@@ -170,7 +170,9 @@ class YoctoThread(threading.Thread):
 
 #inputs temperature
 class nonedevDlg(QDialog): # pylint: disable=too-few-public-methods # pyright: ignore [reportGeneralTypeIssues] # Argument to class must be a base class
+
     __slots__ = ['etEdit','btEdit','ETbox','okButton','cancelButton'] # save some memory by using slots
+
     def __init__(self, parent:QWidget, aw:'ApplicationWindow') -> None:
         super().__init__(parent)
 
@@ -249,7 +251,7 @@ class serialport:
         'YOCTOthread','YOCTOvoltageOutputs','YOCTOcurrentOutputs','YOCTOrelays','YOCTOservos','YOCTOpwmOutputs','HH506RAid','MS6514PrevTemp1','MS6514PrevTemp2','DT301PrevTemp','EXTECH755PrevTemp',\
         'controlETpid','readBTpid','useModbusPort','showFujiLCDs','arduinoETChannel','arduinoBTChannel','arduinoATChannel',\
         'ArduinoIsInitialized','ArduinoFILT','HH806Winitflag','R1','devicefunctionlist','externalprogram',\
-        'externaloutprogram','externaloutprogramFlag','PhidgetHUMtemp','PhidgetHUMhum','PhidgetPREpre','TMP1000temp', 'colorTrack']
+        'externaloutprogram','externaloutprogramFlag','PhidgetHUMtemp','PhidgetHUMhum','PhidgetPREpre','TMP1000temp', 'colorTrackSerial', 'colorTrackBT']
 
     def __init__(self, aw:'ApplicationWindow') -> None:
 
@@ -332,7 +334,8 @@ class serialport:
         self.YOCTOservos:List[YServo] = [] # type:ignore[no-any-unimported,unused-ignore]
         self.YOCTOpwmOutputs:List[YPwmOutput] = [] # type:ignore[no-any-unimported,unused-ignore]
 
-        self.colorTrack:Optional[ColorTrackBLE] = None
+        self.colorTrackSerial:Optional[ColorTrack] = None
+        self.colorTrackBT:Optional[ColorTrackBLE] = None
 
         #stores the _id of the meter HH506RA as a string
         self.HH506RAid:str = 'X'
@@ -539,10 +542,11 @@ class serialport:
                                    self.Mugma_SV,             #167
                                    self.PHIDGET_TMP1202,      #168
                                    self.PHIDGET_TMP1202_2,    #169
-                                   self.ColorTrack,           #170
+                                   self.ColorTrackSerial,     #170
                                    self.SantokerR_BTET,       #171
                                    self.Santoker_IB,          #172
-                                   self.Santoker_RR           #173
+                                   self.Santoker_RR,          #173
+                                   self.ColorTrackBT          #174
                                    ]
         #string with the name of the program for device #27
         self.externalprogram:str = 'test.py'
@@ -1430,32 +1434,44 @@ class serialport:
         t2,t1 = self.NONEtmp()
         return tx,t2,t1
 
-    def ColorTrack(self) -> Tuple[float,float,float]:
-# serial:
-#        if self.colorTrack is None:
-#            from artisanlib.colortrack import ColorTrack
-#            from artisanlib.types import SerialSettings
-#            colortrack_serial:SerialSettings = {
-#                'port': self.comport,
-#                'baudrate': self.baudrate,
-#                'bytesize': self.bytesize,
-#                'stopbits': self.stopbits,
-#                'parity': self.parity,
-#                'timeout': self.timeout}
-#            self.colorTrack = ColorTrack(serial=colortrack_serial)
-#            self.colorTrack.setLogging(self.aw.qmc.device_logging)
-#            self.colorTrack.start()
-#        tx = self.aw.qmc.timeclock.elapsedMilli()
-#        color = (-1 if self.colorTrack is None else self.colorTrack.getColor())
-#        return tx,color,color
-# BLE test
-        if self.colorTrack is None:
-            from artisanlib.colortrack import ColorTrackBLE
-            self.colorTrack = ColorTrackBLE()
-            if self.colorTrack is not None:
-                self.colorTrack.start()
+    def ColorTrackSerial(self) -> Tuple[float,float,float]:
+        if self.colorTrackSerial is None:
+            try:
+                from artisanlib.colortrack import ColorTrack
+                from artisanlib.atypes import SerialSettings
+                colortrack_serial:SerialSettings = {
+                    'port': self.comport,
+                    'baudrate': self.baudrate,
+                    'bytesize': self.bytesize,
+                    'stopbits': self.stopbits,
+                    'parity': self.parity,
+                    'timeout': self.timeout}
+                self.colorTrackSerial = ColorTrack(serial=colortrack_serial)
+                self.colorTrackSerial.setLogging(self.aw.qmc.device_logging)
+                self.colorTrackSerial.start()
+            except Exception as e: # pylint: disable=broad-except
+                _log.error(e)
         tx = self.aw.qmc.timeclock.elapsedMilli()
-        return tx,-1,-1
+        color = (-1 if self.colorTrackSerial is None else self.colorTrackSerial.getColor())
+        return tx,color,color
+
+    def ColorTrackBT(self) -> Tuple[float,float,float]:
+        tx = self.aw.qmc.timeclock.elapsedMilli()
+        if self.colorTrackBT is None:
+            try:
+                from artisanlib.colortrack import ColorTrackBLE
+                self.colorTrackBT = ColorTrackBLE(
+                    self.aw.colorTrack_mean_window_size,
+                    self.aw.colorTrack_median_window_size,
+                    connected_handler=lambda : self.aw.sendmessageSignal.emit(QApplication.translate('Message', '{} connected').format('ColorTrack'),True,None),
+                    disconnected_handler=lambda : self.aw.sendmessageSignal.emit(QApplication.translate('Message', '{} disconnected').format('ColorTrack'),True,None))
+                if self.colorTrackBT is not None:
+                    self.colorTrackBT.start()
+            except Exception as e: # pylint: disable=broad-except
+                _log.error(e)
+            return tx, -1, -1
+        color_mean, color_median = self.colorTrackBT.getColor()
+        return tx, color_median, color_mean # ch1: mean, ch2: median
 
     def ARDUINOTC4(self) -> Tuple[float,float,float]:
         self.aw.qmc.extraArduinoTX = self.aw.qmc.timeclock.elapsedMilli()
@@ -1545,6 +1561,7 @@ class serialport:
             except Exception: # pylint: disable=broad-except
                 self.aw.ws.readings = [-1]*self.aw.ws.channels
         else:
+            self.aw.ws.tx = self.aw.qmc.timeclock.elapsedMilli()
             for i in [0,1]:
                 c = mode*2+i
                 if self.aw.ws.channel_requests[c] != '':
@@ -2021,7 +2038,7 @@ class serialport:
             # Temperature
             if self.aw.ser.TMP1000temp is None:
                 self.aw.ser.TMP1000temp = PhidgetTemperatureSensor()
-            if not self.aw.ser.TMP1000temp.getAttached() and self.aw.qmc.phidgetManager is not None:
+            if self.aw.ser.TMP1000temp is not None and not self.aw.ser.TMP1000temp.getAttached() and self.aw.qmc.phidgetManager is not None:
                 ser, port = self.aw.qmc.phidgetManager.getFirstMatchingPhidget(
                     'PhidgetTemperatureSensor',
                     DeviceID.PHIDID_TMP1000,
@@ -2066,7 +2083,7 @@ class serialport:
             # HUM Temperature
             if self.aw.ser.PhidgetHUMtemp is None:
                 self.aw.ser.PhidgetHUMtemp = PhidgetTemperatureSensor()
-            if not self.aw.ser.PhidgetHUMtemp.getAttached() and self.aw.qmc.phidgetManager is not None:
+            if self.aw.ser.PhidgetHUMtemp is not None and not self.aw.ser.PhidgetHUMtemp.getAttached() and self.aw.qmc.phidgetManager is not None:
                 ser, port = self.aw.qmc.phidgetManager.getFirstMatchingPhidget(
                     'PhidgetTemperatureSensor',
                     DeviceID.PHIDID_HUM1000,
@@ -2118,7 +2135,7 @@ class serialport:
             # HUM Humidity
             if self.aw.ser.PhidgetHUMhum is None:
                 self.aw.ser.PhidgetHUMhum = PhidgetHumiditySensor()
-            if not self.aw.ser.PhidgetHUMhum.getAttached() and self.aw.qmc.phidgetManager is not None:
+            if self.aw.ser.PhidgetHUMhum is not None and not self.aw.ser.PhidgetHUMhum.getAttached() and self.aw.qmc.phidgetManager is not None:
                 ser, port = self.aw.qmc.phidgetManager.getFirstMatchingPhidget(
                     'PhidgetTemperatureSensor',
                     DeviceID.PHIDID_HUM1000,
@@ -2170,7 +2187,7 @@ class serialport:
             # PRE Pressure
             if self.aw.ser.PhidgetPREpre is None:
                 self.aw.ser.PhidgetPREpre = PhidgetPressureSensor()
-            if not self.aw.ser.PhidgetPREpre.getAttached() and self.aw.qmc.phidgetManager is not None:
+            if self.aw.ser.PhidgetPREpre is not None and not self.aw.ser.PhidgetPREpre.getAttached() and self.aw.qmc.phidgetManager is not None:
                 ser, port = self.aw.qmc.phidgetManager.getFirstMatchingPhidget(
                     'PhidgetPressureSensor',
                     DeviceID.PHIDID_PRE1000,
@@ -4188,9 +4205,10 @@ class serialport:
                             do.setIsRemote(False)
                             do.setIsLocal(True)
                         self.aw.ser.PhidgetDigitalOut[serial].append(do)
-                    if serial is None:
-                        # we make this also accessible via its serial number
-                        self.aw.ser.PhidgetDigitalOut[str(ser)] = self.aw.ser.PhidgetDigitalOut[None]
+# this is not needed here as we add those a bit below on successful attach
+#                    if serial is None:
+#                        # we make this also accessible via its serial number
+#                        self.aw.ser.PhidgetDigitalOut[str(ser)] = self.aw.ser.PhidgetDigitalOut[None]
         try:
             ch = self.aw.ser.PhidgetDigitalOut[serial][channel]
             ch.setOnAttachHandler(self.phidgetOUTattached)
@@ -4203,7 +4221,8 @@ class serialport:
                 if serial is None and ch.getAttached():
                     # we make this also accessible via its serial number + port
                     si = self.serialPort2serialString(ch.getDeviceSerialNumber(),ch.getHubPort()) # NOTE: ch.getHubPort() returns -1 if not yet attached
-                    self.aw.ser.PhidgetDigitalOut[str(si)] = self.aw.ser.PhidgetDigitalOut[None]
+                    if si is not None:
+                        self.aw.ser.PhidgetDigitalOut[si] = self.aw.ser.PhidgetDigitalOut[None]
         except Exception: # pylint: disable=broad-except
             pass
 
@@ -4322,9 +4341,14 @@ class serialport:
                             do.setIsRemote(False)
                             do.setIsLocal(True)
                         self.aw.ser.PhidgetDigitalOut[serial].append(do)
-                    if serial is None:
-                        # we make this also accessible via its serial number
-                        self.aw.ser.PhidgetDigitalOut[str(ser)] = self.aw.ser.PhidgetDigitalOut[None]
+# this is not needed here as we add those a bit below on successful attach
+#                    if serial is None:
+#                        # we make this also accessible via its serial number and serial:port number
+#                        for sn in (str(ser) if port is None else [str(ser),f'{str(ser)}:{str(port)}']):
+#                            self.aw.ser.PhidgetDigitalOut[sn] = self.aw.ser.PhidgetDigitalOut[None]
+#                            self.aw.ser.PhidgetDigitalOutLastPWM[sn] = self.aw.ser.PhidgetDigitalOutLastPWM[None]
+#                            self.aw.ser.PhidgetDigitalOutLastToggle[sn] = self.aw.ser.PhidgetDigitalOutLastToggle[None]
+
         try:
             ch = self.aw.ser.PhidgetDigitalOut[serial][channel]
             if not ch.getAttached():
@@ -4337,7 +4361,10 @@ class serialport:
                 if serial is None and ch.getAttached():
                     # we make this also accessible via its serial number + port
                     si = self.serialPort2serialString(ch.getDeviceSerialNumber(),ch.getHubPort())
-                    self.aw.ser.PhidgetDigitalOut[str(si)] = self.aw.ser.PhidgetDigitalOut[None]
+                    if si is not None:
+                        self.aw.ser.PhidgetDigitalOut[si] = self.aw.ser.PhidgetDigitalOut[None]
+                        self.aw.ser.PhidgetDigitalOutLastPWM[si] = self.aw.ser.PhidgetDigitalOutLastPWM[None]
+                        self.aw.ser.PhidgetDigitalOutLastToggle[si] = self.aw.ser.PhidgetDigitalOutLastToggle[None]
         except Exception: # pylint: disable=broad-except
             pass
 
@@ -4611,9 +4638,10 @@ class serialport:
                             vo.setIsRemote(False)
                             vo.setIsLocal(True)
                         self.aw.ser.PhidgetAnalogOut[serial].append(vo)
-                    if serial is None:
-                        # we make this also accessible via its serial number
-                        self.aw.ser.PhidgetAnalogOut[str(ser)] = self.aw.ser.PhidgetAnalogOut[None]
+# this is not needed here as we add those a bit below on successful attach
+#                    if serial is None:
+#                        # we make this also accessible via its serial number
+#                        self.aw.ser.PhidgetAnalogOut[str(ser)] = self.aw.ser.PhidgetAnalogOut[None]
         try:
             ch = self.aw.ser.PhidgetAnalogOut[serial][channel]
             ch.setOnAttachHandler(self.phidgetOUTattached)
@@ -4626,7 +4654,8 @@ class serialport:
                 if serial is None and ch.getAttached():
                     # we make this also accessible via its serial number + port
                     si = self.serialPort2serialString(ch.getDeviceSerialNumber(),ch.getHubPort())
-                    self.aw.ser.PhidgetAnalogOut[str(si)] = self.aw.ser.PhidgetAnalogOut[None]
+                    if si is not None:
+                        self.aw.ser.PhidgetAnalogOut[si] = self.aw.ser.PhidgetAnalogOut[None]
             try:
                 self.aw.ser.PhidgetAnalogOut[str(s)][channel].setEnabled(True) # the output on this device is always enabled
             except Exception: # pylint: disable=broad-except
@@ -4734,9 +4763,10 @@ class serialport:
                             dcm.setIsRemote(False)
                             dcm.setIsLocal(True)
                         self.aw.ser.PhidgetDCMotor[serial].append(dcm)
-                    if serial is None:
-                        # we make this also accessible via its serial number
-                        self.aw.ser.PhidgetDCMotor[str(ser)] = self.aw.ser.PhidgetDCMotor[None]
+# this is not needed here as we add those a bit below on successful attach
+#                    if serial is None:
+#                        # we make this also accessible via its serial number
+#                        self.aw.ser.PhidgetDCMotor[str(ser)] = self.aw.ser.PhidgetDCMotor[None]
         try:
             ch = self.aw.ser.PhidgetDCMotor[serial][channel]
             ch.setOnAttachHandler(self.phidgetOUTattached)
@@ -4749,7 +4779,8 @@ class serialport:
                 if serial is None and ch.getAttached():
                     # we make this also accessible via its serial number + port
                     si = self.serialPort2serialString(ch.getDeviceSerialNumber(),ch.getHubPort())
-                    self.aw.ser.PhidgetDCMotor[str(si)] = self.aw.ser.PhidgetDCMotor[None]
+                    if si is not None:
+                        self.aw.ser.PhidgetDCMotor[si] = self.aw.ser.PhidgetDCMotor[None]
         except Exception: # pylint: disable=broad-except
             pass
 
@@ -5267,9 +5298,10 @@ class serialport:
                             stepper.setIsRemote(True)
                             stepper.setIsLocal(False)
                         self.aw.ser.PhidgetStepperMotor[serial].append(stepper)
-                    if serial is None:
-                        # we make this also accessible via its serial number
-                        self.aw.ser.PhidgetStepperMotor[str(ser)] = self.aw.ser.PhidgetStepperMotor[None]
+# this is not needed here as we add those a bit below on successful attach
+#                    if serial is None:
+#                        # we make this also accessible via its serial number
+#                        self.aw.ser.PhidgetStepperMotor[str(ser)] = self.aw.ser.PhidgetStepperMotor[None]
 
         try:
             ch = self.aw.ser.PhidgetStepperMotor[serial][channel]
@@ -5283,7 +5315,8 @@ class serialport:
                 if serial is None and ch.getAttached():
                     # we make this also accessible via its serial number + port
                     si = self.serialPort2serialString(ch.getDeviceSerialNumber(),ch.getHubPort())
-                    self.aw.ser.PhidgetStepperMotor[str(si)] = self.aw.ser.PhidgetStepperMotor[None]
+                    if si is not None:
+                        self.aw.ser.PhidgetStepperMotor[si] = self.aw.ser.PhidgetStepperMotor[None]
         except Exception: # pylint: disable=broad-except
             pass
 
@@ -5378,9 +5411,10 @@ class serialport:
                             rcservo.setIsRemote(True)
                             rcservo.setIsLocal(False)
                         self.aw.ser.PhidgetRCServo[serial].append(rcservo)
-                    if serial is None:
-                        # we make this also accessible via its serial number
-                        self.aw.ser.PhidgetRCServo[str(ser)] = self.aw.ser.PhidgetRCServo[None]
+# this is not needed here as we add those a bit below on successful attach
+#                    if serial is None:
+#                        # we make this also accessible via its serial number
+#                        self.aw.ser.PhidgetRCServo[str(ser)] = self.aw.ser.PhidgetRCServo[None]
         try:
             ch = self.aw.ser.PhidgetRCServo[serial][channel]
             ch.setOnAttachHandler(self.phidgetOUTattached)
@@ -5393,7 +5427,8 @@ class serialport:
                 if serial is None and ch.getAttached():
                     # we make this also accessible via its serial number + port
                     si = self.serialPort2serialString(ch.getDeviceSerialNumber(),ch.getHubPort())
-                    self.aw.ser.PhidgetRCServo[str(si)] = self.aw.ser.PhidgetRCServo[None]
+                    if si is not None:
+                        self.aw.ser.PhidgetRCServo[si] = self.aw.ser.PhidgetRCServo[None]
         except Exception: # pylint: disable=broad-except
             pass
 

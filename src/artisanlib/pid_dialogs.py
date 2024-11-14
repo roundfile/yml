@@ -105,6 +105,7 @@ class PID_DlgControl(ArtisanDialog):
         pidGrid.addWidget(self.pidKi,1,1)
         pidGrid.addWidget(pidKdLabel,2,0)
         pidGrid.addWidget(self.pidKd,2,1)
+        pidGrid.setSpacing(5)
 
 
         self.pidCycle = QSpinBox()
@@ -141,6 +142,23 @@ class PID_DlgControl(ArtisanDialog):
         pOnLayout.addWidget(self.pOnE)
         pOnLayout.addWidget(self.pOnM)
 
+        self.SVsyncSource = QComboBox()
+        self.SVsyncSource.setToolTip(QApplication.translate('Tooltip', 'Source for SV slider synchronization in manual mode'))
+        SVsyncSourceLabel = QLabel(QApplication.translate('Label','Sync'))
+        if pid_controller in {1, 2}: # only for external MODBUS/S7 PID
+            SVsyncSourceItems = [''] # the first empty item deactivates SV slider syncing
+            SVsyncSourceItems.extend(self.getCurveNames())
+            self.SVsyncSource.addItems(SVsyncSourceItems)
+
+            if self.aw.pidcontrol.svSync == 2: # ET
+                self.SVsyncSource.setCurrentIndex(1)
+            elif self.aw.pidcontrol.svSync == 1: # BT
+                self.SVsyncSource.setCurrentIndex(2)
+            elif self.aw.pidcontrol.svSync < len(SVsyncSourceItems):
+                self.SVsyncSource.setCurrentIndex(self.aw.pidcontrol.svSync)
+            else:
+                self.SVsyncSource.setCurrentIndex(0)
+
         pidVBox = QVBoxLayout()
         if pid_controller in {0, 1, 2, 3, 4}: # only for internal PID, MODBUS/S7 PID and TC4/Kaleido; NOTE: for MODBUS/S7 the input is used only to decide on the source for the background follow mode SV
             self.pidSource = QComboBox()
@@ -153,14 +171,10 @@ class PID_DlgControl(ArtisanDialog):
             else:
                 # internal software PID
                 # Hottop or MODBUS or others (self.qmc.device in [53,29])
-                pidSourceItems = []
-                # NOTE: ET/BT inverted as pidSource=1 => BT and pidSource=2 => ET !!
-                pidSourceItems.append(self.aw.ETname.format(self.aw.qmc.etypesf(0),self.aw.qmc.etypesf(1),self.aw.qmc.etypesf(2),self.aw.qmc.etypesf(3)))
-                pidSourceItems.append(self.aw.BTname.format(self.aw.qmc.etypesf(0),self.aw.qmc.etypesf(1),self.aw.qmc.etypesf(2),self.aw.qmc.etypesf(3)))
-                for i in range(len(self.aw.qmc.extradevices)):
-                    pidSourceItems.append(self.aw.qmc.extraname1[i].format(self.aw.qmc.etypesf(0),self.aw.qmc.etypesf(1),self.aw.qmc.etypesf(2),self.aw.qmc.etypesf(3)))
-                    pidSourceItems.append(self.aw.qmc.extraname2[i].format(self.aw.qmc.etypesf(0),self.aw.qmc.etypesf(1),self.aw.qmc.etypesf(2),self.aw.qmc.etypesf(3)))
+
+                pidSourceItems = self.getCurveNames()
                 self.pidSource.addItems(pidSourceItems)
+
                 if self.aw.pidcontrol.pidSource in {0,1}:
                     self.pidSource.setCurrentIndex(1)
                 elif self.aw.pidcontrol.pidSource == 2:
@@ -169,6 +183,7 @@ class PID_DlgControl(ArtisanDialog):
                     self.pidSource.setCurrentIndex(self.aw.pidcontrol.pidSource-1)
                 else:
                     self.pidSource.setCurrentIndex(1)
+
             pidSourceLabel = QLabel(QApplication.translate('Label','Input'))
             pidSourceBox = QHBoxLayout()
             pidSourceBox.addStretch()
@@ -296,6 +311,7 @@ class PID_DlgControl(ArtisanDialog):
 
         pidGridVBox = QVBoxLayout()
         pidGridVBox.addLayout(pidGridBox)
+        pidGridVBox.setContentsMargins(5,5,5,5) # left, top, right, bottom
         pidGrp.setLayout(pidGridVBox)
         pidGrp.setContentsMargins(0,10,0,0)
 
@@ -392,6 +408,12 @@ class PID_DlgControl(ArtisanDialog):
         svInputBox.addWidget(self.pidSV)
         svInputBox.addWidget(pidSetSV)
 
+        svSyncBox = QHBoxLayout()
+        if pid_controller in {1, 2}:
+            svSyncBox.addWidget(SVsyncSourceLabel)
+            svSyncBox.addWidget(self.SVsyncSource)
+            svSyncBox.addStretch()
+
         self.dutyMin = QSpinBox()
         self.dutyMin.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.dutyMin.setRange(-100,100)
@@ -409,17 +431,20 @@ class PID_DlgControl(ArtisanDialog):
         dutyMaxLabel = QLabel(QApplication.translate('Label','Max'))
 
         svGrpBox = QVBoxLayout()
-        svGrpBox.addStretch()
         svGrpBox.addLayout(modeBox)
         svGrpBox.addLayout(sliderBox)
         svGrpBox.addLayout(svInputBox)
+        svGrpBox.addLayout(svSyncBox)
         svGrpBox.addStretch()
+        svGrpBox.setSpacing(5)
+        svGrpBox.setContentsMargins(5,5,5,5) # left, top, right, bottom
         svGrp = QGroupBox(QApplication.translate('GroupBox','Set Value'))
         svGrp.setLayout(svGrpBox)
-        svGrp.setContentsMargins(0,10,0,0)
+        svGrp.setContentsMargins(0,10,0,0) # left, top, right, bottom
 
         pidBox = QHBoxLayout()
         pidBox.addWidget(pidGrp)
+        pidBox.setSpacing(4)
 
         svBox = QHBoxLayout()
         svBox.addWidget(svGrp)
@@ -779,19 +804,19 @@ class PID_DlgControl(ArtisanDialog):
         flagsLayout.addWidget(self.loadRampSoakFromBackground)
         flagsLayout.addStretch()
 
-        time_label = QLabel(QApplication.translate('Label', 'Time starts at'))
-        self.radioTimeAfterCHARGE = QRadioButton(QApplication.translate('Label','CHARGE'))
-        self.radioTimeAfterPIDON = QRadioButton(QApplication.translate('Button','PID ON'))
-        if self.aw.pidcontrol.RStimeAfterCHARGE:
-            self.radioTimeAfterCHARGE.setChecked(True)
-        else:
-            self.radioTimeAfterPIDON.setChecked(True)
-        radioButtonsLayout = QHBoxLayout()
-        radioButtonsLayout.addStretch()
-        radioButtonsLayout.addWidget(time_label)
-        radioButtonsLayout.addWidget(self.radioTimeAfterCHARGE)
-        radioButtonsLayout.addWidget(self.radioTimeAfterPIDON)
-        radioButtonsLayout.addStretch()
+#        time_label = QLabel(QApplication.translate('Label', 'Time starts at'))
+#        self.radioTimeAfterCHARGE = QRadioButton(QApplication.translate('Label','CHARGE'))
+#        self.radioTimeAfterPIDON = QRadioButton(QApplication.translate('Button','PID ON'))
+#        if self.aw.pidcontrol.RStimeAfterCHARGE:
+#            self.radioTimeAfterCHARGE.setChecked(True)
+#        else:
+#            self.radioTimeAfterPIDON.setChecked(True)
+#        radioButtonsLayout = QHBoxLayout()
+#        radioButtonsLayout.addStretch()
+#        radioButtonsLayout.addWidget(time_label)
+#        radioButtonsLayout.addWidget(self.radioTimeAfterCHARGE)
+#        radioButtonsLayout.addWidget(self.radioTimeAfterPIDON)
+#        radioButtonsLayout.addStretch()
 
         buttonLayout = QHBoxLayout()
         buttonLayout.addStretch()
@@ -804,7 +829,7 @@ class PID_DlgControl(ArtisanDialog):
 
         tab2Layout.addLayout(buttonLayout)
         tab2Layout.addStretch()
-        tab2Layout.addLayout(radioButtonsLayout)
+#        tab2Layout.addLayout(radioButtonsLayout)
         tab2Layout.addLayout(flagsLayout)
 
 
@@ -829,6 +854,16 @@ class PID_DlgControl(ArtisanDialog):
         # we set the active tab with a QTimer after the tabbar has been rendered once, as otherwise
         # some tabs are not rendered at all on Windows using Qt v6.5.1 (https://bugreports.qt.io/projects/QTBUG/issues/QTBUG-114204?filter=allissues)
         QTimer.singleShot(10, self.setActiveTab)
+
+    # NOTE: ET/BT inverted as pidSource=1 => BT and pidSource=2 => ET !!
+    def getCurveNames(self) -> List[str]:
+        curveNames = []
+        curveNames.append(self.aw.ETname.format(self.aw.qmc.etypesf(0),self.aw.qmc.etypesf(1),self.aw.qmc.etypesf(2),self.aw.qmc.etypesf(3)))
+        curveNames.append(self.aw.BTname.format(self.aw.qmc.etypesf(0),self.aw.qmc.etypesf(1),self.aw.qmc.etypesf(2),self.aw.qmc.etypesf(3)))
+        for i in range(len(self.aw.qmc.extradevices)):
+            curveNames.append(self.aw.qmc.extraname1[i].format(self.aw.qmc.etypesf(0),self.aw.qmc.etypesf(1),self.aw.qmc.etypesf(2),self.aw.qmc.etypesf(3)))
+            curveNames.append(self.aw.qmc.extraname2[i].format(self.aw.qmc.etypesf(0),self.aw.qmc.etypesf(1),self.aw.qmc.etypesf(2),self.aw.qmc.etypesf(3)))
+        return curveNames
 
     @pyqtSlot()
     def setActiveTab(self) -> None:
@@ -1183,17 +1218,25 @@ class PID_DlgControl(ArtisanDialog):
             elif pidSourceIdx == 1:
                 source = 1 # BT
             else:
-                source = self.pidSource.currentIndex() + 1 # 3, 4, ... (extra device curves)
+                source = pidSourceIdx + 1 # 3, 4, ... (extra device curves)
             if pid_controller == 0 and not (self.aw.qmc.device == 19 and self.aw.qmc.PIDbuttonflag): # don't show Targets if TC4 firmware PID is in use
                 self.aw.pidcontrol.pidPositiveTarget = self.positiveControlCombo.currentIndex()
                 self.aw.pidcontrol.pidNegativeTarget = self.negativeControlCombo.currentIndex()
                 self.aw.pidcontrol.invertControl = self.invertControlFlag.isChecked()
             cycle = self.pidCycle.value() # def 1000 in ms
+        if pid_controller in {1, 2}: # external MODBUS/S7 PID control
+            svSyncIdx = self.SVsyncSource.currentIndex()
+            if svSyncIdx == 1:
+                self.aw.pidcontrol.svSync = 2 # ET
+            elif svSyncIdx == 2:
+                self.aw.pidcontrol.svSync = 1 # BT
+            else:
+                self.aw.pidcontrol.svSync = svSyncIdx # 0: off, 3, 4, ... (extra device curves)
         pOnE = bool(self.pOnE.isChecked())
         self.aw.pidcontrol.setPID(kp,ki,kd,source,cycle,pOnE)
         #
         self.aw.pidcontrol.pidOnCHARGE = self.startPIDonCHARGE.isChecked()
-        self.aw.pidcontrol.RStimeAfterCHARGE = self.radioTimeAfterCHARGE.isChecked()
+#        self.aw.pidcontrol.RStimeAfterCHARGE = self.radioTimeAfterCHARGE.isChecked()
         self.aw.pidcontrol.loadpidfrombackground = self.loadPIDfromBackground.isChecked()
         self.aw.pidcontrol.createEvents = self.createEvents.isChecked()
         self.aw.pidcontrol.loadRampSoakFromProfile = self.loadRampSoakFromProfile.isChecked()
@@ -3202,7 +3245,7 @@ class PXG4pidDlgControl(PXpidDlgControl):
             command = self.aw.fujipid.message2send(self.aw.ser.controlETpid[1],3,reg_dict['selectsv'][1],1)
             N = self.aw.fujipid.readoneword(command)
         # if current svN is different than requested svN
-        if N != -1:
+        if N is not None and N != -1:
             if svn != N:
                 string = QApplication.translate('Message','Current sv = {0}. Change now to sv = {1}?',None).format(str(N),str(svn))
                 reply = QMessageBox.question(self.aw,QApplication.translate('Message','Change svN',None),string,

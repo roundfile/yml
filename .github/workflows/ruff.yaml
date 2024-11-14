@@ -1,6 +1,7 @@
+---
 name: Ruff
 
-on:
+on:  # yamllint disable-line rule:truthy
   push:
     branches:
       - master
@@ -15,9 +16,9 @@ on:
         default: 'warning'
         type: choice
         options:
-        - info
-        - warning
-        - debug
+          - info
+          - warning
+          - debug
       tags:
         description: 'Test scenario tags'
         required: false

@@ -1189,6 +1189,17 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         self.mugmaPort.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.mugmaPort.setFixedWidth(150)
 
+        colorTrackMeanLabel = QLabel(QApplication.translate('Label','Mean Filter'))
+        self.colorTrackMeanSpinBox = QSpinBox()
+        self.colorTrackMeanSpinBox.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.colorTrackMeanSpinBox.setRange(10,200)
+        self.colorTrackMeanSpinBox.setValue(int(self.aw.colorTrack_mean_window_size))
+        colorTrackMedianLabel = QLabel(QApplication.translate('Label','Median Filter'))
+        self.colorTrackMedianSpinBox = QSpinBox()
+        self.colorTrackMedianSpinBox.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.colorTrackMedianSpinBox.setRange(10,200)
+        self.colorTrackMedianSpinBox.setValue(int(self.aw.colorTrack_median_window_size))
+
         santokerNetworkGrid = QGridLayout()
         santokerNetworkGrid.addWidget(self.santokerNetworkFlag,0,0)
         santokerNetworkGrid.addWidget(santokerHostLabel,0,1)
@@ -1228,7 +1239,6 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         kaleidoNetworkGroupBox = QGroupBox('Kaleido')
         kaleidoNetworkGroupBox.setLayout(kaleidoNetworkGrid)
         kaleidoHBox = QHBoxLayout()
-        kaleidoHBox.addStretch()
         kaleidoHBox.addWidget(kaleidoNetworkGroupBox)
         kaleidoHBox.addStretch()
         kaleidoVBox = QVBoxLayout()
@@ -1246,14 +1256,28 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         mugmaNetworkGroupBox = QGroupBox('Mugma')
         mugmaNetworkGroupBox.setLayout(mugmaNetworkGrid)
         mugmaHBox = QHBoxLayout()
-        mugmaHBox.addStretch()
         mugmaHBox.addWidget(mugmaNetworkGroupBox)
         mugmaHBox.addStretch()
         mugmaVBox = QVBoxLayout()
         mugmaVBox.addLayout(mugmaHBox)
-        mugmaVBox.addStretch()
-        mugmaVBox.setSpacing(5)
         mugmaVBox.setContentsMargins(0,0,0,0)
+
+        colorTrackNetworkGrid = QGridLayout()
+        colorTrackNetworkGrid.addWidget(colorTrackMeanLabel,0,1)
+        colorTrackNetworkGrid.addWidget(self.colorTrackMeanSpinBox,0,2)
+        colorTrackNetworkGrid.addWidget(colorTrackMedianLabel,1,1)
+        colorTrackNetworkGrid.addWidget(self.colorTrackMedianSpinBox,1,2)
+        colorTrackNetworkGrid.setSpacing(20)
+        colorTrackNetworkGroupBox = QGroupBox('ColorTrack')
+        colorTrackNetworkGroupBox.setLayout(colorTrackNetworkGrid)
+        colorTrackHBox = QHBoxLayout()
+        colorTrackHBox.addWidget(colorTrackNetworkGroupBox)
+        colorTrackHBox.addStretch()
+        colorTrackVBox = QVBoxLayout()
+        colorTrackVBox.addLayout(colorTrackHBox)
+        colorTrackVBox.addStretch()
+        colorTrackVBox.setSpacing(5)
+        colorTrackVBox.setContentsMargins(0,0,0,0)
 
         # create pid box
         PIDgrid = QGridLayout()
@@ -1406,9 +1430,13 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
         tab7VLayout.addWidget(santokerNetworkGroupBox)
         tab7VLayout.addLayout(kaleidoVBox)
         tab7VLayout.addStretch()
+        tab7V2Layout = QVBoxLayout()
+        tab7V2Layout.addLayout(mugmaVBox)
+        tab7V2Layout.addLayout(colorTrackVBox)
+        tab7V2Layout.addStretch()
         tab7Layout = QHBoxLayout()
         tab7Layout.addLayout(tab7VLayout)
-        tab7Layout.addLayout(mugmaVBox)
+        tab7Layout.addLayout(tab7V2Layout)
         tab7Layout.addStretch()
         tab7Layout.setContentsMargins(2,10,2,5)
         #main tab widget
@@ -3230,7 +3258,7 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ##########################
                 ####  DEVICE 161 is +Omega HH309 34 but +DEVICE cannot be set as main device
                 ##########################
-                elif meter == 'Digi-Sense 20250-07' and self.aw.qmc.device != 161:
+                elif meter == 'Digi-Sense 20250-07' and self.aw.qmc.device != 161: # noqa: SIM114
                     self.aw.qmc.device = 17
                     #self.aw.ser.comport = "COM4"
                     self.aw.ser.baudrate = 9600
@@ -3272,7 +3300,10 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ####  DEVICE 169 is +TMP1202_2 (a second TMP1202 configuration)
                 ##########################
                 ##########################
-                ####  DEVICE 170 is +ColorTrack
+                ####  DEVICE 170 is ColorTrack Serial
+                elif meter == 'ColorTrack Serial':
+                    self.aw.qmc.device = 170
+                    message = QApplication.translate('Message','Device set to {0}').format(meter)
                 ##########################
                 ##########################
                 ####  DEVICE 171 is Santoker BT/ET
@@ -3285,6 +3316,12 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 ##########################
                 ##########################
                 ####  DEVICE 173 is +Santoker DelatBT/DeltaET  but +DEVICE cannot be set as main device
+                ##########################
+                ##########################
+                ####  DEVICE 174 is ColorTrack BT
+                elif meter == 'ColorTrack BT':
+                    self.aw.qmc.device = 174
+                    message = QApplication.translate('Message','Device set to {0}').format(meter)
                 ##########################
 
 
@@ -3479,7 +3516,8 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 3, # 170
                 1, # 171
                 1, # 172
-                1  # 173
+                1, # 173
+                1  # 174
                 ]
             #init serial settings of extra devices
             for i, _ in enumerate(self.aw.qmc.extradevices):
@@ -3610,6 +3648,8 @@ class DeviceAssignmentDlg(ArtisanResizeablDialog):
                 self.aw.mugmaPort = int(self.mugmaPort.text())
             except Exception: # pylint: disable=broad-except
                 pass
+            self.aw.colorTrack_mean_window_size = self.colorTrackMeanSpinBox.value()
+            self.aw.colorTrack_median_window_size = self.colorTrackMedianSpinBox.value()
             for i in range(8):
                 self.aw.qmc.phidget1018_async[i] = self.asyncCheckBoxes[i].isChecked()
                 self.aw.qmc.phidget1018_ratio[i] = self.ratioCheckBoxes[i].isChecked()

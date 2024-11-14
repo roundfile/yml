@@ -18,7 +18,7 @@
 import asyncio
 import logging
 from enum import IntEnum
-from typing import Optional, Union, List, Tuple, Final, TYPE_CHECKING
+from typing import Optional, Union, List, Tuple, Final, Callable, TYPE_CHECKING
 
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic  # pylint: disable=unused-import
@@ -125,10 +125,16 @@ class AcaiaBLE(ClientBLE):
 
 # NOTE: __slots__ are incompatible with multiple inheritance mixings in subclasses (as done below in class Acaia with QObject)
 #    __slots__ = [ '_read_queue', '_input_stream',
-#            'id_sent', 'fast_notifications_sent', 'slow_notifications_sent', 'weight', 'battery', 'firmware', 'unit', 'max_weight' ]
+#            'id_sent', 'fast_notifications_sent', 'slow_notifications_sent', 'weight', 'battery', 'firmware', 'unit', 'max_weight'
+#            '_connected_handler', '_disconnected_handler' ]
 
-    def __init__(self) -> None:
+    def __init__(self, connected_handler:Optional[Callable[[], None]] = None,
+                       disconnected_handler:Optional[Callable[[], None]] = None):
         super().__init__()
+
+        # handlers
+        self._connected_handler = connected_handler
+        self._disconnected_handler = disconnected_handler
 
         # Protocol parser variables
         self._read_queue : asyncio.Queue[bytes] = asyncio.Queue(maxsize=200)
@@ -184,9 +190,13 @@ class AcaiaBLE(ClientBLE):
             _log.debug('connected to Acaia Legacy Scale')
         elif connected_service_UUID == self.ACAIA_SERVICE_UUID:
             _log.debug('connected to Acaia Scale')
+        if self._connected_handler is not None:
+            self._connected_handler()
 
     def on_disconnect(self) -> None:
         _log.debug('disconnected')
+        if self._disconnected_handler is not None:
+            self._disconnected_handler()
 
 
     ##
@@ -340,9 +350,6 @@ class AcaiaBLE(ClientBLE):
     def parse_data(self, msg_type:int, data:bytes) -> None:
         if msg_type == MSG.INFO:
             self.parse_info(data)
-            if not self.id_sent:
-                # send ID only once per connect
-                self.send_ID()
         elif msg_type == MSG.STATUS:
             self.parse_status(data)
         elif msg_type == MSG.EVENT:
@@ -352,6 +359,9 @@ class AcaiaBLE(ClientBLE):
             # we configure the scale to receive the initial
             # weight notification as fast as possible
             self.fast_notifications()
+        if not self.id_sent:
+            # send ID only once per connect
+            self.send_ID()
 
     ##
 
@@ -416,7 +426,7 @@ class AcaiaBLE(ClientBLE):
             bytes([ # pairs of key/setting
                     0,  # weight id
                     7,  # 0, 1, 3, 5, 7, 15, 31, 63, 127  # weight argument (speed of notifications in 1/10 sec)
-                       # 5 or 7 seems to be good values for this app in Artisan
+                        # 5 or 7 seems to be good values for this app in Artisan
 #                    1,   # battery id
 #                    255, #2,  # battery argument (if 0 : fast, 1 : slow)
 #                    2,  # timer id
@@ -433,7 +443,7 @@ class AcaiaBLE(ClientBLE):
             bytes([ # pairs of key/setting
                     0,  # weight id
                     1,  # 0, 1, 3, 5, 7, 15, 31, 63, 127  # weight argument (speed of notifications in 1/10 sec)
-                       # 5 or 7 seems to be good values for this app in Artisan
+                        # 5 or 7 seems to be good values for this app in Artisan
 #                    1,   # battery id
 #                    255, #2,  # battery argument (if 0 : fast, 1 : slow)
 #                    2,  # timer id
@@ -449,7 +459,7 @@ class AcaiaBLE(ClientBLE):
 
 
     def notify_callback(self, _sender:'BleakGATTCharacteristic', data:bytearray) -> None:
-        if self._async_loop_thread is not None:
+        if hasattr(self, '_async_loop_thread') and self._async_loop_thread is not None:
             asyncio.run_coroutine_threadsafe(
                     self._read_queue.put(bytes(data)),
                     self._async_loop_thread.loop)
@@ -482,7 +492,7 @@ class AcaiaBLE(ClientBLE):
 
 
     def on_start(self) -> None:
-        if self._async_loop_thread is not None:
+        if hasattr(self, '_async_loop_thread') and self._async_loop_thread is not None:
             # start the reader
             asyncio.run_coroutine_threadsafe(
                     self.reader(self._input_stream),
@@ -501,9 +511,14 @@ class AcaiaBLE(ClientBLE):
 # QObject needs to go first in this mixing and AcaiaBLE and its super class are not allowed to hold __slots__
 class Acaia(QObject, AcaiaBLE): # pyright: ignore [reportGeneralTypeIssues] # Argument to class must be a base class
 
-    weight_changed_signal = pyqtSignal(int) # delivers new weight in g
+    weight_changed_signal = pyqtSignal(int)   # delivers new weight in g
     battery_changed_signal = pyqtSignal(int)  # delivers new batter level in %
     disconnected_signal = pyqtSignal()        # issued on disconnect
+
+    def __init__(self, connected_handler:Optional[Callable[[], None]] = None,
+                       disconnected_handler:Optional[Callable[[], None]] = None):
+        QObject.__init__(self)
+        AcaiaBLE.__init__(self, connected_handler = connected_handler, disconnected_handler=disconnected_handler)
 
 
     def weight_changed(self, new_value:int) -> None:
@@ -514,3 +529,4 @@ class Acaia(QObject, AcaiaBLE): # pyright: ignore [reportGeneralTypeIssues] # Ar
 
     def on_disconnect(self) -> None:
         self.disconnected_signal.emit()
+        AcaiaBLE.on_disconnect(self)

@@ -1,3 +1,12 @@
+# Copied from artisan/src/pyporject.toml
+# Modified 
+#  [tool.mypy] 
+#  files = ["xlsx_to_artisan_help.py"]
+# and
+#  [tool.pyright]
+#  include = []
+#  exclude = []
+
 [project]
 name = 'Artisan'
 dynamic = ['version']
@@ -240,7 +249,7 @@ enable='''c-extension-no-member,'''
 ## mypy conf
 
 [tool.mypy]
-files = ["artisanlib/*.py", "plus/*.py"]
+files = ["xlsx_to_artisan_help.py"]
 exclude = ['build', 'dist', 'uic', 'misc']
 python_version = "3.8"
 
@@ -317,9 +326,9 @@ target-version = "py38"
 ## pyright conf
 
 [tool.pyright]
-include = ["artisanlib", "plus" ]
-exclude = ["proto"]
-# ignore = ["src/oldstuff"]
+include = []
+exclude = []
+# ignore = []
 
 reportMissingImports = true
 reportMissingTypeStubs = false

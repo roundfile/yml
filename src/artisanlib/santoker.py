@@ -26,7 +26,7 @@ except Exception: # pylint: disable=broad-except
 from typing import Final, Optional, Union, Callable, Awaitable, TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from artisanlib.types import SerialSettings # pylint: disable=unused-import
+    from artisanlib.atypes import SerialSettings # pylint: disable=unused-import
     from bleak.backends.characteristic import BleakGATTCharacteristic  # pylint: disable=unused-import
 
 from artisanlib.async_comm import AsyncComm, AsyncIterable, IteratorReader
@@ -63,7 +63,7 @@ class SantokerCube_BLE(ClientBLE):
 
     def notify_callback(self, _sender:'BleakGATTCharacteristic', data:bytearray) -> None:
 #        _log.debug("notify: %s => %s", self._read_queue.qsize(), data)
-        if self._async_loop_thread is not None:
+        if hasattr(self, '_async_loop_thread') and self._async_loop_thread is not None:
             asyncio.run_coroutine_threadsafe(
                     self._read_queue.put(bytes(data)),
                     self._async_loop_thread.loop)
@@ -81,7 +81,7 @@ class SantokerCube_BLE(ClientBLE):
             await self._read_msg(stream)
 
     def on_start(self) -> None:
-        if self._async_loop_thread is not None:
+        if hasattr(self, '_async_loop_thread') and self._async_loop_thread is not None:
             # start the reader
             asyncio.run_coroutine_threadsafe(
                     self.reader(self._input_stream),
@@ -320,7 +320,7 @@ class Santoker(AsyncComm):
         return self.HEADER + target + data + crc + self.TAIL
 
     def send_msg(self, target:bytes, value: int) -> None:
-        if self._connect_using_ble and self._ble_client is not None:
+        if self._connect_using_ble and hasattr(self, '_ble_client') and self._ble_client is not None:
             # send via BLE
 #            _log.debug("send_msg(%s,%s): %s",target,value,self.create_msg(target, value))
             self._ble_client.send(self.create_msg(target, value))
@@ -330,15 +330,15 @@ class Santoker(AsyncComm):
 
 
     def start(self, connect_timeout:float=5) -> None:
-        if self._connect_using_ble and self._ble_client is not None:
+        if self._connect_using_ble and hasattr(self, '_ble_client') and self._ble_client is not None:
             self._ble_client.start(case_sensitive=False)
         else:
             super().start(connect_timeout)
 
     def stop(self) -> None:
-        if self._connect_using_ble and self._ble_client is not None:
+        if self._connect_using_ble and hasattr(self, '_ble_client') and self._ble_client is not None:
             self._ble_client.stop()
-            del self._ble_client
+            #del self._ble_client # on this level the released object should be automatically collected by the GC
             self._ble_client = None
         else:
             super().stop()

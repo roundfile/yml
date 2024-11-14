@@ -434,32 +434,27 @@ if not ARTISAN_LEGACY=='True':
 ###################################
 def get_size(path):
     size = 0
-    
     # If the path is a file, get its size directly
     if os.path.isfile(path):
         size += os.path.getsize(path)
-    
     # If the path is a directory, walk through all files and sum their sizes
     elif os.path.isdir(path):
         for dirpath, dirnames, filenames in os.walk(path):
             for filename in filenames:
                 file_path = os.path.join(dirpath, filename)
                 size += os.path.getsize(file_path)
-    
     return size
 
 def readable_bytes(size_in_bytes):
-    # Converts bytes to readable format (KB, MB, GB, etc.)
+    # Converts bytes to readable format
     for unit in ['Bytes', 'KB', 'MB', 'GB', 'TB']:
         if size_in_bytes < 1024.0:
             return f"{size_in_bytes:.2f} {unit}"
         size_in_bytes /= 1024.0
 
-# Get total size in bytes for all paths minus the vc_redist.x64.exe file
+# Get total size in bytes minus the vc_redist.x64.exe file
 size_bytes = get_size(TARGET) - get_size(TARGET + 'vc_redist.x64.exe')
-# Convert to readable format
-size_readable = readable_bytes(size_bytes)
-# Output the result
-logging.info(f'>>>>> Net size of install folder: {size_readable}')
+logging.info(f'>>>>> Net size of install folder: {readable_bytes(size_bytes)}')
+
 ###################################
 
