@@ -1,6 +1,8 @@
 ---
 name: Mypy
 
+# yamllint disable rule:line-length
+
 on:  # yamllint disable-line rule:truthy
   push:
     branches:

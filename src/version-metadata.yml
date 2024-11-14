@@ -1,4 +1,5 @@
 ---
+# yamllint disable rule:line-length
 Version: 0.0.0.0
 CompanyName: artisan-scope.org
 FileDescription: Artisan Roaster Scope

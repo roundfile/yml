@@ -21,6 +21,7 @@
 ---
 # yamllint disable rule:line-length
 # yamllint disable rule:comments-indentation
+
 environment:
   # Set the default Appveyor Python version here. Does not affect windows_legacy. Can be overridden in platform environment.
   PYTHON_V: 3.12
