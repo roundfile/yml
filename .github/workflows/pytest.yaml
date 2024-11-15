@@ -1,9 +1,6 @@
----
 name: Pytest
 
-# yamllint disable rule:line-length
-
-on:  # yamllint disable-line rule:truthy
+on:
   push:
     branches:
       - master
@@ -13,7 +10,7 @@ on:  # yamllint disable-line rule:truthy
 
 jobs:
   pytest:
-    runs-on: macos-latest  # on ubuntu the Qt libs are missing: ImportError: libEGL.so.1: cannot open shared object file: No such file or directory
+    runs-on: macos-latest # on ubunut the Qt libs are missing: ImportError: libEGL.so.1: cannot open shared object file: No such file or directory
     name: runner / pytest
     steps:
       - uses: actions/checkout@v4
@@ -21,9 +18,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
-          cache: 'pip'  # caching pip dependencies
+          cache: 'pip' # caching pip dependencies
 
-# yamllint disable rule:comments-indentation
 #      - name: Install Linux Qt system dependencies
 #        if: runner.os == 'Linux'
 #        run: |

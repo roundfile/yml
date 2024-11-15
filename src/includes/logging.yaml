@@ -1,10 +1,9 @@
----
 version: 1
 formatters:
   simple:
     format: '%(asctime)s - %(levelname)s: %(message)s'
   advanced:
-    format: '%(asctime)s %(threadName)-10s %(name)-20s%(levelname)-7s: %(message)s'  # yamllint disable-line rule:line-length
+    format: '%(asctime)s %(threadName)-10s %(name)-20s %(levelname)-7s: %(message)s'
     datefmt: '%m-%d %H:%M:%S'
 handlers:
   console:
@@ -24,15 +23,15 @@ loggers:
   artisanlib:
     level: INFO
     handlers: [file]
-    propagate: false
+    propagate: no
   plus:
     level: INFO
     handlers: [file]
-    propagate: false
+    propagate: no
   pymodbus.logging:
     level: ERROR
     handlers: [file]
-    propagate: false
+    propagate: no
 root:
   level: ERROR
   handlers: [file]
