@@ -106,19 +106,17 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the build script
-#    - cmd: build-win3-pi.bat
-    - cmd: build-win3-standalone-pi.bat
+    - cmd: build-win3-pi.bat
 
 #  test_script:
 #    - cmd: python -m unittest discover
 
   artifacts:
 #    - path: 'generated-win-legacy.zip'
-#    - path: 'src\%artifact_prefix%-*.zip'
-    - path: 'src\artisan*.exe'
+    - path: 'src\%artifact_prefix%-win*setup.exe'
 
-#  deploy_script:
-#    - cmd: bash ../.ci/upload.sh artisan-*.zip
+  deploy_script:
+    - cmd: bash ../.ci/upload.sh artisan-win*setup.exe
 
 #  # uncomment this section for remote desktop connection to build image
 #  on_finish:
@@ -183,19 +181,17 @@ for:
     - ps: move -force newfile artisanlib/__init__.py
 
     # run the build script
-#    - cmd: build-win3-pi.bat
-    - cmd: build-win3-standalone-pi.bat
+    - cmd: build-win3-pi.bat
 
 #  test_script:
 #    - cmd: python -m unittest discover
 
   artifacts:
 #    - path: 'generated-win.zip'
-#    - path: 'src\%artifact_prefix%-*.zip'
-    - path: 'src\artisan*.exe'
+    - path: 'src\%artifact_prefix%-win*setup.exe'
 
-#  deploy_script:
-#    - cmd: bash ../.ci/upload.sh artisan-*.zip
+  deploy_script:
+    - cmd: bash ../.ci/upload.sh artisan-win*setup.exe
 
 #  # uncomment this section for remote desktop connection to build image
 #  on_finish:
@@ -210,7 +206,7 @@ for:
 
   environment:
     ARTISAN_OS: macos
-    MACOSX_DEPLOYMENT_TARGET: 11.0
+    MACOSX_DEPLOYMENT_TARGET: 12.0
     PYTHONSITEPKGS: /Users/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
     QT_PATH: ${PYTHONSITEPKGS}/PyQt6/Qt6
     QT_SRC_PATH: /Users/appveyor/Qt/6.6/macos
