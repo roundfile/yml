@@ -223,6 +223,7 @@ Qt_modules = [
     'QtQuickWidgets',
     'QtQml',
     'QtQmlModels',
+    'QtQmlWorkerScript'  #dave
     'QtWebChannel',
     'QtPositioning',
     'QtOpenGL' # required by QtWebEngineCore
@@ -274,7 +275,7 @@ for root, dirs, _ in os.walk('./Artisan.app/Contents/Frameworks/PyQt6/Qt6/plugin
                         print(f'rm -rf {file_path}')
                         subprocess.check_call(f'rm -rf {file_path}',shell = True)
 
-#dave subprocess.check_call(r'rm -rf ./Artisan.app/Contents/Frameworks/PyQt6/Qt6/qml',shell = True)
+subprocess.check_call(r'rm -rf ./Artisan.app/Contents/Frameworks/PyQt6/Qt6/qml',shell = True)
 
 print('*** Removing unused files ***')
 for root, dirs, files in os.walk('.'):
