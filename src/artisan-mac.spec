@@ -253,66 +253,66 @@ qt_plugin_files = [
     'libqmacstyle.dylib'
 ]
 
-# remove unused Qt frameworks libs (not in Qt_modules_frameworks)
-for subdir, dirs, _files in os.walk('./Artisan.app/Contents/Frameworks/PyQt6/Qt6/lib'):
-    for di in dirs:
-        if di.startswith('Qt') and di.endswith('.framework') and di not in Qt_frameworks:
-            file_path = os.path.join(subdir, di)
-            print(f'rm -rf {file_path}')
-            subprocess.check_call(f'rm -rf {file_path}',shell = True)
-
-## remove unused plugins
-for root, dirs, _ in os.walk('./Artisan.app/Contents/Frameworks/PyQt6/Qt6/plugins'):
-    for d in dirs:
-        if d not in qt_plugin_dirs:
-            print(f'rm -rf {os.path.join(root,d)}')
-            subprocess.check_call('rm -rf ' + os.path.join(root,d),shell = True)
-        else:
-            for subdir, _, files in os.walk(os.path.join(root,d)):
-                for file in files:
-                    if file not in qt_plugin_files:
-                        file_path = os.path.join(subdir, file)
-                        print(f'rm -rf {file_path}')
-                        subprocess.check_call(f'rm -rf {file_path}',shell = True)
-
-subprocess.check_call(r'rm -rf ./Artisan.app/Contents/Frameworks/PyQt6/Qt6/qml',shell = True)
-
-print('*** Removing unused files ***')
-for root, dirs, files in os.walk('.'):
-    for file in files:
-        if 'debug' in file:
-#            print('Deleting', file)
-            os.remove(os.path.join(root,file))
-        elif file.startswith('test_'):
-#            print('Deleting', file)
-            os.remove(os.path.join(root,file))
-        elif file.endswith('.pyc') and file != 'site.pyc' and os.path.isfile(os.path.join(root,file[:-3] + 'pyo')):
-#            print('Deleting', file)
-            os.remove(os.path.join(root,file))
-        # remove also all .h .in .cpp .cc .html files
-        elif file.endswith('.h') and file != 'pyconfig.h':
-#            print('Deleting', file)
-            os.remove(os.path.join(root,file))
-        elif file.endswith('.in'):
-#            print('Deleting', file)
-            os.remove(os.path.join(root,file))
-        elif file.endswith('.cpp'):
-#            print('Deleting', file)
-            os.remove(os.path.join(root,file))
-        elif file.endswith('.cc'):
-#            print('Deleting', file)
-            os.remove(os.path.join(root,file))
-# .afm files should not be removed as without matplotlib will fail on startup
-#        elif file.endswith('.afm'):
-#            print('Deleting', file)
+## remove unused Qt frameworks libs (not in Qt_modules_frameworks)
+#for subdir, dirs, _files in os.walk('./Artisan.app/Contents/Frameworks/PyQt6/Qt6/lib'):
+#    for di in dirs:
+#        if di.startswith('Qt') and di.endswith('.framework') and di not in Qt_frameworks:
+#            file_path = os.path.join(subdir, di)
+#            print(f'rm -rf {file_path}')
+#            subprocess.check_call(f'rm -rf {file_path}',shell = True)
+#
+### remove unused plugins
+#for root, dirs, _ in os.walk('./Artisan.app/Contents/Frameworks/PyQt6/Qt6/plugins'):
+#    for d in dirs:
+#        if d not in qt_plugin_dirs:
+#            print(f'rm -rf {os.path.join(root,d)}')
+#            subprocess.check_call('rm -rf ' + os.path.join(root,d),shell = True)
+#        else:
+#            for subdir, _, files in os.walk(os.path.join(root,d)):
+#                for file in files:
+#                    if file not in qt_plugin_files:
+#                        file_path = os.path.join(subdir, file)
+#                        print(f'rm -rf {file_path}')
+#                        subprocess.check_call(f'rm -rf {file_path}',shell = True)
+#
+#subprocess.check_call(r'rm -rf ./Artisan.app/Contents/Frameworks/PyQt6/Qt6/qml',shell = True)
+#
+#print('*** Removing unused files ***')
+#for root, dirs, files in os.walk('.'):
+#    for file in files:
+#        if 'debug' in file:
+##            print('Deleting', file)
 #            os.remove(os.path.join(root,file))
-    # remove test files
-    for di in dirs:
-        if 'tests' in di:
-            for r,_d,f in os.walk(os.path.join(root,di)):
-                for fl in f:
-#                    print('Deleting', os.path.join(r,fl))
-                    os.remove(os.path.join(r,fl))
+#        elif file.startswith('test_'):
+##            print('Deleting', file)
+#            os.remove(os.path.join(root,file))
+#        elif file.endswith('.pyc') and file != 'site.pyc' and os.path.isfile(os.path.join(root,file[:-3] + 'pyo')):
+##            print('Deleting', file)
+#            os.remove(os.path.join(root,file))
+#        # remove also all .h .in .cpp .cc .html files
+#        elif file.endswith('.h') and file != 'pyconfig.h':
+##            print('Deleting', file)
+#            os.remove(os.path.join(root,file))
+#        elif file.endswith('.in'):
+##            print('Deleting', file)
+#            os.remove(os.path.join(root,file))
+#        elif file.endswith('.cpp'):
+##            print('Deleting', file)
+#            os.remove(os.path.join(root,file))
+#        elif file.endswith('.cc'):
+##            print('Deleting', file)
+#            os.remove(os.path.join(root,file))
+## .afm files should not be removed as without matplotlib will fail on startup
+##        elif file.endswith('.afm'):
+##            print('Deleting', file)
+##            os.remove(os.path.join(root,file))
+#    # remove test files
+#    for di in dirs:
+#        if 'tests' in di:
+#            for r,_d,f in os.walk(os.path.join(root,di)):
+#                for fl in f:
+##                    print('Deleting', os.path.join(r,fl))
+#                    os.remove(os.path.join(r,fl))
 
 
 
