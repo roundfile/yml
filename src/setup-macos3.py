@@ -314,7 +314,7 @@ for qt_dir in [
         'PyQt6/lupdate',
         'PyQt6/uic',
 #        'PyQt6/Qt6/translations', # qt translations are kept and loaded from their standard dir
-#dave        'PyQt6/Qt6/qml',
+        'PyQt6/Qt6/qml',
         'PyQt6/Qt6/qsci',
 #        'PyQt6/Qt6/lib', # comment for the non-Framework variant
     ]:
