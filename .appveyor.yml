@@ -28,10 +28,10 @@ environment:
     appveyor_build_worker_image: Visual Studio 2019
   - job_name: windows
     appveyor_build_worker_image: Visual Studio 2022
-  - job_name: macos
-    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
-  - job_name: linux
-    appveyor_build_worker_image: Ubuntu2204
+#  - job_name: macos
+#    appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
+#  - job_name: linux
+#    appveyor_build_worker_image: Ubuntu2204
 
 
 # Generic build number, later set to commit hash by init
