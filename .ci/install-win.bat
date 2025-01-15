@@ -68,8 +68,7 @@ python -m pip install wheel
 ::
 :: install Artisan required libraries from pip
 ::
-rem python -m pip install -r src\requirements.txt | findstr /v /b "Ignoring"
-python -m pip install -r src\requirements.txt
+python -m pip install -r src\requirements.txt | findstr /v /b "Ignoring"
 
 :: Check that libusb-1.0.dll was installed.  Was missing once on CI with Win11.
 if not exist %PYTHON_PATH%\Lib\site-packages\libusb_package\libusb-1.0.dll (
