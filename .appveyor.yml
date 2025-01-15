@@ -30,6 +30,7 @@ environment:
 #    appveyor_build_worker_image: Visual Studio 2022
   - job_name: macos
     appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
+    stack: python 3.12
 #  - job_name: linux
 #    appveyor_build_worker_image: Ubuntu2204
 
@@ -55,8 +56,8 @@ branches:
   only:
     - master
 
-stack:
-  python ${PYTHON_V}
+#stack:
+#  python ${PYTHON_V}
 
 for:
 -
