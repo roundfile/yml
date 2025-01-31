@@ -294,6 +294,9 @@ for:
     - chmod +x src/*.sh
     - cd src
 
+    # Enable pause for ssh
+    - sh: export APPVEYOR_SSH_BLOCK=true
+
     # run the build scripts
     - ./build-linux.sh
     - ./build-linux-pkg.sh
