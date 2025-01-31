@@ -145,6 +145,7 @@ for qtlib in $(find dist/_internal/PyQt6/Qt6/lib -type f -name "libQt6*.so.*"); 
         fi
     done
     if [ $match = 0 ]; then
+        echo "**Deleting ${qtlib}"
         rm -f ${qtlib}
     fi
 done
