@@ -36,7 +36,7 @@ _log: Final[logging.Logger] = logging.getLogger(__name__)
 class PID:
 
     __slots__ = [ 'pidSemaphore', 'outMin', 'outMax', 'dutySteps', 'dutyMin', 'dutyMax', 'control', 'Kp',
-            'Ki', 'Kd', 'pOnE', 'Pterm', 'errSum', 'Iterm', 'lastError', 'lastInput', 'lastOutput', 'lastTime',
+            'Ki', 'Kd', 'Pterm', 'errSum', 'Iterm', 'lastError', 'lastInput', 'lastOutput', 'lastTime',
             'lastDerr', 'target', 'active', 'derivative_on_error', 'output_smoothing_factor', 'output_decay_weights',
             'previous_outputs', 'input_smoothing_factor', 'input_decay_weights', 'previous_inputs', 'force_duty', 'iterations_since_duty',
             'derivative_filter_level', 'derivative_filter' ]
@@ -54,7 +54,6 @@ class PID:
         self.Ki:float = i
         self.Kd:float = d
         # Proposional on Measurement mode see: http://brettbeauregard.com/blog/2017/06/introducing-proportional-on-measurement/
-        self.pOnE:bool = True # True for Proposional on Error mode, False for Proposional on Measurement Mode
         self.Pterm:float = 0.0
         self.errSum:float = 0.0
         self.Iterm:float = 0.0
@@ -77,7 +76,7 @@ class PID:
         self.force_duty:int = 3 # at least every n update cycles a new duty value is send, even if its duplicating a previous duty (within the duty step)
         self.iterations_since_duty:int = 0 # reset once a duty is send; incremented on every update cycle
         # PID derivative smoothing
-        self.derivative_filter_level: int = 0 # 0: off, 1: on
+        self.derivative_filter_level: int = 0 # 0: off, >0: on
         self.derivative_filter:LiveSosFilter = self.derivativeFilter()
 
     def _smooth_output(self,output:float) -> float:
@@ -137,6 +136,7 @@ class PID:
 
     # update control value (the pid loop is running even if PID is inactive, just the control function is only called if active)
     def update(self, i:Optional[float]) -> None:
+        _log.debug('update(%s)',i)
         try:
             if i == -1 or i is None:
                 # reject error values
@@ -177,10 +177,7 @@ class PID:
                 self.Iterm = max(self.outMin,min(self.outMax,self.Iterm))
 
                 # compute P-Term
-                if self.pOnE:
-                    self.Pterm = self.Kp * err
-                else:
-                    self.Pterm = self.Pterm -self.Kp * dinput
+                self.Pterm = self.Kp * err
 
                 # compute D-Term
                 D:float
@@ -201,6 +198,8 @@ class PID:
                 elif output < self.outMin:
                     output = self.outMin
 
+                _log.debug('P: %s, I: %s, D: %s => output: %s', self.Pterm, self.Iterm, D, output)
+
                 int_output = int(round(min(self.dutyMax,max(self.dutyMin,output))))
                 if self.lastOutput is None or self.iterations_since_duty >= self.force_duty or int_output >= self.lastOutput + self.dutySteps or int_output <= self.lastOutput - self.dutySteps:
                     if self.active:
@@ -216,18 +215,14 @@ class PID:
 
     # bring the PID to its initial state (to be called externally)
     def reset(self) -> None:
-        try:
-            self.pidSemaphore.acquire(1)
-            self.init()
-            self.Iterm = 0.0
-        finally:
-            if self.pidSemaphore.available() < 1:
-                self.pidSemaphore.release(1)
+        self.init()
 
     # re-initalize the PID on restarting it after a temporary off state
     def init(self) -> None:
         try:
             self.pidSemaphore.acquire(1)
+            # reset the derivative filter on each filter level change (also on PID ON)
+            self.derivative_filter = self.derivativeFilter()
             self.errSum = 0.0
             self.lastError = 0.0
             self.lastInput = 0.0
@@ -269,16 +264,16 @@ class PID:
             if self.pidSemaphore.available() < 1:
                 self.pidSemaphore.release(1)
 
-    def setPID(self, p:float, i:float, d:float, pOnE:bool = True) -> None:
+    def setPID(self, p:float, i:float, d:float) -> None:
         try:
             self.pidSemaphore.acquire(1)
             self.Kp = max(p,0)
             self.Ki = max(i,0)
             self.Kd = max(d,0)
-            self.pOnE = pOnE
         finally:
             if self.pidSemaphore.available() < 1:
                 self.pidSemaphore.release(1)
+        self.reset()
 
     def setLimits(self, outMin:int, outMax:int) -> None:
         try:

@@ -77,7 +77,7 @@ signal.signal(signal.SIGINT, signal.SIG_DFL)
 import zlib
 import logging.config
 from yaml import safe_load as yaml_load
-from typing import Final, Optional, Mapping, List, Dict, Tuple, Union, cast, Any, Callable, TYPE_CHECKING  #for Python >= 3.9: can remove 'List' since type hints can now use the generic 'list'
+from typing import Final, Optional, List, Dict, Tuple, Union, cast, Any, Callable, TYPE_CHECKING  #for Python >= 3.9: can remove 'List' since type hints can now use the generic 'list'
 
 from functools import reduce as freduce
 
@@ -671,31 +671,39 @@ try:
         logging.config.dictConfig(conf)
 except Exception: # pylint: disable=broad-except
     pass
-class FilteredLogger(logging.Logger):
 
-    def __init__(self, name:str, level:Any=logging.NOTSET) -> None:
-        super().__init__(name, level)
+# returns False if message is duplicate and should be suppressed from log output
+# only directly repeated messages will be filtered (maximal 10 times)
+# DEBUG messages will never be filtered
+class DuplicateFilter(logging.Filter):
+    def __init__(self) -> None:
+        super().__init__()
         self._message_lockup: Dict[int,int] = {}
 
-    def _log(self, level:int, msg:Any, args:Any, exc_info:Any=None, extra:Optional[Mapping[str, object]]=None,
-            stack_info:bool=False, stacklevel: int = 1) -> None:
-# don't change signature for typing, but fix to log_interval=10
-#            log_interval:Optional[int]=None) -> None:
-#        if log_interval is None or log_interval == 1:
-#            super()._log(level, msg, args, exc_info, extra, stack_info, stacklevel)
-#        else:
-        log_interval = 10
-        message_Id = zlib.crc32(msg.encode('utf-8'))
-        if message_Id not in self._message_lockup:
-            self._message_lockup[message_Id] = 0
-            super()._log(level, msg, args, exc_info, extra, stack_info, stacklevel)
-        elif self._message_lockup[message_Id] % log_interval == 0:
-            msg += f' -- Suppressed {log_interval} equal messages'
-            super()._log(level, msg, args, exc_info, extra, stack_info, stacklevel)
-        self._message_lockup[message_Id] += 1
-logging.setLoggerClass(FilteredLogger)
+    def filter(self, record:logging.LogRecord) -> bool:
+        try:
+            if logging.getLogger(record.name).isEnabledFor(logging.DEBUG): # don't filter anything in DEBUG mode
+                return True
+            log_interval:int = 10
+            message_Id = zlib.crc32(str(record.getMessage()).encode('utf-8'))
+            if message_Id not in self._message_lockup:
+                self._message_lockup = {} # clear all other "remembered" messages thus remove only directly repeated messages
+                self._message_lockup[message_Id] = 0
+                return True
+            self._message_lockup[message_Id] += 1
+            if self._message_lockup[message_Id] % log_interval == 0:
+                self._message_lockup[message_Id] = 0
+                return True
+            return False
+        except Exception: # pylint: disable=broad-except
+            return True
+for handler in logging.root.handlers:
+    handler.addFilter(DuplicateFilter())
+
 
 _log: Final[logging.Logger] = logging.getLogger(__name__)
+
+
 
 if multiprocessing.current_process().name == 'MainProcess':
     _log.info(
@@ -4182,7 +4190,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         QTimer.singleShot(2000,self.donate)
 
         QTimer.singleShot(0, self.logStartupTime)
-        QTimer.singleShot(200, self.updateBadge)
+        QTimer.singleShot(500, self.updateBadge)
 
         self.zoomInShortcut = QShortcut(QKeySequence.StandardKey.ZoomIn, self)
         self.zoomInShortcut.activated.connect(self.zoomIn)
@@ -5560,6 +5568,12 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                                         self.qmc.loadevent_zeropcts_setup = [int(lzp) for lzp in ratings['loadevent_zeropcts']]
                                     if 'loadevent_hundpcts' in ratings and len(ratings['loadevent_hundpcts']) == 4:
                                         self.qmc.loadevent_hundpcts_setup = [int(lhp) for lhp in ratings['loadevent_hundpcts']]
+                                    if 'meterlabels' in ratings and len(ratings['meterlabels']) == 2:
+                                        self.qmc.meterlabels_setup = [str(ml) for ml in ratings['meterlabels']]
+                                    if 'meterunits' in ratings and len(ratings['meterunits']) == 2:
+                                        self.qmc.meterunits_setup = [int(mu) for mu in ratings['meterunits']]
+                                    if 'metersources' in ratings and len(ratings['metersources']) == 4:
+                                        self.qmc.metersources_setup = [int(ms) for ms in ratings['metersources']]
                                     if 'preheatDuration' in ratings and len(ratings['preheatenergies']) == 1:
                                         self.qmc.preheatDuration_setup = int(ratings['preheatDuration'][0])
                                     if 'preheatenergies' in ratings and len(ratings['preheatenergies']) == 4:
@@ -9081,7 +9095,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                                         # 2. call setpid(self,k) with k that active pid
                                         self.fujipid.setpidPXF(N,kp,ki,kd)
                             else:
-                                self.pidcontrol.confPID(kp,ki,kd,pOnE=self.pidcontrol.pOnE)
+                                self.pidcontrol.confPID(kp,ki,kd)
                                 #self.pidcontrol.setPID(kp,ki,kd) # we don't set the new values in the dialog
                 elif action == 12: # Fuji Command (currently only "write(<unitId>,<register>,<value>)" is supported
                     if cmd_str:
@@ -9813,7 +9827,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                                                     self.fujipid.setpidPXF(N,kp,ki,kd)
                                                     self.sendmessage(f'Artisan Command: {cs}')
                                         else:
-                                            self.pidcontrol.confPID(kp,ki,kd,pOnE=self.pidcontrol.pOnE)
+                                            self.pidcontrol.confPID(kp,ki,kd)
                                             self.sendmessage(f'Artisan Command: {cs}')
                                 except Exception as e: # pylint: disable=broad-except
                                     _log.exception(e)
@@ -9869,7 +9883,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                                         kp = self.pidcontrol.pidKp
                                         ki = self.pidcontrol.pidKi
                                         kd = self.pidcontrol.pidKd
-                                        self.pidcontrol.confPID(kp,ki,kd,pOnE=self.pidcontrol.pOnE,source=source)
+                                        self.pidcontrol.confPID(kp,ki,kd,source=source)
                                         self.sendmessage(f'Artisan Command: {cs}')
                                 except Exception as e: # pylint: disable=broad-except
                                     _log.exception(e)
@@ -12016,7 +12030,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 ('volumegain',drop_trailing_zero(f"{cp['volume_gain']}") if 'volume_gain' in cp else '0'),
                 ('densityloss',drop_trailing_zero(density_loss)),
                 ('moistureloss',drop_trailing_zero(f"{cp['moisture_loss']}") if 'moisture_loss' in cp else '0'),
-                ('weightunits',self.qmc.weight[2]),
+                ('weightunits',self.qmc.weight[2].lower()),
                 ('weight',drop_trailing_zero(f'{self.qmc.weight[0]}')),
                 ('volumeunits',self.qmc.volume[2]),
                 ('volume',drop_trailing_zero(f'{self.qmc.volume[0]}')),
@@ -12724,8 +12738,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 self.pidcontrol.pidKd = float(profile['pidKd'])
             if 'pidSource' in profile:
                 self.pidcontrol.pidSource = int(profile['pidSource'])
-            if 'pOnE' in profile:
-                self.pidcontrol.pOnE = bool(profile['pOnE'])
             if 'svLookahead' in profile:
                 self.pidcontrol.svLookahead = int(profile['svLookahead'])
         except Exception as e: # pylint: disable=broad-except
@@ -12765,6 +12777,14 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.qmc.loadevent_zeropcts = [int(x) for x in profile['loadevent_zeropcts']]
         if 'loadevent_hundpcts' in profile:
             self.qmc.loadevent_hundpcts = [int(x) for x in profile['loadevent_hundpcts']]
+        if 'meterlabels' in profile:
+            self.qmc.meterlabels = [str(x) for x in profile['meterlabels']]
+        if 'meterunits' in profile:
+            self.qmc.meterunits = [int(x) for x in profile['meterunits']]
+        if 'metersources' in profile:
+            self.qmc.metersources = [int(x) for x in profile['metersources']]
+        if 'meterreads' in profile:
+            self.qmc.meterreads = profile['meterreads']
         if 'preheatDuration' in profile:
             self.qmc.preheatDuration = profile['preheatDuration']
         if 'preheatenergies' in profile:
@@ -16121,7 +16141,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             profile['pidKi'] = self.pidcontrol.pidKi
             profile['pidKd'] = self.pidcontrol.pidKd
             profile['pidSource'] = self.pidcontrol.pidSource
-            profile['pOnE'] = self.pidcontrol.pOnE
             profile['svLookahead'] = self.pidcontrol.svLookahead
             try:
                 ds = list(self.qmc.extradevices)
@@ -16153,6 +16172,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 profile['presssure_percents'] = self.qmc.presssure_percents
                 profile['loadevent_zeropcts'] = self.qmc.loadevent_zeropcts
                 profile['loadevent_hundpcts'] = self.qmc.loadevent_hundpcts
+                profile['meterlabels'] = self.qmc.meterlabels
+                profile['meterunits'] = self.qmc.meterunits
+                profile['metersources'] = self.qmc.metersources
+                profile['meterreads'] = self.qmc.meterreads
                 profile['preheatDuration'] = self.qmc.preheatDuration
                 profile['preheatenergies'] = self.qmc.preheatenergies
                 profile['betweenbatchDuration'] = self.qmc.betweenbatchDuration
@@ -17288,7 +17311,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 self.modbus.inputFloatsAsInt[i] = toBool(settings.value(f'input{i+1}FloatsAsInt',self.modbus.inputFloatsAsInt[i]))
                 self.modbus.inputBCDsAsInt[i] = toBool(settings.value(f'input{i+1}BCDsAsInt',self.modbus.inputBCDsAsInt[i]))
                 self.modbus.inputSigned[i] = toBool(settings.value(f'input{i+1}Signed',self.modbus.inputSigned[i]))
-            self.modbus.byteorderLittle = toBool(settings.value('littleEndianFloats',self.modbus.byteorderLittle))
             self.modbus.wordorderLittle = toBool(settings.value('wordorderLittle',self.modbus.wordorderLittle))
             self.modbus.optimizer = toBool(settings.value('optimizer',self.modbus.optimizer))
             self.modbus.fetch_max_blocks = toBool(settings.value('fetch_max_blocks',self.modbus.fetch_max_blocks))
@@ -17441,7 +17463,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.pidcontrol.pidPositiveTarget = toInt(settings.value('pidPositiveTarget',self.pidcontrol.pidPositiveTarget))
             self.pidcontrol.pidNegativeTarget = toInt(settings.value('pidNegativeTarget',self.pidcontrol.pidNegativeTarget))
             self.pidcontrol.invertControl = toBool(settings.value('invertControl',self.pidcontrol.invertControl))
-            self.pidcontrol.pOnE = toBool(settings.value('pOnE',self.pidcontrol.pOnE))
 
             for n in range(self.pidcontrol.RSLen):
                 svLabelLabel = 'RS_svLabel'+str(n)
@@ -17664,6 +17685,9 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.qmc.presssure_percents_setup = [toBool(x) for x in toList(settings.value('presssure_percents_setup', self.qmc.presssure_percents_setup))]
             self.qmc.loadevent_zeropcts_setup = [toInt(x) for x in toList(settings.value('loadevent_zeropcts_setup', self.qmc.loadevent_zeropcts_setup))]
             self.qmc.loadevent_hundpcts_setup = [toInt(x) for x in toList(settings.value('loadevent_hundpcts_setup', self.qmc.loadevent_hundpcts_setup))]
+            self.qmc.meterlabels_setup = [toString(x) for x in toList(settings.value('meterlabels_setup', self.qmc.meterlabels_setup))]
+            self.qmc.meterunits_setup = [toInt(x) for x in toList(settings.value('meterunits_setup', self.qmc.meterunits_setup))]
+            self.qmc.metersources_setup = [toInt(x) for x in toList(settings.value('metersources_setup', self.qmc.metersources_setup))]
             self.qmc.preheatDuration_setup = toInt(settings.value('preheatDuration_setup',self.qmc.preheatDuration_setup))
             self.qmc.preheatenergies_setup = [toFloat(x) for x in toList(settings.value('preheatenergies_setup', self.qmc.preheatenergies_setup))]
             self.qmc.betweenbatchDuration_setup = toInt(settings.value('betweenbatchDuration_setup',self.qmc.betweenbatchDuration_setup))
@@ -19030,7 +19054,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.settingsSetValue(settings, default_settings, 'PIDmultiplier',self.modbus.PIDmultiplier, read_defaults)
             self.settingsSetValue(settings, default_settings, 'SVmultiplier',self.modbus.SVmultiplier, read_defaults)
             self.settingsSetValue(settings, default_settings, 'SVwriteLong',self.modbus.SVwriteLong, read_defaults)
-            self.settingsSetValue(settings, default_settings, 'littleEndianFloats',self.modbus.byteorderLittle, read_defaults)
             self.settingsSetValue(settings, default_settings, 'wordorderLittle',self.modbus.wordorderLittle, read_defaults)
             self.settingsSetValue(settings, default_settings, 'optimizer',self.modbus.optimizer, read_defaults)
             self.settingsSetValue(settings, default_settings, 'fetch_max_blocks',self.modbus.fetch_max_blocks, read_defaults)
@@ -19109,7 +19132,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.settingsSetValue(settings, default_settings, 'pidPositiveTarget',self.pidcontrol.pidPositiveTarget, read_defaults)
             self.settingsSetValue(settings, default_settings, 'pidNegativeTarget',self.pidcontrol.pidNegativeTarget, read_defaults)
             self.settingsSetValue(settings, default_settings, 'invertControl',self.pidcontrol.invertControl, read_defaults)
-            self.settingsSetValue(settings, default_settings, 'pOnE',self.pidcontrol.pOnE, read_defaults)
             for n in range(self.pidcontrol.RSLen):
                 self.settingsSetValue(settings, default_settings, 'RS_svLabel'+str(n),self.pidcontrol.RS_svLabels[n], read_defaults)
                 self.settingsSetValue(settings, default_settings, 'RS_svValues'+str(n),self.pidcontrol.RS_svValues[n], read_defaults)
@@ -19281,6 +19303,9 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.settingsSetValue(settings, default_settings, 'presssure_percents_setup',self.qmc.presssure_percents_setup, read_defaults)
             self.settingsSetValue(settings, default_settings, 'loadevent_zeropcts_setup',self.qmc.loadevent_zeropcts_setup, read_defaults)
             self.settingsSetValue(settings, default_settings, 'loadevent_hundpcts_setup',self.qmc.loadevent_hundpcts_setup, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'meterlabels_setup',self.qmc.meterlabels_setup, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'meterunits_setup',self.qmc.meterunits_setup, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'metersources_setup',self.qmc.metersources_setup, read_defaults)
             self.settingsSetValue(settings, default_settings, 'preheatDuration_setup',self.qmc.preheatDuration_setup, read_defaults)
             self.settingsSetValue(settings, default_settings, 'preheatenergies_setup',self.qmc.preheatenergies_setup, read_defaults)
             self.settingsSetValue(settings, default_settings, 'betweenbatchDuration_setup',self.qmc.betweenbatchDuration_setup, read_defaults)
@@ -20556,7 +20581,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             if 'AUC' in comp:
                 res['AUC'] = comp['AUC']
             if 'BTU_batch' in comp:
-                res['energy'] = self.qmc.convertHeat(comp['BTU_batch'],0,3)
+                res['energy'] = self.qmc.convertHeat(comp['BTU_batch'],'BTU','kWh')
             if 'CO2_batch' in comp:
                 res['co2'] = comp['CO2_batch']
             if 'CO2_batch_per_green_kg' in comp:
@@ -22076,7 +22101,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             else:
                 color = '--'
             if 'BTU_batch' in cp and cp['BTU_batch']:
-                energy = f"{self.qmc.convertHeat(cp['BTU_batch'],0,3):.1f}kWh"
+                energy = f"{self.qmc.convertHeat(cp['BTU_batch'],'BTU','kWh'):.1f}kWh"
             else:
                 energy = '--'
             if 'CO2_batch' in cp and cp['CO2_batch']:
@@ -23092,7 +23117,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.modbus.SVmultiplier = dialog.modbus_SVmultiplier.currentIndex()
             self.modbus.SVwriteLong = bool(dialog.modbus_SVwriteLong.isChecked())
             self.modbus.PIDmultiplier = dialog.modbus_PIDmultiplier.currentIndex()
-            self.modbus.byteorderLittle = bool(dialog.modbus_littleEndianBytes.isChecked())
             self.modbus.wordorderLittle = bool(dialog.modbus_littleEndianWords.isChecked())
             self.modbus.optimizer = bool(dialog.modbus_optimize.isChecked())
             self.modbus.fetch_max_blocks = bool(dialog.modbus_full_block.isChecked())
@@ -23908,7 +23932,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
     @pyqtSlot()
     @pyqtSlot(bool)
     def editgraph(self, _:bool = False) -> None:
-        if self.editgraphdialog is not False: # Roast Properties dialog is not blocked!
+        if self.editgraphdialog is not False and self.editgraphdialog is None: # Roast Properties dialog is not blocked!
             from artisanlib.roast_properties import editGraphDlg
             self.editgraphdialog = editGraphDlg(self,self,self.editGraphDlg_activeTab)
             self.editgraphdialog.show()

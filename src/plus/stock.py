@@ -383,8 +383,9 @@ def renderAmount(amount:float, default_unit:Optional[CoffeeUnit]=None, target_un
     # if we could not convert to default_unit type,
     # we convert to the weightunit
     if not res:
-        # we convert the amount from Kg to the target_unit
-        res = render_weight(amount, 1, target_unit_idx)
+        # we convert the amount from kg to the target_unit
+        # brief=2: we render with kg with only 1 decimal instead of 3 (potentially losing precision)
+        res = render_weight(amount, 1, target_unit_idx, brief=2)
     return res
 
 
@@ -1022,7 +1023,7 @@ def blend2beans(blend:BlendStructure, weight_unit_idx:int, weightIn:float=0) -> 
             c = getBlendCoffeeLabelDict(blend)[i['coffee']]
             w = ''
             if weightIn:
-                w = f"{render_weight(i['ratio'] * weightIn,weight_unit_idx,weight_unit_idx)} " # @UndefinedVariable
+                w = f"{render_weight(i['ratio'] * weightIn,weight_unit_idx,weight_unit_idx,smart_unit_upgrade=False)} " # @UndefinedVariable
             ratio = f"{int(round(i['ratio'] * 100))}% "
             res.append(f'{ratio}{w}{c}')
     except Exception as e:  # pylint: disable=broad-except
@@ -1571,7 +1572,7 @@ def getBlends(weight_unit_idx:int, store:Optional[str] = None, customBlend:Optio
                             if loc_amount_str == '':
                                 label = blend['label']
                             else:
-                                label = f"{blend['label']} ({loc_amount_str})"
+                                label = f"{blend['label']} [{loc_amount_str}]"
                             # we filter all items from replacementBlends with
                             # empty amount and the first original blend
                             replacementBlends = [
