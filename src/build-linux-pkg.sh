@@ -44,9 +44,12 @@ fakeroot chown -R root:root debian
 fakeroot chmod -R go-w debian
 
 # Pause Build Here For SSH Access
-_user="$(id -u -n)"
-echo "User name : $_user"
-if [ ! -z $APPVEYOR_SSH_BLOCK ]; then if $APPVEYOR_SSH_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi;fi
+#_user="$(id -u -n)"
+#echo "User name : $_user"
+#if [ ! -z $APPVEYOR_SSH_BLOCK ]; then if $APPVEYOR_SSH_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi;fi
+
+# Find and delete dangling symbolic links
+find "debian/usr/share/artisan/_internal/" -type l -name "*.so*" ! -exec test -e {} \; -delete
 
 fakeroot chmod 0644 debian/usr/share/artisan/_internal/*.so* || true
 fakeroot chmod +x debian/usr/bin/artisan
