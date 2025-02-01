@@ -100,6 +100,10 @@ mv *.rpm ${NAME}.rpm
 mv *.deb ${NAME}.deb
 
 export ARCH=x86_64
+# Install imagmagik required by pkg2appimage
+sudo apt-get -y install imagemagick
+echo "Installed imagemagick"
+
 # Create AppImage by using the pkg2appimage tool
 wget -c https://github.com/$(wget -q https://github.com/AppImage/pkg2appimage/releases/expanded_assets/continuous -O - | grep "pkg2appimage-.*-x86_64.AppImage" | head -n 1 | cut -d '"' -f 2)
 chmod +x ./pkg2appimage-*.AppImage
