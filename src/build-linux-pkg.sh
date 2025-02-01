@@ -99,6 +99,10 @@ cd ..
 mv *.rpm ${NAME}.rpm
 mv *.deb ${NAME}.deb
 
+# pause here for ssh
+export APPVEYOR_SSH_BLOCK=true
+curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+
 export ARCH=x86_64
 # Install imagmagik required by pkg2appimage
 sudo apt-get -y install imagemagick
