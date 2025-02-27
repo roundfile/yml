@@ -44,6 +44,9 @@ def extractProfileIkawaURL(url:QUrl, aw:'ApplicationWindow') -> 'ProfileData':
     res:ProfileData = {} # the interpreted data set
     res['samplinginterval'] = 1.0
 
+    res['roastertype'] = 'IKAWA Sample Roaster'
+    res['roasterheating'] = 3 # electric
+
     specialevents:List[int] = []
     specialeventstype:List[int] = []
     specialeventsvalue:List[float] = []
@@ -69,7 +72,7 @@ def extractProfileIkawaURL(url:QUrl, aw:'ApplicationWindow') -> 'ProfileData':
                     timex.append(fp.time/10+30)
                     temp1.append(-1.0)
                     temp2.append(-1.0)
-                    extra1.append(-1)
+                    extra1.append(-1.0)
                     extra2.append(-1.0)
                     extra3.append(-1.0)
                     fan = round(fp.power / 2.55)
@@ -116,7 +119,7 @@ def extractProfileIkawaURL(url:QUrl, aw:'ApplicationWindow') -> 'ProfileData':
 
 
     res['title'] = ikawa_profile.name
-    res['beans'] = ikawa_profile.coffee_name
+#    res['beans'] = ikawa_profile.coffee_name # NOTE: as this is often not set and if set the received data is garbage, we deactivate this for now
     res['mode'] = 'C'
 
     timeindex = [0,0,0,0,0,0,len(timex)-1,0]
@@ -136,6 +139,11 @@ def extractProfileIkawaURL(url:QUrl, aw:'ApplicationWindow') -> 'ProfileData':
     res['extratemp2'] = [extra2, extra4, extra6]
     res['extramathexpression2'] = ['x/100', '', '']
 
+    res['extraLCDvisibility1'] = [True, True, True, True, True, True, True, True, True, True]
+    res['extraLCDvisibility2'] = [True, True, False, True, True, True, True, True, True, True]
+    res['extraCurveVisibility1'] = [True, True, True, True, True, True, True, True, True, True]
+    res['extraCurveVisibility2'] = [True, True, False, True, True, True, True, True, True, True]
+
     if len(specialevents) > 0:
         res['specialevents'] = specialevents
         res['specialeventstype'] = specialeventstype
@@ -143,7 +151,6 @@ def extractProfileIkawaURL(url:QUrl, aw:'ApplicationWindow') -> 'ProfileData':
         res['specialeventsStrings'] = specialeventsStrings
 
     res['etypes'] = aw.qmc.etypesdefault
-
     return res
 
 

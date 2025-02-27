@@ -21,13 +21,13 @@ import logging
 try:
     from PyQt6.QtCore import Qt, QEvent, QSettings, pyqtSlot # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtWidgets import (QApplication, QWidget, QDialog, QMessageBox, QDialogButtonBox, QTextEdit,  # @UnusedImport @Reimport  @UnresolvedImport
-                QHBoxLayout, QVBoxLayout, QLabel, QLineEdit)  # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt6.QtGui import QKeySequence, QAction  # @UnusedImport @Reimport  @UnresolvedImport
+                QHBoxLayout, QVBoxLayout, QLabel, QLineEdit, QLayout)  # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt6.QtGui import QKeySequence, QAction, QIntValidator  # @UnusedImport @Reimport  @UnresolvedImport
 except ImportError:
     from PyQt5.QtCore import Qt, QEvent, QSettings, pyqtSlot # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QApplication, QWidget, QAction, QDialog, QMessageBox, QDialogButtonBox, QTextEdit, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
-                QHBoxLayout, QVBoxLayout, QLabel, QLineEdit) # @UnusedImport @Reimport  @UnresolvedImport
-    from PyQt5.QtGui import QKeySequence # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
+                QHBoxLayout, QVBoxLayout, QLabel, QLineEdit, QLayout) # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt5.QtGui import QKeySequence, QIntValidator # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
 from artisanlib.widgets import MyQComboBox
 
@@ -347,8 +347,10 @@ class PortComboBox(MyQComboBox):  # pyright: ignore [reportGeneralTypeIssues] # 
             # on older versions of pyserial list_ports.comports() returned a list of tuples (port, desc, hwid), current versions return a list of ListPortInfo objects
             comports = [(cp.device, cp.product, 'n/a') for cp in serial.tools.list_ports.comports()]
             if platform.system() == 'Darwin':
-                self.ports = [p for p in comports if (p[0] not in ['/dev/cu.Bluetooth-PDA-Sync',
-                    '/dev/cu.Bluetooth-Modem','/dev/tty.Bluetooth-PDA-Sync','/dev/tty.Bluetooth-Modem','/dev/cu.Bluetooth-Incoming-Port','/dev/tty.Bluetooth-Incoming-Port'])]
+                self.ports = [p for p in comports if (p[0] not in ['/dev/cu.Bluetooth-PDA-Sync', '/dev/cu.debug-console', '/dev/cu.wlan-debug',
+                    '/dev/cu.Bluetooth-Modem','/dev/tty.Bluetooth-PDA-Sync','/dev/tty.Bluetooth-Modem',
+                    '/dev/cu.Bluetooth-Incoming-Port', '/dev/tty.Bluetooth-Incoming-Port'
+                    ])]
             else:
                 self.ports = list(comports)
             if self.selection is not None and self.selection not in [p[0] for p in self.ports]:
@@ -401,3 +403,48 @@ class ArtisanPortsDialog(ArtisanDialog):
     def accept(self) -> None:
         self.idx = self.comboBox.currentIndex()
         QDialog.accept(self)
+
+class ArtisanSliderLCDinputDlg(ArtisanDialog):
+
+    def __init__(self, parent:QWidget, aw:'ApplicationWindow', value:int, value_min:int, value_max:int, title:Optional[str] = None) -> None:
+        super().__init__(parent, aw)
+        self.value:Optional[int] = None
+        if title is None:
+            title = ''
+        self.setWindowTitle(title)
+
+        # connect the ArtisanDialog standard OK/Cancel buttons
+        self.dialogbuttons.accepted.connect(self.accept)
+        self.dialogbuttons.rejected.connect(self.reject)
+
+        self.label = QLabel(title)
+
+        self.valueEdit = QLineEdit(str(value))
+        self.valueEdit.setFixedWidth(50)
+        self.valueEdit.setAlignment(Qt.AlignmentFlag.AlignRight)
+        self.valueEdit.setValidator(QIntValidator(value_min, value_max, self.valueEdit))
+        self.valueEdit.selectAll()
+        self.valueEdit.setFocus()
+
+        valueLayout = QHBoxLayout()
+        valueLayout.addStretch()
+        valueLayout.addWidget(self.label)
+        valueLayout.addWidget(self.valueEdit)
+        valueLayout.addStretch()
+
+        buttonsLayout = QHBoxLayout()
+        buttonsLayout.addStretch()
+        buttonsLayout.addWidget(self.dialogbuttons)
+
+        mainLayout = QVBoxLayout()
+        mainLayout.addStretch()
+        mainLayout.addLayout(valueLayout)
+        mainLayout.addStretch()
+        mainLayout.addLayout(buttonsLayout)
+        mainLayout.setSizeConstraint(QLayout.SizeConstraint.SetFixedSize)
+        self.setLayout(mainLayout)
+
+    @pyqtSlot()
+    def accept(self) -> None:
+        self.value = int(self.valueEdit.text())
+        super().accept()

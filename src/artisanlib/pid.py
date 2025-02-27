@@ -136,7 +136,7 @@ class PID:
 
     # update control value (the pid loop is running even if PID is inactive, just the control function is only called if active)
     def update(self, i:Optional[float]) -> None:
-        _log.debug('update(%s)',i)
+#        _log.debug('update(%s)',i)
         try:
             if i == -1 or i is None:
                 # reject error values
@@ -198,7 +198,7 @@ class PID:
                 elif output < self.outMin:
                     output = self.outMin
 
-                _log.debug('P: %s, I: %s, D: %s => output: %s', self.Pterm, self.Iterm, D, output)
+#                _log.debug('P: %s, I: %s, D: %s => output: %s', self.Pterm, self.Iterm, D, output)
 
                 int_output = int(round(min(self.dutyMax,max(self.dutyMin,output))))
                 if self.lastOutput is None or self.iterations_since_duty >= self.force_duty or int_output >= self.lastOutput + self.dutySteps or int_output <= self.lastOutput - self.dutySteps:
@@ -273,7 +273,6 @@ class PID:
         finally:
             if self.pidSemaphore.available() < 1:
                 self.pidSemaphore.release(1)
-        self.reset()
 
     def setLimits(self, outMin:int, outMax:int) -> None:
         try:
@@ -320,7 +319,7 @@ class PID:
         try:
             self.pidSemaphore.acquire(1)
             if self.lastOutput is not None:
-                return int(round(min(self.dutyMax,max(self.dutyMin,self.lastOutput))))
+                return min(self.dutyMax,max(self.dutyMin,self.lastOutput))
             return None
         finally:
             if self.pidSemaphore.available() < 1:

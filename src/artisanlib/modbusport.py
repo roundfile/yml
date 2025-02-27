@@ -101,7 +101,7 @@ class modbusport:
         'timeout', 'IP_timeout', 'IP_retries', 'serial_readRetries', 'PID_slave_ID', 'PID_SV_register', 'PID_p_register', 'PID_i_register', 'PID_d_register', 'PID_ON_action', 'PID_OFF_action',
         'channels', 'inputSlaves', 'inputRegisters', 'inputFloats', 'inputBCDs', 'inputFloatsAsInt', 'inputBCDsAsInt', 'inputSigned', 'inputCodes', 'inputDivs',
         'inputModes', 'optimizer', 'fetch_max_blocks', 'fail_on_cache_miss', 'disconnect_on_error', 'acceptable_errors', 'activeRegisters',
-        'readingsCache', 'SVmultiplier', 'PIDmultiplier', 'SVwriteLong',
+        'readingsCache', 'SVmultiplier', 'PIDmultiplier', 'SVwriteLong', 'SVwriteFloat',
         'wordorderLittle', '_asyncLoopThread', '_client', 'COMsemaphore', 'default_host', 'host', 'port', 'type', 'lastReadResult', 'commError' ]
 
     def __init__(self, aw:'ApplicationWindow') -> None:
@@ -168,7 +168,8 @@ class modbusport:
         self.readingsCache:Dict[int, Dict[int, Dict[int, int]]] = {}
 
         self.SVmultiplier:int = 0  # 0:no, 1:10x, 2:100x # Literal[0,1,2]
-        self.SVwriteLong:bool = False # if True use self.writeLong() to update the SV, otherwise self.writeRegister()
+        self.SVwriteLong:bool = False # if True (and SVwriteFloat is False)  use self.writeLong() to update the SV, otherwise self.writeRegister() or self.writeWord()
+        self.SVwriteFloat:bool = False # if True use self.writeWord() to update the SV, otherwise self.writeRegister() or self.writeLong()
         self.PIDmultiplier:int = 0  # 0:no, 1:10x, 2:100x # :Literal[0,1,2]
         self.wordorderLittle:bool = True
 
@@ -632,7 +633,7 @@ class modbusport:
                 asyncio.run_coroutine_threadsafe(self._client.write_register(int(register),int(round(value)),slave=int(slave)), self._asyncLoopThread.loop).result()
 #                time.sleep(.03) # avoid possible hickups on startup
         except Exception as ex: # pylint: disable=broad-except
-            _log.info('writeSingleRegister(%d,%d,%s) failed', slave, register, value)
+            _log.info('writeSingleRegister(%d,%d,%s) failed', slave, register, int(round(value)))
             _log.debug(ex)
             self.disconnectOnError()
             _, _, exc_tb = sys.exc_info()
@@ -684,8 +685,8 @@ class modbusport:
         self.writeSingleRegister(slave,register,int(new_val))
 
     # function 16 (Write Multiple Holding Registers)
-    # values is a list of integers or one integer
-    def writeRegisters(self, slave:int, register:int, values:Union[List[int], int]) -> None:
+    # values is a list of integers or one integer (given floats are rounded to integers
+    def writeRegisters(self, slave:int, register:int, values:Union[List[float], float]) -> None:
         _log.debug('writeRegisters(%d,%d,%s)', slave, register, values)
         if slave == 0:
             return
@@ -695,7 +696,8 @@ class modbusport:
             self.connect()
             if self._asyncLoopThread is not None and self.isConnected():
                 assert self._client is not None
-                int_values:List[int] = ([values] if isinstance(values, int) else values)
+                float_values:List[float] = (values if isinstance(values, list) else [float(values)])
+                int_values:List[int] = [int(round(v)) for v in float_values]
                 asyncio.run_coroutine_threadsafe(self._client.write_registers(int(register),int_values,slave=int(slave)), self._asyncLoopThread.loop).result()
         except Exception as ex: # pylint: disable=broad-except
             _log.info('writeRegisters(%d,%d,%s) failed', slave, register, values)
@@ -721,7 +723,7 @@ class modbusport:
             self.connect()
             if self._asyncLoopThread is not None and self.isConnected():
                 assert self._client is not None
-                payload:List[int] = self.convert_float_to_registers(float(value))
+                payload:List[int] = self.convert_float_to_registers(value)
                 asyncio.run_coroutine_threadsafe(self._client.write_registers(int(register),payload,slave=int(slave)), self._asyncLoopThread.loop).result()
 #                time.sleep(.03)
         except Exception as ex: # pylint: disable=broad-except
@@ -736,8 +738,8 @@ class modbusport:
             if self.COMsemaphore.available() < 1:
                 self.COMsemaphore.release(1)
 
-    # translates given int value int a 16bit BCD and writes it into one register
-    def writeBCD(self, slave:int, register:int, value:int) -> None:
+    # translates given int value (given floats are rounded to int) into a 16bit BCD and writes it into one register
+    def writeBCD(self, slave:int, register:int, value:float) -> None:
         _log.debug('writeBCD(%d,%d,%s)', slave, register, value)
         if slave == 0:
             return
@@ -747,12 +749,12 @@ class modbusport:
             if self._asyncLoopThread is not None and self.isConnected():
                 assert self._client is not None
                 self.connect()
-                r = convert_to_bcd(int(value))
+                r = convert_to_bcd(int(round(value)))
                 payload: List[int] = self.convert_16bit_uint_to_registers(r)
                 asyncio.run_coroutine_threadsafe(self._client.write_registers(int(register),payload,slave=int(slave)), self._asyncLoopThread.loop).result() # type: ignore [reportGeneralTypeIssues, arg-type, unused-ignore] # Argument of type "list[bytes]" cannot be assigned to parameter "values" of type "List[int] | int" in function "write_registers"; in pymodbus 3.7.4 the error is now "List[bytes]"; expected "List[Union[bytes, int]
 #                time.sleep(.03)
         except Exception as ex: # pylint: disable=broad-except
-            _log.info('writeBCD(%d,%d,%s) failed', slave, register, value)
+            _log.info('writeBCD(%d,%d,%s) failed', slave, register, int(round(value)))
             _log.debug(ex)
             self.disconnectOnError()
             _, _, exc_tb = sys.exc_info()
@@ -765,7 +767,7 @@ class modbusport:
     # function 16 (Write Multiple Holding Registers)
     # value=int or float
     # writes a 32bit integer (2-registers)
-    def writeLong(self, slave:int, register:int, value:int) -> None:
+    def writeLong(self, slave:int, register:int, value:float) -> None:
         _log.debug('writeLong(%d,%d,%s)', slave, register, value)
         if slave == 0:
             return
@@ -775,11 +777,11 @@ class modbusport:
             self.connect()
             if self._asyncLoopThread is not None and self.isConnected():
                 assert self._client is not None
-                payload:List[int] = self.convert_32bit_int_to_registers(int(value))
+                payload:List[int] = self.convert_32bit_int_to_registers(int(round(value)))
                 asyncio.run_coroutine_threadsafe(self._client.write_registers(int(register),payload,slave=int(slave)), self._asyncLoopThread.loop).result() # type: ignore [reportGeneralTypeIssues, arg-type, unused-ignore] # Argument of type "list[bytes]" cannot be assigned to parameter "values" of type "List[int] | int" in function "write_registers"; in pymodbus 3.7.4 the error is now "List[bytes]"; expected "List[Union[bytes, int]
 #                await asyncio.sleep(.03)
         except Exception as ex: # pylint: disable=broad-except
-            _log.info('writeLong(%d,%d,%s) failed', slave, register, value)
+            _log.info('writeLong(%d,%d,%s) failed', slave, register, int(round(value)))
             _log.debug(ex)
             self.disconnectOnError()
             _, _, exc_tb = sys.exc_info()
@@ -917,7 +919,7 @@ class modbusport:
             res_registers, _, res_error_disconnect = self.read_registers(slave, register, 2, code, force)
             error_disconnect = res_error_disconnect
             if res_registers is not None:
-                res = self.convert_32bit_uint_from_registers(res_registers)
+                res = convert_from_bcd(self.convert_32bit_uint_from_registers(res_registers))
                 # we clear the previous error and send a message
                 self.clearCommError()
 #             await asyncio.sleep(0.020) # we add a small sleep between requests to help out the slow Loring electronic
@@ -1093,7 +1095,7 @@ class modbusport:
             res_registers, _, res_error_disconnect = self.read_registers(slave, register, 1, code, force)
             error_disconnect = res_error_disconnect
             if res_registers is not None:
-                res = self.convert_16bit_uint_from_registers(res_registers)
+                res = convert_from_bcd(self.convert_16bit_uint_from_registers(res_registers))
                 # we clear the previous error and send a message
                 self.clearCommError()
 #             await asyncio.sleep(0.020) # we add a small sleep between requests to help out the slow Loring electronic
@@ -1130,7 +1132,9 @@ class modbusport:
                 multiplier = 10.
             elif self.SVmultiplier == 2:
                 multiplier = 100.
-            if self.SVwriteLong:
+            if self.SVwriteFloat:
+                self.writeWord(self.PID_slave_ID,self.PID_SV_register,float(sv*multiplier))
+            elif self.SVwriteLong:
                 self.writeLong(self.PID_slave_ID,self.PID_SV_register,int(round(sv*multiplier)))
             else:
                 self.writeSingleRegister(self.PID_slave_ID,self.PID_SV_register,int(round(sv*multiplier)))

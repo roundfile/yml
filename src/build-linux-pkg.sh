@@ -42,15 +42,8 @@ mv debian/usr/share/dist debian/usr/share/artisan
 find debian -name .svn -exec rm -rf {} \; > /dev/null 2>&1
 fakeroot chown -R root:root debian
 fakeroot chmod -R go-w debian
-
-# Pause Build Here For SSH Access
-#_user="$(id -u -n)"
-#echo "User name : $_user"
-#if [ ! -z $APPVEYOR_SSH_BLOCK ]; then if $APPVEYOR_SSH_BLOCK; then curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -;fi;fi
-
 # Find and delete dangling symbolic links
 find "debian/usr/share/artisan/_internal/" -type l -name "*.so*" ! -exec test -e {} \; -delete
-
 fakeroot chmod 0644 debian/usr/share/artisan/_internal/*.so* || true
 fakeroot chmod +x debian/usr/bin/artisan
 rm -f ${NAME}*.rpm
@@ -99,15 +92,13 @@ cd ..
 mv *.rpm ${NAME}.rpm
 mv *.deb ${NAME}.deb
 
-# pause here for ssh
-export APPVEYOR_SSH_BLOCK=true
-curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+# imagemagick missing from pkg2appimage continuous as of bd9684f (27-Jan-25)
+# reference https://github.com/AppImageCommunity/pkg2appimage/issues/445
+# TODO - watch for this to be resolved
+echo "*** Installing imagemagick"
+sudo apt-get install -y imagemagick
 
 export ARCH=x86_64
-# Install imagmagik required by pkg2appimage
-sudo apt-get -y install imagemagick
-echo "Installed imagemagick"
-
 # Create AppImage by using the pkg2appimage tool
 wget -c https://github.com/$(wget -q https://github.com/AppImage/pkg2appimage/releases/expanded_assets/continuous -O - | grep "pkg2appimage-.*-x86_64.AppImage" | head -n 1 | cut -d '"' -f 2)
 chmod +x ./pkg2appimage-*.AppImage

@@ -94,7 +94,11 @@ class EventsDlg(ArtisanResizeablDialog):
         self.buttonpalette:List[Palette] = []
         for _ in range(self.aw.max_palettes):
             self.buttonpalette.append(self.aw.makePalette())
-        self.buttonpalettemaxlen:List[int] = [14]*10
+        self.buttonpalettemaxlen:List[int] = [self.aw.buttonpalettemaxlen_default]*self.aw.max_palettes
+        self.buttonpalette_buttonsize:List[int] =                 [self.aw.buttonsize_default]*self.aw.max_palettes                    # button sizes per pallet
+        self.buttonpalette_mark_last_button_pressed:List[bool] =  [self.aw.mark_last_button_pressed_default]*self.aw.max_palettes      # mark last flag per pallet
+        self.buttonpalette_tooltips:List[bool] =                  [self.aw.show_extrabutton_tooltips_default]*self.aw.max_palettes     # show tooltips flag per pallet
+        self.buttonpalette_slider_alternative_layout:List[bool] = [self.aw.eventsliderAlternativeLayout_default]*self.aw.max_palettes  # alternative layout flag per pallet
         self.buttonpalette_label:str = self.aw.buttonpalette_label
         # styles
         self.EvalueColor:List[str] = self.aw.qmc.EvalueColor_default.copy()
@@ -617,7 +621,7 @@ class EventsDlg(ArtisanResizeablDialog):
         self.nbuttonsSpinBox = QSpinBox()
         self.nbuttonsSpinBox.setMaximumWidth(100)
         self.nbuttonsSpinBox.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self.nbuttonsSpinBox.setRange(2,30)
+        self.nbuttonsSpinBox.setRange(self.aw.buttonpalettemaxlen_min,self.aw.buttonpalettemaxlen_max)
         self.nbuttonsSpinBox.setValue(int(self.aw.buttonlistmaxlen))
         self.nbuttonsSpinBox.valueChanged.connect(self.setbuttonlistmaxlen)
         nbuttonsSizeLabel = QLabel(QApplication.translate('Label','Button Size'))
@@ -994,68 +998,84 @@ class EventsDlg(ArtisanResizeablDialog):
         self.E1active = QCheckBox(self.aw.qmc.etypesf(0))
         self.E1active.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E1active.setChecked(bool(self.aw.eventquantifieractive[0]))
+        self.E1active.stateChanged.connect(self.quantifier_toggle)
         self.E2active = QCheckBox(self.aw.qmc.etypesf(1))
         self.E2active.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E2active.setChecked(bool(self.aw.eventquantifieractive[1]))
+        self.E2active.stateChanged.connect(self.quantifier_toggle)
         self.E3active = QCheckBox(self.aw.qmc.etypesf(2))
         self.E3active.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E3active.setChecked(bool(self.aw.eventquantifieractive[2]))
+        self.E3active.stateChanged.connect(self.quantifier_toggle)
         self.E4active = QCheckBox(self.aw.qmc.etypesf(3))
         self.E4active.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E4active.setChecked(bool(self.aw.eventquantifieractive[3]))
+        self.E4active.stateChanged.connect(self.quantifier_toggle)
 
         self.E1coarse = QComboBox()
         self.E1coarse.setToolTip(QApplication.translate('Tooltip', 'Step Size'))
         self.E1coarse.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E1coarse.addItems(self.sliderStepSizes)
         self.E1coarse.setCurrentIndex(self.slidercoarse2stepSizePos(self.aw.eventquantifiercoarse[0]))
+        self.E1coarse.setEnabled(self.E1active.isChecked())
         self.E2coarse = QComboBox()
         self.E2coarse.setToolTip(QApplication.translate('Tooltip', 'Step Size'))
         self.E2coarse.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E2coarse.addItems(self.sliderStepSizes)
         self.E2coarse.setCurrentIndex(self.slidercoarse2stepSizePos(self.aw.eventquantifiercoarse[1]))
+        self.E2coarse.setEnabled(self.E2active.isChecked())
         self.E3coarse = QComboBox()
         self.E3coarse.setToolTip(QApplication.translate('Tooltip', 'Step Size'))
         self.E3coarse.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E3coarse.addItems(self.sliderStepSizes)
         self.E3coarse.setCurrentIndex(self.slidercoarse2stepSizePos(self.aw.eventquantifiercoarse[2]))
+        self.E3coarse.setEnabled(self.E3active.isChecked())
         self.E4coarse = QComboBox()
         self.E4coarse.setToolTip(QApplication.translate('Tooltip', 'Step Size'))
         self.E4coarse.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E4coarse.addItems(self.sliderStepSizes)
         self.E4coarse.setCurrentIndex(self.slidercoarse2stepSizePos(self.aw.eventquantifiercoarse[3]))
+        self.E4coarse.setEnabled(self.E4active.isChecked())
         self.E1quantifieraction = QCheckBox()
         self.E1quantifieraction.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E1quantifieraction.setChecked(bool(self.aw.eventquantifieraction[0]))
         self.E1quantifieraction.setToolTip(QApplication.translate('Tooltip', 'fire slider action'))
+        self.E1quantifieraction.setEnabled(self.E1active.isChecked())
         self.E2quantifieraction = QCheckBox()
         self.E2quantifieraction.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E2quantifieraction.setChecked(bool(self.aw.eventquantifieraction[1]))
         self.E2quantifieraction.setToolTip(QApplication.translate('Tooltip', 'fire slider action'))
+        self.E2quantifieraction.setEnabled(self.E2active.isChecked())
         self.E3quantifieraction = QCheckBox()
         self.E3quantifieraction.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E3quantifieraction.setChecked(bool(self.aw.eventquantifieraction[2]))
         self.E3quantifieraction.setToolTip(QApplication.translate('Tooltip', 'fire slider action'))
+        self.E3quantifieraction.setEnabled(self.E3active.isChecked())
         self.E4quantifieraction = QCheckBox()
         self.E4quantifieraction.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E4quantifieraction.setChecked(bool(self.aw.eventquantifieraction[3]))
         self.E4quantifieraction.setToolTip(QApplication.translate('Tooltip', 'fire slider action'))
+        self.E4quantifieraction.setEnabled(self.E4active.isChecked())
         self.E1quantifierSV = QCheckBox()
         self.E1quantifierSV.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E1quantifierSV.setChecked(bool(self.aw.eventquantifierSV[0]))
         self.E1quantifierSV.setToolTip(QApplication.translate('Tooltip', 'If source is a Set Value quantification gets never blocked'))
+        self.E1quantifierSV.setEnabled(self.E1active.isChecked())
         self.E2quantifierSV = QCheckBox()
         self.E2quantifierSV.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E2quantifierSV.setChecked(bool(self.aw.eventquantifierSV[1]))
         self.E2quantifierSV.setToolTip(QApplication.translate('Tooltip', 'If source is a Set Value quantification gets never blocked'))
+        self.E2quantifierSV.setEnabled(self.E2active.isChecked())
         self.E3quantifierSV = QCheckBox()
         self.E3quantifierSV.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E3quantifierSV.setChecked(bool(self.aw.eventquantifierSV[2]))
         self.E3quantifierSV.setToolTip(QApplication.translate('Tooltip', 'If source is a Set Value quantification gets never blocked'))
+        self.E3quantifierSV.setEnabled(self.E3active.isChecked())
         self.E4quantifierSV = QCheckBox()
         self.E4quantifierSV.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.E4quantifierSV.setChecked(bool(self.aw.eventquantifierSV[3]))
         self.E4quantifierSV.setToolTip(QApplication.translate('Tooltip', 'If source is a Set Value quantification gets never blocked'))
+        self.E4quantifierSV.setEnabled(self.E4active.isChecked())
 
         self.curvenames = []
         self.curvenames.append(QApplication.translate('ComboBox','ET'))
@@ -1067,50 +1087,62 @@ class EventsDlg(ArtisanResizeablDialog):
         self.E1SourceComboBox.addItems(self.curvenames)
         if self.aw.eventquantifiersource[0] < len(self.curvenames):
             self.E1SourceComboBox.setCurrentIndex(self.aw.eventquantifiersource[0])
+        self.E1SourceComboBox.setEnabled(self.E1active.isChecked())
         self.E2SourceComboBox = QComboBox()
         self.E2SourceComboBox.addItems(self.curvenames)
         if self.aw.eventquantifiersource[1] < len(self.curvenames):
             self.E2SourceComboBox.setCurrentIndex(self.aw.eventquantifiersource[1])
+        self.E2SourceComboBox.setEnabled(self.E2active.isChecked())
         self.E3SourceComboBox = QComboBox()
         self.E3SourceComboBox.addItems(self.curvenames)
         if self.aw.eventquantifiersource[2] < len(self.curvenames):
             self.E3SourceComboBox.setCurrentIndex(self.aw.eventquantifiersource[2])
+        self.E3SourceComboBox.setEnabled(self.E3active.isChecked())
         self.E4SourceComboBox = QComboBox()
         self.E4SourceComboBox.addItems(self.curvenames)
         if self.aw.eventquantifiersource[3] < len(self.curvenames):
             self.E4SourceComboBox.setCurrentIndex(self.aw.eventquantifiersource[3])
+        self.E4SourceComboBox.setEnabled(self.E4active.isChecked())
         self.E1min = QSpinBox()
         self.E1min.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E1min.setRange(-99999,99999)
         self.E1min.setValue(self.aw.eventquantifiermin[0])
+        self.E1min.setEnabled(self.E1active.isChecked())
         self.E2min = QSpinBox()
         self.E2min.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E2min.setRange(-99999,99999)
         self.E2min.setValue(self.aw.eventquantifiermin[1])
+        self.E2min.setEnabled(self.E2active.isChecked())
         self.E3min = QSpinBox()
         self.E3min.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E3min.setRange(-99999,99999)
         self.E3min.setValue(self.aw.eventquantifiermin[2])
+        self.E3min.setEnabled(self.E3active.isChecked())
         self.E4min = QSpinBox()
         self.E4min.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E4min.setRange(-99999,99999)
         self.E4min.setValue(self.aw.eventquantifiermin[3])
+        self.E4min.setEnabled(self.E4active.isChecked())
         self.E1max = QSpinBox()
         self.E1max.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E1max.setRange(-99999,99999)
         self.E1max.setValue(self.aw.eventquantifiermax[0])
+        self.E1max.setEnabled(self.E1active.isChecked())
         self.E2max = QSpinBox()
         self.E2max.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E2max.setRange(-99999,99999)
         self.E2max.setValue(self.aw.eventquantifiermax[1])
+        self.E2max.setEnabled(self.E2active.isChecked())
         self.E3max = QSpinBox()
         self.E3max.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E3max.setRange(-99999,99999)
         self.E3max.setValue(self.aw.eventquantifiermax[2])
+        self.E3max.setEnabled(self.E3active.isChecked())
         self.E4max = QSpinBox()
         self.E4max.setAlignment(Qt.AlignmentFlag.AlignRight)
         self.E4max.setRange(-99999,99999)
         self.E4max.setValue(self.aw.eventquantifiermax[3])
+        self.E4max.setEnabled(self.E4active.isChecked())
         applyDialogButton = QDialogButtonBox()
         applyquantifierbutton: Optional[QPushButton] = applyDialogButton.addButton(QDialogButtonBox.StandardButton.Apply)
         if applyquantifierbutton is not None:
@@ -1702,6 +1734,39 @@ class EventsDlg(ArtisanResizeablDialog):
         QTimer.singleShot(50, self.setActiveTab)
 
     @pyqtSlot()
+    def quantifier_toggle(self) -> None:
+        sender = cast(QCheckBox, self.sender())
+        ticked:bool = sender.isChecked()
+        if sender == self.E1active:
+            self.E1quantifierSV.setEnabled(ticked)
+            self.E1quantifieraction.setEnabled(ticked)
+            self.E1coarse.setEnabled(ticked)
+            self.E1SourceComboBox.setEnabled(ticked)
+            self.E1min.setEnabled(ticked)
+            self.E1max.setEnabled(ticked)
+        elif sender == self.E2active:
+            self.E2quantifierSV.setEnabled(ticked)
+            self.E2quantifieraction.setEnabled(ticked)
+            self.E2coarse.setEnabled(ticked)
+            self.E2SourceComboBox.setEnabled(ticked)
+            self.E2min.setEnabled(ticked)
+            self.E2max.setEnabled(ticked)
+        elif sender == self.E3active:
+            self.E3quantifierSV.setEnabled(ticked)
+            self.E3quantifieraction.setEnabled(ticked)
+            self.E3coarse.setEnabled(ticked)
+            self.E3SourceComboBox.setEnabled(ticked)
+            self.E3min.setEnabled(ticked)
+            self.E3max.setEnabled(ticked)
+        elif sender == self.E4active:
+            self.E4quantifierSV.setEnabled(ticked)
+            self.E4quantifieraction.setEnabled(ticked)
+            self.E4coarse.setEnabled(ticked)
+            self.E4SourceComboBox.setEnabled(ticked)
+            self.E4min.setEnabled(ticked)
+            self.E4max.setEnabled(ticked)
+
+    @pyqtSlot()
     def setActiveTab(self) -> None:
         self.TabWidget.setCurrentIndex(self.activeTab)
 
@@ -2206,7 +2271,7 @@ class EventsDlg(ArtisanResizeablDialog):
     def transferbuttonsto(self, pindex:Optional[int] = None) -> None:
         if pindex is None:
             pindex = self.transferpalettecombobox.currentIndex()
-        if 0 <= pindex < 10:
+        if 0 <= pindex < self.aw.max_palettes:
             copy:Palette = (
                 self.extraeventstypes[:],
                 self.extraeventsvalues[:],
@@ -2247,113 +2312,126 @@ class EventsDlg(ArtisanResizeablDialog):
                 # added quantifier SV
                 self.aw.eventquantifierSV[:]
             )
-
             self.aw.buttonpalette[pindex] = copy
-            self.aw.buttonpalettemaxlen[pindex] = self.aw.buttonlistmaxlen
+            self.aw.buttonpalettemaxlen[pindex] = self.nbuttonsSpinBox.value()
+            self.aw.buttonpalette_buttonsize[pindex] = self.nbuttonsSizeBox.currentIndex()
+            self.aw.buttonpalette_mark_last_button_pressed[pindex] = self.markLastButtonPressed.isChecked()
+            self.aw.buttonpalette_tooltips[pindex] = self.showExtraButtonTooltips.isChecked()
+            self.aw.buttonpalette_slider_alternative_layout[pindex] = self.sliderAlternativeLayoutFlag.isChecked()
             self.transferpalettecombobox.setCurrentIndex(-1)
             self.updatePalettePopup()
 
 
     def localSetbuttonsfrom(self, pindex:int) -> int:
-        copy = cast('Palette', self.aw.buttonpalette[pindex][:])
-        if len(copy):
-            self.extraeventstypes = copy[0][:] # pylint: disable=attribute-defined-outside-init
-            self.extraeventsvalues = copy[1][:] # pylint: disable=attribute-defined-outside-init
-            self.extraeventsactions = copy[2][:] # pylint: disable=attribute-defined-outside-init
-            self.extraeventsvisibility = copy[3][:] # pylint: disable=attribute-defined-outside-init
-            self.extraeventsactionstrings = copy[4][:] # pylint: disable=attribute-defined-outside-init
-            self.extraeventslabels = copy[5][:] # pylint: disable=attribute-defined-outside-init
-            self.extraeventsdescriptions = copy[6][:] # pylint: disable=attribute-defined-outside-init
-            self.extraeventbuttoncolor = copy[7][:] # pylint: disable=attribute-defined-outside-init
-            self.extraeventbuttontextcolor = copy[8][:] # pylint: disable=attribute-defined-outside-init
-            # added slider settings
-            if len(copy)>9 and len(copy[9]) == 4:
-                self.aw.eventslidervisibilities = copy[9][:]
-            else:
-                self.aw.eventslidervisibilities = [0,0,0,0]
-            if len(copy)>10 and len(copy[10]) == 4:
-                self.aw.eventslideractions = copy[10][:]
-            else:
-                self.aw.eventslideractions = [0,0,0,0]
-            if len(copy)>11 and len(copy[11]) == 4:
-                self.aw.eventslidercommands = copy[11][:]
-            else:
-                self.aw.eventslidercommands = ['','','','']
-            if len(copy)>12 and len(copy[12]) == 4:
-                self.aw.eventslideroffsets = copy[12][:]
-            else:
-                self.aw.eventslideroffsets = [0., 0., 0., 0.]
-            if len(copy)>13 and len(copy[13]) == 4:
-                self.aw.eventsliderfactors = copy[13][:]
-            else:
-                self.aw.eventsliderfactors = [1.0,1.0,1.0,1.0]
-            # quantifiers
-            if len(copy)>14 and len(copy[14]) == 4:
-                self.aw.eventquantifieractive = copy[14][:]
-            else:
-                self.aw.eventquantifieractive = [0,0,0,0]
-            if len(copy)>15 and len(copy[15]) == 4:
-                self.aw.eventquantifiersource = copy[15][:]
-            else:
-                self.aw.eventquantifiersource = [0,0,0,0]
-            if len(copy)>16 and len(copy[16]) == 4:
-                self.aw.eventquantifiermin = copy[16][:]
-            else:
-                self.aw.eventquantifiermin = [0,0,0,0]
-            if len(copy)>17 and len(copy[17]) == 4:
-                self.aw.eventquantifiermax = copy[17][:]
-            else:
-                self.aw.eventquantifiermax = [100,100,100,100]
-            if len(copy)>18 and len(copy[18]) == 4:
-                self.aw.eventquantifiercoarse = copy[18][:]
-            else:
-                self.aw.eventquantifiercoarse = [0,0,0,0]
-            # slider min/max
-            if len(copy)>19 and len(copy[19]) == 4:
-                self.aw.eventslidermin = copy[19][:]
-            else:
-                self.aw.eventslidermin = [0,0,0,0]
-            if len(copy)>20 and len(copy[20]) == 4:
-                self.aw.eventslidermax = copy[20][:]
-            else:
-                self.aw.eventslidermax = [100,100,100,100]
-            # slider coarse
-            if len(copy)>21 and len(copy[21]) == 4:
-                self.aw.eventslidercoarse = copy[21][:]
-            else:
-                self.aw.eventslidercoarse = [0,0,0,0]
-            # slide temp
-            if len(copy)>22 and len(copy[22]) == 4:
-                self.aw.eventslidertemp = copy[22][:]
-            else:
-                self.aw.eventslidertemp = [0,0,0,0]
-            # slider units
-            if len(copy)>23 and len(copy[23]) == 4:
-                self.aw.eventsliderunits = copy[23][:]
-            else:
-                self.aw.eventsliderunits = ['','','','']
-            # slider bernoulli
-            if len(copy)>24 and len(copy[24]) == 4:
-                self.aw.eventsliderBernoulli = copy[24][:]
-            else:
-                self.aw.eventsliderBernoulli = [0,0,0,0]
-            # palette label
-            if len(copy)>25:
-                self.aw.buttonpalette_label = copy[25]
-            else:
-                self.aw.buttonpalette_label = self.aw.buttonpalette_default_label
-            if len(copy)>26 and len(copy[26]) == 4:
-                self.aw.eventquantifieraction = copy[26][:]
-            else:
-                self.aw.eventquantifieraction = [0,0,0,0]
-            if len(copy)>27 and len(copy[27]) == 4:
-                self.aw.eventquantifierSV = copy[27][:]
-            else:
-                self.aw.eventquantifierSV = [0,0,0,0]
+        if 0 <= pindex < self.aw.max_palettes:
+            copy = cast('Palette', self.aw.buttonpalette[pindex][:])
+            if len(copy):
+                self.extraeventstypes = copy[0][:] # pylint: disable=attribute-defined-outside-init
+                self.extraeventsvalues = copy[1][:] # pylint: disable=attribute-defined-outside-init
+                self.extraeventsactions = copy[2][:] # pylint: disable=attribute-defined-outside-init
+                self.extraeventsvisibility = copy[3][:] # pylint: disable=attribute-defined-outside-init
+                self.extraeventsactionstrings = copy[4][:] # pylint: disable=attribute-defined-outside-init
+                self.extraeventslabels = copy[5][:] # pylint: disable=attribute-defined-outside-init
+                self.extraeventsdescriptions = copy[6][:] # pylint: disable=attribute-defined-outside-init
+                self.extraeventbuttoncolor = copy[7][:] # pylint: disable=attribute-defined-outside-init
+                self.extraeventbuttontextcolor = copy[8][:] # pylint: disable=attribute-defined-outside-init
+                # added slider settings
+                if len(copy)>9 and len(copy[9]) == 4:
+                    self.aw.eventslidervisibilities = copy[9][:]
+                else:
+                    self.aw.eventslidervisibilities = [0,0,0,0]
+                if len(copy)>10 and len(copy[10]) == 4:
+                    self.aw.eventslideractions = copy[10][:]
+                else:
+                    self.aw.eventslideractions = [0,0,0,0]
+                if len(copy)>11 and len(copy[11]) == 4:
+                    self.aw.eventslidercommands = copy[11][:]
+                else:
+                    self.aw.eventslidercommands = ['','','','']
+                if len(copy)>12 and len(copy[12]) == 4:
+                    self.aw.eventslideroffsets = copy[12][:]
+                else:
+                    self.aw.eventslideroffsets = [0., 0., 0., 0.]
+                if len(copy)>13 and len(copy[13]) == 4:
+                    self.aw.eventsliderfactors = copy[13][:]
+                else:
+                    self.aw.eventsliderfactors = [1.0,1.0,1.0,1.0]
+                # quantifiers
+                if len(copy)>14 and len(copy[14]) == 4:
+                    self.aw.eventquantifieractive = copy[14][:]
+                else:
+                    self.aw.eventquantifieractive = [0,0,0,0]
+                if len(copy)>15 and len(copy[15]) == 4:
+                    self.aw.eventquantifiersource = copy[15][:]
+                else:
+                    self.aw.eventquantifiersource = [0,0,0,0]
+                if len(copy)>16 and len(copy[16]) == 4:
+                    self.aw.eventquantifiermin = copy[16][:]
+                else:
+                    self.aw.eventquantifiermin = [0,0,0,0]
+                if len(copy)>17 and len(copy[17]) == 4:
+                    self.aw.eventquantifiermax = copy[17][:]
+                else:
+                    self.aw.eventquantifiermax = [100,100,100,100]
+                if len(copy)>18 and len(copy[18]) == 4:
+                    self.aw.eventquantifiercoarse = copy[18][:]
+                else:
+                    self.aw.eventquantifiercoarse = [0,0,0,0]
+                # slider min/max
+                if len(copy)>19 and len(copy[19]) == 4:
+                    self.aw.eventslidermin = copy[19][:]
+                else:
+                    self.aw.eventslidermin = [0,0,0,0]
+                if len(copy)>20 and len(copy[20]) == 4:
+                    self.aw.eventslidermax = copy[20][:]
+                else:
+                    self.aw.eventslidermax = [100,100,100,100]
+                # slider coarse
+                if len(copy)>21 and len(copy[21]) == 4:
+                    self.aw.eventslidercoarse = copy[21][:]
+                else:
+                    self.aw.eventslidercoarse = [0,0,0,0]
+                # slide temp
+                if len(copy)>22 and len(copy[22]) == 4:
+                    self.aw.eventslidertemp = copy[22][:]
+                else:
+                    self.aw.eventslidertemp = [0,0,0,0]
+                # slider units
+                if len(copy)>23 and len(copy[23]) == 4:
+                    self.aw.eventsliderunits = copy[23][:]
+                else:
+                    self.aw.eventsliderunits = ['','','','']
+                # slider bernoulli
+                if len(copy)>24 and len(copy[24]) == 4:
+                    self.aw.eventsliderBernoulli = copy[24][:]
+                else:
+                    self.aw.eventsliderBernoulli = [0,0,0,0]
+                # palette label
+                if len(copy)>25:
+                    self.aw.buttonpalette_label = copy[25]
+                else:
+                    self.aw.buttonpalette_label = self.aw.buttonpalette_default_label
+                if len(copy)>26 and len(copy[26]) == 4:
+                    self.aw.eventquantifieraction = copy[26][:]
+                else:
+                    self.aw.eventquantifieraction = [0,0,0,0]
+                if len(copy)>27 and len(copy[27]) == 4:
+                    self.aw.eventquantifierSV = copy[27][:]
+                else:
+                    self.aw.eventquantifierSV = [0,0,0,0]
 
-            self.aw.buttonlistmaxlen = self.aw.buttonpalettemaxlen[pindex]
+#                self.aw.buttonlistmaxlen = self.aw.buttonpalettemaxlen[pindex]
+                self.nbuttonsSpinBox.setValue(self.aw.buttonpalettemaxlen[pindex])
+#                self.aw.buttonsize = self.aw.buttonpalette_buttonsize[pindex]
+                self.nbuttonsSizeBox.setCurrentIndex(self.aw.buttonpalette_buttonsize[pindex])
+#                self.aw.mark_last_button_pressed = self.aw.buttonpalette_mark_last_button_pressed[pindex]
+                self.markLastButtonPressed.setChecked(self.aw.buttonpalette_mark_last_button_pressed[pindex])
+#                self.aw.show_extrabutton_tooltips = self.aw.buttonpalette_tooltips[pindex]
+                self.showExtraButtonTooltips.setChecked(self.aw.buttonpalette_tooltips[pindex])
+#                self.aw.eventsliderAlternativeLayout = self.aw.buttonpalette_slider_alternative_layout[pindex]
+                self.sliderAlternativeLayoutFlag.setChecked(self.aw.buttonpalette_slider_alternative_layout[pindex])
 
-            return 1  #success
+                return 1  #success
         return 0  #failed
 
     @pyqtSlot(bool)
@@ -2978,7 +3056,7 @@ class EventsDlg(ArtisanResizeablDialog):
         self.insertextraeventbutton(True)
 
     def insertextraeventbutton(self, insert:bool = False) -> None:
-        if len(self.extraeventstypes) >= self.aw.buttonlistmaxlen * 4: # max 4 rows of buttons of buttonlistmaxlen
+        if len(self.extraeventstypes) >= self.aw.buttonlistmaxlen * self.aw.max_palettes: # max 10 rows of buttons of buttonlistmaxlen
             return
         try:
             focusWidget = QApplication.focusWidget()
@@ -3283,6 +3361,14 @@ class EventsDlg(ArtisanResizeablDialog):
         # palettes
         self.buttonpalette = self.aw.buttonpalette[:]
         self.buttonpalettemaxlen = self.aw.buttonpalettemaxlen
+        self.buttonsize = self.aw.buttonsize
+        self.buttonpalette_buttonsize = self.aw.buttonpalette_buttonsize
+        self.mark_last_button_pressed = self.aw.mark_last_button_pressed
+        self.buttonpalette_mark_last_button_pressed = self.aw.buttonpalette_mark_last_button_pressed
+        self.show_extrabutton_tooltips = self.aw.show_extrabutton_tooltips
+        self.buttonpalette_tooltips = self.aw.buttonpalette_tooltips
+        self.eventsliderAlternativeLayout = self.aw.eventsliderAlternativeLayout
+        self.buttonpalette_slider_alternative_layout = self.aw.buttonpalette_slider_alternative_layout
         self.buttonpalette_label = self.aw.buttonpalette_label
         # styles
         self.EvalueColor = self.aw.qmc.EvalueColor[:]
@@ -3339,6 +3425,14 @@ class EventsDlg(ArtisanResizeablDialog):
         # palettes
         self.aw.buttonpalette = self.buttonpalette
         self.aw.buttonpalettemaxlen = self.buttonpalettemaxlen
+        self.aw.buttonsize = self.buttonsize
+        self.aw.buttonpalette_buttonsize = self.buttonpalette_buttonsize
+        self.aw.mark_last_button_pressed = self.mark_last_button_pressed
+        self.aw.buttonpalette_mark_last_button_pressed = self.buttonpalette_mark_last_button_pressed
+        self.aw.show_extrabutton_tooltips = self.show_extrabutton_tooltips
+        self.aw.buttonpalette_tooltips = self.buttonpalette_tooltips
+        self.aw.eventsliderAlternativeLayout = self.eventsliderAlternativeLayout
+        self.aw.buttonpalette_slider_alternative_layout = self.buttonpalette_slider_alternative_layout
         self.aw.buttonpalette_label = self.buttonpalette_label
         # styles
         self.aw.qmc.EvalueColor = self.EvalueColor

@@ -5,22 +5,48 @@ Detailed Release History
 v3.1.1
 ------------------
 
-* NEW HARDWARE SUPPORT
-  - adds support for [Carmomaq's Stratto Lab sample roaster](https://carmomaq.com.br/en/produtos/stratto-roaster-lab/)
-  - adds a new [IMF](https://artisan-scope.org/machines/imf/) machine setup that supports machine control
-  - updated [Giesen](https://artisan-scope.org/machines/giesen/) machine support (now incl. sample roasters and PRO machines) supporting additional actor control
-  - adds support for the [DCC1100 and DCC1120 Brushless DC Motor controllers and the DCC1020 DC Motor controller](https://artisan-scope.org/devices/phidgets/#45-dc-motor-control) ([Discussion #1750](../../../discussions/1750))
 
 * ADDITIONS
   - adds drag-and-drop to Stats Summary table configuration
-  - allows to hide scheduled items
+  - adds hiding of scheduled items via a right-click or drag-out
+  - adds support for feeding data from energy meters into Artisans roast energy calculator
+  - adds new flag "Set batch size" to background dialog. If ticked the batch size is taken from the background profile on load while scheduler is off
+  - adds sorting to the background events table
+  - adds configuration to allow to send MODBUS PID SV as 32bit float
+  - adds event replay ramping by time and temperature
+  - adds new Artisan Commands (with `n` from `{1,2,3,4}`)
+      - `quantifier(n,<bool>)` to toggle quantification per event type
+      - `playback(n,<bool>)` to toggle event playback per event type
+      - `ramp(n,<bool>)` to toggle event playback ramping per event type
+      - `alarm(m,<bool>)` enable/disable alarm number `m`
+      - `setBatchSize(<float>)` to set the batch size. if the given number is negative the batch size is taken from the background profile, if available
+  - adds event slider input dialog via a double-click on a sliders LCD
+  - adds slider focus on slider LCD click
+  - adds quick keyboard focused event slider input using numeric keys followed by the ENTER/RETURN key. The last digit can be removed by using the backspace key. ESC cancels the action.
+  - events displayed in step and combo mode can be updated by moving them to a new position. Pressing SHIFT restricts the movement in either the x or the y direction.
+  - a picked custom event can be removed using the backspace key
+
+* NEW HARDWARE SUPPORT
+  - adds support for [Carmomaq's Stratto Lab sample roaster](https://carmomaq.com.br/en/produtos/stratto-roaster-lab/)
+  - adds a new [IMF](https://artisan-scope.org/machines/imf/) machine setup that supports machine control enabling IT/BT and IT/Power profiling
+  - updated [Giesen](https://artisan-scope.org/machines/giesen/) machine support (now incl. sample roasters and PRO machines) supporting the control of additional actors
+  - adds support for the [DCC1100 and DCC1120 Brushless DC Motor controllers and the DCC1020 DC Motor controller](https://artisan-scope.org/devices/phidgets/#45-dc-motor-control) ([Discussion #1750](../../../discussions/1750))
+  - adds [ROEST](https://artisan-scope.org/machines/roest/) CSV import
+  - adds [Thermoworks BlueDOT](https://www.thermoworks.com/bluedot) support
 
 * CHANGES
-  - the Phidget driver is now bundled with the Artisan app and does no longer need to be installed separately (but for some legacy USB HID devices, like the original 1046 and 1048, which still need the kernel extension of the driver package installed in the system)
+  - the Phidget driver is now bundled with the Artisan app and does no longer need to be installed separately. NOTE: some legacy USB HID devices, like the original 1046 and 1048, which still need the kernel extension of the driver package installed in the system.
   - indicates [artisan.plus](https://artisan.plus) connection loss more reliable
   - update volume not density if weight changes and volume is set in Roast Properties ([Discussion #1786](../../../discussions/1786))
-  - generated WebLCD URL are using more stable host names instead of potentially DHCP assigned IP addresses
+  - generated WebLCD URL is using more stable host names instead of, potentially DHCP assigned, IP addresses
   - updated Turkish translations (thanks to Kemal Akdas)
+  - raises max event button limits from 4 rows with maximal 30 buttons to 10 rows with maximal 50 buttons
+  - keeps custom events ordered by time
+  - events were replayed only if the corresponding event slider was visible in previous versions. Now events selected for replay are always replayed, independent of the visibility of the corresponding event slider.
+  - the parameters "max. number of custom buttons per row", "button size", "alternative slider layout", "mark last pressed" and "show tooltips" are now persisted per palette
+  - a click in a sliders pane does no longer move the slider, but just gives that slier the input focus (a click in a sliders bar still moves the slider to this position)
+  - the quick custom event entry using the q, w, e and e key followed by number keys now requires the ENTER/RETURN key to establish the new value.  The last entered digit can be removed by using the backspace key. ESC cancels the action.
+  - improved accuracy on rendering [artisan.plus](https://artisan.plus) blend component weights
 
 * FIXES
   - ensure complete reset to defaults in energy tab loads tab
@@ -28,7 +54,10 @@ v3.1.1
   - prevents exceptions caused by empty event type names ([Discussion #1745](../../../discussions/1745))
   - fixes processing of MODBUS function 2 request which broke the just introduced autoCHARGE/autoDROP triggered by Loring machines
   - fixes a typo which allowed to open multiple Roast Properties dialogs ([Issue #1781](../../../issues/1781))
-
+  - fixes regression introduced in v3.0 which prevented the replay of events before CHARGE
+  - fixed an issue in event replay where certain events failed to be replayed by temperature
+  - fixes an issue where the PID Input for external MODBUS/SV PIDs was not correctly persisted
+  - fixes broken `button` Modbus Command
 
 * REMOVALS
   - support for the non-standard MODBUS little-endian byte order has been removed
@@ -54,7 +83,7 @@ v3.1.0 (November 22, 2024)
   - adds control function to [Diedrich DR](https://artisan-scope.org/machines/diedrich/) machine setup and adds [Diedrich CR](https://artisan-scope.org/machines/diedrich/) machine setup
   - adds support for [Acaia](https://acaia.co/) scales on Windows 11
   - adds support for [Phidget Stepper Motor Controllers](https://artisan-scope.org/devices/phidgets/#47-stepper-motor-control) ([Discussion #891](../../../discussions/891) and [PR #1715](../../../pull/1715))
-  - adds importer for [Stronghold](https://stronghold.coffee/) profiles exported as XLSX
+  - adds importer for [Stronghold](https://artisan-scope.org/machines/stronghold/) profiles exported as XLSX
 
 * CHANGES
   - automatically start of the scheduler while connected to [artisan.plus](https://artisan.plus) if there are incompleted scheduled items
