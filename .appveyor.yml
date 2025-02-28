@@ -55,8 +55,8 @@ branches:
   only:
     - master
 
-stack:
-  python ${PYTHON_V}
+#stack:
+#  python ${PYTHON_V}
 
 for:
 -
