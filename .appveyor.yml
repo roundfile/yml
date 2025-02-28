@@ -24,10 +24,10 @@ environment:
   #PYUPGRADE_MACOS_V: 3.12.1
 
   matrix:
-  - job_name: windows_legacy
-    appveyor_build_worker_image: Visual Studio 2019
-  - job_name: windows
-    appveyor_build_worker_image: Visual Studio 2022
+#  - job_name: windows_legacy
+#    appveyor_build_worker_image: Visual Studio 2019
+#  - job_name: windows
+#    appveyor_build_worker_image: Visual Studio 2022
   - job_name: macos
     appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
   - job_name: linux
@@ -205,6 +205,7 @@ for:
     fast_finish: false
 
   environment:
+    PYTHON_V: 3.12
     ARTISAN_OS: macos
     MACOSX_DEPLOYMENT_TARGET: 12.0
     PYTHONSITEPKGS: /Users/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
