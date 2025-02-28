@@ -205,7 +205,7 @@ for:
     fast_finish: false
 
   environment:
-    PYTHON_V: 3.12
+    PYTHON_V: 3.12  # Override the stack key
     ARTISAN_OS: macos
     MACOSX_DEPLOYMENT_TARGET: 12.0
     PYTHONSITEPKGS: /Users/appveyor/venv${PYTHON_V}/lib/python${PYTHON_V}/site-packages
