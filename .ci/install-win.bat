@@ -38,6 +38,8 @@ python -V
 :: Upgrade the Python version to PYUPGRADE_WIN_V when the environment variable exists.
 ::
 if NOT "%PYUPGRADE_WIN_V%" == "" (
+    echo ***** PYTHON_PATH
+    echo %PYTHON_PATH%
     if exist %PYTHON_PATH%\python.exe (
         echo **** Python upgrade set to %PYUPGRADE_WIN_V%
         echo **** Python version was changed from %PREV_PYTHON_V% to %PYUPGRADE_WIN_V%
