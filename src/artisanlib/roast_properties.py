@@ -43,7 +43,7 @@ import plus.blend
 from artisanlib.util import (deltaLabelUTF8, stringfromseconds,stringtoseconds, toInt, toFloat, abbrevString,
         scaleFloat2String, comma2dot, weight_units, render_weight, weight_units_lower, volume_units, float2floatWeightVolume, float2float,
         convertWeight, convertVolume)
-from artisanlib.dialogs import ArtisanDialog, ArtisanResizeablDialog
+from artisanlib.dialogs import ArtisanDialog, ArtisanResizeablDialog, tareDlg
 from artisanlib.widgets import MyQComboBox, ClickableQLabel, ClickableTextEdit, MyTableWidgetItemNumber
 
 
@@ -54,20 +54,20 @@ from uic import MeasureDialog # pyright: ignore[attr-defined] # pylint: disable=
 _log: Final[logging.Logger] = logging.getLogger(__name__)
 
 try:
-    from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot, QRegularExpression, QSettings, QTimer, QEvent, QLocale # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt6.QtCore import Qt, pyqtSignal, pyqtSlot, QRegularExpression, QSettings, QTimer, QEvent, QLocale, QSignalBlocker # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtGui import QColor, QIntValidator, QRegularExpressionValidator, QKeySequence, QPalette # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt6.QtWidgets import (QApplication, QWidget, QCheckBox, QComboBox, QDialogButtonBox, QGridLayout, # @UnusedImport @Reimport  @UnresolvedImport
                                  QHBoxLayout, QVBoxLayout, QHeaderView, QLabel, QLineEdit, QTextEdit, QListView,  # @UnusedImport @Reimport  @UnresolvedImport
                                  QPushButton, QSpinBox, QTableWidget, QTableWidgetItem, QTabWidget, QSizePolicy, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QGroupBox, QToolButton) # @UnusedImport @Reimport  @UnresolvedImport
+                                 QGroupBox, QToolButton, QFrame) # @UnusedImport @Reimport  @UnresolvedImport
 #    from PyQt6 import sip # @UnusedImport @Reimport  @UnresolvedImport
 except ImportError:
-    from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot, QRegularExpression, QSettings, QTimer, QEvent, QLocale # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt5.QtCore import Qt, pyqtSignal, pyqtSlot, QRegularExpression, QSettings, QTimer, QEvent, QLocale, QSignalBlocker # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtGui import QColor, QIntValidator, QRegularExpressionValidator, QKeySequence, QPalette # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
     from PyQt5.QtWidgets import (QApplication, QWidget, QCheckBox, QComboBox, QDialogButtonBox, QGridLayout, # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
                                  QHBoxLayout, QVBoxLayout, QHeaderView, QLabel, QLineEdit, QTextEdit, QListView, # @UnusedImport @Reimport  @UnresolvedImport
                                  QPushButton, QSpinBox, QTableWidget, QTableWidgetItem, QTabWidget, QSizePolicy, # @UnusedImport @Reimport  @UnresolvedImport
-                                 QGroupBox, QToolButton) # @UnusedImport @Reimport  @UnresolvedImport
+                                 QGroupBox, QToolButton, QFrame) # @UnusedImport @Reimport  @UnresolvedImport
 #    try:
 #        from PyQt5 import sip # type: ignore # @Reimport @UnresolvedImport @UnusedImport
 #    except ImportError:
@@ -114,7 +114,7 @@ class volumeCalculatorDlg(ArtisanDialog):
 
         # Scale Weight
         self.scale_weight = self.parent_dialog.scale_weight
-        self.scaleWeight = QLabel() # displays the current reading - tare of the connected scale
+        self.scaleWeight = QLabel() # displays the current reading
         if self.parent_dialog.acaia is not None:
             self.update_scale_weight()
             self.parent_dialog.acaia.weight_changed_signal.connect(self.acaia_weight_changed)
@@ -600,7 +600,8 @@ class editGraphDlg(ArtisanResizeablDialog):
 
         self.batcheditmode = False # a click to the batch label enables the batcheditmode
 
-        self.perKgRoastMode = False # if true only the amount during the roast and not the full batch (incl. preheat and BBP) are displayed), toggled by click on the result widget
+        self.org_perKgRoastMode = self.aw.qmc.perKgRoastMode
+        self.perKgRoastMode = self.aw.qmc.perKgRoastMode # if true only the amount during the roast and not the full batch (incl. preheat and BBP) are displayed), toggled by click on the result widget
 
         self.acaia:'Optional[Acaia]' = None # the BLE interface # noqa: UP037
         self.scale_weight:Optional[float] = None # weight received from a connected scale
@@ -982,11 +983,13 @@ class editGraphDlg(ArtisanResizeablDialog):
         self.addRecentButton = QPushButton('+')
         self.addRecentButton.clicked.connect(self.addRecentRoast)
         self.addRecentButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.addRecentButton.setToolTip(QApplication.translate('Tooltip','Add roast properties to list of recent roasts'))
 
         # delete from recent
         self.delRecentButton = QPushButton('-')
         self.delRecentButton.clicked.connect(self.delRecentRoast)
         self.delRecentButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.delRecentButton.setToolTip(QApplication.translate('Tooltip','Remove roast properties from list of recent roasts'))
 
         self.recentRoastEnabled()
 
@@ -1155,19 +1158,11 @@ class editGraphDlg(ArtisanResizeablDialog):
 
         # container tare
         self.tareComboBox = QComboBox()
-        self.tareComboBox.addItem('<edit> TARE')
-        self.tareComboBox.addItem('')
-        self.tareComboBox.insertSeparator(1)
         self.tareComboBox.setMaximumWidth(80)
         self.tareComboBox.setMinimumWidth(80)
-        self.tareComboBox.addItems(self.aw.qmc.container_names)
-        width = self.tareComboBox.minimumSizeHint().width()
-        tare_view: Optional[QAbstractItemView] = self.tareComboBox.view()
-        if tare_view is not None:
-            tare_view.setMinimumWidth(width)
+        self.updateTarePopup()
         self.tareComboBox.setCurrentIndex(self.aw.qmc.container_idx + 3)
         self.tareComboBox.currentIndexChanged.connect(self.tareChanged)
-        self.tarePopupEnabled = True # controls if the popup will process tareChange events
 
         # in button
         inButton = QPushButton(QApplication.translate('Button', 'in'))
@@ -1306,7 +1301,7 @@ class editGraphDlg(ArtisanResizeablDialog):
             self.plus_coffees_combo.setMinimumContentsLength(15)
             self.plus_blends_combo.setMinimumContentsLength(10)
             self.plus_stores_combo.setMinimumContentsLength(10)
-            self.plus_stores_combo.setMaximumWidth(120)
+            self.plus_stores_combo.setMaximumWidth(130)
             self.plus_coffees_combo.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Maximum)
             self.plus_coffees_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
             self.plus_blends_combo.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Maximum)
@@ -1314,18 +1309,41 @@ class editGraphDlg(ArtisanResizeablDialog):
             self.plus_stores_combo.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Maximum)
             self.plus_stores_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
             # plus widget row
+
+            plusLineStores = QHBoxLayout()
+            plusLineStores.addSpacing(10)
+            plusLineStores.addWidget(self.plusStoreslabel)
+            plusLineStores.addSpacing(5)
+            plusLineStores.addWidget(self.plus_stores_combo)
+            plusLineStores.setContentsMargins(0, 0, 0, 0) # left, top, right, bottom
+            plusLineStores.setSpacing(5)
+
+            self.plusLineStoresFrame = QFrame()
+            self.plusLineStoresFrame.setLayout(plusLineStores)
+
             plusLine = QHBoxLayout()
             plusLine.addWidget(self.plus_coffees_combo)
-            plusLine.addSpacing(15)
+            plusLine.addSpacing(10)
             plusLine.addWidget(self.plusBlendslabel)
-            plusLine.addSpacing(5)
+            plusLine.addSpacing(4)
             plusLine.addWidget(self.plus_blends_combo)
             plusLine.addWidget(self.plus_custom_blend_button)
-            plusLine.addSpacing(15)
-            plusLine.addWidget(self.plusStoreslabel)
-            plusLine.addSpacing(5)
-            plusLine.addWidget(self.plus_stores_combo)
-            textLayout.addWidget(self.plus_selected_line,4,1)
+            plusLine.addWidget(self.plusLineStoresFrame)
+
+            plusLine.setStretch(0, 3)
+            plusLine.setStretch(4, 2)
+            plusLine.setStretch(6, 1)
+
+            self.label_origin_flag = QCheckBox(QApplication.translate('CheckBox','Standard bean labels'))
+            self.label_origin_flag.setToolTip(QApplication.translate('Tooltip',"Beans are listed as 'origin, name' if ticked, otherwise as 'name, origin'"))
+            self.label_origin_flag.setChecked(bool(plus.stock.coffee_label_normal_order))
+            self.label_origin_flag.stateChanged.connect(self.labelOriginFlagChanged)
+
+            selectedLineLayout = QHBoxLayout()
+            selectedLineLayout.addWidget(self.plus_selected_line)
+            selectedLineLayout.addStretch()
+            selectedLineLayout.addWidget(self.label_origin_flag)
+            textLayout.addLayout(selectedLineLayout,4,1)
             textLayout.addWidget(plusCoffeeslabel,5,0)
             textLayout.addLayout(plusLine,5,1)
             textLayoutPlusOffset = 2 # to insert the plus widget row, we move the remaining ones one step lower
@@ -1374,6 +1392,9 @@ class editGraphDlg(ArtisanResizeablDialog):
                 try:
                     from artisanlib.acaia import Acaia
                     self.acaia = Acaia(
+                        model = 1,
+                        ident = None,
+                        name = 'Acaia',
                         connected_handler=lambda : self.aw.sendmessageSignal.emit(QApplication.translate('Message', '{} connected').format('Acaia'),True,None),
                         disconnected_handler=lambda : self.aw.sendmessageSignal.emit(QApplication.translate('Message', '{} disconnected').format('Acaia'),True,None))
                     self.acaia.weight_changed_signal.connect(self.ble_weight_changed)
@@ -1605,6 +1626,9 @@ class editGraphDlg(ArtisanResizeablDialog):
         # some tabs are not rendered at all on Windows using Qt v6.5.1 (https://bugreports.qt.io/projects/QTBUG/issues/QTBUG-114204?filter=allissues)
         QTimer.singleShot(50, self.setActiveTab)
 
+    def get_scale_weight(self) -> Optional[float]:
+        return self.scale_weight
+
     @pyqtSlot()
     def setActiveTab(self) -> None:
         self.TabWidget.setCurrentIndex(self.activeTab)
@@ -1816,7 +1840,7 @@ class editGraphDlg(ArtisanResizeablDialog):
             else:
                 v = convertWeight(v,0,weight_units.index(self.aw.qmc.weight[2]))
                 v_formatted = f'{v:.2f}'
-            self.updateWeightLCD(v_formatted, self.aw.qmc.weight[2], self.scale_weight - tare)
+            self.updateWeightLCD(v_formatted, self.aw.qmc.weight[2].lower(), self.scale_weight - tare)
         else:
             self.updateWeightLCD('----')
 
@@ -1902,19 +1926,13 @@ class editGraphDlg(ArtisanResizeablDialog):
                         if len(self.plus_stores) == 1:
                             self.plus_default_store = plus.stock.getStoreId(self.plus_stores[0])
                         if len(self.plus_stores) < 2:
-                            #self.plusStoreslabel.setVisible(False)
-                            if self.plusStoreslabel.isVisible():
-                                self.plusStoreslabel.hide()
-                            #self.plus_stores_combo.setVisible(False)
-                            if self.plus_stores_combo.isVisible():
-                                self.plus_stores_combo.hide()
+#                            self.plusStoreslabel.hide()
+#                            self.plus_stores_combo.hide()
+                            self.plusLineStoresFrame.hide()
                         else:
-                            #self.plusStoreslabel.setVisible(True)
-                            if not self.plusStoreslabel.isVisible():
-                                self.plusStoreslabel.show()
-                            #self.plus_stores_combo.setVisible(True)
-                            if not self.plus_stores_combo.isVisible():
-                                self.plus_stores_combo.show()
+#                            self.plusStoreslabel.show()
+#                            self.plus_stores_combo.show()
+                            self.plusLineStoresFrame.show()
                     except Exception as e:  # pylint: disable=broad-except
                         _log.exception(e)
                     self.plus_stores_combo.blockSignals(True)
@@ -2222,13 +2240,7 @@ class editGraphDlg(ArtisanResizeablDialog):
             self.plus_store_selected_label = sd['location_label']
             cd = plus.stock.getCoffeeCoffeeDict(selected_coffee)
             self.plus_coffee_selected = cd.get('hr_id','')
-            origin = ''
-            if 'origin' in cd and cd['origin'] is not None:
-                origin = cd['origin'] + ' '
-            picked = ''
-            if 'crop_date' in cd and 'picked' in cd['crop_date'] and len(cd['crop_date']['picked']) > 0 and cd['crop_date']['picked'][0] is not None:
-                picked = f"{cd['crop_date']['picked'][0]}, "
-            self.plus_coffee_selected_label = f"{origin}{picked}{cd.get('label','')}"
+            self.plus_coffee_selected_label = plus.stock.coffeeLabel(cd)
             self.plus_blend_selected_label = None
             self.plus_blend_selected_spec = None
             self.plus_blend_selected_spec_labels = None
@@ -2552,6 +2564,8 @@ class editGraphDlg(ArtisanResizeablDialog):
         self.aw.qmc.weight = self.org_weight
         self.aw.qmc.volume = self.org_volume
 
+        self.aw.qmc.perKgRoastMode = self.org_perKgRoastMode
+
         self.aw.qmc.specialevents = self.org_specialevents
         self.aw.qmc.specialeventstype = self.org_specialeventstype
         self.aw.qmc.specialeventsStrings = self.org_specialeventsStrings
@@ -2567,8 +2581,9 @@ class editGraphDlg(ArtisanResizeablDialog):
         self.aw.qmc.roastpropertiesAutoOpenDropFlag = self.org_roastpropertiesAutoOpenDropFlag
 
         self.aw.qmc.clear_last_picked_event_selection()
+        self.aw.eNumberSpinBox.setValue(0)
 
-        self.aw.qmc.redraw(recomputeAllDeltas=False)
+        self.aw.qmc.redraw_keep_view(recomputeAllDeltas=False)
 
         self.clean_up()
         super().reject()
@@ -2629,15 +2644,42 @@ class editGraphDlg(ArtisanResizeablDialog):
             else:
                 super().keyPressEvent(event)
 
+    @staticmethod
+    def container_menu_idx(i:int) -> int: # takes a container idx and returns the index of the corresponding menu item
+        return i + 3 # skip <edit>, separator and empty index
+
+    # update tare popup
+    def updateTarePopup(self) -> None:
+        prev_item_count = self.tareComboBox.count()
+        with QSignalBlocker(self.tareComboBox): # blocking all signals, especially its currentIndexChanged connected to tareChanged which would lead to cycles
+            self.tareComboBox.clear()
+            self.tareComboBox.addItem(f"<{QApplication.translate('Label','edit')}>")
+            self.tareComboBox.insertSeparator(2)
+            self.tareComboBox.addItem('')
+            self.tareComboBox.addItems(self.aw.qmc.container_names)
+            width = self.tareComboBox.minimumSizeHint().width()
+            view: Optional[QAbstractItemView] = self.tareComboBox.view()
+            if view is not None:
+                view.setMinimumWidth(width)
+        if self.tareComboBox.count() > prev_item_count:
+            # if item list is longer (new items added), we select the last item
+            self.aw.qmc.container_idx = self.tareComboBox.count() - 4
+        if len(self.aw.qmc.container_weights) > self.aw.qmc.container_idx:
+            self.tareComboBox.setCurrentIndex(self.container_menu_idx(self.aw.qmc.container_idx))
+        else:
+            self.tareComboBox.setCurrentIndex(2) # reset to the empty entry
+            self.aw.qmc.container_idx = -1
+
     @pyqtSlot(int)
     def tareChanged(self, i:int) -> None:
-        if i == 0 and self.tarePopupEnabled:
-            tareDLG = tareDlg(self,self.aw,self)
+        if i == 0:
+            tareDLG = tareDlg(self,self.aw, self.get_scale_weight)
+            tareDLG.tare_updated_signal.connect(self.updateTarePopup)
             tareDLG.show()
-            # reset index and popup
-            self.tareComboBox.setCurrentIndex(self.aw.qmc.container_idx + 3)
-        # update displayed scale weight
-        self.update_scale_weight()
+        else:
+            self.aw.qmc.container_idx = i - 3
+            # update displayed scale weight
+            self.update_scale_weight()
 
     @pyqtSlot(int)
     def changeWeightUnit(self, i:int) -> None:
@@ -4136,6 +4178,11 @@ class editGraphDlg(ArtisanResizeablDialog):
             self.aw.qmc.roastpropertiesflag = 0
 
     @pyqtSlot(int)
+    def labelOriginFlagChanged(self, _:int = 0) -> None:
+        plus.stock.coffee_label_normal_order = self.label_origin_flag.isChecked()
+        self.populatePlusCoffeeBlendCombos()  # update the plus stock popups to display the correct bean label format
+
+    @pyqtSlot(int)
     def roastpropertiesAutoOpenChanged(self, _:int = 0) -> None:
         if self.roastpropertiesAutoOpen.isChecked():
             self.aw.qmc.roastpropertiesAutoOpenFlag = 1
@@ -5097,7 +5144,7 @@ class editGraphDlg(ArtisanResizeablDialog):
 
             self.saveEventTable()
             self.aw.orderEvents()
-            self.aw.qmc.redraw(recomputeAllDeltas=False)
+            self.aw.qmc.redraw_keep_view(recomputeAllDeltas=False)
         # Update Title
         self.aw.qmc.title = ' '.join(self.titleedit.currentText().split())
         self.aw.qmc.title_show_always = self.titleShowAlwaysFlag.isChecked()
@@ -5262,6 +5309,8 @@ class editGraphDlg(ArtisanResizeablDialog):
             self.aw.qmc.roastbatchnr = self.batchcounterSpinBox.value()
             self.aw.qmc.roastbatchpos = self.batchposSpinBox.value()
 
+        self.aw.qmc.perKgRoastMode = self.perKgRoastMode
+
         # if custom events were changed we clear the event flag position cache
         if self.aw.qmc.specialevents != self.org_specialevents:
             self.aw.qmc.l_event_flags_dict = {}
@@ -5273,12 +5322,15 @@ class editGraphDlg(ArtisanResizeablDialog):
             # save column widths
             self.aw.qmc.energytablecolumnwidths = [self.energy_ui.datatable.columnWidth(c) for c in range(self.energy_ui.datatable.columnCount())]
 
+        self.aw.qmc.clear_last_picked_event_selection()
+        self.aw.eNumberSpinBox.setValue(0)
+
         # load selected recent roast template in the background
         if self.aw.loadbackgroundUUID(self.template_file,self.template_uuid):
             try:
                 self.aw.qmc.background = not self.aw.qmc.hideBgafterprofileload
                 self.aw.qmc.timealign(redraw=False)
-                self.aw.qmc.redraw()
+                self.aw.qmc.redraw_keep_view()
             except Exception: # pylint: disable=broad-except
                 pass
         elif ((not self.aw.qmc.flagon) or
@@ -5288,7 +5340,7 @@ class editGraphDlg(ArtisanResizeablDialog):
             (self.aw.qmc.specialeventsvalue != self.org_specialeventsvalue) or
             (self.aw.qmc.timeindex != self.org_timeindex)):
             # we do a general redraw only if not sampling
-            self.aw.qmc.redraw(recomputeAllDeltas=False)
+            self.aw.qmc.redraw_keep_view(recomputeAllDeltas=False)
         elif (self.org_title != self.aw.qmc.title) or self.org_title_show_always != self.aw.qmc.title_show_always:
             # if title changed we at least update that one
             if self.aw.qmc.flagstart and not self.aw.qmc.title_show_always:
@@ -5473,158 +5525,7 @@ class BlendsComboBox(StockComboBox):
         blend_items:List[str] = plus.stock.getBlendLabels(plus_blends)
         return [''] + blend_items
 
-##########################################################################
-#####################  VIEW Tare  ########################################
-##########################################################################
 
-
-class tareDlg(ArtisanDialog):
-    def __init__(self, parent:editGraphDlg, aw:'ApplicationWindow', tarePopup:editGraphDlg) -> None:
-        super().__init__(parent, aw)
-        self.parent_dialog = parent
-        self.tarePopup = tarePopup
-        self.setModal(True)
-        self.setWindowTitle(QApplication.translate('Form Caption','Tare Setup'))
-
-        self.taretable = QTableWidget()
-        self.taretable.setTabKeyNavigation(True)
-        self.createTareTable()
-
-        self.taretable.itemSelectionChanged.connect(self.selectionChanged)
-
-        addButton = QPushButton(QApplication.translate('Button','Add'))
-        addButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.delButton = QPushButton(QApplication.translate('Button','Delete'))
-        self.delButton.setDisabled(True)
-        self.delButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-
-        addButton.clicked.connect(self.addTare)
-        self.delButton.clicked.connect(self.delTare)
-
-        okButton = QPushButton(QApplication.translate('Button','OK'))
-        cancelButton = QPushButton(QApplication.translate('Button','Cancel'))
-        cancelButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        okButton.clicked.connect(self.accept)
-        cancelButton.clicked.connect(self.reject)
-        contentbuttonLayout = QHBoxLayout()
-        contentbuttonLayout.addStretch()
-        contentbuttonLayout.addWidget(addButton)
-        contentbuttonLayout.addWidget(self.delButton)
-        contentbuttonLayout.addStretch()
-
-        buttonLayout = QHBoxLayout()
-        buttonLayout.addStretch()
-        buttonLayout.addWidget(cancelButton)
-        buttonLayout.addWidget(okButton)
-        layout = QVBoxLayout()
-        layout.addWidget(self.taretable)
-        layout.addLayout(contentbuttonLayout)
-        layout.addLayout(buttonLayout)
-        self.setLayout(layout)
-
-    @pyqtSlot()
-    def selectionChanged(self) -> None:
-        if len(self.taretable.selectedRanges()) > 0:
-            self.delButton.setDisabled(False)
-        else:
-            self.delButton.setDisabled(False)
-
-    @pyqtSlot()
-    def accept(self) -> None:
-        self.close()
-        super().accept()
-
-    @pyqtSlot('QCloseEvent')
-    def closeEvent(self,_:Optional['QCloseEvent'] = None) -> None:
-        self.saveTareTable()
-        # update popup
-        self.tarePopup.tarePopupEnabled = False
-        self.tarePopup.tareComboBox.clear()
-        self.tarePopup.tareComboBox.addItem('<edit> TARE')
-        self.tarePopup.tareComboBox.insertSeparator(2)
-        self.tarePopup.tareComboBox.addItem('')
-        self.tarePopup.tareComboBox.addItems(self.aw.qmc.container_names)
-        width = self.tarePopup.tareComboBox.minimumSizeHint().width()
-        view: Optional[QAbstractItemView] = self.tarePopup.tareComboBox.view()
-        if view is not None:
-            view.setMinimumWidth(width)
-        self.tarePopup.tareComboBox.setCurrentIndex(2) # reset to the empty entry
-        self.aw.qmc.container_idx = -1
-        self.tarePopup.tarePopupEnabled = True
-        self.accept()
-
-    @pyqtSlot(bool)
-    def addTare(self, _:bool = False) -> None:
-        rows = self.taretable.rowCount()
-        self.taretable.setRowCount(rows + 1)
-        #add widgets to the table
-        name = QLineEdit()
-        name.setAlignment(Qt.AlignmentFlag.AlignRight)
-        name.setText('name')
-        w,_d,_m = self.aw.scale.readWeight(self.parent_dialog.scale_weight) # read value from scale in 'g'
-        weight = QLineEdit()
-        weight.setAlignment(Qt.AlignmentFlag.AlignRight)
-        if w > -1:
-            weight.setText(str(w))
-        else:
-            weight.setText(str(0))
-        weight.setValidator(QIntValidator(0,999,weight))
-        self.taretable.setCellWidget(rows,0,name)
-        self.taretable.setCellWidget(rows,1,weight)
-
-    @pyqtSlot(bool)
-    def delTare(self, _:bool = False) -> None:
-        selected = self.taretable.selectedRanges()
-        if len(selected) > 0:
-            bindex = selected[0].topRow()
-            if bindex >= 0:
-                self.taretable.removeRow(bindex)
-
-    def saveTareTable(self) -> None:
-        tars = self.taretable.rowCount()
-        names = []
-        weights = []
-        for i in range(tars):
-            nameWidget = cast(QLineEdit, self.taretable.cellWidget(i,0))
-            name = nameWidget.text()
-            weightWidget = cast(QLineEdit, self.taretable.cellWidget(i,1))
-            weight = int(round(float(comma2dot(weightWidget.text()))))
-            names.append(name)
-            weights.append(weight)
-        self.aw.qmc.container_names = names
-        self.aw.qmc.container_weights = weights
-
-    def createTareTable(self) -> None:
-        self.taretable.clear()
-        self.taretable.setRowCount(len(self.aw.qmc.container_names))
-        self.taretable.setColumnCount(2)
-        self.taretable.setHorizontalHeaderLabels([QApplication.translate('Table','Name'),
-                                                         QApplication.translate('Table','Weight')])
-        self.taretable.setAlternatingRowColors(True)
-        self.taretable.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self.taretable.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self.taretable.setSelectionMode(QTableWidget.SelectionMode.SingleSelection)
-        self.taretable.setShowGrid(True)
-        vheader: Optional[QHeaderView] = self.taretable.verticalHeader()
-        if vheader is not None:
-            vheader.setSectionResizeMode(QHeaderView.ResizeMode.Fixed)
-        for i, cn in enumerate(self.aw.qmc.container_names):
-            #add widgets to the table
-            name = QLineEdit()
-            name.setAlignment(Qt.AlignmentFlag.AlignRight)
-            name.setText(cn)
-            weight = QLineEdit()
-            weight.setAlignment(Qt.AlignmentFlag.AlignRight)
-            weight.setText(str(self.aw.qmc.container_weights[i]))
-            weight.setValidator(QIntValidator(0,999,weight))
-
-            self.taretable.setCellWidget(i,0,name)
-            self.taretable.setCellWidget(i,1,weight)
-        header: Optional[QHeaderView] = self.taretable.horizontalHeader()
-        if header is not None:
-            header.setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
-            header.setSectionResizeMode(1, QHeaderView.ResizeMode.Fixed)
-        self.taretable.setColumnWidth(1,65)
 
 ########################################################################################
 #####################  ENERGY Measuring Dialog  ########################################

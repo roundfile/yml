@@ -199,7 +199,7 @@ if TYPE_CHECKING:
     from artisanlib.comparator import roastCompareDlg # pylint: disable=unused-import
     from artisanlib.wheels import WheelDlg # pylint: disable=unused-import
     from artisanlib.hottop import Hottop # pylint: disable=unused-import
-    from artisanlib.weblcds import WebLCDs # pylint: disable=unused-import
+    from artisanlib.weblcds import WebLCDs, WebGreen, WebRoasted # pylint: disable=unused-import
     from artisanlib.santoker import Santoker # pylint: disable=unused-import
     from artisanlib.santoker_r import SantokerR # pylint: disable=unused-import
     from artisanlib.bluedot import BlueDOT # pylint: disable=unused-import
@@ -236,6 +236,7 @@ from artisanlib.util import (appFrozen, uchr, decodeLocal, decodeLocalStrict, en
         convertWeight, convertVolume, rgba_colorname2argb_colorname)
 
 from artisanlib.qtsingleapplication import QtSingleApplication
+
 
 
 try:
@@ -756,6 +757,7 @@ from artisanlib.widgets import (MyQLCDNumber, EventPushButton, MajorEventPushBut
 from artisanlib.notifications import Notification, NotificationManager, NotificationType
 from artisanlib.canvas import tgraphcanvas
 from artisanlib.phases_canvas import tphasescanvas
+from artisanlib.scale import ScaleManager
 
 
 # import artisan.plus module
@@ -884,7 +886,7 @@ class VMToolbar(NavigationToolbar): # pylint: disable=abstract-method
         except Exception: # pylint: disable=broad-except
             # not yet monkey patched
             formlayout.fedit_org = formlayout.fedit # type: ignore
-            formlayout.fedit = self.my_fedit
+            formlayout.fedit = self.my_fedit  # pyright:ignore[reportPrivateImportUsage]
 #        # monkey patch _formlayout to work around a MPL3.5.1 issue on Qt6
 #        # (see https://github.com/matplotlib/matplotlib/issues/22471)
 #        if mpl_version in [[3,5,0], [3,5,1]]:
@@ -1491,6 +1493,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         'recentThemeActs', 'applicationDirectory', 'helpdialog', 'redrawTimer', 'lastLoadedProfile', 'lastLoadedBackground', 'LargeScaleLCDsFlag', 'largeScaleLCDs_dialog',
         'analysisresultsanno', 'segmentresultsanno', 'schedule_window', 'scheduleFlag', 'scheduled_items_uuids', 'largeLCDs_dialog', 'LargeLCDsFlag', 'largeDeltaLCDs_dialog', 'LargeDeltaLCDsFlag', 'largePIDLCDs_dialog',
         'LargePIDLCDsFlag', 'largeExtraLCDs_dialog', 'LargeExtraLCDsFlag', 'largePhasesLCDs_dialog', 'LargePhasesLCDsFlag', 'WebLCDs', 'WebLCDsPort', 'weblcds_server',
+        'weblcds_index_path', 'weblcds_websocket_path',
+        'taskWebDisplayGreenActive', 'taskWebDisplayGreenPort', 'taskWebDisplayRoastedActive', 'taskWebDisplayRoastedPort',
+        'taskWebDisplayRoastedIndexPath', 'taskWebDisplayRoastedWebSocketPath', 'taskWebDisplayGreen_server', 'taskWebDisplayRoasted_server',
+        'scale_manager', 'scale1_model', 'scale1_id', 'container1_idx', 'scale2_model', 'scale2_name', 'scale2_id', 'container2_idx',
         'WebLCDsAlerts', 'EventsDlg_activeTab', 'graphColorDlg_activeTab', 'PID_DlgControl_activeTab', 'CurveDlg_activeTab', 'editGraphDlg_activeTab',
         'backgroundDlg_activeTab', 'DeviceAssignmentDlg_activeTab', 'AlarmDlg_activeTab', 'schedule_activeTab', 'StatisticsDlg_activeTab', 'resetqsettings', 'settingspath', 'wheelpath', 'profilepath',
         'userprofilepath', 'printer', 'main_widget', 'defaultdpi', 'dpi', 'qmc', 'HottopControlActive', 'AsyncSamplingTimer', 'wheeldialog',
@@ -1667,6 +1673,29 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         self.WebLCDsPort:int = 8080
         self.WebLCDsAlerts:bool = False
 
+        # Tasks Web Displays
+        self.taskWebDisplayGreenActive:bool = False
+        self.taskWebDisplayGreenPort:int = 8081
+        self.taskWebDisplayGreen_server:Optional[WebGreen] = None # holds the Task Green Web display instance
+        self.taskWebDisplayRoastedActive:bool = False
+        self.taskWebDisplayRoastedPort:int = 8082
+        self.taskWebDisplayRoastedIndexPath:Final[str] = 'roasted'
+        self.taskWebDisplayRoastedWebSocketPath:Final[str] = 'roasted_ws'
+        self.taskWebDisplayRoasted_server:Optional[WebRoasted] = None # holds the Roasted Web display instance
+
+        # Scales
+        self.scale_manager:ScaleManager = ScaleManager()
+        # scale1: for roasted and green (if no second scale is configured, otherwise just for roasted)
+        self.scale1_model:Optional[int] = None
+        self.scale1_name:Optional[str] = None  # the display/local name of the device (like "ACAIA162FC")
+        self.scale1_id:Optional[str] = None    # the id, eg. the BT address (like "24:71:89:cc:09:05")
+        self.container1_idx:int = -1 # -1: no container set; otherwise index into selected qmc.container_names/qmc.container_weights
+        # scale2: just for green
+        self.scale2_model:Optional[int] = None
+        self.scale2_name:Optional[str] = None  # the display/local name of the device (like "ACAIA162FC")
+        self.scale2_id:Optional[str] = None    # the device id, eg. the BT address (like "24:71:89:cc:09:05")
+        self.container2_idx:int = -1 # -1: no container set; otherwise index into selected qmc.container_names/qmc.container_weights
+
         # active tab
         self.EventsDlg_activeTab:int = 0
         self.graphColorDlg_activeTab:int = 0
@@ -1796,6 +1825,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         self.extratimeout:List[float] = []
 
         # WebLCDs
+        self.weblcds_index_path:Final[str] = 'artisan'
+        self.weblcds_websocket_path:Final[str] = 'websocket'
         self.weblcds_server:Optional[WebLCDs] = None # holds the WebLCD instance
 
         # Hottop
@@ -4438,6 +4469,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.qmc.BTcurve = not self.qmc.BTcurve
             # we reset the cached main event annotation positions as those annotations are now rendered on the other curve
             self.qmc.l_annotations_dict = {}
+            self.qmc.l_event_flags_dict = {}
             # and redraw
             self.qmc.redraw_keep_view(recomputeAllDeltas=False)
 
@@ -4447,6 +4479,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.qmc.ETcurve = not self.qmc.ETcurve
             # we reset the cached main event annotation positions as those annotations are now rendered on the other curve
             self.qmc.l_annotations_dict = {}
+            self.qmc.l_event_flags_dict = {}
             self.qmc.redraw_keep_view(recomputeAllDeltas=False)
 
     @pyqtSlot()
@@ -6798,8 +6831,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         mindelta = float('nan')
         ioi_start = ''
         ioi_duration = ''
-        ioi_maxdelta = ''
-        ioi_abcprime = ''
+        ioi_maxdelta = 0.
+        ioi_abcprime = 0.
         maxdeltas_seg = numpy.empty(0)
         deltatimes_seg:npt.NDArray[numpy.double] = numpy.empty(0)
         timeindexs_seg:npt.NDArray[numpy.int64] = numpy.empty(0, dtype=numpy.int64)
@@ -6992,7 +7025,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 except Exception:  # pylint: disable=broad-except
                     tra = numpy.trapz(ioi_abs_deltas, x=times_all) # type:ignore [attr-defined, unused-ignore]
                 ioi_abc_deltas = float(numpy.sum(tra))
-                ioi_abcprime = str(ioi_abc_deltas / ioi_seconds)
+                ioi_abcprime = ioi_abc_deltas / ioi_seconds
 
                 # fit RoR in C/min/min
                 if exp == 2:
@@ -8242,7 +8275,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     if action > 18:
                         action = action + 1 # skip the 19: Aillio PRS
             # after adaption: (see eventaction)
-                value = (self.calcSliderSendValue(n) if v is None else v) # preference for the more precise float value if given over the slider value
+                value = (self.calcSliderSendValue(n) if v is None else self.calcEventValue(n,v)) # preference for the more precise float value if given over the slider value
                 if action not in {4, 6, 13, 14, 15, 20, 21, 22} or (action in {4,13,20, 22} and v is None): # only for IO, VOUT, S7 and RC Commands we keep the floats always
                         # and for MODBUS/PWM/Artisan/WebSocket Command if the optional float value v is not given (enabling hi-res ramping event replay)
                         # NOTE: avoid using 'write({})' in MODBUS commands as {} might be bound to a float and then writing to 2 registers instead of one
@@ -8277,7 +8310,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         self.block_quantification_sampling_ticks[n] = self.sampling_ticks_to_block_quantifiction
         self.extraeventsactionslastvalue[n] = self.eventslidervalues[n]
         if self.qmc.flagstart:
-#            value = float2float((self.eventslidervalues[n] + 10.0) / 10.0)
             value = self.qmc.eventsExternal2InternalValue(self.eventslidervalues[n])
             description = str(float2float(self.calcSliderSendValue(n),2)).rstrip('0').rstrip('.') + self.eventsliderunits[n]
             self.qmc.EventRecordAction(extraevent = 1,eventtype=n,eventvalue=value,eventdescription=description)
@@ -9924,15 +9956,29 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                                     if len(args) == 2:
                                         event_type = int(args[0])
                                         if 0 < event_type < 5:
+                                            updated:bool = False
                                             try:
                                                 state = toBool(eval(args[1])) # pylint: disable=eval-used
-                                                self.qmc.specialeventplaybackramp[event_type - 1] = state
+                                                if self.qmc.specialeventplaybackramp[event_type - 1] != state:
+                                                    self.qmc.specialeventplaybackramp[event_type - 1] = state
+                                                    updated = True
                                             except Exception: # pylint: disable=broad-except
                                                 value_str = args[1].strip()
                                                 if value_str.lower() in {'yes', 'true', 't', '1'}:
-                                                    self.qmc.specialeventplaybackramp[event_type - 1] = True
-                                                else:
+                                                    if not self.qmc.specialeventplaybackramp[event_type - 1]:
+                                                        self.qmc.specialeventplaybackramp[event_type - 1] = True
+                                                        updated = True
+                                                elif self.qmc.specialeventplaybackramp[event_type - 1]:
                                                     self.qmc.specialeventplaybackramp[event_type - 1] = False
+                                                    updated = True
+                                            if updated:
+                                                self.qmc.redrawKeepViewSignal.emit(
+                                                    False, # recomputeAllDeltas (default: True)
+                                                    False, # re_smooth_foreground (default: True)
+                                                    True,  # takelock (default: True)
+                                                    False, # forceRenewAxis (default: False)
+                                                    False, # re_smooth_background (default: False)
+                                                    )
                                 except Exception as e: # pylint: disable=broad-except
                                     _log.exception(e)
                             # playback(<int>, <bool>) with <int> from {1,2,3,4} selecting one of the four event types
@@ -11572,13 +11618,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.alarmAction.setEnabled(False)
             self.autosaveAction.setEnabled(False)
             self.batchAction.setEnabled(False)
-            self.readingsAction.setEnabled(False)
             self.buttonsAction.setChecked(False)
             self.buttonsAction.setEnabled(False)
             self.slidersAction.setChecked(False)
             self.slidersAction.setEnabled(False)
-            self.eventsEditorAction.setChecked(False)
-            self.eventsEditorAction.setEnabled(False)
             self.simulatorAction.setEnabled(False)
 
     def update_minieventline_visibility(self) -> None:
@@ -13424,11 +13467,6 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 self.qmc.background = not self.qmc.hideBgafterprofileload
                 self.qmc.timealign(redraw=False)
                 self.qmc.redraw()
-                if self.qmc.backgroundPlaybackEvents:
-                    # first turn playback off to clean previous disabled events
-                    self.qmc.turn_playback_event_OFF()
-                    # turn on again after background load to ignore already passed events
-                    self.qmc.turn_playback_event_ON()
 
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
@@ -17327,6 +17365,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.plus_language = settings.value('plus_language',self.plus_language)
             self.plus_user_id = settings.value('plus_user_id',self.plus_user_id)
             self.plus_account_id = settings.value('plus_account_id',self.plus_account_id)
+            plus.stock.coffee_label_normal_order = settings.value('standard_bean_labels',plus.stock.coffee_label_normal_order)
             #remember swaplcds and swapdeltalcds
             old_swaplcds = self.qmc.swaplcds
             old_swapdeltalcds = self.qmc.swapdeltalcds
@@ -18175,6 +18214,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.qmc.gasMix_setup = toInt(settings.value('gasMix_setup',self.qmc.gasMix_setup))
             self.qmc.energyresultunit_setup = toInt(settings.value('energyresultunit_setup',self.qmc.energyresultunit_setup))
 #            self.qmc.energytablecolumnwidths = [toInt(x) for x in toList(settings.value("energytablecolumnwidths",self.qmc.energytablecolumnwidths))]
+            self.qmc.perKgRoastMode = toBool(settings.value('perKgRoastMode',self.qmc.perKgRoastMode))
             settings.endGroup()
             self.qmc.restoreEnergyLoadDefaults()
             self.qmc.restoreEnergyProtocolDefaults()
@@ -18523,6 +18563,30 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             settings.endGroup()
 #--- END GROUP WebLCDs
 
+#--- BEGIN GROUP Tasks
+            # Tasks
+            settings.beginGroup('Tasks')
+            self.taskWebDisplayGreenActive = toBool(settings.value('greenActive',self.taskWebDisplayGreenActive))
+            self.taskWebDisplayGreenPort = toInt(settings.value('greenPort',self.taskWebDisplayGreenPort))
+            self.taskWebDisplayRoastedActive = toBool(settings.value('roastedActive',self.taskWebDisplayRoastedActive))
+            self.taskWebDisplayRoastedPort = toInt(settings.value('roastedPort',self.taskWebDisplayRoastedPort))
+            settings.endGroup()
+#--- END GROUP Tasks
+
+#--- BEGIN GROUP Scales
+            # Scales
+            settings.beginGroup('Scales')
+            self.scale1_model = settings.value('scale1_model',self.scale1_model)
+            self.scale1_name = settings.value('scale1_name',self.scale1_name)
+            self.scale1_id = settings.value('scale1_id',self.scale1_id)
+            self.container1_idx = settings.value('container1_idx',self.container1_idx)
+            self.scale2_model = settings.value('scale2_model',self.scale2_model)
+            self.scale2_name = settings.value('scale2_name',self.scale2_name)
+            self.scale2_id = settings.value('scale2_id',self.scale2_id)
+            self.container2_idx = settings.value('container2_idx',self.container2_idx)
+            settings.endGroup()
+#--- END GROUP Scales
+
             self.schedule_day_filter =toBool(settings.value('ScheduleDayFilter',self.schedule_day_filter))
             self.schedule_user_filter = toBool(settings.value('ScheduleUserFilter',self.schedule_user_filter))
             self.schedule_machine_filter = toBool(settings.value('ScheduleMachineFilter',self.schedule_machine_filter))
@@ -18556,9 +18620,17 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.LargePhasesLCDsFlag = toBool(settings.value('LargePhasesLCDs',self.LargePhasesLCDsFlag))
             if self.LargePhasesLCDsFlag:
                 self.largePhasesLCDs()
-            # start server if needed
+
+            # start WebLCD server if needed
             if self.WebLCDs:
-                QTimer.singleShot(5000, self.startWebLCDsforced)
+                QTimer.singleShot(2000, self.startWebLCDsforced)
+            # start Task Green Web Display
+            if self.taskWebDisplayGreenActive:
+                QTimer.singleShot(2500, self.startWebGreenforced)
+            # start Task Roasted Web Display
+            if self.taskWebDisplayRoastedActive:
+                QTimer.singleShot(3000, self.startWebRoastedforced)
+
 
 #--- BEGIN GROUP ExtraEventButtons
             #restore buttons
@@ -18768,17 +18840,21 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 
         return res
 
+    ## WebLCDs
+
     @pyqtSlot()
     def startWebLCDsforced(self) -> None:
         self.startWebLCDs(force=True)
 
     def startWebLCDs(self, force:bool = False) -> bool:
         try:
-            if not self.app.artisanviewerMode and not self.WebLCDs or force:
+            if not self.app.artisanviewerMode and (not self.WebLCDs or force):
                 from artisanlib.weblcds import WebLCDs
                 self.weblcds_server = WebLCDs(
                     self.WebLCDsPort,
                     str(getResourcePath()),
+                    self.weblcds_index_path,
+                    self.weblcds_websocket_path,
                     ('&nbsp;&nbsp;-.-' if self.qmc.LCDdecimalplaces else '&nbsp;--'),
                     self.lcdpaletteF['timer'],
                     self.lcdpaletteB['timer'],
@@ -18802,7 +18878,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.WebLCDs = False
             return False
         except Exception as e: # pylint: disable=broad-except
-            _log.exception(e)
+            _log.error(e)
             self.qmc.adderror(QApplication.translate('Error Message','Could not start WebLCDs. Selected port might be busy.'))
             self.stopWebLCDs()
             self.WebLCDs = False
@@ -18816,6 +18892,112 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.WebLCDs = False
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
+
+    ## WebGreen
+
+    @pyqtSlot()
+    def startWebGreenforced(self) -> None:
+        self.startWebGreen(force=True)
+
+    def startWebGreen(self, force:bool = False) -> bool:
+        try:
+            if not self.app.artisanviewerMode and (not self.taskWebDisplayGreenActive or force):
+                from artisanlib.weblcds import WebGreen
+                self.taskWebDisplayGreen_server = WebGreen(
+                    self.taskWebDisplayGreenPort,
+                    str(getResourcePath()),
+                    ('&nbsp;&nbsp;-.-' if self.qmc.LCDdecimalplaces else '&nbsp;--'),
+                    self.lcdpaletteF['timer'],
+                    self.lcdpaletteB['timer'],
+                    self.lcdpaletteF['bt'],
+                    self.lcdpaletteB['bt'],
+                    self.lcdpaletteF['et'],
+                    self.lcdpaletteB['et'],
+                    self.qmc.ETlcd,
+                    self.qmc.BTlcd)
+                res = self.taskWebDisplayGreen_server.startWeb()
+                if res:
+                    self.taskWebDisplayGreenActive = True
+                    return True
+                self.stopWebGreen()
+                self.taskWebDisplayGreenActive = False
+                return False
+            return False
+        except ModuleNotFoundError:
+            self.qmc.adderror(QApplication.translate('Error Message','Exception: Task Green remote display not supported by this build'))
+            self.stopWebGreen()
+            self.taskWebDisplayGreenActive = False
+            return False
+        except Exception as e: # pylint: disable=broad-except
+            _log.error(e)
+            self.qmc.adderror(QApplication.translate('Error Message','Could not start Task Green remote display. Selected port might be busy.'))
+            self.stopWebGreen()
+            self.taskWebDisplayGreenActive = False
+            return False
+
+    def stopWebGreen(self) -> None:
+        try:
+            if self.taskWebDisplayGreen_server is not None:
+                self.taskWebDisplayGreen_server.stopWeb()
+            self.taskWebDisplayGreen_server = None
+            self.taskWebDisplayGreenActive = False
+        except Exception as e: # pylint: disable=broad-except
+            _log.exception(e)
+
+    ## WebGreen
+
+    @pyqtSlot()
+    def startWebRoastedforced(self) -> None:
+        self.startWebRoasted(force=True)
+
+    def startWebRoasted(self, force:bool = False) -> bool:
+        try:
+            if not self.app.artisanviewerMode and (not self.taskWebDisplayRoastedActive or force):
+                from artisanlib.weblcds import WebRoasted
+                self.taskWebDisplayRoasted_server = WebRoasted(
+                    self.taskWebDisplayRoastedPort,
+                    str(getResourcePath()),
+                    self.taskWebDisplayRoastedIndexPath,
+                    self.taskWebDisplayRoastedWebSocketPath,
+                    ('&nbsp;&nbsp;-.-' if self.qmc.LCDdecimalplaces else '&nbsp;--'),
+                    self.lcdpaletteF['timer'],
+                    self.lcdpaletteB['timer'],
+                    self.lcdpaletteF['bt'],
+                    self.lcdpaletteB['bt'],
+                    self.lcdpaletteF['et'],
+                    self.lcdpaletteB['et'],
+                    self.qmc.ETlcd,
+                    self.qmc.BTlcd)
+                res = self.taskWebDisplayRoasted_server.startWeb()
+                if res:
+                    self.taskWebDisplayRoastedActive = True
+                    return True
+                self.stopWebRoasted()
+                self.taskWebDisplayRoastedActive = False
+                return False
+            return False
+        except ModuleNotFoundError:
+            self.qmc.adderror(QApplication.translate('Error Message','Exception: Task Roasted remote display not supported by this build'))
+            self.stopWebRoasted()
+            self.taskWebDisplayRoastedActive = False
+            return False
+        except Exception as e: # pylint: disable=broad-except
+            _log.error(e)
+            self.qmc.adderror(QApplication.translate('Error Message','Could not start Task Roasted remote display. Selected port might be busy.'))
+            self.stopWebRoasted()
+            self.taskWebDisplayRoastedActive = False
+            return False
+
+    def stopWebRoasted(self) -> None:
+        try:
+            if self.taskWebDisplayRoasted_server is not None:
+                self.taskWebDisplayRoasted_server.stopWeb()
+            self.taskWebDisplayRoasted_server = None
+            self.taskWebDisplayRoastedActive = False
+        except Exception as e: # pylint: disable=broad-except
+            _log.exception(e)
+
+    ##
 
     def applyStandardButtonVisibility(self) -> None:
         if self.eventsbuttonflag:
@@ -19031,7 +19213,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     if isinstance(m, str):
                         self.qmc.EvalueMarker[0] = m
                     self.qmc.EvalueMarkerSize[0] = max(self.qmc.markersize_min, self.qmc.l_eventtype1dots.get_markersize())
-                    self.qmc.EvalueColor[0] = self.getColor(self.qmc.l_eventtype1dots)
+                    self.qmc.EvalueColor[0] = self.getColor(self.qmc.l_eventtype1dots)[:7] # no alpha for event colors as it is handled separately
                     self.qmc.Evaluelinethickness[0] = max(self.qmc.linewidth_min, self.qmc.l_eventtype1dots.get_linewidth())
                     self.qmc.etypes[0] = str(self.qmc.l_eventtype1dots.get_label())
                 if self.qmc.l_eventtype2dots is not None:
@@ -19039,7 +19221,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     if isinstance(m, str):
                         self.qmc.EvalueMarker[1] = m
                     self.qmc.EvalueMarkerSize[1] = max(self.qmc.markersize_min, self.qmc.l_eventtype2dots.get_markersize())
-                    self.qmc.EvalueColor[1] = self.getColor(self.qmc.l_eventtype2dots)
+                    self.qmc.EvalueColor[1] = self.getColor(self.qmc.l_eventtype2dots)[:7] # no alpha for event colors as it is handled separately
                     self.qmc.Evaluelinethickness[1] = max(self.qmc.linewidth_min, self.qmc.l_eventtype2dots.get_linewidth())
                     self.qmc.etypes[1] = str(self.qmc.l_eventtype2dots.get_label())
                 if self.qmc.l_eventtype3dots is not None:
@@ -19047,7 +19229,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     if isinstance(m, str):
                         self.qmc.EvalueMarker[2] = m
                     self.qmc.EvalueMarkerSize[2] = max(self.qmc.markersize_min, self.qmc.l_eventtype3dots.get_markersize())
-                    self.qmc.EvalueColor[2] = self.getColor(self.qmc.l_eventtype3dots)
+                    self.qmc.EvalueColor[2] = self.getColor(self.qmc.l_eventtype3dots)[:7] # no alpha for event colors as it is handled separately
                     self.qmc.Evaluelinethickness[2] = max(self.qmc.linewidth_min, self.qmc.l_eventtype3dots.get_linewidth())
                     self.qmc.etypes[2] = str(self.qmc.l_eventtype3dots.get_label())
                 if self.qmc.l_eventtype4dots is not None:
@@ -19055,7 +19237,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     if isinstance(m, str):
                         self.qmc.EvalueMarker[3] = m
                     self.qmc.EvalueMarkerSize[3] = max(self.qmc.markersize_min, self.qmc.l_eventtype4dots.get_markersize())
-                    self.qmc.EvalueColor[3] = self.getColor(self.qmc.l_eventtype4dots)
+                    self.qmc.EvalueColor[3] = self.getColor(self.qmc.l_eventtype4dots)[:7] # no alpha for event colors as it is handled separately
                     self.qmc.Evaluelinethickness[3] = max(self.qmc.linewidth_min, self.qmc.l_eventtype4dots.get_linewidth())
                     self.qmc.etypes[3] = str(self.qmc.l_eventtype4dots.get_label())
         except Exception as e: # pylint: disable=broad-except
@@ -19173,6 +19355,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 self.settingsSetValue(settings, default_settings, 'plus_language', self.plus_language, read_defaults)
                 self.settingsSetValue(settings, default_settings, 'plus_user_id', self.plus_user_id, read_defaults)
                 self.settingsSetValue(settings, default_settings, 'plus_account_id', self.plus_account_id, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'standard_bean_labels', plus.stock.coffee_label_normal_order, read_defaults)
 
             if not read_defaults: # we don't add those to the cache forcing those settings to be saved always
                 #save window geometry if not in fullscreen mode
@@ -19801,6 +19984,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.settingsSetValue(settings, default_settings, 'electricEnergyMix_setup',self.qmc.electricEnergyMix_setup, read_defaults)
             self.settingsSetValue(settings, default_settings, 'gasMix_setup',self.qmc.gasMix_setup, read_defaults)
             self.settingsSetValue(settings, default_settings, 'energyresultunit_setup',self.qmc.energyresultunit_setup, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'perKgRoastMode',self.qmc.perKgRoastMode, read_defaults)
             settings.endGroup()
 #--- END GROUP EnergyUse
 
@@ -20013,6 +20197,30 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.settingsSetValue(settings, default_settings, 'alerts',self.WebLCDsAlerts, read_defaults)
             settings.endGroup()
 #--- END GROUP WebLCDs
+
+#--- BEGIN GROUP Tasks
+            # Tasks
+            settings.beginGroup('Tasks')
+            self.settingsSetValue(settings, default_settings, 'greenActive',self.taskWebDisplayGreenActive, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'greenPort',self.taskWebDisplayGreenPort, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'roastedActive',self.taskWebDisplayRoastedActive, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'roastedPort',self.taskWebDisplayRoastedPort, read_defaults)
+            settings.endGroup()
+#--- END GROUP Tasks
+
+#--- BEGIN GROUP Scales
+            # Scales
+            settings.beginGroup('Scales')
+            self.settingsSetValue(settings, default_settings, 'scale1_model',self.scale1_model, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'scale1_name',self.scale1_name, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'scale1_id',self.scale1_id, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'container1_idx',self.container1_idx, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'scale2_model',self.scale2_model, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'scale2_name',self.scale2_name, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'scale2_id',self.scale2_id, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'container2_idx',self.container2_idx, read_defaults)
+            settings.endGroup()
+#--- END GROUP Scales
 
             self.settingsSetValue(settings, default_settings, 'ScheduleDayFilter',self.schedule_day_filter, read_defaults)
             self.settingsSetValue(settings, default_settings, 'ScheduleUserFilter',self.schedule_user_filter, read_defaults)
@@ -20317,6 +20525,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
             self.qmc.stopPhidgetManager()
+        try:
+            self.scale_manager.disconnect_all()
+        except Exception as e: # pylint: disable=broad-except
+            _log.exception(e)
 
     # returns True if confirmed, False if canceled by the user
     def closeApp(self) -> bool:
@@ -21884,6 +22096,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                             _, _, exc_tb = sys.exc_info()
                             self.qmc.adderror((QApplication.translate('Error Message','Exception:') + ' rankingReport() {0}').format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
 
+
                     try:
                         # Create a roast phase visualization graph
 
@@ -22038,7 +22251,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                         if prev_backgroundpath:
                             self.loadbackground(prev_backgroundpath)
                             self.qmc.background = prev_background
-                        self.qmc.timealign()
+                        if prev_foreground_profile_path or prev_backgroundpath:
+                            self.qmc.timealign()
+                        else:
+                            self.qmc.reset()
                     except Exception as e: # pylint: disable=broad-except
                         _log.exception(e)
 
@@ -24697,178 +24913,179 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             if self.qmc.reset():
                 tree = ET.ElementTree(file=filename)
                 root = tree.getroot()
-                self.normalize_tags(root) # normalize tags to lower case
-                self.normalize_attr(root) # normalize attributes to lower case
+                if root is not None:
+                    self.normalize_tags(root) # normalize tags to lower case
+                    self.normalize_attr(root) # normalize attributes to lower case
 
-                if root.tag == 'history':
-                    date = root.find('historydate')
-                    time = root.find('historytime')
-                    if date is not None and time is not None:
-                        date_str = date.text
-                        time_str = time.text
-                        if date_str is not None and time_str is not None:
-                            self.qmc.roastdate = QDateTime(QDate.fromString(date_str,'M/d/yyyy'),QTime.fromString(time_str,'h:mm AP'))
+                    if root.tag == 'history':
+                        date = root.find('historydate')
+                        time = root.find('historytime')
+                        if date is not None and time is not None:
+                            date_str = date.text
+                            time_str = time.text
+                            if date_str is not None and time_str is not None:
+                                self.qmc.roastdate = QDateTime(QDate.fromString(date_str,'M/d/yyyy'),QTime.fromString(time_str,'h:mm AP'))
 
-                title = root.find('roasttype')
-                if title is None:
-                    self.qmc.title = str(os.path.basename(filename))
-                else:
-                    self.qmc.title = str(title.text)
-
-                beans = root.find('coffeetype')
-                if beans is not None and beans.text is not None:
-                    self.qmc.beans = str(beans.text)
-
-                roaster = root.find('roaster')
-                if roaster is not None and roaster.text is not None:
-                    self.qmc.roastertype = str(roaster.text)
-
-                chargestr = root.find('charge')
-                if chargestr is None:
-                    chargestr = root.find('chargingcapacity')
-                if chargestr is not None: # contains floating point number; default unit Kg
-                    try:
-                        weight_in_str = chargestr.text
-                        if weight_in_str is not None:
-                            self.qmc.weight = (float(weight_in_str), self.qmc.weight[1], 'Kg')
-                    except Exception: # pylint: disable=broad-except
-                        pass
-
-                dischargestr = root.find('dischargingcapacity')
-                if dischargestr is not None: # contains floating point number; default unit Kg
-                    try:
-                        weight_out_str = dischargestr.text
-                        if weight_out_str is not None:
-                            self.qmc.weight = (self.qmc.weight[0], float(weight_out_str), 'Kg')
-                    except Exception: # pylint: disable=broad-except
-                        pass
-
-                colorstr = root.find('coffeecolor')
-                if colorstr is not None:
-                    c = None
-                    if colorstr.text is not None:
-                        for e in colorstr.text.strip().split():
-                            try:
-                                c = int(e)
-                                break
-                            except Exception: # pylint: disable=broad-except
-                                pass
-                    if c:
-                        self.qmc.ground_color = c
-
-                notes = root.find('notes')
-                if notes is not None and notes.text is not None:
-                    self.qmc.roastingnotes = str(notes.text)
-
-                recipedata = None
-                historydata = None
-                recipedata = tree.find('recipedata')
-                m = None
-                if recipedata is not None:
-                    m = recipedata.get('temp_unit')
-                else:
-                    mt = tree.find('recipedata_temp_unit')
-                    if mt is not None:
-                        m = mt.text
-                if m is None:
-                    historydata = tree.find('historydata')
-                    if historydata is not None:
-                        m = historydata.get('temp_unit')
+                    title = root.find('roasttype')
+                    if title is None:
+                        self.qmc.title = str(os.path.basename(filename))
                     else:
-                        mt = tree.find('historydata_temp_unit')
+                        self.qmc.title = str(title.text)
+
+                    beans = root.find('coffeetype')
+                    if beans is not None and beans.text is not None:
+                        self.qmc.beans = str(beans.text)
+
+                    roaster = root.find('roaster')
+                    if roaster is not None and roaster.text is not None:
+                        self.qmc.roastertype = str(roaster.text)
+
+                    chargestr = root.find('charge')
+                    if chargestr is None:
+                        chargestr = root.find('chargingcapacity')
+                    if chargestr is not None: # contains floating point number; default unit Kg
+                        try:
+                            weight_in_str = chargestr.text
+                            if weight_in_str is not None:
+                                self.qmc.weight = (float(weight_in_str), self.qmc.weight[1], 'Kg')
+                        except Exception: # pylint: disable=broad-except
+                            pass
+
+                    dischargestr = root.find('dischargingcapacity')
+                    if dischargestr is not None: # contains floating point number; default unit Kg
+                        try:
+                            weight_out_str = dischargestr.text
+                            if weight_out_str is not None:
+                                self.qmc.weight = (self.qmc.weight[0], float(weight_out_str), 'Kg')
+                        except Exception: # pylint: disable=broad-except
+                            pass
+
+                    colorstr = root.find('coffeecolor')
+                    if colorstr is not None:
+                        c = None
+                        if colorstr.text is not None:
+                            for e in colorstr.text.strip().split():
+                                try:
+                                    c = int(e)
+                                    break
+                                except Exception: # pylint: disable=broad-except
+                                    pass
+                        if c:
+                            self.qmc.ground_color = c
+
+                    notes = root.find('notes')
+                    if notes is not None and notes.text is not None:
+                        self.qmc.roastingnotes = str(notes.text)
+
+                    recipedata = None
+                    historydata = None
+                    recipedata = tree.find('recipedata')
+                    m = None
+                    if recipedata is not None:
+                        m = recipedata.get('temp_unit')
+                    else:
+                        mt = tree.find('recipedata_temp_unit')
                         if mt is not None:
                             m = mt.text
-                if m is not None:
-                    m = m.lower()
-                    if m == 'c' and self.qmc.mode == 'F':
-                        self.qmc.celsiusMode()
-                    elif m == 'f' and self.qmc.mode == 'C':
-                        self.qmc.fahrenheitMode()
-
-                # add extra device if needed
-                for __ in range(max(0,1 - len(self.qmc.extradevices))):
-                    self.addDevice()
-                if self.qmc.extraname1[0] == 'Extra 1':
-                    self.qmc.extraname1[0] = 'Burner'
-
-                diagrampoints = None
-                if recipedata is not None:
-                    diagrampoints = tree.find('recipedata/diagrampoints')
-                if diagrampoints is None:
-                    diagrampoints = tree.find('diagrampoints')
-                if diagrampoints is None:
-                    diagrampoints = tree.find('historydata')
-                last_timez = 0.
-                if diagrampoints is not None:
-                    for elem in diagrampoints.findall('data'):
-                        time_entry = elem.find('time')
-                        if time_entry is None:
-                            time_entry = elem.find('stime')
-                        if time_entry is None or time_entry.text is None:
-                            last_timez = last_timez + 1
-                            timez = last_timez
+                    if m is None:
+                        historydata = tree.find('historydata')
+                        if historydata is not None:
+                            m = historydata.get('temp_unit')
                         else:
-                            timez = float(stringtoseconds(time_entry.text))
-                            last_timez = timez
-                        self.qmc.timex.append(timez)
-                        self.qmc.temp1.append(-1)
-                        temp_entry = elem.find('temperature')
-                        if temp_entry is None:
-                            temp_entry = elem.find('ntemperature')
-                        if temp_entry is not None:
-                            bt = temp_entry.text
-                            if bt is not None:
-                                bt = bt.replace(',','.')
-                                self.qmc.temp2.append(float(bt))
-                                self.qmc.extratimex[0].append(timez)
-                                burner_entry = elem.find('burnercapacity')
-                                if burner_entry is None:
-                                    burner_entry = elem.find('nburnercapacity')
-                                if burner_entry is not None:
-                                    burner = burner_entry.text
-                                    if burner is not None:
-                                        burner = burner.replace(',','.')
-                                        self.qmc.extratemp1[0].append(float(burner))
-                                        self.qmc.extratemp2[0].append(-1)
+                            mt = tree.find('historydata_temp_unit')
+                            if mt is not None:
+                                m = mt.text
+                    if m is not None:
+                        m = m.lower()
+                        if m == 'c' and self.qmc.mode == 'F':
+                            self.qmc.celsiusMode()
+                        elif m == 'f' and self.qmc.mode == 'C':
+                            self.qmc.fahrenheitMode()
 
-                if len(self.qmc.timex) > 2:
-                    self.qmc.profile_sampling_interval = (self.qmc.timex[-1] - self.qmc.timex[0])/(len(self.qmc.timex) - 1)
-                self.qmc.updateDeltaSamples()
+                    # add extra device if needed
+                    for __ in range(max(0,1 - len(self.qmc.extradevices))):
+                        self.addDevice()
+                    if self.qmc.extraname1[0] == 'Extra 1':
+                        self.qmc.extraname1[0] = 'Burner'
 
-                # set CHARGE and DROP
-                self.qmc.timeindex[0] = 0
-                self.qmc.timeindex[6] = max(0,len(self.qmc.timex) - 1)
+                    diagrampoints = None
+                    if recipedata is not None:
+                        diagrampoints = tree.find('recipedata/diagrampoints')
+                    if diagrampoints is None:
+                        diagrampoints = tree.find('diagrampoints')
+                    if diagrampoints is None:
+                        diagrampoints = tree.find('historydata')
+                    last_timez = 0.
+                    if diagrampoints is not None:
+                        for elem in diagrampoints.findall('data'):
+                            time_entry = elem.find('time')
+                            if time_entry is None:
+                                time_entry = elem.find('stime')
+                            if time_entry is None or time_entry.text is None:
+                                last_timez = last_timez + 1
+                                timez = last_timez
+                            else:
+                                timez = float(stringtoseconds(time_entry.text))
+                                last_timez = timez
+                            self.qmc.timex.append(timez)
+                            self.qmc.temp1.append(-1)
+                            temp_entry = elem.find('temperature')
+                            if temp_entry is None:
+                                temp_entry = elem.find('ntemperature')
+                            if temp_entry is not None:
+                                bt = temp_entry.text
+                                if bt is not None:
+                                    bt = bt.replace(',','.')
+                                    self.qmc.temp2.append(float(bt))
+                                    self.qmc.extratimex[0].append(timez)
+                                    burner_entry = elem.find('burnercapacity')
+                                    if burner_entry is None:
+                                        burner_entry = elem.find('nburnercapacity')
+                                    if burner_entry is not None:
+                                        burner = burner_entry.text
+                                        if burner is not None:
+                                            burner = burner.replace(',','.')
+                                            self.qmc.extratemp1[0].append(float(burner))
+                                            self.qmc.extratemp2[0].append(-1)
 
-                if recipedata is not None:
-                    switchpoints = tree.find('recipedata/switchpoints')
-                else:
-                    switchpoints = tree.find('switchpoints')
-                if switchpoints is not None:
-                    for elem in switchpoints.findall('data'):
-                        time_entry = elem.find('time')
-                        if time_entry is None:
-                            time_entry = elem.find('stime')
-                        if time_entry is not None:
-                            time_str = time_entry.text
-                            if time_str is not None:
-                                time = float(stringtoseconds(time_str))
-                                burner_entry = elem.find('burnercapacity')
-                                if burner_entry is None:
-                                    burner_entry = elem.find('nburnercapacity')
-                                if burner_entry is not None:
-                                    burner = burner_entry.text
-                                    if burner is not None:
-                                        self.qmc.addEvent(
-                                            self.qmc.time2index(time),
-                                            3,
-                                            '',
-                                            self.qmc.str2eventsvalue(burner))
+                    if len(self.qmc.timex) > 2:
+                        self.qmc.profile_sampling_interval = (self.qmc.timex[-1] - self.qmc.timex[0])/(len(self.qmc.timex) - 1)
+                    self.qmc.updateDeltaSamples()
 
-                self.autoAdjustAxis()
+                    # set CHARGE and DROP
+                    self.qmc.timeindex[0] = 0
+                    self.qmc.timeindex[6] = max(0,len(self.qmc.timex) - 1)
 
-                self.sendmessage(QApplication.translate('Message','Probat Pilot data imported successfully'))
-                self.qmc.redraw()
-                self.qmc.fileDirtySignal.emit()
+                    if recipedata is not None:
+                        switchpoints = tree.find('recipedata/switchpoints')
+                    else:
+                        switchpoints = tree.find('switchpoints')
+                    if switchpoints is not None:
+                        for elem in switchpoints.findall('data'):
+                            time_entry = elem.find('time')
+                            if time_entry is None:
+                                time_entry = elem.find('stime')
+                            if time_entry is not None:
+                                time_str = time_entry.text
+                                if time_str is not None:
+                                    time = float(stringtoseconds(time_str))
+                                    burner_entry = elem.find('burnercapacity')
+                                    if burner_entry is None:
+                                        burner_entry = elem.find('nburnercapacity')
+                                    if burner_entry is not None:
+                                        burner = burner_entry.text
+                                        if burner is not None:
+                                            self.qmc.addEvent(
+                                                self.qmc.time2index(time),
+                                                3,
+                                                '',
+                                                self.qmc.str2eventsvalue(burner))
+
+                    self.autoAdjustAxis()
+
+                    self.sendmessage(QApplication.translate('Message','Probat Pilot data imported successfully'))
+                    self.qmc.redraw()
+                    self.qmc.fileDirtySignal.emit()
         except OSError as ex:
             self.qmc.adderror((QApplication.translate('Error Message','IO Error:') + ' importPilot(): {0}').format(str(ex)))
         except ValueError as ex:

@@ -23,18 +23,17 @@ from typing import Optional, Union, List, Tuple, Final, Callable, TYPE_CHECKING
 if TYPE_CHECKING:
     from bleak.backends.characteristic import BleakGATTCharacteristic  # pylint: disable=unused-import
 
-
 try:
-    from PyQt6.QtCore import QObject, pyqtSignal # @UnusedImport @Reimport  @UnresolvedImport
+    from PyQt6.QtCore import QObject # @UnusedImport @Reimport  @UnresolvedImport
 except ImportError:
-    from PyQt5.QtCore import QObject, pyqtSignal # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
-
+    from PyQt5.QtCore import QObject # type: ignore # @UnusedImport @Reimport  @UnresolvedImport
 
 from artisanlib.ble_port import ClientBLE
 from artisanlib.async_comm import AsyncIterable, IteratorReader
+from artisanlib.scale import Scale
 
 
-_log = logging.getLogger(__name__)
+_log: Final[logging.Logger] = logging.getLogger(__name__)
 
 
 ####
@@ -92,29 +91,42 @@ class ACAIA_TIMER(IntEnum):
     TIMER_STATE_STARTED = 1
     TIMER_STATE_PAUSED = 2
 
+# Acaia legacy service and characteristics UUIDs
+ACAIA_LEGACY_SERVICE_UUID:Final[str] = '00001820-0000-1000-8000-00805f9b34fb' # Internet Protocol Support Service # adverstised service UUID
+ACAIA_LEGACY_NOTIFY_UUID:Final[str] = '00002a80-0000-1000-8000-00805f9b34fb'
+ACAIA_LEGACY_WRITE_UUID:Final[str] = '00002a80-0000-1000-8000-00805f9b34fb' # same as notify!
 
-class AcaiaBLE(ClientBLE):
+# Acaia legacy name prefixes
+ACAIA_LEGACY_PEARL_NAME:Final[str] = 'PROCHBT' # Acaia Pearl
+ACAIA_LEGACY_LUNAR_NAME:Final[str] = 'ACAIA'   # Acaia Lunar Legacy
 
-    # Acaia legacy service and characteristics UUIDs
-    ACAIA_LEGACY_SERVICE_UUID:Final[str] = '00001820-0000-1000-8000-00805f9b34fb' # Internet Protocol Support Service # adverstised service UUID
-    ACAIA_LEGACY_NOTIFY_UUID:Final[str] = '00002a80-0000-1000-8000-00805f9b34fb'
-    ACAIA_LEGACY_WRITE_UUID:Final[str] = '00002a80-0000-1000-8000-00805f9b34fb' # same as notify!
+# Acaia service and characteristics UUIDs
+ACAIA_SERVICE_UUID:Final[str] = '49535343-FE7D-4AE5-8FA9-9FAFD205E455'
+ACAIA_NOTIFY_UUID:Final[str] = '49535343-1E4D-4BD9-BA61-23C647249616'
+ACAIA_WRITE_UUID:Final[str] = '49535343-8841-43F4-A8D4-ECBE34729BB3'
 
-    # Acaia legacy name prefixes
-    ACAIA_LEGACY_PEARL_NAME:Final[str] = 'PROCHBT' # Acaia Pearl
-    ACAIA_LEGACY_LUNAR_NAME:Final[str] = 'ACAIA'   # Acaia Lunar Legacy
+# Acaia name prefixes
+ACAIA_PEARL_NAME:Final[str] = 'PEARL-'   # Acaia Pearl (2021)
+ACAIA_PEARLS_NAME:Final[str] = 'PEARLS'  # Acaia Pearl S
+ACAIA_LUNAR_NAME:Final[str] = 'LUNAR-'   # Acaia Lunar (2021)
+ACAIA_CINCO_NAME:Final[str] = 'CINCO'    # Acaia Cinco
+ACAIA_PYXIS_NAME:Final[str] = 'PYXIS'    # Acaia Pyxis
 
-    # Acaia service and characteristics UUIDs
-    ACAIA_SERVICE_UUID:Final[str] = '49535343-FE7D-4AE5-8FA9-9FAFD205E455'
-    ACAIA_NOTIFY_UUID:Final[str] = '49535343-1E4D-4BD9-BA61-23C647249616'
-    ACAIA_WRITE_UUID:Final[str] = '49535343-8841-43F4-A8D4-ECBE34729BB3'
 
-    # Acaia name prefixes
-    ACAIA_PEARL_NAME:Final[str] = 'PEARL-'   # Acaia Pearl (2021)
-    ACAIA_PEARLS_NAME:Final[str] = 'PEARLS'  # Acaia Pearl S
-    ACAIA_LUNAR_NAME:Final[str] = 'LUNAR-'   # Acaia Lunar (2021)
-    ACAIA_CINCO_NAME:Final[str] = 'CINCO'    # Acaia Cinco
-    ACAIA_PYXIS_NAME:Final[str] = 'PYXIS'    # Acaia Pyxis
+# Acaia scale device name prefixes and product names
+ACAIA_SCALE_NAMES = [
+    (ACAIA_LEGACY_LUNAR_NAME, 'Lunar'), # original Lunar
+    (ACAIA_LUNAR_NAME, 'Lunar'), # Lunar 2021 and later
+    (ACAIA_LEGACY_PEARL_NAME, 'Pearl'), # original Pearl
+    (ACAIA_PEARLS_NAME, 'Pearl S'),
+    (ACAIA_PEARL_NAME, 'Pearl'), # Pearl 2021
+    (ACAIA_CINCO_NAME, 'Cinco'),
+    (ACAIA_PYXIS_NAME, 'Pyxis')]
+
+
+
+class AcaiaBLE(QObject, ClientBLE): # pyright: ignore [reportGeneralTypeIssues] # Argument to class must be a base class
+
 
     # Acaia message constants
     HEADER1:Final[bytes]      = b'\xef'
@@ -157,16 +169,22 @@ class AcaiaBLE(ClientBLE):
         self.set_heartbeat(self.HEARTBEAT_FREQUENCY) # send keep-alive heartbeat all 3-5sec; seems not to be needed any longer after sending ID on newer firmware versions!?
 
         # register Acaia Legacy UUIDs
-        for legacy_name in (self.ACAIA_LEGACY_LUNAR_NAME, self.ACAIA_LEGACY_PEARL_NAME):
-            self.add_device_description(self.ACAIA_LEGACY_SERVICE_UUID, legacy_name)
-        self.add_notify(self.ACAIA_LEGACY_NOTIFY_UUID, self.notify_callback)
-        self.add_write(self.ACAIA_LEGACY_SERVICE_UUID, self.ACAIA_LEGACY_WRITE_UUID)
+        for legacy_name in (ACAIA_LEGACY_LUNAR_NAME, ACAIA_LEGACY_PEARL_NAME):
+            self.add_device_description(ACAIA_LEGACY_SERVICE_UUID, legacy_name)
+        self.add_notify(ACAIA_LEGACY_NOTIFY_UUID, self.notify_callback)
+        self.add_write(ACAIA_LEGACY_SERVICE_UUID, ACAIA_LEGACY_WRITE_UUID)
 
         # register Acaia Current UUIDs
-        for acaia_name in (self.ACAIA_PEARL_NAME, self.ACAIA_PEARLS_NAME, self.ACAIA_LUNAR_NAME, self.ACAIA_PYXIS_NAME, self.ACAIA_CINCO_NAME):
-            self.add_device_description(self.ACAIA_SERVICE_UUID, acaia_name)
-        self.add_notify(self.ACAIA_NOTIFY_UUID, self.notify_callback)
-        self.add_write(self.ACAIA_SERVICE_UUID, self.ACAIA_WRITE_UUID)
+        for acaia_name in (ACAIA_PEARL_NAME, ACAIA_PEARLS_NAME, ACAIA_LUNAR_NAME, ACAIA_PYXIS_NAME, ACAIA_CINCO_NAME):
+            self.add_device_description(ACAIA_SERVICE_UUID, acaia_name)
+        self.add_notify(ACAIA_NOTIFY_UUID, self.notify_callback)
+        self.add_write(ACAIA_SERVICE_UUID, ACAIA_WRITE_UUID)
+
+    def set_connected_handler(self, connected_handler:Optional[Callable[[], None]]) -> None:
+        self._connected_handler = connected_handler
+
+    def set_disconnected_handler(self, disconnected_handler:Optional[Callable[[], None]]) -> None:
+        self._disconnected_handler = disconnected_handler
 
 
     # protocol parser
@@ -186,9 +204,9 @@ class AcaiaBLE(ClientBLE):
         self.fast_notifications_sent = False
         self.slow_notifications_sent = False
         connected_service_UUID = self.connected()
-        if connected_service_UUID == self.ACAIA_LEGACY_SERVICE_UUID:
+        if connected_service_UUID == ACAIA_LEGACY_SERVICE_UUID:
             _log.debug('connected to Acaia Legacy Scale')
-        elif connected_service_UUID == self.ACAIA_SERVICE_UUID:
+        elif connected_service_UUID == ACAIA_SERVICE_UUID:
             _log.debug('connected to Acaia Scale')
         if self._connected_handler is not None:
             self._connected_handler()
@@ -508,18 +526,19 @@ class AcaiaBLE(ClientBLE):
 
 
 
-# QObject needs to go first in this mixing and AcaiaBLE and its super class are not allowed to hold __slots__
-class Acaia(QObject, AcaiaBLE): # pyright: ignore [reportGeneralTypeIssues] # Argument to class must be a base class
+# AcaiaBLE and its super class are not allowed to hold __slots__
+class Acaia(AcaiaBLE, Scale): # pyright: ignore [reportGeneralTypeIssues] # Argument to class must be a base class
 
-    weight_changed_signal = pyqtSignal(int)   # delivers new weight in g
-    battery_changed_signal = pyqtSignal(int)  # delivers new batter level in %
-    disconnected_signal = pyqtSignal()        # issued on disconnect
-
-    def __init__(self, connected_handler:Optional[Callable[[], None]] = None,
+    def __init__(self, model:int, ident:Optional[str], name:Optional[str], connected_handler:Optional[Callable[[], None]] = None,
                        disconnected_handler:Optional[Callable[[], None]] = None):
-        QObject.__init__(self)
+        Scale.__init__(self, model, ident, name)
         AcaiaBLE.__init__(self, connected_handler = connected_handler, disconnected_handler=disconnected_handler)
 
+    def connect_scale(self) -> None:
+        self.start(address=self.ident)
+
+    def disconnect_scale(self) -> None:
+        self.stop()
 
     def weight_changed(self, new_value:int) -> None:
         self.weight_changed_signal.emit(new_value)
@@ -530,3 +549,6 @@ class Acaia(QObject, AcaiaBLE): # pyright: ignore [reportGeneralTypeIssues] # Ar
     def on_disconnect(self) -> None:
         self.disconnected_signal.emit()
         AcaiaBLE.on_disconnect(self)
+
+    def tare_scale(self) -> None:
+        self.send_tare()

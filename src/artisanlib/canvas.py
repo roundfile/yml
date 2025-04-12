@@ -38,7 +38,7 @@ import textwrap
 import functools
 from bisect import bisect_right
 import psutil
-from psutil._common import bytes2human
+from psutil._common import bytes2human # pyright:ignore[reportPrivateImportUsage]
 
 from typing import Final, Optional, List, Set, Dict, Callable, Tuple, Union, Any, Sequence, cast, TYPE_CHECKING  #for Python >= 3.9: can remove 'List' since type hints can now use the generic 'list'
 
@@ -50,7 +50,7 @@ if TYPE_CHECKING:
     from plus.blend import CustomBlend # pylint: disable=unused-import
     from matplotlib.collections import PolyCollection # pylint: disable=unused-import
     from matplotlib.axes import Axes # pylint: disable=unused-import
-    from matplotlib.axes._base import _AxesBase # pylint: disable=unused-import
+    from matplotlib.axes._base import _AxesBase # pyright:ignore[reportPrivateImportUsage] # pylint: disable=unused-import
     from matplotlib.image import AxesImage # pylint: disable=unused-import
     from matplotlib.legend import Legend # pylint: disable=unused-import
     from matplotlib.backend_bases import PickEvent, MouseEvent, Event # pylint: disable=unused-import
@@ -186,6 +186,7 @@ class tgraphcanvas(FigureCanvas):
     showEventsSignal = pyqtSignal(int, bool)
     showBackgroundEventsSignal = pyqtSignal(bool)
     redrawSignal = pyqtSignal(bool,bool,bool,bool,bool)
+    redrawKeepViewSignal = pyqtSignal(bool,bool,bool,bool,bool)
 
     umlaute_dict : Final[Dict[str, str]] = {
        uchr(228): 'ae',  # U+00E4   \xc3\xa4
@@ -951,6 +952,7 @@ class tgraphcanvas(FigureCanvas):
         # ids of (main) devices (without a + in front of their name string)
         # that do NOT communicate via any serial port thus do not need any serial port configuration
         self.nonSerialDevices : Final[List[int]] = self.phidgetDevices + [
+            18, # NONE (manual)
             27, # Program
             45, # Yocto Thermocouple
             46, # Yocto PT100
@@ -1702,9 +1704,9 @@ class tgraphcanvas(FigureCanvas):
         self.eventpositionbars:List[float] = [0.]*120
         self.specialeventannotations:List[str] = ['','','','']
         self.specialeventannovisibilities:List[int] = [0,0,0,0]
-        self.specialeventplaybackaid:List[bool] = [True, True, True, True]      # per event type decides if playback aid is active
-        self.specialeventplayback:List[bool] = [True, True, True, True]         # per event type decides if background events are play-backed or not
-        self.specialeventplaybackramp:List[bool] = [False, False, False, False] # per event type decides if playback ramping is applied or not
+        self.specialeventplaybackaid:List[bool] = [True, True, True, True]          # per event type decides if playback aid is active (note that eventtype 4 "--" is not replayed)
+        self.specialeventplayback:List[bool] = [True, True, True, True]             # per event type decides if background events are play-backed or not
+        self.specialeventplaybackramp:List[bool] = [False, False, False, False]     # per event type decides if playback ramping is applied or not
         self.overlappct:int = 100
 
         #curve styles
@@ -2306,6 +2308,7 @@ class tgraphcanvas(FigureCanvas):
                           QApplication.translate('Label','Continuous'),
                           QApplication.translate('Label','Roast Event'),
                           QApplication.translate('Label','Meter')]
+        self.perKgRoastMode:bool = False # if true only the amount during the roast and not the full batch (incl. preheat and BBP) are displayed), toggled by click on the result widget
 
         ## working variables (stored in .alog profiles):
         # Burners
@@ -2416,6 +2419,7 @@ class tgraphcanvas(FigureCanvas):
         self.showEventsSignal.connect(self.showEvents)
         self.showBackgroundEventsSignal.connect(self.showBackgroundEvents)
         self.redrawSignal.connect(self.redraw, type=Qt.ConnectionType.QueuedConnection) # type: ignore
+        self.redrawKeepViewSignal.connect(self.redraw_keep_view, type=Qt.ConnectionType.QueuedConnection) # type: ignore
 
     #NOTE: empty Figure is initially drawn at the end of self.awsettingsload()
     #################################    FUNCTIONS    ###################################
@@ -2440,6 +2444,10 @@ class tgraphcanvas(FigureCanvas):
              device_id in self.specialDevices
              )
 
+    def get_container_weight(self, container_idx:int) -> Optional[int]:
+        if len(self.container_weights) > container_idx >= 0:
+            return self.container_weights[container_idx]
+        return None
 
     # toggles the y cursor coordinate see self.fmt_data_curve
     def nextFmtDataCurve(self) -> None:
@@ -3211,6 +3219,7 @@ class tgraphcanvas(FigureCanvas):
             event_annos = None
             ldots, event_annos = (self.event_type_to_artist(event_type) if foreground else self.event_type_to_background_artist(event_type))
             if ldots is not None:
+                xdata = ldots.get_xdata()
                 ydata = ldots.get_ydata()
                 if self.clampEvents:
                     event_ydata = new_value
@@ -3219,11 +3228,13 @@ class tgraphcanvas(FigureCanvas):
                     event_pos_factor = self.eventpositionbars[1] - self.eventpositionbars[0]
                     event_ydata = int(round(new_value * event_pos_factor + event_pos_offset))
                 ydata[pos] = event_ydata
-                if not self.flagon and len(ydata) == pos + 2: # we also move the last dot up and down with the butlast
+                if (not self.flagon and len(ydata) == pos + 2 and (
+                    self.timeindex[6]!=0 and self.timex[self.timeindex[6]] >= xdata[-1] if foreground
+                        else self.timeindexB[6]!=0 and self.timeB[self.timeindexB[6]] >= xdata[-1])):
+                    # we also move the last dot up and down with the butlast
                     ydata[-1] = ydata[-2]
                 ldots.set_ydata(ydata)
                 # update the xdata
-                xdata = ldots.get_xdata()
                 time_idx = (max(0,min(len(self.timex)-1,self.time2index(xdata[pos]))) if foreground else
                         max(0,min(len(self.timeB)-1,self.backgroundtime2index(xdata[pos]))))
                 if xstep:
@@ -3247,38 +3258,49 @@ class tgraphcanvas(FigureCanvas):
                     self.resetlines()
                     self.aw.plotEventSelection(ind)
                 if event_annos is not None:
-                    if self.eventsGraphflag == 4 and len(event_annos)>pos:
-                        event_anno = event_annos[pos]
+                    if (foreground and self.foregroundShowFullflag) or (not foreground and self.backgroundShowFullflag):
+                        corrected_event_pos = pos
+                    else: # extra one is added to line at the end, but without anno
+                        corrected_event_pos = pos - max(0, len(xdata) - len(event_annos) - 1) # before first anno there can be others line elements
+                    if self.eventsGraphflag == 4 and len(event_annos)>corrected_event_pos:
+                        event_anno = event_annos[corrected_event_pos]
                         self.updateEventAnno(
                             event_type,
                             event_anno,
                             (self.timex[time_idx] if foreground else self.timeB[time_idx]),
-                            event_ydata)
-                    elif self.eventsGraphflag == 3 and len(event_annos)>ind:
-                        event_anno = event_annos[ind]
-                        tempo:Optional[float] = None
-                        if foreground:
-                            if not self.showeventsonbt and self.temp1[ind] > self.temp2[ind] and self.ETcurve:
-                                if self.flagon:
-                                    tempo = self.temp1[time_idx]
-                                else:
-                                    tempo = self.stemp1[time_idx]
+                            event_ydata,
+                            background = not foreground)
+                    elif self.eventsGraphflag == 3 and ((foreground and (self.ETcurve or self.BTcurve)) or (not foreground and (self.backgroundETcurve or self.backgroundBTcurve))):
+                        event_ind = ind
+                        if foreground and not self.foregroundShowFullflag:
+                            event_ind -= self.foreground_evens_before_CAHRGE()
+                        if not foreground and not self.backgroundShowFullflag:
+                            event_ind -= self.background_evens_before_CAHRGE()
+                        if len(event_annos)>event_ind:
+                            event_anno = event_annos[event_ind]
+                            tempo:Optional[float] = None
+                            if foreground:
+                                if self.ETcurve and (not self.BTcurve or not self.showeventsonbt or self.temp1[ind] > self.temp2[ind]):
+                                    if self.flagon:
+                                        tempo = self.temp1[time_idx]
+                                    else:
+                                        tempo = self.stemp1[time_idx]
+                                elif self.BTcurve:
+                                    if self.flagon:
+                                        tempo = self.temp2[time_idx]
+                                    else:
+                                        tempo = self.stemp2[time_idx]
+                            elif self.ETcurve and (not self.BTcurve or not self.showeventsonbt or self.temp1B[ind] > self.temp2B[ind]):
+                                tempo = self.temp1B[time_idx]
                             elif self.BTcurve:
-                                if self.flagon:
-                                    tempo = self.temp2[time_idx]
-                                else:
-                                    tempo = self.stemp2[time_idx]
-                        elif not self.showeventsonbt and self.temp1B[ind] > self.temp2B[ind] and self.ETcurve:
-                            tempo = self.temp1B[time_idx]
-                        elif self.BTcurve:
-                            tempo = self.temp2B[time_idx]
-                        if tempo is not None:
-                            self.updateFlagAnno(
-                                event_type,
-                                event_anno,
-                                (self.timex[time_idx] if foreground else self.timeB[time_idx]),
-                                event_ydata,
-                                tempo)
+                                tempo = self.temp2B[time_idx]
+                            if tempo is not None:
+                                self.updateFlagAnno(
+                                    event_type,
+                                    event_anno,
+                                    (self.timex[time_idx] if foreground else self.timeB[time_idx]),
+                                    event_ydata,
+                                    tempo)
                 # redraw
                 if self.flagon:
                     self.redraw_keep_view(recomputeAllDeltas=False)
@@ -3319,32 +3341,41 @@ class tgraphcanvas(FigureCanvas):
                     # put back after rounding and converting back to position
                     ydata[self.foreground_event_pos] = (evalue if self.clampEvents else (evalue*event_pos_factor)+event_pos_offset)
                     if event_annos is not None:
-                        if self.eventsGraphflag == 4 and len(event_annos)>self.foreground_event_pos:
-                            event_anno = event_annos[self.foreground_event_pos]
+                        if self.foregroundShowFullflag:
+                            corrected_foreground_event_pos = self.foreground_event_pos
+                        else: # extra one is added to line at the end, but without anno
+                            corrected_foreground_event_pos = self.foreground_event_pos - max(0, len(xdata) - len(event_annos) - 1) # before first anno there can be others line elements
+                        if self.eventsGraphflag == 4 and len(event_annos)>corrected_foreground_event_pos:
+                            event_anno = event_annos[corrected_foreground_event_pos]
                             self.updateEventAnno(
                                 event_type,
                                 event_anno,
                                 self.timex[time_idx],
                                 event_ydata)
-                        elif self.eventsGraphflag == 3 and len(event_annos)>self.foreground_event_ind:
-                            event_anno = event_annos[self.foreground_event_ind]
-                            if not self.showeventsonbt and self.temp1[time_idx] > self.temp2[time_idx] and self.ETcurve:
-                                if self.flagon:
-                                    tempo = self.temp1[time_idx]
-                                else:
-                                    tempo = self.stemp1[time_idx]
-                            elif self.BTcurve:
-                                if self.flagon:
-                                    tempo = self.temp2[time_idx]
-                                else:
-                                    tempo = self.stemp2[time_idx]
-                            if tempo is not None:
-                                self.updateFlagAnno(
-                                    event_type,
-                                    event_anno,
-                                    self.timex[time_idx],
-                                    event_ydata,
-                                    tempo)
+                        elif self.eventsGraphflag == 3 and (self.ETcurve or self.BTcurve):
+                            event_ind = self.foreground_event_ind
+                            if not self.foregroundShowFullflag:
+                                event_ind -= self.foreground_evens_before_CAHRGE()
+                            if len(event_annos)>event_ind:
+                                event_anno = event_annos[event_ind]
+                                if self.ETcurve and (not self.BTcurve or
+                                            not self.showeventsonbt or self.temp1[time_idx] > self.temp2[time_idx]):
+                                    if self.flagon:
+                                        tempo = self.temp1[time_idx]
+                                    else:
+                                        tempo = self.stemp1[time_idx]
+                                elif self.BTcurve:
+                                    if self.flagon:
+                                        tempo = self.temp2[time_idx]
+                                    else:
+                                        tempo = self.stemp2[time_idx]
+                                if tempo is not None:
+                                    self.updateFlagAnno(
+                                        event_type,
+                                        event_anno,
+                                        self.timex[time_idx],
+                                        event_ydata,
+                                        tempo)
                     # redraw
                     if self.flagon:
                         self.redraw_keep_view(recomputeAllDeltas=False)
@@ -3389,27 +3420,36 @@ class tgraphcanvas(FigureCanvas):
                     # put back after rounding and converting back to position
                     ydata[self.background_event_pos] = (evalue if self.clampEvents else (evalue*event_pos_factor)+event_pos_offset)
                     if event_annos is not None:
-                        if self.eventsGraphflag == 4 and len(event_annos)>self.background_event_pos:
-                            event_anno = event_annos[self.background_event_pos]
+                        if self.backgroundShowFullflag: # extra one is added to line at the end, but without anno
+                            corrected_backround_event_pos = self.background_event_pos #- max(0, len(xdata) - len(event_annos)) # before first anno there can be others line elements
+                        else:
+                            corrected_backround_event_pos = self.background_event_pos - max(0, len(xdata) - len(event_annos) - 1) # before first anno there can be others line elements
+                        if self.eventsGraphflag == 4 and len(event_annos)>corrected_backround_event_pos:
+                            event_anno = event_annos[corrected_backround_event_pos]
                             self.updateEventAnno(
                                 event_type,
                                 event_anno,
                                 self.timeB[time_idx],
-                                event_ydata)
-                        elif self.eventsGraphflag == 3 and len(event_annos)>self.background_event_ind:
-                            event_anno = event_annos[self.background_event_ind]
-                            if not self.showeventsonbt and self.temp1B[time_idx] > self.temp2B[time_idx] and self.ETcurve:
-                                tempo = self.temp1B[time_idx]
-                            elif self.BTcurve:
-                                tempo = self.temp2B[time_idx]
-                            if tempo is not None:
-                                self.updateFlagAnno(
-                                    event_type,
-                                    event_anno,
-                                    self.timeB[time_idx],
-                                    event_ydata,
-                                    tempo)
-
+                                event_ydata,
+                                background=True)
+                        elif self.eventsGraphflag == 3 and (self.backgroundETcurve or self.backgroundBTcurve):
+                            event_ind = self.background_event_ind
+                            if not self.backgroundShowFullflag:
+                                event_ind -= self.background_evens_before_CAHRGE()
+                            if len(event_annos)>event_ind:
+                                event_anno = event_annos[event_ind]
+                                if self.backgroundETcurve and (not self.backgroundBTcurve or
+                                            not self.showeventsonbt or self.temp1B[time_idx] > self.temp2B[time_idx]):
+                                    tempo = self.temp1B[time_idx]
+                                elif self.BTcurve:
+                                    tempo = self.temp2B[time_idx]
+                                if tempo is not None:
+                                    self.updateFlagAnno(
+                                        event_type,
+                                        event_anno,
+                                        self.timeB[time_idx],
+                                        event_ydata,
+                                        tempo)
                     # redraw
                     if self.flagon:
                         self.redraw_keep_view(recomputeAllDeltas=False)
@@ -3497,7 +3537,8 @@ class tgraphcanvas(FigureCanvas):
             pass
 
     # update event annotation value and position in combo mode
-    def updateEventAnno(self, event_type:int, event_anno:Annotation, x:float, y:float) -> None:
+    # if background is True, we use the backgrounds event name/letters
+    def updateEventAnno(self, event_type:int, event_anno:Annotation, x:float, y:float, background:bool = False) -> None:
         # update marker position
         event_anno.set_position((x,y))
         # update marker text
@@ -3509,8 +3550,12 @@ class tgraphcanvas(FigureCanvas):
             evalue = max(0,int(round((y - event_pos_offset) / event_pos_factor)))
         evalue_internal = self.eventsExternal2InternalValue(evalue)
         # set anno text
-        etype = self.etypesf(event_type)
-        firstletter = self.etypeAbbrev(etype)
+        if background:
+            Betype = self.Betypesf(event_type)
+            firstletter = self.etypeAbbrev(Betype)
+        else:
+            etype = self.etypesf(event_type)
+            firstletter = self.etypeAbbrev(etype)
         secondletter = self.eventsvaluesShort(evalue_internal)
         if self.aw.eventslidertemp[event_type]:
             thirdletter = self.mode # postfix
@@ -3539,6 +3584,28 @@ class tgraphcanvas(FigureCanvas):
         firstletter = self.etypeAbbrev(etype)
         secondletter = self.eventsvaluesShort(evalue_internal)
         flag_anno.set_text(f'{firstletter}{secondletter}')
+
+    def foreground_evens_before_CAHRGE(self) -> int:
+        if self.timeindex[0] < 0:
+            return 0
+        # assuming self.specialevents are ordered by time
+        count = 0
+        for se in self.specialevents:
+            if se >= self.timeindex[0]:
+                return count
+            count += 1
+        return count
+
+    def background_evens_before_CAHRGE(self) -> int:
+        if self.timeindexB[0] < 0:
+            return 0
+        # assuming self.backgroundEvents are ordered by time
+        count = 0
+        for se in self.backgroundEvents:
+            if se >= self.timeindexB[0]:
+                return count
+            count += 1
+        return count
 
     def onmove(self, event:'MouseEvent') -> None:
         if all(x is None for x in [self.foreground_event_ind, self.foreground_event_pos, self.foreground_event_pick_position,
@@ -3576,37 +3643,47 @@ class tgraphcanvas(FigureCanvas):
                 ydata = ldots.get_ydata()
                 if set_y:
                     ydata[self.foreground_event_pos] = max(0,event.ydata)
-                    if not self.flagon and len(ydata) == self.foreground_event_pos + 2: # we also move the last dot up and down with the butlast
+                    if not self.flagon and len(ydata) == self.foreground_event_pos + 2 and (self.timeindex[6]!=0 and self.timex[self.timeindex[6]] >= xdata[-1]):
+                        # we also move the last dot up and down with the butlast if automatically added, but only if that last one is not after DROP
                         ydata[-1] = ydata[-2]
                     ldots.set_ydata(ydata)
                 if event_annos is not None:
-                    if self.eventsGraphflag == 4 and len(event_annos)>self.foreground_event_pos:
-                        event_anno = event_annos[self.foreground_event_pos]
+                    if self.foregroundShowFullflag:
+                        corrected_foreground_event_pos = self.foreground_event_pos
+                    else: # extra one is added to line at the end, but without anno
+                        corrected_foreground_event_pos = self.foreground_event_pos - max(0, len(xdata) - len(event_annos) - 1) # before first anno there can be others line elements
+                    if self.eventsGraphflag == 4 and len(event_annos)>corrected_foreground_event_pos:
+                        event_anno = event_annos[corrected_foreground_event_pos]
                         self.updateEventAnno(
                             event_type,
                             event_anno,
                             xdata[self.foreground_event_pos],
                             ydata[self.foreground_event_pos])
-                    elif self.eventsGraphflag == 3 and len(event_annos)>self.foreground_event_ind:
-                        event_anno = event_annos[self.foreground_event_ind]
-                        idx = max(0,min(len(self.timex)-1,self.time2index(xdata[self.foreground_event_pos])))
-                        if not self.showeventsonbt and self.temp1[idx] > self.temp2[idx] and self.ETcurve:
-                            if self.flagon:
-                                tempo = self.temp1[idx]
-                            else:
-                                tempo = self.stemp1[idx]
-                        elif self.BTcurve:
-                            if self.flagon:
-                                tempo = self.temp2[idx]
-                            else:
-                                tempo = self.stemp2[idx]
-                        if tempo is not None:
-                            self.updateFlagAnno(
-                                event_type,
-                                event_anno,
-                                xdata[self.foreground_event_pos],
-                                ydata[self.foreground_event_pos],
-                                tempo)
+                    elif self.eventsGraphflag == 3 and (self.ETcurve or self.BTcurve):
+                        event_ind = self.foreground_event_ind
+                        if not self.foregroundShowFullflag:
+                            event_ind -= self.foreground_evens_before_CAHRGE()
+                        if len(event_annos)>event_ind:
+                            event_anno = event_annos[event_ind]
+                            idx = max(0,min(len(self.timex)-1,self.time2index(xdata[self.foreground_event_pos])))
+                            if self.ETcurve and (not self.BTcurve or
+                                            not self.showeventsonbt or self.temp1[idx] > self.temp2[idx]):
+                                if self.flagon:
+                                    tempo = self.temp1[idx]
+                                else:
+                                    tempo = self.stemp1[idx]
+                            elif self.BTcurve:
+                                if self.flagon:
+                                    tempo = self.temp2[idx]
+                                else:
+                                    tempo = self.stemp2[idx]
+                            if tempo is not None:
+                                self.updateFlagAnno(
+                                    event_type,
+                                    event_anno,
+                                    xdata[self.foreground_event_pos],
+                                    ydata[self.foreground_event_pos],
+                                    tempo)
                 self.fig.canvas.draw_idle()
         elif (self.background_event_ind is not None and self.background_event_pos is not None and self.background_event_pick_position is not None and
                     len(self.backgroundEtypes)>self.background_event_ind):
@@ -3637,31 +3714,42 @@ class tgraphcanvas(FigureCanvas):
                 ydata = ldots.get_ydata()
                 if set_y:
                     ydata[self.background_event_pos] = max(0,event.ydata)
-                    if not self.flagon and len(ydata) == self.background_event_pos + 2: # we also move the last dot up and down with the butlast
+                    if not self.flagon and len(ydata) == self.background_event_pos + 2 and (self.timeindex[6]!=0 and self.timex[self.timeindex[6]] >= xdata[-1]):
+                        # we also move the last dot up and down with the butlast if automatically added, but only if that last one is not after DROP
                         ydata[-1] = ydata[-2]
                     ldots.set_ydata(ydata)
                 if event_annos is not None:
-                    if self.eventsGraphflag == 4 and len(event_annos)>self.background_event_pos:
-                        event_anno = event_annos[self.background_event_pos]
+                    if self.backgroundShowFullflag:
+                        corrected_background_event_pos = self.background_event_pos
+                    else: # extra one is added to line at the end, but without anno
+                        corrected_background_event_pos = self.background_event_pos - max(0, len(xdata) - len(event_annos) - 1) # before first anno there can be others line elements
+                    if self.eventsGraphflag == 4 and len(event_annos)>corrected_background_event_pos:
+                        event_anno = event_annos[corrected_background_event_pos]
                         self.updateEventAnno(
                             event_type,
                             event_anno,
                             xdata[self.background_event_pos],
-                            ydata[self.background_event_pos])
-                    elif self.eventsGraphflag == 3 and len(event_annos)>self.background_event_ind:
-                        event_anno = event_annos[self.background_event_ind]
-                        idx = max(0,min(len(self.timeB)-1,self.backgroundtime2index(xdata[self.background_event_pos])))
-                        if not self.showeventsonbt and self.temp1B[idx] > self.temp2B[idx] and self.ETcurve:
-                            tempo = self.temp1B[idx]
-                        elif self.BTcurve:
-                            tempo = self.temp2B[idx]
-                        if tempo is not None:
-                            self.updateFlagAnno(
-                                event_type,
-                                event_anno,
-                                xdata[self.background_event_pos],
-                                ydata[self.background_event_pos],
-                                tempo)
+                            ydata[self.background_event_pos],
+                            background=True)
+                    elif self.eventsGraphflag == 3 and (self.backgroundETcurve or self.backgroundBTcurve):
+                        event_ind = self.background_event_ind
+                        if not self.backgroundShowFullflag:
+                            event_ind -= self.background_evens_before_CAHRGE()
+                        if len(event_annos)>event_ind:
+                            event_anno = event_annos[event_ind]
+                            idx = max(0,min(len(self.timeB)-1,self.backgroundtime2index(xdata[self.background_event_pos])))
+                            if self.backgroundETcurve and (not self.backgroundBTcurve or
+                                            not self.showeventsonbt or self.temp1B[idx] > self.temp2B[idx]):
+                                tempo = self.temp1B[idx]
+                            elif self.backgroundBTcurve:
+                                tempo = self.temp2B[idx]
+                            if tempo is not None:
+                                self.updateFlagAnno(
+                                    event_type,
+                                    event_anno,
+                                    xdata[self.background_event_pos],
+                                    ydata[self.background_event_pos],
+                                    tempo)
                 self.fig.canvas.draw_idle()
 
     def clear_last_picked_event_selection(self) -> None:
@@ -3695,6 +3783,14 @@ class tgraphcanvas(FigureCanvas):
                     event.x < event.y and self.roastUUID is not None:
                 QDesktopServices.openUrl(QUrl(roastLink(self.roastUUID), QUrl.ParsingMode.TolerantMode))
                 return
+
+            if event.dblclick and event.button == 1 and not self.designerflag and not self.wheelflag and event.inaxes:
+                if self.ax.get_autoscaley_on():
+                    self.ax.autoscale(enable=False, axis='y', tight=False)
+                    self.redraw(recomputeAllDeltas=False)
+                else:
+                    self.ax.autoscale(enable=True, axis='y', tight=False)
+                    self.fig.canvas.draw_idle()
 
             if not self.wheelflag and event.inaxes is None and event.button == 1 and event.dblclick and event.x > event.y:
                 fig = self.ax.get_figure()
@@ -4686,10 +4782,10 @@ class tgraphcanvas(FigureCanvas):
                             except Exception as e: # pylint: disable=broad-except
                                 _log.exception(e)
                         # autodetect DROP event
-                        # only if 8min into roast and BT>160C/320F
-                        if self.autoDropIdx == 0 and self.autoDropFlag and self.autoDROPenabled and self.timeindex[0] > -1 and not self.timeindex[6] and \
+                        # only if 7min into roast and BT>160C/320F
+                        if self.autoDropIdx == 0 and self.autoDropFlag and self.autoDROPenabled and self.timeindex[0] > -1 and self.timeindex[6] == 0 and \
                             length_of_qmc_timex >= 5 and ((self.mode == 'C' and sample_temp2[-1] > 160) or (self.mode == 'F' and sample_temp2[-1] > 320)) and\
-                            ((sample_timex[-1] - sample_timex[self.timeindex[0]]) > 420):
+                            ((sample_timex[-1] - sample_timex[self.timeindex[0]]) > 7*60):
                             b = self.aw.BTbreak(length_of_qmc_timex - 1,event='DROP') # call BTbreak with last index
                             if b > 0:
                                 # we found a BT break at the current index minus b
@@ -5553,8 +5649,8 @@ class tgraphcanvas(FigureCanvas):
 
     @pyqtSlot(str,int)
     def moveBackgroundAndRedraw(self, direction:str, step:int) -> None:
-        self.movebackground(direction, step)
-        self.redraw(recomputeAllDeltas=False, #(direction in {'left', 'right'}),
+        self.movebackground(direction, step) # direction in {'left', 'right'}
+        self.redraw_keep_view(recomputeAllDeltas=False,
             re_smooth_foreground=False,
             re_smooth_background=False)
 
@@ -5788,14 +5884,17 @@ class tgraphcanvas(FigureCanvas):
                 _, _, exc_tb = sys.exc_info()
                 self.adderror((QApplication.translate('Error Message','Exception:') + ' processAlarm() {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
-    # called only after CHARGE
+    # called only after CHARGE with at least 7min into the roast
     def playbackdrop(self) -> None:
         try:
             #needed when using device NONE
-            if (self.autoDropIdx == 0 and self.timex and self.timeindexB[6] and not self.timeindex[6] and
+            if (self.timeindex[0] > -1 and self.autoDropIdx == 0 and self.timex and self.timeindexB[6]>0 and self.timeindex[6] == 0 and
+                (self.timex[-1] - self.timex[self.timeindex[0]]) > 7*60 and
                 ((self.replayType == 0 and self.timeB[self.timeindexB[6]] - self.timeclock.elapsed()/1000. <= 0) or # by time
-                    (self.replayType == 1 and self.TPalarmtimeindex and self.ctemp2[-1] is not None and self.stemp2B[self.timeindexB[6]] - self.ctemp2[-1] <= 0) or # by BT
-                    (self.replayType == 2 and self.TPalarmtimeindex and self.ctemp1[-1] is not None and self.stemp1B[self.timeindexB[6]] - self.ctemp1[-1] <= 0))): # by ET
+                    (self.replayType == 1 and len(self.ctemp2)>0 and len(self.stemp2B)>self.timeindexB[6] and  # pylint: disable=chained-comparison
+                        self.TPalarmtimeindex and self.ctemp2[-1] is not None and self.stemp2B[self.timeindexB[6]] - self.ctemp2[-1] <= 0) or # by BT
+                    (self.replayType == 2 and len(self.ctemp1)>0 and len(self.stemp1B)>self.timeindexB[6] and  # pylint: disable=chained-comparison
+                        self.TPalarmtimeindex and self.ctemp1[-1] is not None and self.stemp1B[self.timeindexB[6]] - self.ctemp1[-1] <= 0))): # by ET
                 self.autoDropIdx = len(self.timex) - 2
                 self.markDropSignal.emit(False)
         except Exception as ex: # pylint: disable=broad-except
@@ -5804,12 +5903,10 @@ class tgraphcanvas(FigureCanvas):
             self.adderror((QApplication.translate('Error Message','Exception:') + ' playbackdrop() {0}').format(str(ex)),getattr(exc_tb, 'tb_lineno', '?'))
 
 
-    # turns playback event on and fills self.replayedBackgroundEvents with already passed events (w.r.t. time) if any
-    def turn_playback_event_ON(self) -> None:
-        if not self.backgroundPlaybackEvents:
-            # only if playback is freshly turned ON we consider to enable (potentially) already fired background events to be replayed
-            self.backgroundPlaybackEvents = True
-            self.replayedBackgroundEvents = set()
+    # update the cache (self.replayedBackgroundEvents) which holds the background events considered to have been already triggered to prevent
+    # to have them triggered again. All events before NOW are considered to have been triggered already.
+    def updateReplayedBackgroundEvents(self) -> None:
+        self.replayedBackgroundEvents = set()
         if self.flagstart:
             sample_interval = self.delay/1000. # in sec
             if self.timeindex[0] != -1:
@@ -5829,15 +5926,20 @@ class tgraphcanvas(FigureCanvas):
                     # switching on short after CHARGE, does not disable background events before CHARGE
                     self.replayedBackgroundEvents.add(i)
 
+    # turns playback event on and fills self.replayedBackgroundEvents with already passed events (w.r.t. time) if any
+    def turn_playback_event_ON(self) -> None:
+        if not self.backgroundPlaybackEvents:
+            # mark all events before NOW as already replayed to prevent them to replay again
+            self.updateReplayedBackgroundEvents()
+            self.backgroundPlaybackEvents = True
+
     def turn_playback_event_OFF(self) -> None:
         self.backgroundPlaybackEvents = False
         self.replayedBackgroundEvents = set()
 
-
     # called only after CHARGE
     def playbackevent(self) -> None:
         try:
-
             #needed when using device NONE
             if self.timex:
                 #find time or temp distances
@@ -5858,6 +5960,7 @@ class tgraphcanvas(FigureCanvas):
 
                 # after an replay by-temp event is checked we set the flag corresponding to its event type in next_byTemp_checked to prevent further checking of this type for by-temp
                 # preventing later events to trigger by-temp to keep events triggered in-order (we assume temps increase and without this all further event will trigger immediately!)
+
                 for i, bge in enumerate(self.backgroundEvents):
                     if all(end_reached):
                         # for each type an event was found that did not fire, we can stop looking further for monotonicity
@@ -5865,168 +5968,229 @@ class tgraphcanvas(FigureCanvas):
 
                     event_type = self.backgroundEtypes[i]
 
-                    now = self.timeclock.elapsedMilli()
+                    if 0 <= event_type < 4: # only the 4 custom events can be replayed
 
-                    if (i not in self.replayedBackgroundEvents and # never replay one event twice
-                        not end_reached[event_type] and # we already reached the next event of this type after the first enabled one
-                        (self.timeindexB[6]==0 or bge < self.timeindexB[6]) and
-                        event_type < 4 and len(self.timeB)>bge): # don't replay events that happened after DROP in the backgroundprofile
+                        now = self.timeclock.elapsedMilli()
 
-                        timed = self.timeB[bge] - now
-                        delta:float = 1 # by default don't trigger this one
-                        if self.replayType == 0: # replay by time
-                            delta = timed
-                        elif not next_byTemp_checked[event_type] and self.replayType == 1: # replay by BT (after TP)
-                            if self.TPalarmtimeindex is not None:
-                                if len(self.ctemp2)>0 and self.ctemp2[-1] is not None and len(self.stemp2B)>bge:
-                                    delta = self.stemp2B[bge] - self.ctemp2[-1]
+                        if (i not in self.replayedBackgroundEvents and # never replay one event twice
+                            not end_reached[event_type] and # we already reached the next event of this type after the first enabled one
+                            event_type < 4 and len(self.timeB)>bge):
+
+                            timed = self.timeB[bge] - now
+                            delta:float = 1 # by default don't trigger this one
+                            increasing:bool = True
+
+                            if (self.timeindexB[6]==0 or bge <= self.timeindexB[6]):
+                                # don't replay events that happened after DROP in the backgroundprofile (but still apply the last ramp!)
+                                if self.replayType == 0: # replay by time
+                                    delta = timed
+                                elif not next_byTemp_checked[event_type] and self.replayType == 1: # replay by BT (after TP)
+                                    if self.TPalarmtimeindex is not None:
+                                        if len(self.ctemp2)>0 and self.ctemp2[-1] is not None and len(self.stemp2B)>bge:
+                                            delta = self.stemp2B[bge] - self.ctemp2[-1]
+# disable "decreasing" support for now (might lead to issues)
+#                                            try:
+#                                                # if last registered event of event_type has higher BT as next to be replayed one, we
+#                                                # expect a temperature decrease instead of an increase
+#                                                last_registered_event_index = len(self.specialeventstype) - 1 - self.specialeventstype[::-1].index(event_type)
+#                                                if self.ctemp2[self.specialevents[last_registered_event_index]] > self.stemp2B[bge]:
+#                                                    delta = self.ctemp2[-1] - self.stemp2B[bge]
+#                                                    increasing = False
+#                                            except Exception: # pylint: disable=broad-except
+#                                                # a previous event of that type might not yet exist
+#                                                pass
+                                    else: # before TP we switch back to time-based
+                                        delta = timed
                                     next_byTemp_checked[event_type] = True
-                            else: # before TP we switch back to time-based
-                                delta = timed
-                                next_byTemp_checked[event_type] = True
-                        elif not next_byTemp_checked[event_type] and self.replayType == 2: # replay by ET (after TP)
-                            if self.TPalarmtimeindex is not None:
-                                if len(self.ctemp1)> 0 and self.ctemp1[-1] is not None and len(self.stemp1)>bge:
-                                    delta = self.stemp1B[bge] - self.ctemp1[-1]
+                                elif not next_byTemp_checked[event_type] and self.replayType == 2: # replay by ET (after TP)
+                                    if self.TPalarmtimeindex is not None:
+                                        if len(self.ctemp1)> 0 and self.ctemp1[-1] is not None and len(self.stemp1B)>bge:
+                                            delta = self.stemp1B[bge] - self.ctemp1[-1]
+#                                            try:
+#                                                # if last registered event of event_type has higher BT as next to be replayed one, we
+#                                                # expect a temperature decrease instead of an increase
+#                                                last_registered_event_index = len(self.specialeventstype) - 1 - self.specialeventstype[::-1].index(event_type)
+#                                                if self.ctemp1[self.specialevents[last_registered_event_index]] > self.stemp1B[bge]:
+#                                                    delta = self.ctemp1[-1] - self.stemp1B[bge]
+#                                                    increasing = False
+#                                            except Exception: # pylint: disable=broad-except
+#                                                # a previous event of that type might not yet exist
+#                                                pass
+                                    else: # before TP we switch back to time-based
+                                        delta = timed
                                     next_byTemp_checked[event_type] = True
-                            else: # before TP we switch back to time-based
-                                delta = timed
-                                next_byTemp_checked[event_type] = True
-                        else:
-                            delta = 99999 # don't trigger this one
+                                else:
+                                    delta = 99999 # don't trigger this one
 
-                        if (reproducing is None and self.specialeventplaybackaid[event_type] and  # only show playback aid for event types with activated playback aid
-                                self.backgroundReproduce and 0 < timed < self.detectBackgroundEventTime):
-                            if i not in self.beepedBackgroundEvents and self.backgroundReproduceBeep:
-                                self.beepedBackgroundEvents.add(i)
-                                QApplication.beep()
-                            #write text message
-                            message = f'> [{self.Betypesf(event_type)}] [{self.eventsvalues(self.backgroundEvalues[i])}] : <b>{stringfromseconds(timed)}</b> : {self.backgroundEStrings[i]}'
-                            #rotate colors to get attention
-                            if int(round(timed))%2:
-                                style = "background-color:'transparent';"
-                            else:
-                                style = "background-color:'yellow';"
+                            if (reproducing is None and self.specialeventplaybackaid[event_type] and  # only show playback aid for event types with activated playback aid
+                                    self.backgroundReproduce and 0 < timed < self.detectBackgroundEventTime):
+                                if i not in self.beepedBackgroundEvents and self.backgroundReproduceBeep:
+                                    self.beepedBackgroundEvents.add(i)
+                                    QApplication.beep()
+                                #write text message
+                                message = f'> [{self.Betypesf(event_type)}] [{self.eventsvalues(self.backgroundEvalues[i])}] : <b>{stringfromseconds(timed)}</b> : {self.backgroundEStrings[i]}'
+                                #rotate colors to get attention
+                                if int(round(timed))%2:
+                                    style = "background-color:'transparent';"
+                                else:
+                                    style = "background-color:'yellow';"
 
-                            self.aw.sendmessage(message,style=style)
-                            reproducing = i
+                                self.aw.sendmessage(message,style=style)
+                                reproducing = i
 
 
-                        if delta <= 0:
-                            #for devices that support automatic roaster control
-                            #if Fuji PID
-                            if self.device == 0 and '::' in self.backgroundEStrings[i]:
+                            if delta <= 0:
+                                #for devices that support automatic roaster control
+                                #if Fuji PID
+                                if self.device == 0 and '::' in self.backgroundEStrings[i]:
 
-                                # COMMAND SET STRINGS
-                                #  (adjust the SV PID to the float VALUE1)
-                                # SETRS::VALUE1::VALUE2::VALUE3  (VALUE1 = target SV. float VALUE2 = time to reach int VALUE 1 (ramp) in minutes. int VALUE3 = hold (soak) time in minutes)
+                                    # COMMAND SET STRINGS
+                                    #  (adjust the SV PID to the float VALUE1)
+                                    # SETRS::VALUE1::VALUE2::VALUE3  (VALUE1 = target SV. float VALUE2 = time to reach int VALUE 1 (ramp) in minutes. int VALUE3 = hold (soak) time in minutes)
 
-                                # IMPORTANT: VALUES are for controlling ET only (not BT). The PID should control ET not BT. The PID should be connected to ET only.
-                                # Therefore, these values don't reflect a BT defined profile. They define an ET profile.
-                                # They reflect the changes in ET, which indirectly define BT after some time lag
+                                    # IMPORTANT: VALUES are for controlling ET only (not BT). The PID should control ET not BT. The PID should be connected to ET only.
+                                    # Therefore, these values don't reflect a BT defined profile. They define an ET profile.
+                                    # They reflect the changes in ET, which indirectly define BT after some time lag
 
-                                # There are two ways to record a roast. One is by changing Set Values (SV) during the roast,
-                                # the other is by using ramp/soaks segments (RS).
-                                # Examples:
+                                    # There are two ways to record a roast. One is by changing Set Values (SV) during the roast,
+                                    # the other is by using ramp/soaks segments (RS).
+                                    # Examples:
 
-                                # SETSV::560.3           sets an SV value of 560.3F in the PID at the time of the recorded background event
+                                    # SETSV::560.3           sets an SV value of 560.3F in the PID at the time of the recorded background event
 
-                                # SETRS::440.2::2::0     starts Ramp Soak mode so that it reaches 440.2F in 2 minutes and holds (soaks) 440.2F for zero minutes
+                                    # SETRS::440.2::2::0     starts Ramp Soak mode so that it reaches 440.2F in 2 minutes and holds (soaks) 440.2F for zero minutes
 
-                                # SETRS::300.0::2::3::SETRS::540.0::6::0::SETRS::560.0::4::0::SETRS::560::0::0
-                                #       this command has 4 comsecutive commands inside (4 segments)
-                                #       1 SETRS::300.0::2::3 reach 300.0F in 2 minutes and hold it for 3 minutes (ie. total dry phase time = 5 minutes)
-                                #       2 SETRS::540.0::6::0 then reach 540.0F in 6 minutes and hold it there 0 minutes (ie. total mid phase time = 6 minutes )
-                                #       3 SETRS::560.0::4::0 then reach 560.0F in 4 minutes and hold it there 0 minutes (ie. total finish phase time = 4 minutes)
-                                #       4 SETRS::560::0::0 then do nothing (because ramp time and soak time are both 0)
-                                #       END ramp soak mode
+                                    # SETRS::300.0::2::3::SETRS::540.0::6::0::SETRS::560.0::4::0::SETRS::560::0::0
+                                    #       this command has 4 comsecutive commands inside (4 segments)
+                                    #       1 SETRS::300.0::2::3 reach 300.0F in 2 minutes and hold it for 3 minutes (ie. total dry phase time = 5 minutes)
+                                    #       2 SETRS::540.0::6::0 then reach 540.0F in 6 minutes and hold it there 0 minutes (ie. total mid phase time = 6 minutes )
+                                    #       3 SETRS::560.0::4::0 then reach 560.0F in 4 minutes and hold it there 0 minutes (ie. total finish phase time = 4 minutes)
+                                    #       4 SETRS::560::0::0 then do nothing (because ramp time and soak time are both 0)
+                                    #       END ramp soak mode
 
-                                self.aw.fujipid.replay(self.backgroundEStrings[i])
-                                libtime.sleep(.5)  #avoid possible close times (rounding off)
+                                    self.aw.fujipid.replay(self.backgroundEStrings[i])
+                                    libtime.sleep(.5)  #avoid possible close times (rounding off)
 
 
-                            # if playbackevents is active, we fire the event by moving the slider, but only if
-                            # an event type is given (type<4), the background event type is named exactly as the one of the foreground
-                            # (NOTE: the event slider does not need to be visible any longer)
-                            if (self.backgroundPlaybackEvents and event_type < 4 and
-                                    self.specialeventplayback[event_type] and # only replay event types activated for replay
-                                    (str(self.etypesf(event_type) == str(self.Betypesf(event_type)))) and
-                                    #self.aw.eventslidervisibilities[event_type] and
-                                    len(self.backgroundEvalues)>i):
-                                slider_events[event_type] = self.eventsInternal2ExternalValue(self.backgroundEvalues[i]) # add to dict (later overwrite earlier slider moves!)
+                                # if playbackevents is active, we fire the event by moving the slider, but only if
+                                # an event type is given (type<4), the background event type is named exactly as the one of the foreground
+                                # (NOTE: the event slider does not need to be visible any longer)
+                                if (self.backgroundPlaybackEvents and event_type < 4 and
+                                        self.specialeventplayback[event_type] and # only replay event types activated for replay
+                                        (str(self.etypesf(event_type) == str(self.Betypesf(event_type)))) and
+                                        #self.aw.eventslidervisibilities[event_type] and
+                                        len(self.backgroundEvalues)>i):
+                                    slider_events[event_type] = self.eventsInternal2ExternalValue(self.backgroundEvalues[i]) # add to dict (later overwrite earlier slider moves!)
 
-                            self.replayedBackgroundEvents.add(i) # in any case we mark this event as processed
+                                self.replayedBackgroundEvents.add(i) # in any case we mark this event as processed
 
-                        elif self.backgroundPlaybackEvents and event_type < 4:
+                            elif self.backgroundPlaybackEvents and event_type < 4:
 
-                            # we reached a background event (in order) which is not yet ready for (direct) replay
-                            # as we assume all further events of this type will as well not fire as they are ordered by time and
-                            # temperatures which are assumed to increase
-                            end_reached[event_type] = True
+                                # we reached a background event (in order) which is not yet ready for (direct) replay
+                                # as we assume all further events of this type will as well not fire as they are ordered by time and
+                                # temperatures which are assumed to increase
+                                end_reached[event_type] = True
 
-                            if (event_type not in slider_events and # only if the is no slider event of the corresponding type
-                                    self.specialeventplayback[event_type] and # only replay event types activated for replay
-                                    (str(self.etypesf(event_type) == str(self.Betypesf(event_type)))) and
-                                    #self.aw.eventslidervisibilities[event_type] and
-                                    self.specialeventplaybackramp[event_type]):   # only calculate ramp for ramping events
+                                if (event_type not in slider_events and # only if there is no slider event of the corresponding type
+                                        self.specialeventplayback[event_type] and # only replay event types activated for replay
+                                        (str(self.etypesf(event_type) == str(self.Betypesf(event_type)))) and
+                                        #self.aw.eventslidervisibilities[event_type] and # we ramp also events of invisible sliders
+                                        self.specialeventplaybackramp[event_type]):   # only calculate ramp for ramping events
 
-                                try:
-                                    # get the index of the last event of current event type
+                                    ## calculate ramping
+
+                                    # we pick the left event of the ramp the last event of type event_type either of the foreground or the background, whichever ever is closer
                                     # NOTE: this last event was not necessarily replayed before and might have been manually entered instead
-                                    last_registered_event_idx:Optional[int] = None
+
+                                    last_registered_background_event_idx:Optional[int] = None
+                                    last_registered_background_event_time:Optional[float] = None
+                                    last_registered_foreground_event_idx:Optional[int] = None
+                                    last_registered_foreground_event_time:Optional[float] = None
+                                    TP_time:Optional[float] = None
+                                    try:
+                                        previous_background_event_types = self.backgroundEtypes[:i] # check only events before NOW (events before the current checked index bge)
+                                        last_registered_background_event_idx = len(previous_background_event_types) - 1 - previous_background_event_types[::-1].index(event_type) # index of last background event if any; except otherwise
+                                        if last_registered_background_event_idx is not None:
+                                            last_registered_background_event_time = self.timeB[self.backgroundEvents[last_registered_background_event_idx]]
+                                    except ValueError: # index access fails if there is no such event/index
+                                        pass
+                                    try:
+                                        last_registered_foreground_event_idx = len(self.specialeventstype) - 1 - self.specialeventstype[::-1].index(event_type) # index of last foreground event if any; except otherwise
+                                        if last_registered_foreground_event_idx is not None:
+                                            last_registered_foreground_event_time = self.timex[self.specialevents[last_registered_foreground_event_idx]]
+                                    except ValueError:
+                                        pass
+                                    try:
+                                        if self.TPalarmtimeindex is not None:
+                                            TP_time = self.timex[self.TPalarmtimeindex]
+                                    except ValueError: # index access fails if there is no such event/index
+                                        pass
+
+                                    last_event_idx:Optional[int] = last_registered_background_event_idx
+                                    last_event_time:Optional[float] = last_registered_background_event_time
+                                    last_event_value:Optional[float] = None
+                                    last_event_temp1:Optional[float] = None
+                                    last_event_temp2:Optional[float] = None
                                     last_event_temp:Optional[float] = None
-                                    next_event_temp:Optional[float] = None
-                                    current_temp:Optional[float] = None
 
-                                    last_registered_event_idx = len(self.specialeventstype) - 1 - self.specialeventstype[::-1].index(event_type)
+                                    if (last_registered_foreground_event_idx is not None and last_registered_background_event_time is not None and last_registered_foreground_event_time is not None and
+                                        last_registered_foreground_event_time > last_registered_background_event_time):
+                                        # last foreground event is newer then last background event thus we use that foreground one
+                                        last_event_idx = last_registered_foreground_event_idx
+                                        last_event_time = last_registered_foreground_event_time
+                                        last_event_value = self.eventsInternal2ExternalValue(self.specialeventsvalue[last_registered_foreground_event_idx])
+                                        # only if there is a last_event after TP we do ramping by temperature
+                                        if TP_time is not None and TP_time < last_event_time and len(self.specialevents)>last_event_idx:
+                                            last_event_temp1 = self.temp1[self.specialevents[last_event_idx]]
+                                            last_event_temp2 = self.temp2[self.specialevents[last_event_idx]]
+                                    elif last_registered_background_event_idx is not None and last_event_time is not None and last_event_idx is not None:
+                                        # use last background event as assigned above is the last we just passed, we add its value
+                                        last_event_value = self.eventsInternal2ExternalValue(self.backgroundEvalues[last_registered_background_event_idx])
+                                        # only if there is a last_event after TP we do ramping by temperature
+                                        if TP_time is not None and TP_time < last_event_time and len(self.backgroundEvents)>last_event_idx:
+                                            last_event_temp1 = self.temp1B[self.backgroundEvents[last_event_idx]]
+                                            last_event_temp2 = self.temp2B[self.backgroundEvents[last_event_idx]]
 
-                                    if last_registered_event_idx is not None and len(self.specialeventsvalue)>last_registered_event_idx:
-                                        last_value = self.eventsInternal2ExternalValue(self.specialeventsvalue[last_registered_event_idx]) # from foreground
-                                        next_value = self.eventsInternal2ExternalValue(self.backgroundEvalues[i])                          # from background
+                                    if last_event_idx is not None:
+                                        next_event_value = self.eventsInternal2ExternalValue(self.backgroundEvalues[i])                          # next always from background
+                                        next_event_temp:Optional[float] = None
+                                        current_temp:Optional[float] = None
 
-                                        # for ramp by BT only after TP and if BT increased
-                                        if (self.TPalarmtimeindex is not None and self.replayType == 1 and len(self.temp2)>1 and self.temp2[-1] != -1 and
-                                                self.temp2[-2] != -1 and self.temp2[-1] > self.temp2[-2] and len(self.specialevents) > last_registered_event_idx and
-                                                len(self.temp2)> self.specialevents[last_registered_event_idx] and
+                                        # for ramp by BT only after TP
+                                        if (last_event_temp2 is not None and self.replayType == 1 and len(self.temp2)>1 and self.temp2[-1] != -1 and
+                                                self.temp2[-2] != -1 and ((increasing and self.temp2[-1] >= self.temp2[-2]) or (not increasing and self.temp2[-1] <= self.temp2[-2])) and
                                                 len(self.temp2B) > bge):
-                                            # we ramp by BT only after TP and if BT increased, however, last event could be before TP
-                                            # we take as last event the one of the foreground profile and not the one of the background assuming it was replayed at the same temp
-                                            # we do not take any last_temp before TP as before TP BT is not monotone increasing, but decreasing
-                                            last_event_temp = (self.temp2[self.TPalarmtimeindex] if self.specialevents[last_registered_event_idx] < self.TPalarmtimeindex
-                                                    else self.temp2[self.specialevents[last_registered_event_idx]])
+                                            last_event_temp = last_event_temp2
                                             next_event_temp = self.temp2B[bge]
                                             current_temp = self.temp2[-1]
-                                        elif (self.TPalarmtimeindex is not None and self.replayType == 2 and len(self.temp1)>1 and self.temp1[-1] != -1 and
-                                                self.temp1[-2] != -1 and self.temp1[-1] > self.temp1[-2] and len(self.specialevents) > last_registered_event_idx and
-                                                len(self.temp1)> self.specialevents[last_registered_event_idx] and
+                                        elif (last_event_temp1 is not None and self.replayType == 2 and len(self.temp1)>1 and self.temp1[-1] != -1 and
+                                                self.temp1[-2] != -1 and ((increasing and self.temp1[-1] >= self.temp1[-2]) or (not increasing and self.temp1[-1] <= self.temp1[-2])) and
                                                 len(self.temp1B) > bge):
-                                            # we ramp by ET only after TP and if ET increased
-                                            # NOTE: ET ramp replay might not work well as ET is often not monotonic increasing
-                                            # we do not take any last_temp before TP as before TP BT is not monotone increasing, but decreasing
-                                            last_event_temp = (self.temp1[self.TPalarmtimeindex] if self.specialevents[last_registered_event_idx] < self.TPalarmtimeindex
-                                                    else self.temp1[self.specialevents[last_registered_event_idx]])
+                                            last_event_temp = last_event_temp1
                                             next_event_temp = self.temp1B[bge]
                                             current_temp = self.temp1[-1]
 
                                         # compute ramp value if possible
                                         if (self.replayType in {1,2} and last_event_temp is not None and next_event_temp is not None and
-                                                current_temp is not None and next_event_temp > last_event_temp):
-                                            # if background event target temperature did increase we ramp by temperature
-                                            coefficients = numpy.polyfit([last_event_temp, next_event_temp] , [last_value, next_value], 1)
-                                            ramps[event_type] = numpy.poly1d(coefficients)(current_temp)
-                                        elif  (last_event_temp is None and next_event_temp is None and
+                                                last_event_temp is not None and next_event_temp is not None and
+                                                current_temp is not None):
+                                            # if background event target temperature did increase (or decrease) as the foreground, we ramp by temperature
+                                            if min(last_event_temp, next_event_temp) <= current_temp <= max(last_event_temp, next_event_temp):
+                                                # we ramp only within the limits
+                                                coefficients = numpy.polyfit([last_event_temp, next_event_temp] , [last_event_value, next_event_value], 1)
+                                                ramps[event_type] = numpy.poly1d(coefficients)(current_temp)
+                                        elif (last_event_temp is None and next_event_temp is None and
+                                                (self.replayType == 0 or self.TPalarmtimeindex is None) and # replay by time active
+                                                last_event_time is not None and len(self.timeB)>bge):
                                                   # if replay by temp (as one or both of those event_temps is not None), but current temp did not increase we don't
                                                   # ramp by time instead as this would confuse everything.
-                                                len(self.timex)> self.specialevents[last_registered_event_idx] and len(self.timeB)>bge):
-                                            # otherwise we ramp by time
-                                            last_time = self.timex[self.specialevents[last_registered_event_idx]]
+                                            # we ramp by (absolute) time (ignoring relative shift by CHARGE)
+                                            last_time = last_event_time
                                             next_time = self.timeB[bge]
-                                            coefficients = numpy.polyfit([last_time, next_time], [last_value, next_value], 1)
-                                            ramps[event_type] = numpy.poly1d(coefficients)(now)
-
-                                except ValueError:
-                                    # no previous event found to compute the ramp
-                                    pass
+                                            if last_time <= now <= next_time:
+                                                # we ramp only within the limits
+                                                coefficients = numpy.polyfit([last_time, next_time], [last_event_value, next_event_value], 1)
+                                                ramps[event_type] = numpy.poly1d(coefficients)(now)
 
                 # now move the sliders to the new values (if any)
                 for k,v in slider_events.items():
@@ -6035,13 +6199,7 @@ class tgraphcanvas(FigureCanvas):
 
                 for k,ramp_value in enumerate(ramps):
                     if ramp_value is not None:
-#                        slider_value = self.aw.eventslidervalues[k]
                         self.aw.moveslider(k, ramp_value)
-# Ramping quantified to integers (only sends a slider action request if quantification leads to a different integer as previously)
-#                        if slider_value != self.aw.eventslidervalues[k]:
-#                            # slider moved to new value thus we fire its action, if any
-#                            self.aw.fireslideraction(k)
-# Ramping using full floats (more slider action requests!)
                         self.aw.fireslideraction_internal(k, ramp_value) # higher precision ramp value send in extern slider actions
 
                 #delete existing message
@@ -6497,7 +6655,7 @@ class tgraphcanvas(FigureCanvas):
                             #Example1 "Y2[-7]" = "Y20070"   Example2 "Y2[+9]" = "Y21191"
                             mathexpression = evaltimeexpression.join((mathexpression[:i],mathexpression[i+offset+6:]))
                         #direct index access: e.g. "Y2{CHARGE}" or "Y2{12}"
-                        elif i+5+offset < len(mathexpression) and mathexpression[i+offset+2] == '{' and mathexpression.find('}',i+offset+3) > -1:
+                        elif i+4+offset < mlen and mathexpression[i+offset+2] == '{' and mathexpression.find('}',i+offset+3) > -1:
                             end_idx = mathexpression.index('}',i+offset+3)
                             body = mathexpression[i+3:end_idx]
                             val = -1
@@ -6571,7 +6729,7 @@ class tgraphcanvas(FigureCanvas):
                                 if mathexpression[i+k+1].isdigit():
                                     nint = int(mathexpression[i+k+1])              #Rnumber int
                                     #check for TIMESHIFT 0-9 (one digit). Example: "R1[-2]" or RB1[-2]
-                                    if i+k+5 < len(mathexpression) and mathexpression[i+k+2] == '[':
+                                    if i+k+5 < mlen and mathexpression[i+k+2] == '[':
                                         Yshiftval = int(mathexpression[i+k+4])
                                         sign = mathexpression[i+k+3]
 
@@ -6611,7 +6769,7 @@ class tgraphcanvas(FigureCanvas):
                                         mathexpression = evaltimeexpression.join((mathexpression[:i],mathexpression[i+k+6:]))
 
                                     #direct index access: e.g. "R2{CHARGE}" or "R2{12}"
-                                    elif i+k+5 < len(mathexpression) and mathexpression[i+k+2] == '{' and mathexpression.find('}',i+k+3) > -1:
+                                    elif i+k+5 < mlen and mathexpression[i+k+2] == '{' and mathexpression.find('}',i+k+3) > -1:
                                         end_idx = mathexpression.index('}',i+k+3)
                                         body = mathexpression[i+k+3:end_idx]
                                         val = -1
@@ -6726,7 +6884,7 @@ class tgraphcanvas(FigureCanvas):
                         else:
                             timex = self.abs_timeB
                         seconddigitstr = ''
-                        if i+4 < len(mathexpression) and mathexpression[i+1] == '[':
+                        if i+4 < mlen and mathexpression[i+1] == '[':
                             Yshiftval = int(mathexpression[i+3])
                             sign = mathexpression[i+2]
 
@@ -6744,7 +6902,7 @@ class tgraphcanvas(FigureCanvas):
                             timeshiftexpressionsvalues.append(val)
                             mathexpression = evaltimeexpression.join((mathexpression[:i],mathexpression[i+5:]))
                         #direct index access: e.g. "t{CHARGE}" or "t{12}"
-                        elif i+3 < len(mathexpression) and mathexpression[i+1] == '{' and mathexpression.find('}',i+2) > -1:
+                        elif i+3 < mlen and mathexpression[i+1] == '{' and mathexpression.find('}',i+2) > -1:
                             end_idx = mathexpression.index('}',i+2)
                             body = mathexpression[i+2:end_idx]
                             if mathexpression[i]=='b':
@@ -6772,7 +6930,7 @@ class tgraphcanvas(FigureCanvas):
                     elif mathexpression[i] == 'P' and i+1 < mlen and mathexpression[i+1].isdigit():                          #check for out of range
                         nint = int(mathexpression[i+1])              #Ynumber int
                         #check for TIMESHIFT 0-9 (one digit). Example: "Y1[-2]"
-                        if i+5 < len(mathexpression) and mathexpression[i+2] == '[' and mathexpression[i+5] == ']':
+                        if i+5 < mlen and mathexpression[i+2] == '[' and mathexpression[i+5] == ']':
                             Yshiftval = int(mathexpression[i+4])
                             sign = mathexpression[i+3]
                             evaltimeexpression = ''.join(('P',mathexpression[i+1],'1'*2,mathexpression[i+4],'1'))
@@ -6796,7 +6954,7 @@ class tgraphcanvas(FigureCanvas):
                             if mathexpression[i+1].isdigit():
                                 nint = int(mathexpression[i+1])              #Bnumber int
                                 #check for TIMESHIFT 0-9 (one digit). Example: "B1[-2]"
-                                if i+5 < len(mathexpression) and mathexpression[i+2] == '[':
+                                if i+5 < mlen and mathexpression[i+2] == '[':
                                     Yshiftval = int(mathexpression[i+4])
                                     sign = mathexpression[i+3]
 
@@ -6846,7 +7004,7 @@ class tgraphcanvas(FigureCanvas):
                                     timeshiftexpressionsvalues.append(val)
                                     mathexpression = evaltimeexpression.join((mathexpression[:i],mathexpression[i+6:]))
                                 #direct index access: e.g. "B2{CHARGE}" or "B2{12}"
-                                elif i+5 < len(mathexpression) and mathexpression[i+2] == '{' and mathexpression.find('}',i+3) > -1:
+                                elif i+5 < mlen and mathexpression[i+2] == '{' and mathexpression.find('}',i+3) > -1:
                                     end_idx = mathexpression.index('}',i+3)
                                     body = mathexpression[i+3:end_idx]
                                     val = -1
@@ -8789,6 +8947,7 @@ class tgraphcanvas(FigureCanvas):
                     any(self.aw.extraDelta1[:len(self.extratimex)]) or
                     any(self.aw.extraDelta2[:len(self.extratimex)])))
 
+    @pyqtSlot(bool,bool,bool,bool,bool)
     def redraw_keep_view(self, *args:bool, **kwargs:bool) -> None:
         xlimit_min: Optional[float] = None
         xlimit: Optional[float] = None
@@ -9437,13 +9596,14 @@ class tgraphcanvas(FigureCanvas):
                                     alpha=self.backgroundalpha,
                                     label=self.aw.arabicReshape(QApplication.translate('Label', 'BackgroundDeltaBT')))
                         #check backgroundevents flag
-                        if self.backgroundeventsflag:
+                        if self.backgroundeventsflag and (self.backgroundETcurve or self.backgroundBTcurve):
                             height = 50 if self.mode == 'F' else 20
 
                             for p, bge in enumerate(self.backgroundEvents):
                                 if self.eventsGraphflag not in [2,4] or self.backgroundEtypes[p] > 3:
                                     event_idx = bge
-                                    if not self.backgroundShowFullflag and (((not self.autotimex or self.autotimexMode == 0) and event_idx < bcharge_idx) or event_idx > bdrop_idx):
+                                    if (not self.showEtypes[self.backgroundEtypes[p]] or
+                                        (not self.backgroundShowFullflag and (((not self.autotimex or self.autotimexMode == 0) and event_idx < bcharge_idx) or event_idx > bdrop_idx))):
                                         continue
                                     if self.backgroundEtypes[p] < 4:
                                         st1 = f'{self.Betypesf(self.backgroundEtypes[p])[0]}{self.eventsvaluesShort(self.backgroundEvalues[p])}'
@@ -9452,12 +9612,11 @@ class tgraphcanvas(FigureCanvas):
                                         if len(st1) == 0:
                                             st1 = 'E'
                                     # plot events on BT when showeventsonbt is true
-                                    if not self.showeventsonbt and self.temp1B[event_idx] > self.temp2B[event_idx]:
+                                    if self.backgroundETcurve and (not self.backgroundBTcurve or
+                                            not self.showeventsonbt or self.temp1B[event_idx] > self.temp2B[event_idx]):
                                         temp = self.temp1B[event_idx]
                                     else:
                                         temp = self.temp2B[event_idx]
-                                    if not self.showEtypes[self.backgroundEtypes[p]]:
-                                        continue
                                     anno = self.ax.annotate(st1, xy=(self.timeB[event_idx], temp),path_effects=[],
                                                         xytext=(self.timeB[event_idx], temp+height),
                                                         va='center', ha='center',
@@ -10006,7 +10165,8 @@ class tgraphcanvas(FigureCanvas):
                                 elif self.showEtypes[self.specialeventstype[i]]:
                                     event_idx = int(self.specialevents[i])
                                     try:
-                                        if not(self.flagstart or self.foregroundShowFullflag or (charge_idx <= event_idx <= drop_idx) or (self.autotimex and self.autotimexMode != 0 and event_idx < charge_idx)):
+                                        if not(self.flagstart or self.foregroundShowFullflag or
+                                                (charge_idx <= event_idx <= drop_idx) or (self.autotimex and self.autotimexMode != 0 and event_idx < charge_idx)):
                                             continue
 
                                         firstletter = self.etypeAbbrev(self.etypes[self.specialeventstype[i]])
@@ -10015,13 +10175,7 @@ class tgraphcanvas(FigureCanvas):
                                         #some times ET is not drawn (ET = 0) when using device NONE
                                         if self.ETcurve or self.BTcurve:
                                             # plot events on BT when showeventsonbt is true
-                                            if self.showeventsonbt and self.BTcurve:
-                                                col = self.palette['bt']
-                                                if self.flagon:
-                                                    temps = self.temp2
-                                                else:
-                                                    temps = self.stemp2
-                                            elif (self.ETcurve and self.temp1[event_idx] >= self.temp2[event_idx]) or (not self.BTcurve):
+                                            if self.ETcurve and (not self.BTcurve or not self.showeventsonbt or self.temp1[event_idx] >= self.temp2[event_idx]):
                                                 col = self.palette['et']
                                                 if self.flagon:
                                                     temps = self.temp1
@@ -10400,7 +10554,7 @@ class tgraphcanvas(FigureCanvas):
                                         #some times ET is not drawn (ET = 0) when using device NONE
                                         # plot events on BT when showeventsonbt is true
                                         tempo:Optional[float]
-                                        if not self.showeventsonbt and self.temp1[event_idx] > self.temp2[event_idx] and self.ETcurve:
+                                        if self.ETcurve and (not self.BTcurve or not self.showeventsonbt or self.temp1[event_idx] > self.temp2[event_idx]):
                                             if self.flagon:
                                                 tempo = self.temp1[event_idx]
                                             else:
@@ -10469,7 +10623,7 @@ class tgraphcanvas(FigureCanvas):
                                                     pass
                                                 # register draggable flag annotation to be re-created after re-positioning on redraw
                                                 self.l_event_flags_dict[i] = anno
-                                                if not self.showeventsonbt and self.ETcurve:
+                                                if self.ETcurve and (not self.BTcurve or not self.showeventsonbt or self.temp1[event_idx] > self.temp2[event_idx]):
                                                     self.l_eteventannos.append(anno)
                                                 else:
                                                     self.l_bteventannos.append(anno)
@@ -12759,8 +12913,8 @@ class tgraphcanvas(FigureCanvas):
                         # CHARGE handler disactivated to not trigger CHARGE after CHARGE is signalled to the machine by START
                         # NOTE: only after CHARGE the heater
 #                        charge_handler=lambda : (self.markChargeDelaySignal.emit(0) if (self.timeindex[0] == -1) else None),
-                        dry_handler=lambda : (self.markDRYSignal.emit(False) if (self.timeindex[2] == 0) else None),
-                        fcs_handler=lambda : (self.markFCsSignal.emit(False) if (self.timeindex[1] == 0) else None),
+                        dry_handler=lambda : (self.markDRYSignal.emit(False) if (self.timeindex[1] == 0) else None),
+                        fcs_handler=lambda : (self.markFCsSignal.emit(False) if (self.timeindex[2] == 0) else None),
                         scs_handler=lambda : (self.markSCsSignal.emit(False) if (self.timeindex[4] == 0) else None),
                         drop_handler=lambda : (self.markDropSignal.emit(False) if (self.timeindex[6] == 0) else None))
                     self.aw.santoker.setLogging(self.device_logging)
@@ -13700,7 +13854,7 @@ class tgraphcanvas(FigureCanvas):
                     self.aw.clusterEvents()
             except Exception as e: # pylint: disable=broad-except
                 _log.exception(e)
-            if autosave and self.autosaveflag != 0 and self.autosavepath:
+            if autosave and self.autosaveflag != 0 and self.autosavepath and self.timeindex[0] != -1 and self.timeindex[6] != 0: # only autosave if CHARGE and DROP are set
                 try:
                     self.aw.automaticsave()
                 except Exception as e: # pylint: disable=broad-except
@@ -14554,7 +14708,7 @@ class tgraphcanvas(FigureCanvas):
                     # we check if this is the first DROP mark on this roast
                     firstDROP = self.timeindex[6] == 0 # on UNDO DROP we do not send the record to plus
                     if self.aw.buttonDROP.isFlat() and self.timeindex[6] > 0:
-                        self.autoDropIdx = -1 # disable autoCharge to allow manual re-CHARGE
+                        self.autoDropIdx = -1 # disable autoDROP to allow manual re-DROP
                         # undo wrongly set FCs
                         # deactivate autoDROP
                         self.autoDROPenabled = False
@@ -15062,7 +15216,7 @@ class tgraphcanvas(FigureCanvas):
                                 #some times ET is not drawn (ET = 0) when using device NONE
                                 # plot events on BT when showeventsonbt is true
                                 anno = None
-                                if self.ETcurve and not self.showeventsonbt and self.temp1[index] >= self.temp2[index]:
+                                if self.ETcurve and (not self.BTcurve or not self.showeventsonbt or self.temp1[index] >= self.temp2[index]):
                                     anno = self.ax.annotate(f'{firstletter}{secondletter}',
                                         xy=(self.timex[index],
                                         self.temp1[index]),
@@ -15105,7 +15259,7 @@ class tgraphcanvas(FigureCanvas):
                                 height = 50 if self.mode == 'F' else 20
                                 #some times ET is not drawn (ET = 0) when using device NONE
                                 # plot events on BT when showeventsonbt is true
-                                if self.ETcurve and not self.showeventsonbt and self.temp1[index] > self.temp2[index]:
+                                if self.ETcurve and (not self.BTcurve or not self.showeventsonbt or self.temp1[index] > self.temp2[index]):
                                     temp = self.temp1[index]
                                 elif self.BTcurve:
                                     temp = self.temp2[index]
@@ -15251,7 +15405,7 @@ class tgraphcanvas(FigureCanvas):
                             height = 50 if self.mode == 'F' else 20
                             #some times ET is not drawn (ET = 0) when using device NONE
                             # plot events on BT when showeventsonbt is true
-                            if self.ETcurve and not self.showeventsonbt and self.temp1[index] > self.temp2[index]:
+                            if self.ETcurve and (not self.BTcurve or not self.showeventsonbt or self.temp1[index] > self.temp2[index]):
                                 temp = self.temp1[index]
                             else:
                                 temp = self.temp2[index]
@@ -15271,7 +15425,7 @@ class tgraphcanvas(FigureCanvas):
                                 row = {0:self.phases[0]-10,1:self.phases[0]-20,2:self.phases[0]-30,3:self.phases[0]-40}
                             #some times ET is not drawn (ET = 0) when using device NONE
                             # plot events on BT when showeventsonbt is true
-                            if self.ETcurve and not self.showeventsonbt and self.temp1[index] >= self.temp2[index]:
+                            if self.ETcurve and (not self.BTcurve or not self.showeventsonbt or self.temp1[index] >= self.temp2[index]):
                                 anno = self.ax.annotate(f'{firstletter}{secondletter}', xy=(self.timex[index], self.temp1[index]),xytext=(self.timex[index],row[self.specialeventstype[-1]]),alpha=1.,
                                                  color=self.palette['specialeventtext'],arrowprops={'arrowstyle':'-',
                                                     'color':self.palette['et'],'alpha':0.4,'relpos':(0,0)},fontsize=fontsize,
@@ -16387,9 +16541,9 @@ class tgraphcanvas(FigureCanvas):
                 self.moveBackgroundAnnoPositionsY(-step)
 
             # ensure to deactivate passed background events to prevent their replay
-            if self.backgroundPlaybackEvents:
-                # turn on again after background load to ignore already passed events
-                self.turn_playback_event_ON()
+            if self.backgroundPlaybackEvents and direction in {'left','right'}:
+                # to ignore already passed events
+                self.updateReplayedBackgroundEvents()
         else:
             self.aw.sendmessage(QApplication.translate('Message','Unable to move background'))
 
