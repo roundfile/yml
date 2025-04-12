@@ -41,6 +41,8 @@ if NOT "%PYUPGRADE_WIN_V%" == "" (
     if exist %PYTHON_PATH%\python.exe (
         echo **** Python upgrade set to %PYUPGRADE_WIN_V%
         echo **** Python version was changed from %PREV_PYTHON_V% to %PYUPGRADE_WIN_V%
+        echo Python Version Now
+        python -V
     ) else (
         echo ***** Upgrading from Python %PREV_PYTHON_V% to %PYUPGRADE_WIN_V%
         echo *** Downloading Python install exe
@@ -50,7 +52,7 @@ if NOT "%PYUPGRADE_WIN_V%" == "" (
         python-%PYUPGRADE_WIN_V%-amd64.exe /quiet PrependPath=1
         if not exist %PYTHON_PATH%\python.exe (exit /b 90)
         echo ***** Upgrade Complete
-        echo Python Version
+        echo Python Version Now
         python -V
     )
 )
