@@ -23268,35 +23268,29 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
     # . average delta after i-2 is negative and twice as high (absolute) as the one before
     # d is minimum temperature delta of the two legs after the event to prevent too early recognition based on noise
     def BTbreak(self, i:int, event:str) -> int:
-        try:
-            #Compensate for fast sample rates
-            if self.qmc.delay < self.qmc.btbreak_params['delay'][self.qmc.autoDropMode][2] :
-                sampleMode = 2
-            elif self.qmc.delay < self.qmc.btbreak_params['delay'][self.qmc.autoDropMode][1] :
-                sampleMode = 1
-            else:
-                sampleMode = 0
+        #Compensate for fast sample rates
+        if self.qmc.delay < self.qmc.btbreak_params['delay'][self.qmc.autoDropMode][2] :
+            sampleMode = 2
+        elif self.qmc.delay < self.qmc.btbreak_params['delay'][self.qmc.autoDropMode][1] :
+            sampleMode = 1
+        else:
+            sampleMode = 0
 
-            if event in {'DROP','drop'}:
-                d = self.qmc.btbreak_params['d_drop'][self.qmc.autoDropMode][sampleMode]
-                offset = self.qmc.btbreak_params['offset_drop'][self.qmc.autoDropMode][sampleMode]
-                dpre_dpost_diff = self.qmc.btbreak_params['dpre_dpost_diff'][self.qmc.autoDropMode][sampleMode]
-            else: #CHARGE
-                d = self.qmc.btbreak_params['d_charge'][self.qmc.autoChargeMode][sampleMode]
-                offset = self.qmc.btbreak_params['offset_charge'][self.qmc.autoChargeMode][sampleMode]
-                dpre_dpost_diff = self.qmc.btbreak_params['dpre_dpost_diff'][self.qmc.autoChargeMode][sampleMode]
+        if event in {'DROP','drop'}:
+            d = self.qmc.btbreak_params['d_drop'][self.qmc.autoDropMode][sampleMode]
+            offset = self.qmc.btbreak_params['offset_drop'][self.qmc.autoDropMode][sampleMode]
+            dpre_dpost_diff = self.qmc.btbreak_params['dpre_dpost_diff'][self.qmc.autoDropMode][sampleMode]
+        else: #CHARGE
+            d = self.qmc.btbreak_params['d_charge'][self.qmc.autoChargeMode][sampleMode]
+            offset = self.qmc.btbreak_params['offset_charge'][self.qmc.autoChargeMode][sampleMode]
+            dpre_dpost_diff = self.qmc.btbreak_params['dpre_dpost_diff'][self.qmc.autoChargeMode][sampleMode]
 
-            if len(self.qmc.timex)>5 and 4 < i < len(self.qmc.timex):  #'i>4' prevents reading temp2[-1] or worse when using BTbreak post recording
-                if self.checkTop(d,offset,dpre_dpost_diff,self.qmc.temp2[i-5],self.qmc.temp2[i-4],self.qmc.temp2[i-3],self.qmc.temp2[i-2],self.qmc.temp2[i-1],self.qmc.temp2[i]):
-                    return self.qmc.btbreak_params['tight']
-                if len(self.qmc.timex)>10 and i>10 and self.checkTop(d,offset,dpre_dpost_diff,self.qmc.temp2[i-10],self.qmc.temp2[i-8],self.qmc.temp2[i-6],self.qmc.temp2[i-4],self.qmc.temp2[i-2],self.qmc.temp2[i],twice=True):
-                    return self.qmc.btbreak_params['loose']
-            return 0
-        except Exception as e:  # pylint: disable=broad-exception-caught
-            _, _, exc_tb = sys.exc_info()
-            self.qmc.adderror((QApplication.translate('Error Message','Exception:') + ' BTbreak() {0}').format(str(e)),getattr(exc_tb, 'tb_lineno', '?'))
-            return 0
-
+        if len(self.qmc.timex)>5 and 4 < i < len(self.qmc.timex):  #'i>4' prevents reading temp2[-1] or worse when using BTbreak post recording
+            if self.checkTop(d,offset,dpre_dpost_diff,self.qmc.temp2[i-5],self.qmc.temp2[i-4],self.qmc.temp2[i-3],self.qmc.temp2[i-2],self.qmc.temp2[i-1],self.qmc.temp2[i]):
+                return self.qmc.btbreak_params['tight']
+            if len(self.qmc.timex)>10 and i>10 and self.checkTop(d,offset,dpre_dpost_diff,self.qmc.temp2[i-10],self.qmc.temp2[i-8],self.qmc.temp2[i-6],self.qmc.temp2[i-4],self.qmc.temp2[i-2],self.qmc.temp2[i],twice=True):
+                return self.qmc.btbreak_params['loose']
+        return 0
 
     # updates AUC guide (expected time to hit target AUC; self.qmc.AUCguideTime) based on current AUC, target, base, and RoR
     def updateAUCguide(self) -> None:
