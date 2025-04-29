@@ -31,6 +31,7 @@ if TYPE_CHECKING:
 
 _log = logging.getLogger(__name__)
 
+test_build_mode = True  # Use to check that all required files are in build  #TODO remove
 
 class DEVICE_VARIANT(TypedDict):
     vid: int
@@ -178,6 +179,17 @@ class AillioBase:
         try:
             detected_device = AillioBase.detect_device()
 
+            # Use to check that all required files are in build  #TODO remove
+            if test_build_mode:
+                detected_device = {
+                    'vid': 0x0483,
+                    'pid': 0xa27e,
+                    'protocol': 1,
+                    'model': 'Aillio Bullet R1 IrBts',
+                    'module': 'aillio_r1',
+                    'class_name': 'AillioR1'
+                    }
+                
             if detected_device is None:
                 _log.warning('No Aillio roaster detected')
                 return None
