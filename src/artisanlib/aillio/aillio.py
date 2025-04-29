@@ -19,11 +19,11 @@
 # mikefsq, r2 2025
 
 import usb.core # type: ignore[import-untyped]
-from typing import Optional, Union, List, TypedDict, cast, TYPE_CHECKING, Any
 import logging
-from platform import system
 import importlib.util
 import os
+from platform import system
+from typing import Optional, Union, List, TypedDict, cast, TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from artisanlib.aillio.aillio_r1 import AillioR1
@@ -41,7 +41,6 @@ class DEVICE_VARIANT(TypedDict):
     class_name: str
 
 def _load_library(find_library:Any = None) -> Any:
-    """Load the libusb library with custom search paths"""
     import usb.libloader # type: ignore[import-untyped, unused-ignore] # pylint: disable=redefined-outer-name
     return usb.libloader.load_locate_library(
                 ('usb-1.0', 'libusb-1.0', 'usb'),
@@ -102,9 +101,7 @@ class AillioBase:
                 # Fallback to pyusb backend
                 try:
                     _log.debug('Trying fallback pyusb backend')
-                    import usb.backend.libusb1
-                    import usb.core
-                    import os
+                    import usb.backend.libusb1 # type: ignore[import-untyped, unused-ignore] # pylint: disable=redefined-outer-name
 
                     # Look for libusb DLL in common locations
                     dll_paths = [
@@ -118,7 +115,7 @@ class AillioBase:
                     for dll_path in dll_paths:
                         try:
                             _log.debug('Trying libusb DLL at: %s', dll_path)
-                            backend = usb.backend.libusb1.get_backend(find_library=lambda x: dll_path)
+                            backend = usb.backend.libusb1.get_backend(find_library=lambda _,res=dll_path: res)
                             if backend is not None:
                                 _log.info('Successfully loaded libusb backend from: %s', dll_path)
                                 break
@@ -150,7 +147,6 @@ class AillioBase:
                 backend = None
                 if system().startswith('Linux'):
                     # Try to find system libusb
-                    import os
                     for shared_libusb_path in [
                     '/usr/lib/x86_64-linux-gnu/libusb-1.0.so',
                     '/usr/lib/x86_64-linux-gnu/libusb-1.0.so.0',
@@ -158,21 +154,20 @@ class AillioBase:
                     '/usr/lib/aarch64-linux-gnu/libusb-1.0.so.0'
                     ]:
                         if os.path.isfile(shared_libusb_path):
-                            import usb.backend.libusb1 as libusb10
-                            libusb10._load_library = _load_library
-                            from usb.backend.libusb1 import get_backend
+                            import usb.backend.libusb1 as libusb10 # type: ignore[import-untyped, unused-ignore]
+                            libusb10._load_library = _load_library # pylint: disable=protected-access # overwrite the overwrite of the pyinstaller runtime hook pyi_rth_usb.py
+                            from usb.backend.libusb1 import get_backend # type: ignore[import-untyped, unused-ignore]
                             backend = get_backend(find_library=lambda _,shared_libusb_path=shared_libusb_path: shared_libusb_path)
                             break
 
                 # Try to find device with the backend
-                import usb.core
                 for variant in AillioBase.DEVICE_VARIANTS:
                     device = usb.core.find(idVendor=variant['vid'], idProduct=variant['pid'], backend=backend)
                     if device is not None:
                         return variant
 
         except Exception as e: # pylint: disable=broad-except
-            _log.exception("Error detecting device: %s", str(e))
+            _log.exception('Error detecting device: %s', str(e))
             return None
 
         return None
@@ -211,10 +206,10 @@ class AillioBase:
                 return None
 
         except usb.core.NoBackendError:
-            _log.error("No USB backend available. Please ensure libusb is installed.")
+            _log.error('No USB backend available. Please ensure libusb is installed.')
             return None
-        except Exception as e:
-            _log.exception("Unexpected error creating Aillio instance: %s", str(e))
+        except Exception as e:  # pylint: disable=broad-except
+            _log.exception('Unexpected error creating Aillio instance: %s', str(e))
             return None
 
     @staticmethod
