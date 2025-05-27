@@ -1946,13 +1946,6 @@ class tgraphcanvas(FigureCanvas):
                 linewidth = self.gridthickness,
                 alpha = self.gridalpha)
 
-        #change label colors
-        for label in self.ax.yaxis.get_ticklabels():
-            label.set_color(self.palette['ylabel'])
-
-        for label in self.ax.xaxis.get_ticklabels():
-            label.set_color(self.palette['xlabel'])
-
         self.backgroundETcurve:bool = True
         self.backgroundBTcurve:bool = True
 
@@ -3320,7 +3313,7 @@ class tgraphcanvas(FigureCanvas):
                             event_anno = event_annos[event_ind]
                             tempo:Optional[float] = None
                             if foreground:
-                                if self.ETcurve and (not self.BTcurve or not self.showeventsonbt or self.temp1[ind] > self.temp2[ind]):
+                                if self.ETcurve and not (self.BTcurve and self.showeventsonbt) and self.temp1[ind] > self.temp2[ind]:
                                     if self.flagon:
                                         tempo = self.temp1[time_idx]
                                     else:
@@ -3330,7 +3323,7 @@ class tgraphcanvas(FigureCanvas):
                                         tempo = self.temp2[time_idx]
                                     else:
                                         tempo = self.stemp2[time_idx]
-                            elif self.ETcurve and (not self.BTcurve or not self.showeventsonbt or self.temp1B[ind] > self.temp2B[ind]):
+                            elif self.ETcurve and not (self.BTcurve and self.showeventsonbt) and self.temp1B[ind] > self.temp2B[ind]:
                                 tempo = self.temp1B[time_idx]
                             elif self.BTcurve:
                                 tempo = self.temp2B[time_idx]
@@ -3415,8 +3408,7 @@ class tgraphcanvas(FigureCanvas):
                                 event_ind -= self.foreground_evens_before_CAHRGE()
                             if len(event_annos)>event_ind:
                                 event_anno = event_annos[event_ind]
-                                if self.ETcurve and (not self.BTcurve or
-                                            not self.showeventsonbt or self.temp1[time_idx] > self.temp2[time_idx]):
+                                if self.ETcurve and not (self.BTcurve and self.showeventsonbt) and self.temp1[time_idx] > self.temp2[time_idx]:
                                     if self.flagon:
                                         tempo = self.temp1[time_idx]
                                     else:
@@ -3513,8 +3505,7 @@ class tgraphcanvas(FigureCanvas):
                                 event_ind -= self.background_evens_before_CAHRGE()
                             if len(event_annos)>event_ind:
                                 event_anno = event_annos[event_ind]
-                                if self.backgroundETcurve and (not self.backgroundBTcurve or
-                                            not self.showeventsonbt or self.temp1B[time_idx] > self.temp2B[time_idx]):
+                                if self.backgroundETcurve and not (self.backgroundBTcurve and self.showeventsonbt) and self.temp1B[time_idx] > self.temp2B[time_idx]:
                                     tempo = self.temp1B[time_idx]
                                 elif self.BTcurve:
                                     tempo = self.temp2B[time_idx]
@@ -3736,7 +3727,6 @@ class tgraphcanvas(FigureCanvas):
                     len(self.specialeventstype)>self.foreground_event_ind):
             event_type = self.specialeventstype[self.foreground_event_ind]
             ldots, event_annos, specialevent_annos = self.event_type_to_artist(event_type)
-            _log.debug('PRINT specialevent_annos1: %s',specialevent_annos)
             set_x = True
             set_y = True
             if ldots is not None:
@@ -3775,8 +3765,7 @@ class tgraphcanvas(FigureCanvas):
                         if len(event_annos)>event_ind:
                             event_anno = event_annos[event_ind]
                             idx = max(0,min(len(self.timex)-1,self.time2index(xdata[self.foreground_event_pos])))
-                            if self.ETcurve and (not self.BTcurve or
-                                            not self.showeventsonbt or self.temp1[idx] > self.temp2[idx]):
+                            if self.ETcurve and not (self.BTcurve and self.showeventsonbt) and self.temp1[idx] > self.temp2[idx]:
                                 if self.flagon:
                                     tempo = self.temp1[idx]
                                 else:
@@ -3861,8 +3850,7 @@ class tgraphcanvas(FigureCanvas):
                         if len(event_annos)>event_ind:
                             event_anno = event_annos[event_ind]
                             idx = max(0,min(len(self.timeB)-1,self.backgroundtime2index(xdata[self.background_event_pos])))
-                            if self.backgroundETcurve and (not self.backgroundBTcurve or
-                                            not self.showeventsonbt or self.temp1B[idx] > self.temp2B[idx]):
+                            if self.backgroundETcurve and not (self.backgroundBTcurve and self.showeventsonbt) and self.temp1B[idx] > self.temp2B[idx]:
                                 tempo = self.temp1B[idx]
                             elif self.backgroundBTcurve:
                                 tempo = self.temp2B[idx]
@@ -7368,40 +7356,32 @@ class tgraphcanvas(FigureCanvas):
                 mfactor2 =  round(float(2. + abs( int(round(last_reading_time)) / int(round(self.xgrid)) )))
 
                 majorloc = numpy.arange(starttime-(self.xgrid*mfactor1),starttime+(self.xgrid*mfactor2), self.xgrid)
-                if self.xgrid == 60:
-                    minorloc = numpy.arange(starttime-(self.xgrid*mfactor1),starttime+(self.xgrid*mfactor2), 30)
-                else:
-                    minorloc = numpy.arange(starttime-(self.xgrid*mfactor1),starttime+(self.xgrid*mfactor2), 60)
-
                 majorlocator = ticker.FixedLocator(majorloc.tolist())
-                minorlocator = ticker.FixedLocator(minorloc.tolist())
-
                 self.ax.xaxis.set_major_locator(majorlocator)
-                self.ax.xaxis.set_minor_locator(minorlocator)
-
                 formatter = ticker.FuncFormatter(self.formtime)
                 self.ax.xaxis.set_major_formatter(formatter)
-
-
-                #adjust the length of the minor ticks
-                for i in self.ax.xaxis.get_minorticklines() + self.ax.yaxis.get_minorticklines():
-                    i.set_markersize(4)
 
                 #adjust the length of the major ticks
                 for i in self.ax.get_xticklines() + self.ax.get_yticklines():
                     i.set_markersize(6)
                     #i.set_markeredgewidth(2)   #adjust the width
 
-#                # check x labels rotation
-#                if self.xrotation != 0:
-#                    for label in self.ax.xaxis.get_ticklabels():
-#                        label.set_rotation(self.xrotation)
-
-            if not self.LCDdecimalplaces:
-                if self.ax:
+                # minor x-axis tick locator
+                if not self.LCDdecimalplaces:
                     self.ax.minorticks_off()
-                if self.delta_ax is not None:
-                    self.delta_ax.minorticks_off()
+                else:
+                    if self.xgrid == 60:
+                        minorloc = numpy.arange(starttime-(self.xgrid*mfactor1),starttime+(self.xgrid*mfactor2), 30)
+                    else:
+                        minorloc = numpy.arange(starttime-(self.xgrid*mfactor1),starttime+(self.xgrid*mfactor2), 60)
+                    minorlocator = ticker.FixedLocator(minorloc.tolist())
+                    self.ax.xaxis.set_minor_locator(minorlocator)
+
+                    #adjust the length of the minor ticks
+                    for i in self.ax.xaxis.get_minorticklines():
+                        i.set_markersize(4)
+            else:
+                self.ax.set_xticks([])
 
             # we have to update the canvas cache
             if redraw:
@@ -9083,9 +9063,9 @@ class tgraphcanvas(FigureCanvas):
 
     def twoAxisMode(self) -> bool:
         return (self.DeltaETflag or self.DeltaBTflag or
-                    (self.background and self.backgroundprofile is not None and (self.DeltaETBflag or self.DeltaBTBflag) or
+                    (self.background and self.backgroundprofile is not None and (self.DeltaETBflag or self.DeltaBTBflag)) or
                     any(self.aw.extraDelta1[:len(self.extratimex)]) or
-                    any(self.aw.extraDelta2[:len(self.extratimex)])))
+                    any(self.aw.extraDelta2[:len(self.extratimex)]))
 
     @pyqtSlot(bool,bool,bool,bool,bool)
     def redraw_keep_view(self, *args:bool, **kwargs:bool) -> None:
@@ -9128,7 +9108,7 @@ class tgraphcanvas(FigureCanvas):
     #   to keep points and lines drawn without those breaks data should be interpolated via util:fill_gaps (controlled by the "Interpolate Drops" filter)
     @pyqtSlot(bool,bool,bool,bool,bool)
     def redraw(self, recomputeAllDeltas:bool = True, re_smooth_foreground:bool = True, takelock:bool = True, forceRenewAxis:bool = False, re_smooth_background:bool = False) -> None: # pyright: ignore [reportGeneralTypeIssues] # Code is too complex to analyze; reduce complexity by refactoring into subroutines or reducing conditional code paths
-#        _log.info("PRINT redraw(recomputeAllDeltas: %s, re_smooth_foreground: %s, takelock: %s, forceRenewAxis: %s, re_smooth_background: %s)",recomputeAllDeltas, re_smooth_foreground, takelock, forceRenewAxis, re_smooth_background)
+#        _log.debug("PRINT redraw(recomputeAllDeltas: %s, re_smooth_foreground: %s, takelock: %s, forceRenewAxis: %s, re_smooth_background: %s)",recomputeAllDeltas, re_smooth_foreground, takelock, forceRenewAxis, re_smooth_background)
         if self.designerflag:
             self.redrawdesigner(force=True)
         elif self.aw.comparator is not None:
@@ -9154,30 +9134,30 @@ class tgraphcanvas(FigureCanvas):
                     randomness = 12 # 2 (16 default)
                     rcParams['path.sketch'] = (scale, length, randomness)
 
-                    rcParams['axes.linewidth'] = 0.8
-                    rcParams['xtick.major.size'] = 6
-                    rcParams['xtick.major.width'] = 1
-                    rcParams['xtick.minor.width'] = 0.8
-
-                    rcParams['ytick.major.size'] = 4
-                    rcParams['ytick.major.width'] = 1
-                    rcParams['ytick.minor.width'] = 1
+                    # if no axis are set, we need to forceRenewAxis in any case
+                    if self.ax is None or self.delta_ax is None:
+                        forceRenewAxis = True
 
                     xlabel_alpha_color = to_hex(to_rgba(self.palette['xlabel'], 0.47), keep_alpha=True)
                     ylabel_alpha_color = to_hex(to_rgba(self.palette['ylabel'], 0.47), keep_alpha=True)
 
+                    if forceRenewAxis or self.ax is None:
+                        #rcParams['text.antialiased'] = True
+                        self.fig.clf()
+                        self.ax = self.fig.add_subplot(111,facecolor=self.palette['background'])
+                        self.ax.set_autoscale_on(False)
+                        self.delta_ax = self.ax.twinx()
+
+                    # rcParams need to be set each redraw. Why?
+#                    rcParams['axes.linewidth'] = 0.8
+#                    rcParams['xtick.major.size'] = 6
+#                    rcParams['xtick.major.width'] = 1
+#                    rcParams['xtick.minor.width'] = 0.8
+#                    rcParams['ytick.major.size'] = 4
+#                    rcParams['ytick.major.width'] = 1
+#                    rcParams['ytick.minor.width'] = 1
                     rcParams['xtick.color'] = xlabel_alpha_color
                     rcParams['ytick.color'] = ylabel_alpha_color
-
-                    #rcParams['text.antialiased'] = True
-
-                    if forceRenewAxis:
-                        self.fig.clf()
-
-                    if self.ax is None or forceRenewAxis:
-                        self.ax = self.fig.add_subplot(111,facecolor=self.palette['background'])
-                    if self.delta_ax is None or forceRenewAxis:
-                        self.delta_ax = self.ax.twinx()
 
                     # instead to remove and regenerate the axis object (we just clear and reuse it)
 
@@ -9186,16 +9166,11 @@ class tgraphcanvas(FigureCanvas):
                             warnings.simplefilter('ignore')
                             self.ax.clear()
                         self.ax.set_facecolor(self.palette['background'])
-                        self.ax.set_yticks([])
-                        self.ax.set_xticks([])
                         self.ax.set_ylim(self.ylimit_min, self.ylimit)
-                        self.ax.set_autoscale_on(False)
                     if self.delta_ax is not None:
                         with warnings.catch_warnings():
                             warnings.simplefilter('ignore')
                             self.delta_ax.clear()
-                        self.delta_ax.set_yticks([])
-                        self.delta_ax.set_xticks([])
 
                     prop = self.aw.mpl_fontproperties.copy()
                     prop.set_size('small')
@@ -9284,55 +9259,44 @@ class tgraphcanvas(FigureCanvas):
 
                     self.ax.patch.set_visible(True)
 
-                    self.delta_ax.set_ylim(self.zlimit_min,self.zlimit)
-                    if self.zgrid > 0:
-                        self.delta_ax.yaxis.set_major_locator(ticker.MultipleLocator(self.zgrid))
-                        self.delta_ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
-                        for ii in self.delta_ax.get_yticklines():
-                            ii.set_markersize(10)
-                        for iiii in self.delta_ax.yaxis.get_minorticklines():
-                            iiii.set_markersize(5)
-                        for label in self.delta_ax.get_yticklabels() :
-                            label.set_fontsize('small')
-                        if not self.LCDdecimalplaces:
-                            self.delta_ax.minorticks_off()
-                    # translate y-coordinate from delta into temp range to ensure the cursor position display (x,y) coordinate in the temp axis
-                    self.delta_ax.fmt_ydata = self.fmt_data
-                    self.delta_ax.fmt_xdata = self.fmt_timedata
-                    self.delta_ax.yaxis.set_label_position('right')
+                    if self.delta_ax is not None:
+                        # translate y-coordinate from delta into temp range to ensure the cursor position display (x,y) coordinate in the temp axis
+                        self.delta_ax.fmt_ydata = self.fmt_data
+                        self.delta_ax.fmt_xdata = self.fmt_timedata
+                        self.delta_ax.yaxis.set_label_position('right')
 
-                    if two_ax_mode:
-                        #create a second set of axes in the same position as self.ax
-                        self.delta_ax.tick_params(\
-                            axis='y',           # changes apply to the y-axis
-                            which='both',       # both major and minor ticks are affected
-                            left=False,         # ticks along the left edge are off
-                            bottom=False,       # ticks along the bottom edge are off
-                            top=False,          # ticks along the top edge are off
-                            direction='inout',  # tick_dir # this does not work as ticks are not drawn at all in ON mode with this!?
-                            labelright=True,
-                            labelleft=False,
-                            labelbottom=False)   # labels along the bottom edge are off
+                        if two_ax_mode:
+                            #create a second set of axes in the same position as self.ax
+                            self.delta_ax.tick_params(\
+                                axis='y',           # changes apply to the y-axis
+                                which='both',       # both major and minor ticks are affected
+                                left=False,         # ticks along the left edge are off
+                                bottom=False,       # ticks along the bottom edge are off
+                                top=False,          # ticks along the top edge are off
+                                direction='inout',  # tick_dir # this does not work as ticks are not drawn at all in ON mode with this!?
+                                labelright=True,
+                                labelleft=False,
+                                labelbottom=False)   # labels along the bottom edge are off
 
-                        if self.flagstart or self.zgrid == 0:
-                            y_label = self.delta_ax.set_ylabel('')
+                            if self.flagstart or self.zgrid == 0:
+                                y_label = self.delta_ax.set_ylabel('')
+                            else:
+                                y_label = self.delta_ax.set_ylabel(f"{self.mode}{self.aw.arabicReshape('/min')}",
+                                    color = self.palette['ylabel'],
+                                    fontsize='medium',
+                                    fontfamily=prop.get_family()
+                                    )
+                            try:
+                                y_label.set_in_layout(False) # remove y-axis labels from tight_layout calculation
+                            except Exception: # pylint: disable=broad-except # set_in_layout not available in mpl<3.x
+                                pass
                         else:
-                            y_label = self.delta_ax.set_ylabel(f"{self.mode}{self.aw.arabicReshape('/min')}",
-                                color = self.palette['ylabel'],
-                                fontsize='medium',
-                                fontfamily=prop.get_family()
-                                )
-                        try:
-                            y_label.set_in_layout(False) # remove y-axis labels from tight_layout calculation
-                        except Exception: # pylint: disable=broad-except # set_in_layout not available in mpl<3.x
-                            pass
-                    else:
-                        self.delta_ax.patch.set_visible(False)
-                        self.delta_ax.tick_params(\
-                            axis='y',
-                            which='both',
-                            right=False,
-                            labelright=False)
+                            self.delta_ax.patch.set_visible(False)
+                            self.delta_ax.tick_params(\
+                                axis='y',
+                                which='both',
+                                right=False,
+                                labelright=False)
 
                     self.ax.spines['top'].set_color(xlabel_alpha_color)
                     self.ax.spines['bottom'].set_color(xlabel_alpha_color)
@@ -9354,12 +9318,28 @@ class tgraphcanvas(FigureCanvas):
                         self.delta_ax.set_frame_on(False) # hide all splines (as the four lines above)
 
                     if self.ygrid > 0:
-                        self.ax.yaxis.set_major_locator(ticker.MultipleLocator(self.ygrid))
-                        self.ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
+                        major_locator = ticker.MultipleLocator(self.ygrid)
+                        self.ax.yaxis.set_major_locator(major_locator)
+                        if len(major_locator()) > 50: # accept a maximum of 30 major ticks
+                            min_grid = (self.aw.qmc.ylimit - self.aw.qmc.ylimit_min) / 50
+                            # set grid to closest of min_grid from regular grids [1, 2, 5, 10, 20, 50, 100]
+                            major_locator.set_params(min([1, 2, 5, 10, 20, 50, 100], key=lambda x:abs(x-min_grid)))
+                        if not self.LCDdecimalplaces:
+                            self.ax.minorticks_off()
+                        else:
+                            minor_locator = ticker.AutoMinorLocator() # locator parameter n, default: n='auto' => 4 or 5, n=2 => 1
+                            self.ax.yaxis.set_minor_locator(minor_locator)
+                            if len(minor_locator()) > 50:
+                                # we limit the total number of minor tick locators for performance and esthetic reasons
+                                self.ax.yaxis.set_minor_locator(ticker.NullLocator())
+                            for m in self.ax.yaxis.get_minorticklines():
+                                m.set_markersize(5)
                         for j in self.ax.get_yticklines():
                             j.set_markersize(10)
-                        for m in self.ax.yaxis.get_minorticklines():
-                            m.set_markersize(5)
+                        for label in self.ax.get_yticklabels():
+                            label.set_fontsize('small')
+                    else:
+                        self.ax.set_yticks([])
 
                     for ldots in [self.l_eventtype1dots,self.l_eventtype2dots,self.l_eventtype3dots,self.l_eventtype4dots,
                             self.l_backgroundeventtype1dots,self.l_backgroundeventtype2dots,self.l_backgroundeventtype3dots,self.l_backgroundeventtype4dots]:
@@ -9404,10 +9384,8 @@ class tgraphcanvas(FigureCanvas):
                     #update X ticks, labels, and rotating_colors
                     self.xaxistosm(redraw=False)
 
-                    if forceRenewAxis:
-                        for label in self.ax.get_xticklabels() :
-                            label.set_fontsize('small')
-                        for label in self.ax.get_yticklabels() :
+                    if self.xgrid:
+                        for label in self.ax.get_xticklabels():
                             label.set_fontsize('small')
 
                     rcParams['path.sketch'] = (0,0,0)
@@ -9763,8 +9741,7 @@ class tgraphcanvas(FigureCanvas):
                                         if len(st1) == 0:
                                             st1 = 'E'
                                     # plot events on BT when showeventsonbt is true
-                                    if self.backgroundETcurve and (not self.backgroundBTcurve or
-                                            not self.showeventsonbt or self.temp1B[event_idx] > self.temp2B[event_idx]):
+                                    if self.backgroundETcurve and not (self.backgroundBTcurve and self.showeventsonbt) and self.temp1B[event_idx] > self.temp2B[event_idx]:
                                         temp = self.temp1B[event_idx]
                                     else:
                                         temp = self.temp2B[event_idx]
@@ -10314,7 +10291,7 @@ class tgraphcanvas(FigureCanvas):
                                         #some times ET is not drawn (ET = 0) when using device NONE
                                         if self.ETcurve or self.BTcurve:
                                             # plot events on BT when showeventsonbt is true
-                                            if self.ETcurve and (not self.BTcurve or not self.showeventsonbt or self.temp1[event_idx] >= self.temp2[event_idx]):
+                                            if self.ETcurve and not (self.BTcurve and self.showeventsonbt) and self.temp1[event_idx] >= self.temp2[event_idx]:
                                                 col = self.palette['et']
                                                 if self.flagon:
                                                     temps = self.temp1
@@ -10326,7 +10303,6 @@ class tgraphcanvas(FigureCanvas):
                                                     temps = self.temp2
                                                 else:
                                                     temps = self.stemp2
-        #                                    fcolor=self.EvalueColor[self.specialeventstype[i]]
                                             if platform.system() == 'Windows':
                                                 vert_offset = 5.0
                                             else:
@@ -10526,7 +10502,6 @@ class tgraphcanvas(FigureCanvas):
                                             try:
                                                 if not self.flagon and self.eventsGraphflag!=4 and self.specialeventannovisibilities[3] != 0:
                                                     E4_annotation = self.parseSpecialeventannotation(self.specialeventannotations[3], i)
-                                                    _log.debug('PRINT E4_annotation: %s',E4_annotation)
                                                     temp = self.E4values[-1]
                                                     anno = self.ax.annotate(E4_annotation, xy=(hoffset + self.timex[int(self.specialevents[i])], voffset + temp),
                                                                 alpha=.9,
@@ -10699,7 +10674,7 @@ class tgraphcanvas(FigureCanvas):
                                         #some times ET is not drawn (ET = 0) when using device NONE
                                         # plot events on BT when showeventsonbt is true
                                         tempo:Optional[float]
-                                        if self.ETcurve and (not self.BTcurve or not self.showeventsonbt or self.temp1[event_idx] > self.temp2[event_idx]):
+                                        if self.ETcurve and not (self.BTcurve and self.showeventsonbt) and self.temp1[event_idx] > self.temp2[event_idx]:
                                             if self.flagon:
                                                 tempo = self.temp1[event_idx]
                                             else:
@@ -10768,7 +10743,7 @@ class tgraphcanvas(FigureCanvas):
                                                     pass
                                                 # register draggable flag annotation to be re-created after re-positioning on redraw
                                                 self.l_event_flags_dict[i] = anno
-                                                if self.ETcurve and (not self.BTcurve or not self.showeventsonbt or self.temp1[event_idx] > self.temp2[event_idx]):
+                                                if self.ETcurve and not (self.BTcurve and self.showeventsonbt) and self.temp1[event_idx] > self.temp2[event_idx]:
                                                     self.l_eteventannos.append(anno)
                                                 else:
                                                     self.l_bteventannos.append(anno)
@@ -10822,22 +10797,36 @@ class tgraphcanvas(FigureCanvas):
                             self.drawDeltaET(trans,0,0)
                             self.drawDeltaBT(trans,0,0)
 
-                    if self.delta_ax is not None and two_ax_mode:
-                        self.aw.autoAdjustAxis(timex=False)
-                        self.delta_ax.set_ylim(self.zlimit_min,self.zlimit)
-                        if self.zgrid > 0:
-                            self.delta_ax.yaxis.set_major_locator(ticker.MultipleLocator(self.zgrid))
-                            self.delta_ax.yaxis.set_minor_locator(ticker.AutoMinorLocator())
-                            delta_major_tick_lines:List[Line2D] = self.delta_ax.get_yticklines()
-                            for ytl in delta_major_tick_lines:
-                                ytl.set_markersize(10)
-                            delta_minor_tick_lines:List[Line2D] = self.delta_ax.yaxis.get_minorticklines()
-                            for mtl in delta_minor_tick_lines:
-                                mtl.set_markersize(5)
-                            for label in self.delta_ax.get_yticklabels() :
-                                label.set_fontsize('small')
-                            if not self.LCDdecimalplaces:
-                                self.delta_ax.minorticks_off()
+                    if self.delta_ax is not None:
+                        self.delta_ax.set_yticks([])
+                        if two_ax_mode:
+                            self.aw.autoAdjustAxis(timex=False)
+                            self.delta_ax.set_ylim(self.zlimit_min,self.zlimit)
+                            if self.zgrid > 0:
+                                major_locator = ticker.MultipleLocator(self.zgrid)
+                                self.delta_ax.yaxis.set_major_locator(major_locator)
+                                if len(major_locator()) > 50: # accept a maximum of 20 major ticks
+                                    min_grid = (self.aw.qmc.zlimit - self.aw.qmc.zlimit_min) / 50
+                                    # set grid to closest of min_grid from regular grids [1, 2, 5, 10, 20, 50, 100]
+                                    major_locator.set_params(min([1, 2, 5, 10, 20, 50, 100], key=lambda x:abs(x-min_grid)))
+                                delta_major_tick_lines:List[Line2D] = self.delta_ax.get_yticklines()
+                                for ytl in delta_major_tick_lines:
+                                    ytl.set_markersize(10)
+                                for label in self.delta_ax.get_yticklabels() :
+                                    label.set_fontsize('small')
+                                if not self.LCDdecimalplaces:
+                                    self.delta_ax.minorticks_off()
+                                else:
+                                    minor_locator = ticker.AutoMinorLocator() # locator parameter n, default: n='auto' => 4 or 5, n=2 => 1
+                                    self.delta_ax.yaxis.set_minor_locator(minor_locator)
+                                    if len(minor_locator()) > 50:
+                                        # we limit the total number of minor tick locators for performance and esthetic reasons
+                                        self.delta_ax.yaxis.set_minor_locator(ticker.NullLocator())
+                                    delta_minor_tick_lines:List[Line2D] = self.delta_ax.yaxis.get_minorticklines()
+                                    for mtl in delta_minor_tick_lines:
+                                        mtl.set_markersize(5)
+
+
 
                     ##### Extra devices-curves
                     for l in self.extratemp1lines + self.extratemp2lines:
@@ -11076,6 +11065,7 @@ class tgraphcanvas(FigureCanvas):
 
                     if not self.flagon and self.timeindex[6] and self.AUCshowFlag:
                         self.drawAUC()
+
                     #update label rotating_colors
                     for label in self.ax.xaxis.get_ticklabels():
                         label.set_color(self.palette['xlabel'])
@@ -11229,7 +11219,7 @@ class tgraphcanvas(FigureCanvas):
                     self.fig.canvas.draw_idle()
 
                 # we update the canvas immediately to get the RoR projections drawn again
-                if self.flagstart and  self.timeindex[0] > -1:
+                if self.flagstart and self.timeindex[0] > -1:
                     self.updategraphicsSignal.emit()
 
     def checkOverlap(self, anno:'Annotation') -> bool:
@@ -12465,7 +12455,7 @@ class tgraphcanvas(FigureCanvas):
                 self.EvalueColor = self.EvalueColor_default.copy()
                 self.EvalueTextColor = self.EvalueTextColor_default.copy()
                 self.aw.sendmessage(QApplication.translate('Message','Colors set to defaults'))
-                self.aw.closeEventSettings()
+#                self.aw.closeEventSettings()
 
         elif color == 2:
             self.aw.sendmessage(QApplication.translate('Message','Colors set to grey'))
@@ -12487,7 +12477,7 @@ class tgraphcanvas(FigureCanvas):
             self.backgroundxtcolor      = self.aw.convertToGreyscale(self.backgroundxtcolor)
             self.backgroundytcolor      = self.aw.convertToGreyscale(self.backgroundytcolor)
             self.aw.setLCDsBW()
-            self.aw.closeEventSettings()
+#            self.aw.closeEventSettings()
 
         elif color == 3:
             from artisanlib.colors import graphColorDlg
@@ -12531,7 +12521,8 @@ class tgraphcanvas(FigureCanvas):
                 self.backgrounddeltabtcolor = str(dialog.bgdeltabtButton.text())
                 self.backgroundxtcolor = str(dialog.bgextraButton.text())
                 self.backgroundytcolor = str(dialog.bgextra2Button.text())
-                self.aw.closeEventSettings()
+#                self.aw.closeEventSettings()
+
 #            #deleteLater() will not work here as the dialog is still bound via the parent
 #            #dialog.deleteLater() # now we explicitly allow the dialog an its widgets to be GCed
 #            # the following will immediately release the memory despite this parent link
@@ -15393,7 +15384,7 @@ class tgraphcanvas(FigureCanvas):
                                 #some times ET is not drawn (ET = 0) when using device NONE
                                 # plot events on BT when showeventsonbt is true
                                 anno = None
-                                if self.ETcurve and (not self.BTcurve or not self.showeventsonbt or self.temp1[index] >= self.temp2[index]):
+                                if self.ETcurve and not (self.BTcurve and self.showeventsonbt) and self.temp1[index] >= self.temp2[index]:
                                     anno = self.ax.annotate(f'{firstletter}{secondletter}',
                                         xy=(self.timex[index],
                                         self.temp1[index]),
@@ -15436,7 +15427,7 @@ class tgraphcanvas(FigureCanvas):
                                 height = 50 if self.mode == 'F' else 20
                                 #some times ET is not drawn (ET = 0) when using device NONE
                                 # plot events on BT when showeventsonbt is true
-                                if self.ETcurve and (not self.BTcurve or not self.showeventsonbt or self.temp1[index] > self.temp2[index]):
+                                if self.ETcurve and not (self.BTcurve and self.showeventsonbt) and self.temp1[index] > self.temp2[index]:
                                     temp = self.temp1[index]
                                 elif self.BTcurve:
                                     temp = self.temp2[index]
@@ -15582,7 +15573,7 @@ class tgraphcanvas(FigureCanvas):
                             height = 50 if self.mode == 'F' else 20
                             #some times ET is not drawn (ET = 0) when using device NONE
                             # plot events on BT when showeventsonbt is true
-                            if self.ETcurve and (not self.BTcurve or not self.showeventsonbt or self.temp1[index] > self.temp2[index]):
+                            if self.ETcurve and not (self.BTcurve and self.showeventsonbt) and self.temp1[index] > self.temp2[index]:
                                 temp = self.temp1[index]
                             else:
                                 temp = self.temp2[index]
@@ -15602,7 +15593,7 @@ class tgraphcanvas(FigureCanvas):
                                 row = {0:self.phases[0]-10,1:self.phases[0]-20,2:self.phases[0]-30,3:self.phases[0]-40}
                             #some times ET is not drawn (ET = 0) when using device NONE
                             # plot events on BT when showeventsonbt is true
-                            if self.ETcurve and (not self.BTcurve or not self.showeventsonbt or self.temp1[index] >= self.temp2[index]):
+                            if self.ETcurve and not (self.BTcurve and self.showeventsonbt) and self.temp1[index] >= self.temp2[index]:
                                 anno = self.ax.annotate(f'{firstletter}{secondletter}', xy=(self.timex[index], self.temp1[index]),xytext=(self.timex[index],row[self.specialeventstype[-1]]),alpha=1.,
                                                  color=self.palette['specialeventtext'],arrowprops={'arrowstyle':'-',
                                                     'color':self.palette['et'],'alpha':0.4,'relpos':(0,0)},fontsize=fontsize,

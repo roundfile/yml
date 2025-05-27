@@ -2,6 +2,34 @@ Detailed Release History
 ========================
 
 ----
+v3.1.6
+------------------
+
+* ADDITIONS
+  - adds Acaia Umbra support
+  - adds custom scale names
+  - adds URL open handler for Linux/RPi
+  - adds button to manual update the roast schedule
+
+* CHANGES
+  - improves WebSocket performance for slow servers
+  - improves full redraw performance
+  - increases maximum frequency of schedule updates
+
+* FIXES
+  - fixes an unhandled exception on loading settings related to scales configurations ([Issue #1847](../../../issues/1847))
+  - fix regression which broke show-events-on-BT in v3.1.2 and v3.1.4
+  - fixes delayed closing of the Roast Properties dialog on some configurations ([Issue #1852](../../../issues/1852))
+
+
+----
+v3.1.4 (May 1, 2025)
+------------------
+* FIXES
+  - maps the deprecated MODBUS Command "write" to "writeSingle" for backward compatibility with previous settings
+
+
+----
 v3.1.2 (April 30, 2025)
 ------------------
 

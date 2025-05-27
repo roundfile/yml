@@ -195,6 +195,7 @@ import matplotlib.backends.qt_editor._formlayout as formlayout
 if TYPE_CHECKING:
     from types import TracebackType
     from artisanlib.atypes import ProfileData, ComputedProfileInformation, RecentRoast, ExtraDeviceSettings, Palette, CurveSimilarity, ProductionData, ProductionDataStr, Wheel # pylint: disable=unused-import
+    from artisanlib.scale import ScaleSpec
     from artisanlib.roast_properties import editGraphDlg # pylint: disable=unused-import
     from artisanlib.comparator import roastCompareDlg # pylint: disable=unused-import
     from artisanlib.wheels import WheelDlg # pylint: disable=unused-import
@@ -1686,7 +1687,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         self.taskWebDisplayRoasted_server:Optional[WebRoasted] = None # holds the Roasted Web display instance
 
         # Scales
-        self.scale_manager:ScaleManager = ScaleManager()
+        self.scale_manager:ScaleManager = ScaleManager(self.scale_connected_handler, self.scale_disconnected_handler)
+        # association of scale ids (eg. BLE addresses) to custom user names for the scales
+        self.custom_scale_ids:List[str] = []   # same length as self.custom_scale_names
+        self.custom_scale_names:List[str] = [] # same length as self.custom_scale_ids
         # scale1: for roasted and green (if no second scale is configured, otherwise just for roasted)
         self.scale1_model:Optional[int] = None
         self.scale1_name:Optional[str] = None  # the display/local name of the device (like "ACAIA162FC")
@@ -4290,6 +4294,51 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         self.zoomOutShortcut = QShortcut(QKeySequence.StandardKey.ZoomOut, self)
         self.zoomOutShortcut.activated.connect(self.zoomOut)
 
+    def scale_connected_handler(self, scale_id:str, scale_name:str) -> None:
+        if scale_name:
+            name = (self.getScaleName((scale_name, scale_id)) if scale_id else scale_name)
+        else:
+            name = QApplication.translate('Tab','Scale')
+        self.sendmessageSignal.emit(QApplication.translate('Message', '{} connected').format(name),True,None)
+
+    def scale_disconnected_handler(self, scale_id:str, scale_name:str) -> None:
+        if scale_name:
+            name = (self.getScaleName((scale_name, scale_id)) if scale_id else scale_name)
+        else:
+            name = QApplication.translate('Tab','Scale')
+        self.sendmessageSignal.emit(QApplication.translate('Message', '{} disconnected').format(name),True,None)
+
+    # returns the custom name associated with the given scale_id if any, or None
+    def get_custom_scale_name(self, scale_id:str) -> Optional[str]:
+        try:
+            return self.custom_scale_names[self.custom_scale_ids.index(scale_id)]
+        except Exception: # pylint: disable=broad-except
+            return None
+
+    # if supplied name is empty a previous custom name entry is removed
+    def set_custom_scale_name(self, scale_id:str, name:str) -> None:
+        if name == '':
+            # given name is the empty string we remove the entry if it exists
+            try:
+                idx = self.custom_scale_ids.index(scale_id)
+                self.custom_scale_ids.pop(idx)
+                self.custom_scale_names.pop(idx)
+            except Exception: # pylint: disable=broad-except
+                pass
+        else:
+            try:
+                # update existing custom name
+                self.custom_scale_names[self.custom_scale_ids.index(scale_id)] = name
+            except ValueError:
+                # add a new custom name entry
+                self.custom_scale_ids.append(scale_id)
+                self.custom_scale_names.append(name)
+            except Exception as e: # pylint: disable=broad-except
+                _log.exception(e)
+
+    def getScaleName(self, scale_device:'ScaleSpec') -> str:
+        custom_name = self.get_custom_scale_name(scale_device[1])
+        return custom_name or scale_device[0]
 
     # today is expected to be w.r.t. local timezone
     def scheduledItemsfilter(self, today:datetime.date, item:plus.schedule.ScheduledItem, hidden:bool = False) -> bool:
@@ -4416,7 +4465,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             if self.scheduler_auto_open:
                 if item_count > 0 and plus.controller.is_connected():
                     # if plus is connected and there are open schedule items, we open the scheduler window automatically
-                    self.schedule()
+                    self.schedule(True)
                 elif item_count == 0:
                     self.scheduler_auto_open = True # next time new schedule items arrive we again auto open
             # in any case we update the badge
@@ -12520,7 +12569,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 ('capacity',drop_trailing_zero(f'{self.qmc.roastersize}')),
                 ('drumspeed',f'{self.qmc.drumspeed}'),
                 ('mode',self.qmc.mode),
-                ('test',setdecimal(cp['finish_phase_delta_temp']) if 'test' in cp else setdecimal(0.0)),
+                ('test',setdecimal(cp['finish_phase_delta_temp']) if 'test' in cp and 'finish_phase_delta_temp' in cp else setdecimal(0.0)),
                 ('weightloss',drop_trailing_zero(f"{cp['weight_loss']}") if 'weight_loss' in cp else '0'),
                 ('volumegain',drop_trailing_zero(f"{cp['volume_gain']}") if 'volume_gain' in cp else '0'),
                 ('densityloss',drop_trailing_zero(density_loss)),
@@ -12617,7 +12666,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 ('btubatchpergreenkg',f"{cp['BTU_batch_per_green_kg']}" if 'BTU_batch_per_green_kg' in cp else '0'),
                 ('bturoastpergreenkg',f"{cp['BTU_roast_per_green_kg']}" if 'BTU_roast_per_green_kg' in cp else '0'),
                 ('effbatch',f"{cp['KWH_batch_per_green_kg']}" if 'KWH_batch_per_green_kg' in cp else '0'),
-                ('effroast',f"{cp['KWH_roast_per_green_kg']}" if 'KEH_roast_per_green_kg' in cp else '0'),
+                ('effroast',f"{cp['KWH_roast_per_green_kg']}" if 'KWH_roast_per_green_kg' in cp else '0'),
                 ]
 
             _ignorecase = re.IGNORECASE  # @UndefinedVariable
@@ -12755,9 +12804,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 self.valueEdit.setText('')
                 self.etypeComboBox.setCurrentIndex(0)
                 self.etimeline.setText('')
-                self.qmc.resetlines()
-                if not self.qmc.flagstart:
-                    self.qmc.fig.canvas.draw()
+                if not self.qmc.flagon and self.EventsGroupLayout.isVisible(): # only redraw if the events editor is shown
+                    self.qmc.resetlines()
+                    if not self.qmc.flagstart:
+                        self.qmc.fig.canvas.draw()
                 return
             if currentevent > lenevents:
                 self.eNumberSpinBox.setValue(int(lenevents))
@@ -12774,7 +12824,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.qmc.resetlines() #clear old
             if currentevent:
                 self.plotEventSelection(currentevent-1)
-                if not self.qmc.flagstart:
+                if not self.qmc.flagon and self.EventsGroupLayout.isVisible():
                     self.qmc.fig.canvas.draw()
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
@@ -14784,9 +14834,17 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                         ws.cell(row=r,column=c,value=fe[0])
                     for el in extraslist:
                         c += 1
-                        ws.cell(row=r,column=c).value = el[0]
+                        try:
+                            # error: Cannot assign to attribute "value" for class "MergedCell" "str" is not assignable to "None"
+                            ws.cell(row=r,column=c).value = el[0] # pyright:ignore[reportAttributeAccessIssue]
+                        except Exception:
+                            pass
                         c += 1
-                        ws.cell(row=r,column=c).value = el[1]
+                        try:
+                            # error: Cannot assign to attribute "value" for class "MergedCell" "str" is not assignable to "None"
+                            ws.cell(row=r,column=c).value = el[1] # pyright:ignore[reportAttributeAccessIssue]
+                        except Exception:
+                            pass
 
                     for i in range(ws.max_column):
                         ws.cell(row=r,column=i+1).font = bf
@@ -16013,8 +16071,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                     rbt = bt
                     resolution = float(numpy.min(numpy.diff(numpy.sort(rbt))[numpy.nonzero(numpy.diff(numpy.sort(rbt)))]))
                 #except Exception: # pylint: disable=broad-except
-                except Exception as e: # pylint: disable=broad-except
-                    _log.exception(e)
+                except Exception: # pylint: disable=broad-except
                     resolution = float('nan')
 
                 str_modeChanged = ''
@@ -16154,7 +16211,14 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             maxAllowedTime_fromPrevEnd_toStart = 60 #seconds, max gap time between roast recordings
             minBbpTime = 90 #seconds, the minimum amount of time recorded in the current roast before CHARGE
             # is there data from a prev roast?
-            if self.qmc.bbpCache and checkCache:
+            if (self.qmc.bbpCache and checkCache and
+                    'end_roastepoch_msec' in self.qmc.bbpCache and
+                    'drop_to_end' in self.qmc.bbpCache and
+                    'drop_bt' in self.qmc.bbpCache and
+                    'drop_et' in self.qmc.bbpCache and
+                    'end_events' in self.qmc.bbpCache and
+                    'drop_events' in self.qmc.bbpCache and
+                    'drop_to_end' in self.qmc.bbpCache):
                 _log.debug('bbpCache exists')
                 bbpGap = self.qmc.roastepoch - (self.qmc.bbpCache['end_roastepoch_msec']/1000)
                 # did the prev roast end shortly before this roast began?  If not clear bbpCache
@@ -17578,7 +17642,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.qmc.phasesLCDmode = toInt(settings.value('phasesLCDmode',self.qmc.phasesLCDmode))
             if settings.contains('step100temp'):
                 try:
-                    self.qmc.step100temp = int(settings.value('step100temp',self.qmc.step100temp))
+                    self.qmc.step100temp = toInt(settings.value('step100temp',self.qmc.step100temp))
                 except Exception: # pylint: disable=broad-except
                     self.qmc.step100temp = None
             # Important - this must come after the code that restores phasesLCDmode
@@ -18643,15 +18707,48 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 #--- BEGIN GROUP Scales
             # Scales
             settings.beginGroup('Scales')
-            self.scale1_model = settings.value('scale1_model',self.scale1_model)
-            self.scale1_name = settings.value('scale1_name',self.scale1_name)
-            self.scale1_id = settings.value('scale1_id',self.scale1_id)
+            self.custom_scale_ids = list(toStringList(settings.value('custom_scale_ids',self.custom_scale_ids)))
+            self.custom_scale_names = list(toStringList(settings.value('custom_scale_names',self.custom_scale_names)))
+            if settings.contains('scale1_model'):
+                try:
+                    self.scale1_model = toInt(settings.value('scale1_model',self.scale1_model))
+                except Exception: # pylint: disable=broad-except
+                    self.scale1_model = None
+            if settings.contains('scale1_name'):
+                try:
+                    self.scale1_name = toString(settings.value('scale1_name',self.scale1_name))
+                except Exception: # pylint: disable=broad-except
+                    self.scale1_name = None
+            if settings.contains('scale1_id'):
+                try:
+                    self.scale1_id = settings.value('scale1_id',self.scale1_id)
+                except Exception: # pylint: disable=broad-except
+                    self.scale1_id = None
             self.container1_idx = toInt(settings.value('container1_idx',int(self.container1_idx)))
-            self.scale2_model = settings.value('scale2_model',self.scale2_model)
-            self.scale2_name = settings.value('scale2_name',self.scale2_name)
-            self.scale2_id = settings.value('scale2_id',self.scale2_id)
+            if settings.contains('scale2_model'):
+                try:
+                    self.scale2_model = toInt(settings.value('scale2_model',self.scale2_model))
+                except Exception: # pylint: disable=broad-except
+                    self.scale2_model = None
+            if settings.contains('scale2_name'):
+                try:
+                    self.scale2_name = toString(settings.value('scale2_name',self.scale2_name))
+                except Exception: # pylint: disable=broad-except
+                    self.scale2_name = None
+            if settings.contains('scale2_id'):
+                try:
+                    self.scale2_id = settings.value('scale2_id',self.scale2_id)
+                except Exception: # pylint: disable=broad-except
+                    self.scale2_id = None
             self.container2_idx = toInt(settings.value('container2_idx',int(self.container2_idx)))
             settings.endGroup()
+
+            # configure the two scales according to the settings just loaded
+            if self.scale1_model is not None and self.scale1_id is not None and self.scale1_name is not None:
+                self.scale_manager.set_scale1_signal.emit(self.scale1_model, self.scale1_id, self.scale1_name)
+            if self.scale2_model is not None and self.scale2_id is not None and self.scale2_name is not None:
+                self.scale_manager.set_scale1_signal.emit(self.scale2_model, self.scale2_id, self.scale2_name)
+
 #--- END GROUP Scales
 
             self.schedule_day_filter =toBool(settings.value('ScheduleDayFilter',self.schedule_day_filter))
@@ -18665,7 +18762,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             self.scheduler_filters_visible = toBool(settings.value('SchedulerFilter',self.scheduler_filters_visible))
             if self.scheduleFlag:
                 try:
-                    self.schedule()
+                    QTimer.singleShot(700, lambda:self.schedule(True))
                 except Exception as e: # pylint: disable=broad-except
                     _log.exception(e)
 
@@ -18693,10 +18790,10 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
                 QTimer.singleShot(2000, self.startWebLCDsforced)
             # start Task Green Web Display
             if self.taskWebDisplayGreenActive:
-                QTimer.singleShot(2500, self.startWebGreenforced)
+                QTimer.singleShot(2001, self.startWebGreenforced)
             # start Task Roasted Web Display
             if self.taskWebDisplayRoastedActive:
-                QTimer.singleShot(3000, self.startWebRoastedforced)
+                QTimer.singleShot(2002, self.startWebRoastedforced)
 
 
 #--- BEGIN GROUP ExtraEventButtons
@@ -18971,20 +19068,19 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             if not self.app.artisanviewerMode and (not self.taskWebDisplayGreenActive or force):
                 from artisanlib.weblcds import WebGreen
                 self.taskWebDisplayGreen_server = WebGreen(
+                    f"Artisan – {QApplication.translate('GroupBox', 'Task Green')}",
                     self.taskWebDisplayGreenPort,
-                    str(getResourcePath()),
-                    ('&nbsp;&nbsp;-.-' if self.qmc.LCDdecimalplaces else '&nbsp;--'),
-                    self.lcdpaletteF['timer'],
-                    self.lcdpaletteB['timer'],
-                    self.lcdpaletteF['bt'],
-                    self.lcdpaletteB['bt'],
-                    self.lcdpaletteF['et'],
-                    self.lcdpaletteB['et'],
-                    self.qmc.ETlcd,
-                    self.qmc.BTlcd)
+                    str(getResourcePath()))
                 res = self.taskWebDisplayGreen_server.startWeb()
                 if res:
                     self.taskWebDisplayGreenActive = True
+                    if self.schedule_window is not None:
+                        self.schedule_window.green_web_display.update()
+                    else:
+                        # send init message
+                        from json import dumps as json_dumps
+                        msg = json_dumps(plus.schedule.GreenWebDisplay.INIT_PAYLOAD, indent=None, separators=(',', ':'))
+                        self.taskWebDisplayGreen_server.send_msg(msg)
                     return True
                 self.stopWebGreen()
                 self.taskWebDisplayGreenActive = False
@@ -19011,7 +19107,7 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
         except Exception as e: # pylint: disable=broad-except
             _log.exception(e)
 
-    ## WebGreen
+    ## WebRoasted
 
     @pyqtSlot()
     def startWebRoastedforced(self) -> None:
@@ -19022,22 +19118,19 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
             if not self.app.artisanviewerMode and (not self.taskWebDisplayRoastedActive or force):
                 from artisanlib.weblcds import WebRoasted
                 self.taskWebDisplayRoasted_server = WebRoasted(
+                    f"Artisan – {QApplication.translate('GroupBox', 'Task Roasted')}",
                     self.taskWebDisplayRoastedPort,
-                    str(getResourcePath()),
-                    self.taskWebDisplayRoastedIndexPath,
-                    self.taskWebDisplayRoastedWebSocketPath,
-                    ('&nbsp;&nbsp;-.-' if self.qmc.LCDdecimalplaces else '&nbsp;--'),
-                    self.lcdpaletteF['timer'],
-                    self.lcdpaletteB['timer'],
-                    self.lcdpaletteF['bt'],
-                    self.lcdpaletteB['bt'],
-                    self.lcdpaletteF['et'],
-                    self.lcdpaletteB['et'],
-                    self.qmc.ETlcd,
-                    self.qmc.BTlcd)
+                    str(getResourcePath()))
                 res = self.taskWebDisplayRoasted_server.startWeb()
                 if res:
                     self.taskWebDisplayRoastedActive = True
+                    if self.schedule_window is not None:
+                        self.schedule_window.roasted_web_display.update()
+                    else:
+                        # send init message
+                        from json import dumps as json_dumps
+                        msg = json_dumps(plus.schedule.RoastedWebDisplay.INIT_PAYLOAD, indent=None, separators=(',', ':'))
+                        self.taskWebDisplayRoasted_server.send_msg(msg)
                     return True
                 self.stopWebRoasted()
                 self.taskWebDisplayRoastedActive = False
@@ -20281,6 +20374,8 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 #--- BEGIN GROUP Scales
             # Scales
             settings.beginGroup('Scales')
+            self.settingsSetValue(settings, default_settings, 'custom_scale_ids',self.custom_scale_ids, read_defaults)
+            self.settingsSetValue(settings, default_settings, 'custom_scale_names',self.custom_scale_names, read_defaults)
             self.settingsSetValue(settings, default_settings, 'scale1_model',self.scale1_model, read_defaults)
             self.settingsSetValue(settings, default_settings, 'scale1_name',self.scale1_name, read_defaults)
             self.settingsSetValue(settings, default_settings, 'scale1_id',self.scale1_id, read_defaults)
@@ -20501,6 +20596,9 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 
 
     def stopActivities(self) -> None:
+        # disconnect connected scales
+        self.scale_manager.disconnect_all()
+
         # if BLE was used we need to terminate its singular thread/asyncloop running the bleak scan and connect:
         try:
             if 'artisanlib.ble_port' in sys.modules:
@@ -24526,15 +24624,15 @@ class ApplicationWindow(QMainWindow):  # pyright: ignore [reportGeneralTypeIssue
 
     @pyqtSlot()
     @pyqtSlot(bool)
-    def schedule(self, _:bool = False) -> None:
-        if self.schedule_window is None:
+    def schedule(self, b:bool = False) -> None:
+        if b and self.schedule_window is None:
             if  not self.app.artisanviewerMode:  # no scheduler in ArtisanViewer mode
                 self.schedule_window = plus.schedule.ScheduleWindow(self, self, self.schedule_activeTab)
                 if self.schedule_window is not None:
                     self.scheduleFlag = True
                     self.scheduleAction.setChecked(True)
                     self.schedule_window.show()
-        else:
+        elif self.schedule_window is not None:
             self.schedule_window.close()
             self.schedule_window = None
 

@@ -68,6 +68,16 @@
 
   <releases>
 
+    <release version="3.1.4" date="2025-05-01">
+      <url type="details">https://github.com/artisan-roaster-scope/artisan/releases/tag/v3.1.4</url>
+      <description>
+        <p>FIXES</p>
+        <ul>
+          <li>maps the deprecated MODBUS Command "write" to "writeSingle" for backward compatibility with previous settings</li>
+        </ul>
+      </description>
+    </release>
+
     <release version="3.1.2" date="2025-04-30">
       <url type="details">https://github.com/artisan-roaster-scope/artisan/releases/tag/v3.1.2</url>
       <description>
@@ -87,15 +97,12 @@
           <li>adds configuration to allow to send MODBUS PID SV as 32bit float</li>
           <li>adds configuration to specify the mode (by time, BT or ET) for the playback of the DROP event</li>
           <li>adds mixed event playback, by time (for increasing event values) and temperature (for decreasing event values)</li>
-          <li>adds new Artisan Commands (with `n` from `{1,2,3,4}`)</li>
-            <ul>
-              <li>`quantifier(n,bool)` to toggle quantification per event type</li>
-              <li>`playback(n,bool)` to toggle event playback per event type</li>
-              <li>`ramp(n,bool)` to toggle event playback ramping per event type</li>
-              <li>`alarm(m,bool)` enable/disable alarm number `m`</li>
-              <li>`setBatchSize(float)` to set the batch size. if the given number is negative the batch size is taken from the background profile, if available</li>
-              <li>`playbackdropmode(int)` to set the mode for the playback of the DROP event (0: by time, 1: by BT, 2: by ET)</li>
-            </ul>
+          <li>adds new Artisan command `quantifier(n,bool)` to toggle quantification per event type (with `n` from `{1,2,3,4}`)</li>
+          <li>adds new Artisan command `playback(n,bool)` to toggle event playback per event type (with `n` from `{1,2,3,4}`)</li>
+          <li>adds new Artisan command `ramp(n,bool)` to toggle event playback ramping per event type (with `n` from `{1,2,3,4}`)</li>
+          <li>adds new Artisan command `alarm(m,bool)` enable/disable alarm number `m`</li>
+          <li>adds new Artisan command `setBatchSize(float)` to set the batch size. if the given number is negative the batch size is taken from the background profile, if available</li>
+          <li>adds new Artisan command `playbackdropmode(int)` to set the mode for the playback of the DROP event (0: by time, 1: by BT, 2: by ET)</li>
           <li>adds event slider input dialog via a double-click on a sliders LCD</li>
           <li>adds slider focus on slider LCD click</li>
           <li>adds quick keyboard focused event slider input using numeric keys followed by the ENTER/RETURN key. The last digit can be removed by using the backspace key. ESC cancels the action.</li>
@@ -165,7 +172,6 @@
         </ul>
       </description>
     </release>
-
 
     <release version="3.1.1.1" date="2024-12-09">
       <url type="details">https://github.com/artisan-roaster-scope/artisan/releases/tag/v3.1.1.1</url>
