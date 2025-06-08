@@ -204,6 +204,10 @@ class Worker(QObject): # pyright: ignore [reportGeneralTypeIssues] # Argument to
 
         try:
             stock_semaphore.acquire(1)
+            aw = config.app_window
+            if not config.connected and aw is not None and aw.plus_account is not None:
+                # we lost connection, let's try to reconnect
+                controller.connect(clear_on_failure=False, interactive=False) # ensure we are connected (reconnect if needed)
 
             if config.connected:
                 # seconds_since_last_stock_update is None if no stock with a proper timestamp was ever retrieved
@@ -266,7 +270,7 @@ class Worker(QObject): # pyright: ignore [reportGeneralTypeIssues] # Argument to
                     try:
                         stock_semaphore.acquire(1)
                         if stock is not None:
-                            stock['retrieved'] = time.time()
+                            stock['retrieved'] = time.time() # ty: ignore[possibly-unbound-implicit-call]
                         _log.debug('-> retrieved time updated')
                     finally:
                         if stock_semaphore.available() < 1:
@@ -408,12 +412,11 @@ def list2blend(blend_list: Optional[BlendList]) -> Optional[Blend]:
                         coffee = decodeLocal(ic)
                         if coffee is None:
                             return None
-                        bi:BlendIngredient = {'coffee': coffee, 'ratio': ir}
+                        bi = BlendIngredient(coffee = coffee, ratio = ir)
                         ingredients.append(bi)
                     else:
                         return None
-                d:Blend = { 'label': blend_label, 'ingredients': ingredients}
-                return d
+                return Blend(label = blend_label, ingredients = ingredients)
         return None
     except Exception as e:  # pylint: disable=broad-except
         _log.exception(e)
@@ -470,10 +473,10 @@ def getSchedule(acquire_lock:bool=True) -> List[ScheduledItem]:
             stock_semaphore.acquire(1)
         if stock is not None and 'schedule' in stock:
             return stock['schedule']
-        return []
     finally:
         if acquire_lock and stock_semaphore.available() < 1:
             stock_semaphore.release(1)
+    return []
 
 
 # ==================
@@ -507,10 +510,10 @@ def getStores(acquire_lock:bool=True) -> List[Tuple[str, str]]:
                         ):
                             res[s['location_label']] = s['location_hr_id']
             return sorted(res.items(), key=getStoreLabel)
-        return []
     finally:
         if acquire_lock and stock_semaphore.available() < 1:
             stock_semaphore.release(1)
+    return []
 
 
 # given a list of stores, returns a list of labels to populate the stores popup
@@ -698,11 +701,10 @@ def getCoffeeLabels() -> Dict[str, str]:
                 except Exception as e:  # pylint: disable=broad-except
                     _log.exception(e)
             return res
-        return {}
-
     finally:
         if stock_semaphore.available() < 1:
             stock_semaphore.release(1)
+    return {}
 
 
 def getCoffee(hr_id:str) -> Optional[Coffee]:
@@ -940,11 +942,10 @@ def getBlendBlendDict(blend:BlendStructure, weight:Optional[float]=None) -> Blen
         screen_maxs:List[Optional[int]] = []
         for c, a in components.items():
             ratio = a / weight
-            ingredient:BlendIngredient = {
-                'coffee': c,
-                'ratio': ratio,
-                'label': components_labels[c],
-            }
+            ingredient = BlendIngredient(
+                coffee = c,
+                ratio = ratio,
+                label = components_labels[c])
             if c in components_moisture:
                 ingredient['moisture'] = components_moisture[c]
             if c in components_density:
@@ -974,7 +975,7 @@ def getBlendBlendDict(blend:BlendStructure, weight:Optional[float]=None) -> Blen
         try:
             if not is_float_list(moistures):
                 del res['moisture']
-            elif config.app_window is not None:
+            else:
                 res['moisture'] = float2float(sum(moistures))
         except Exception:  # pylint: disable=broad-except
             pass
@@ -1354,11 +1355,10 @@ def getBlends(weight_unit_idx:int, store:Optional[str] = None, customBlend:Optio
                             # we also add the initial blend and blends with
                             # empty reach to replacementBlends and filter
                             # those out later
-                            new_blend:Blend = {
-                                'label': blend['label'],
-                                'hr_id': blend['hr_id'],
-                                'ingredients': ingredients,
-                            }
+                            new_blend = Blend(
+                                label = blend['label'],
+                                hr_id = blend['hr_id'],
+                                ingredients = ingredients)
                             moistures = [
                                 (
                                     coffee_moisture[i['coffee']] * i['ratio']
@@ -1476,12 +1476,11 @@ def getBlends(weight_unit_idx:int, store:Optional[str] = None, customBlend:Optio
                                                 # replacement coffee as coffee
                                                 # and its ratio, but without a
                                                 # further replacement coffee
-                                                rep_ingredients:BlendIngredient = {
-                                                    'coffee': i[
+                                                rep_ingredients = BlendIngredient(
+                                                    coffee = i[
                                                         'replace_coffee'
                                                     ],
-                                                    'ratio': i['ratio'],
-                                                }
+                                                    ratio = i['ratio'])
                                                 # if copy ratio num/denom
                                                 # (if given)
                                                 if 'ratio_num' in i:
