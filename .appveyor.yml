@@ -20,14 +20,14 @@ environment:
   # Set the default Appveyor Python version here. Does not affect windows_legacy. Can be overridden in platform environment.
   PYTHON_V: 3.13
   # Upgrade to specific version (for platforms supporting upgrade). Upgrade skipped if env var is missing or blank.
-  PYUPGRADE_WIN_V: 3.13.5
-  PYUPGRADE_MACOS_V: 3.13.5
+#  PYUPGRADE_WIN_V: 3.13.5
+#  PYUPGRADE_MACOS_V: 3.13.5
 
   matrix:
 #  - job_name: windows_legacy
 #    appveyor_build_worker_image: Visual Studio 2019
-  - job_name: windows
-    appveyor_build_worker_image: Visual Studio 2022
+#  - job_name: windows
+#    appveyor_build_worker_image: Visual Studio 2022
   - job_name: macos
     appveyor_build_worker_image: macos-monterey # macos-bigsur (macOS 11 not support by brew any longer)
 #  - job_name: linux
@@ -227,6 +227,10 @@ for:
     - export PATH=/Users/appveyor/venv${PYTHON_V}/bin:${PATH} # required after updating Python in venv
 
   build_script:
+    - sh: export APPVEYOR_SSH_BLOCK=true
+    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-ssh.sh' | bash -e -
+#    - sh: export APPVEYOR_VNC_BLOCK=true
+#    - sh: curl -sflL 'https://raw.githubusercontent.com/appveyor/ci/master/scripts/enable-vnc.sh' | bash -e -
     - echo "MacOS Build"
     - chmod +x src/*.sh
     - chmod +x src/pylupdate6pro.py
