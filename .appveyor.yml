@@ -251,7 +251,7 @@ for:
     # we upgrade libidn2 and curl to prevent issues caused by the previous python update
     # on running curl for later upload (libunistring.2.dylib not found)
     # this is done here after generating the build to prevent SSL issues
-    - brew upgrade libidn2 # 2.3.4 -> 2.3.4_1
+#    - brew upgrade libidn2 # 2.3.4 -> 2.3.4_1
     - ../.ci/upload.sh artisan-*.dmg
 
 #  # uncomment this section for vnc or ssh connection to the build image
