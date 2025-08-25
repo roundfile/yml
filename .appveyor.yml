@@ -183,12 +183,17 @@ for:
     # run the build script
     - cmd: build-win3-pi.bat
 
+    # create an artifact with diagnstic outputs from pyinstaller
+    - ps: Compress-Archive -Path "src\build\artisan-win\warn-artisan-win", "src\build\artisan-win\xref-artisan-win", "src\build\artisan-win\*.toc" -DestinationPath "src\build\artisan-win\pyinstaller_files.zip"
+
 #  test_script:
 #    - cmd: python -m unittest discover
 
   artifacts:
 #    - path: 'generated-win.zip'
     - path: 'src\%artifact_prefix%-win*setup.exe'
+    # upload the pyinstaller artifact
+    - path: 'src\build\artisan-win\pyinstaller_files.zip'
 
   deploy_script:
     - cmd: bash ../.ci/upload.sh artisan-win*setup.exe
