@@ -1151,7 +1151,7 @@ class PIDcontrol:
             'dutyMin', 'dutyMax', 'pidKp', 'pidKi', 'pidKd', 'pidSource', 'pidCycle', 'pidPositiveTarget', 'pidNegativeTarget', 'invertControl',
             'sv_smoothing_factor', 'sv_decay_weights', 'previous_svs', 'time_pidON', 'source_reading_pidON', 'current_ramp_segment',  'current_soak_segment', 'ramp_soak_engaged',
             'RS_total_time', 'slider_force_move', 'positiveTargetRangeLimit', 'positiveTargetMin', 'positiveTargetMax', 'negativeTargetRangeLimit',
-            'negativeTargetMin', 'negativeTargetMax', 'derivative_filter']
+            'negativeTargetMin', 'negativeTargetMax', 'derivative_filter', 'pidDoE', 'pidDlimit', 'pidIlimitFactor', 'pidIWP', 'pidIRoC', 'pidIRoCthreshold' ]
 
     def __init__(self, aw:'ApplicationWindow') -> None:
         self.aw:ApplicationWindow = aw
@@ -1205,7 +1205,15 @@ class PIDcontrol:
         self.pidKp:float = (15.0 if self.aw.qmc.mode == 'C' else 8.3334) # 15.0 in C
         self.pidKi:float = (0.01 if self.aw.qmc.mode == 'C' else 0.00556) # 0.01 in C
         self.pidKd:float = (20.0 if self.aw.qmc.mode == 'C' else 11.1111) # 20.0 in C
-        # Proposional on Measurement mode see: http://brettbeauregard.com/blog/2017/06/introducing-proportional-on-measurement/
+        # Proposional on Measurement (PoM) mode see: http://brettbeauregard.com/blog/2017/06/introducing-proportional-on-measurement/
+        # => PoM removed in v3.1.2
+        ## further pid configurations (only supported by the software pid currently)
+        self.pidDoE:bool = False          # classical Derivative on Error (DoE) if True, otherwise Derivative on Measurement (DoM) to reduce derivative kick
+        self.pidDlimit:float = 80.0       # derivative limit [0-100] (used for both, DoM and DoE)
+        self.pidIlimitFactor:float = 0.8  # integral limit factor
+        self.pidIWP:bool = True           # Advanced Integral Windup Prevention
+        self.pidIRoC:bool = True          # Reset integral on large setpoint changes
+        self.pidIRoCthreshold:float = 30  # SP threshold beyond which the integral will be reset if pidRIoC is set
         # pidSource
         #   either the TC4 input channel from [1,..,4] if self.qmc.device == 19 (Arduino/TC4)
         #   in all other cases (HOTTOP, MODBUS,..), 1 is interpreted as BT and 2 as ET, 3 as 0xT1, 4 as 0xT2, 5 as 1xT1, ...
@@ -1245,7 +1253,7 @@ class PIDcontrol:
     #  4: Kaleido
     def externalPIDControl(self) -> int:
         # TC4 with PID firmware or MODBUS and SV register set or S7 and SV area set
-        if self.aw.modbus.PID_slave_ID != 0:
+        if self.aw.modbus.PID_device_ID != 0:
             return 1
         if self.aw.s7.PID_area != 0:
             return 2
@@ -1387,17 +1395,23 @@ class PIDcontrol:
 
     # the internal software PID should be configured on ON, but not be activated yet to warm it up
     def confSoftwarePID(self) -> None:
-        if self.externalPIDControl() not in [1, 2, 4] and not(self.aw.qmc.device == 19 and self.aw.qmc.PIDbuttonflag) and self.aw.qmc.Controlbuttonflag:
-            # software PID
-            self.aw.qmc.pid.setPID(self.pidKp,self.pidKi,self.pidKd)
-            self.aw.qmc.pid.setLimits((-100 if self.pidNegativeTarget else 0),(100 if self.pidPositiveTarget else 0))
-            self.aw.qmc.pid.setDutySteps(self.dutySteps)
-            self.aw.qmc.pid.setDutyMin(self.dutyMin)
-            self.aw.qmc.pid.setDutyMax(self.dutyMax)
-            self.aw.qmc.pid.setControl(self.setEnergy)
-            self.aw.qmc.pid.setDerivativeFilterLevel(self.derivative_filter)
-            if self.svMode == 0:
-                self.setSV(self.aw.sliderSV.value())
+        # software PID
+        self.aw.qmc.pid.setPID(self.pidKp,self.pidKi,self.pidKd)
+        self.aw.qmc.pid.setLimits((-100 if self.pidNegativeTarget else 0),(100 if self.pidPositiveTarget else 0))
+        self.aw.qmc.pid.setDutySteps(self.dutySteps)
+        self.aw.qmc.pid.setDutyMin(self.dutyMin)
+        self.aw.qmc.pid.setDutyMax(self.dutyMax)
+        self.aw.qmc.pid.setControl(self.setEnergy)
+        self.aw.qmc.pid.setDerivativeFilterLevel(self.derivative_filter)
+        if self.svMode == 0:
+            self.setSV(self.aw.sliderSV.value())
+        self.aw.qmc.pid.setDerivativeOnError(self.pidDoE)
+        self.aw.qmc.pid.setDerivativeLimit(self.pidDlimit)
+        self.aw.qmc.pid.setIntegralWindupPrevention(self.pidIWP)
+        self.aw.qmc.pid.setIntegralResetOnSP(self.pidIRoC)
+        self.aw.qmc.pid.setSetpointChangeThreshold(self.pidIRoCthreshold)
+        self.aw.qmc.pid.setIntegralLimitFactor(self.pidIlimitFactor)
+
 
     # if send_command is False, the pidOn command is not forwarded to the external PID (TC4, Kaleido, ..)
     def pidOn(self, send_command:bool = True) -> None:
@@ -1445,15 +1459,7 @@ class PIDcontrol:
         elif self.aw.qmc.Controlbuttonflag:
             # software PID
             if not self.pidActive: # only if not yet active!
-                self.aw.qmc.pid.setPID(self.pidKp,self.pidKi,self.pidKd)
-                self.aw.qmc.pid.setLimits((-100 if self.pidNegativeTarget else 0),(100 if self.pidPositiveTarget else 0))
-                self.aw.qmc.pid.setDutySteps(self.dutySteps)
-                self.aw.qmc.pid.setDutyMin(self.dutyMin)
-                self.aw.qmc.pid.setDutyMax(self.dutyMax)
-                self.aw.qmc.pid.setControl(self.setEnergy)
-                self.aw.qmc.pid.setDerivativeFilterLevel(self.derivative_filter)
-                if self.svMode == 0:
-                    self.setSV(self.aw.sliderSV.value())
+                self.confSoftwarePID()
                 self.pidActive = True
                 self.aw.qmc.pid.on()
                 self.aw.buttonCONTROL.setStyleSheet(self.aw.pushbuttonstyles['PIDactive'])
@@ -1873,10 +1879,10 @@ class DtaPID:
     def writeDTE(self, value:str, DTAaddress:str) -> None:
         try:
             newsv = hex(int(abs(float(str(value)))))[2:].upper() # can fail on value=''
-            slaveID = self.aw.ser.controlETpid[1]
+            deviceID = self.aw.ser.controlETpid[1]
             if self.aw.ser.controlETpid[0] != 2: # control pid is not a DTA PID
-                slaveID = self.aw.ser.readBTpid[1]
-            command = self.aw.dtapid.message2send(slaveID,6,str(DTAaddress),newsv)
+                deviceID = self.aw.ser.readBTpid[1]
+            command = self.aw.dtapid.message2send(deviceID,6,str(DTAaddress),newsv)
             self.aw.ser.sendDTAcommand(command)
         except Exception:  # pylint: disable=broad-except
             pass

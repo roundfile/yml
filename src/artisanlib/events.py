@@ -25,7 +25,7 @@ if TYPE_CHECKING:
     from artisanlib.main import ApplicationWindow # noqa: F401 # pylint: disable=unused-import
     from PyQt6.QtGui import QCloseEvent # pylint: disable=unused-import
 
-from artisanlib.util import uchr, comma2dot
+from artisanlib.util import uchr, comma2dot, eventtime2string
 from artisanlib.dialogs import ArtisanResizeablDialog, ArtisanDialog
 from artisanlib.widgets import MyQComboBox, MyQDoubleSpinBox
 
@@ -1838,7 +1838,7 @@ class EventsDlg(ArtisanResizeablDialog):
 
     @pyqtSlot(bool)
     def restorepaletteeventbuttons(self, _:bool = False) -> None:
-        filename = self.aw.ArtisanOpenFileDialog(msg=QApplication.translate('Message','Load Palettes'))
+        filename = self.aw.ArtisanOpenFileDialog(msg=QApplication.translate('Message','Load Palettes'), ext='*.apal')
         if filename:
             maxlen = self.aw.loadPalettes(filename,self.aw.buttonpalette)
             if maxlen is not None:
@@ -2727,7 +2727,8 @@ class EventsDlg(ArtisanResizeablDialog):
         if hheader is not None:
             hheader.setStretchLastSection(False)
             self.eventbuttontable.resizeColumnsToContents()
-            hheader.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
+            if platform.system() != 'Windows':  # allow resizing as behavior is different on Windows
+                hheader.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
             hheader.setSectionResizeMode(6, QHeaderView.ResizeMode.Fixed)
             hheader.resizeSection(6, hheader.sectionSize(6) + 15)
             hheader.resizeSection(7, self.aw.standard_button_min_width_px)
@@ -2741,11 +2742,10 @@ class EventsDlg(ArtisanResizeablDialog):
 
         # remember the columnwidth
         for i, _ in enumerate(self.aw.eventbuttontablecolumnwidths):
-            if i not in [5,6,7,8]:
-                try:
-                    self.eventbuttontable.setColumnWidth(i,self.aw.eventbuttontablecolumnwidths[i])
-                except Exception: # pylint: disable=broad-except
-                    pass
+            try:
+                self.eventbuttontable.setColumnWidth(i,self.aw.eventbuttontablecolumnwidths[i])
+            except Exception: # pylint: disable=broad-except
+                pass
 
     @pyqtSlot(bool)
     def copyEventButtonTabletoClipboard(self, _:bool=False) -> None:
@@ -3779,7 +3779,7 @@ class customEventDlg(ArtisanDialog):
             event_time = self.aw.qmc.timex[time_idx]
             if self.aw.qmc.timeindex[0] > -1:
                 event_time -= self.aw.qmc.timex[self.aw.qmc.timeindex[0]]
-            event_time_str = ' @ ' + self.aw.eventtime2string(event_time)
+            event_time_str = ' @ ' + eventtime2string(event_time)
         else:
             event_time_str = ''
         self.setWindowTitle(QApplication.translate('Form Caption','Event') + event_time_str)
