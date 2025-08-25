@@ -184,7 +184,8 @@ for:
     - cmd: build-win3-pi.bat
 
     # create an artifact with diagnstic outputs from pyinstaller
-    - ps: Compress-Archive -Path "src\build\artisan-win\warn-artisan-win", "src\build\artisan-win\xref-artisan-win", "src\build\artisan-win\*.toc" -DestinationPath "src\build\artisan-win\pyinstaller_files.zip"
+    - cmd: cd
+    - ps: Compress-Archive -Path "build\artisan-win\warn-artisan-win", "build\artisan-win\xref-artisan-win", "build\artisan-win\*.toc" -DestinationPath "src\build\artisan-win\pyinstaller_files.zip"
 
 #  test_script:
 #    - cmd: python -m unittest discover
